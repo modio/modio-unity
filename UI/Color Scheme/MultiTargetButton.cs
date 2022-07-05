@@ -81,6 +81,12 @@ namespace ModIOBrowser
                         TriggerAnimation(target.animator, target.animationTriggers, triggername);
                         break;
                     case MultiTargetTransition.DisableEnable:
+                        if(target.isControllerButtonIcon && Browser.mouseNavigation)
+                        {
+                            // if we arent using a controller always hide this target
+                            target?.target?.gameObject.SetActive(false);
+                            break;
+                        }
                         ToggleActiveState(target, state);
                         break;
                     case MultiTargetTransition.ColorScheme:
@@ -131,10 +137,10 @@ namespace ModIOBrowser
             switch(state)
             {
                 case SelectionState.Normal:
-                    target.target.gameObject.SetActive(target.enableOnNormal);
+                    target?.target?.gameObject.SetActive(target.enableOnNormal);
                     break;
                 case SelectionState.Highlighted:
-                    target.target.gameObject.SetActive(target.enableOnHighlight);
+                    target?.target?.gameObject.SetActive(target.enableOnHighlight);
                     break;
 #if UNITY_2020_1_OR_NEWER
                 case SelectionState.Selected:
@@ -142,10 +148,10 @@ namespace ModIOBrowser
                     break;
 #endif
                 case SelectionState.Pressed:
-                    target.target.gameObject.SetActive(target.enableOnPressed);
+                    target?.target?.gameObject.SetActive(target.enableOnPressed);
                     break;
                 case SelectionState.Disabled:
-                    target.target.gameObject.SetActive(target.enableOnDisabled);
+                    target?.target?.gameObject.SetActive(target.enableOnDisabled);
                     break;
             }
         }

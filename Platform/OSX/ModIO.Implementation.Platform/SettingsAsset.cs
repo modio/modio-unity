@@ -2,10 +2,10 @@
 
 namespace ModIO.Implementation
 {
-    /// <summary>Windows extension to the SettingsAsset.</summary>
+    /// <summary>Osx extension to the SettingsAsset.</summary>
     internal partial class SettingsAsset : ScriptableObject
     {
-        /// <summary>Configuration for Windows.</summary>
+        /// <summary>Configuration for Osx.</summary>
         public BuildSettings osxConfiguration;
 
 #if UNITY_STANDALONE_OSX && !UNITY_EDITOR

@@ -1,4 +1,5 @@
-﻿using ModIO;
+﻿using System.Collections;
+using ModIO;
 using ModIOBrowser.Implementation;
 using TMPro;
 using UnityEngine;
@@ -48,8 +49,8 @@ namespace ModIOBrowser
                 CloseDownloadQueuePanel();
             }
             else
-            {
-                // TODO this selection can sometimes fail, figure out why it would be null and write a backup
+            {                
+                // TODO this selection can sometimes fail, figure out why it would be null (not dire as we have a backup)
                 OpenDownloadQueuePanel(EventSystem.current.currentSelectedGameObject?.GetComponent<Selectable>());
             }
         }
@@ -59,14 +60,15 @@ namespace ModIOBrowser
             downloadQueueSelectionOnClose = selectionOnClose ?? downloadQueueSelectionOnClose;
             DownloadQueuePanel.SetActive(true);
             RefreshDownloadHistoryPanel();
-            DownloadQueueCurrentUnsubscribeButton.Select();
+            SelectionManager.Instance.SelectView(UiViews.Downloads);
         }
         
         public void CloseDownloadQueuePanel()
-        {
+        {            
             DownloadQueuePanel.SetActive(false);
-            downloadQueueSelectionOnClose?.Select();
+            SelectSelectable(downloadQueueSelectionOnClose);
             RefreshDownloadHistoryPanel();
+            SelectionManager.Instance.SelectView(UiViews.Browse);
         }
         
         /// <summary>
@@ -96,7 +98,7 @@ namespace ModIOBrowser
             
             foreach(SubscribedMod mod in subscribedMods)
             {
-                if(mod.status == SubscribedModStatus.Installed)
+                if(mod.status == SubscribedModStatus.Installed || pendingUnsubscribes.Contains(mod.modProfile.id))
                 {
                     continue;
                 }
@@ -106,7 +108,7 @@ namespace ModIOBrowser
                 }
                 
                 ListItem li = ListItem.GetListItem<DownloadQueueListItem>(DownloadQueueListItem, DownloadQueueList, colorScheme);
-                li.Setup(mod.modProfile);
+                li.Setup(mod);
                 li.SetViewportRestraint(DownloadQueueList as RectTransform, DownloadQueueListViewport);
                 pendingModsInQueue = true;
                 
@@ -149,7 +151,7 @@ namespace ModIOBrowser
             // Check the selection isn't lost on a de-activated button
             if (!DownloadQueueCurrentUnsubscribeButton.gameObject.activeSelf)
             {
-                DownloadQueueCurrentLogoutButton.Select();
+                SelectSelectable(DownloadQueueCurrentLogoutButton);
             }
         }
 
@@ -204,10 +206,8 @@ namespace ModIOBrowser
         /// </summary>
         public void LogoutButton()
         {
-            ModIOUnity.RemoveUserData();
             ToggleDownloadQueuePanel();
-            Avatar.gameObject.SetActive(false);
-            isAuthenticated = false;
+            OpenAuthenticationPanel_Logout(delegate { OpenDownloadQueuePanel(); });
         }
 
 #endregion // Mod Download History Panel

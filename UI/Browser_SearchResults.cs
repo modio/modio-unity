@@ -1,4 +1,6 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
+using System.Linq;
 using ModIO;
 using ModIOBrowser.Implementation;
 using TMPro;
@@ -28,11 +30,13 @@ namespace ModIOBrowser
         [SerializeField] GameObject SearchResultsSearchPhrase;
         [SerializeField] TMP_Text SearchResultsSearchPhraseText;
         [SerializeField] TMP_Dropdown SearchResultsSortByDropdown;
-        [SerializeField] Button SearchResultsDefaultSelection;
         [SerializeField] GameObject SearchResultsEndOfResults;
         [SerializeField] GameObject SearchResultsNoResultsText;
         [SerializeField] TMP_Text SearchResultsEndOfResultsHeader;
         [SerializeField] TMP_Text SearchResultsEndOfResultsText;
+        [SerializeField] Selectable SearchResultsRefineFilter;
+        [SerializeField] Selectable SearchResultsFilterBy;
+
         bool moreResultsToShow;
         long numberOfRemainingResultsToShow;
         string lastUsedSearchPhrase;
@@ -52,7 +56,13 @@ namespace ModIOBrowser
 
         internal void OpenSearchResults(string searchPhrase)
         {
-            SearchResultsDefaultSelection.Select();
+            //could have a clear out here?
+            //No, this is something with highlighted?
+            //ListItem.HideListItems<SearchResultListItem>();
+
+
+            SelectionManager.Instance.SelectView(UiViews.SearchResults);
+            SearchResults_ClearButtonNavigation();
 
             lastUsedSearchPhrase = searchPhrase;
             GoToPanel(SearchResultsPanel);
@@ -61,8 +71,8 @@ namespace ModIOBrowser
         }
 
         internal void OpenSearchResultsWithoutRefreshing()
-        {
-            SearchResultsDefaultSelection.Select();
+        {            
+            SelectionManager.Instance.SelectView(UiViews.SearchResults);
             GoToPanel(SearchResultsPanel);
         }
 
@@ -315,9 +325,52 @@ namespace ModIOBrowser
             // TODO show tags that are part of the search
 
             ListItem.HideListItems<SearchResultListItem>(true);
+
+            SearchResults_UpdateButtonNavigation();
         }
 
-#endregion
+        #endregion
 
+        #region Button navigation helper methods
+
+        void SearchResults_ClearButtonNavigation()
+        {
+            var refineNav = SearchResultsRefineFilter.navigation;
+            refineNav.selectOnDown = null;
+            SearchResultsRefineFilter.navigation = refineNav;
+
+            var filterNav = SearchResultsFilterBy.navigation;
+            filterNav.selectOnDown = null;
+            SearchResultsFilterBy.navigation = filterNav;
+        }
+
+        void SearchResults_UpdateButtonNavigation()
+        {
+            var childrenBegin = 2;
+            var childrenEnd = 7;
+
+            var items = ListItem.Where<SearchResultListItem>(x =>
+                {
+                    var query = x.transform.GetSiblingIndex() > childrenBegin
+                             && x.transform.GetSiblingIndex() <= childrenEnd;
+
+                    return query;
+                })
+                .OrderByDescending(x => x.transform.GetSiblingIndex())
+                .ToList();
+
+            if(items.Count > 0)
+            {
+                var refineNav = SearchResultsRefineFilter.navigation;
+                refineNav.selectOnDown = items[0].selectable;
+                SearchResultsRefineFilter.navigation = refineNav;
+
+                var filterNav = SearchResultsFilterBy.navigation;
+                filterNav.selectOnDown = items[0].selectable;
+                SearchResultsFilterBy.navigation = filterNav;
+            }            
+        }
+
+        #endregion
     }
 }

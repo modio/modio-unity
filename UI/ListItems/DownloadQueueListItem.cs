@@ -1,5 +1,6 @@
 ﻿using ModIO;
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using TMPro;
 
@@ -13,6 +14,10 @@ namespace ModIOBrowser.Implementation
     {
         [SerializeField] TMP_Text modName;
         [SerializeField] TMP_Text fileSize;
+        [SerializeField] Image modLogo;
+        [SerializeField] GameObject loadingIcon;
+        [SerializeField] GameObject failedToLoadIcon;
+        [SerializeField] GameObject failedToLoadMod;
         public ModProfile profile;
 
         public static DownloadQueueListItem currentDownloadQueueListItem;
@@ -30,19 +35,41 @@ namespace ModIOBrowser.Implementation
             viewportRestraint.UseScreenAsViewport = false;
         }
 
-        public override void Setup(ModProfile profile)
+        public override void Setup(SubscribedMod mod)
         {
             base.Setup();
-            this.profile = profile;
-            modName.text = profile.name;
-            fileSize.text = ""; // TODO @Steve Implement this
+            this.profile = mod.modProfile;
+            modName.text = mod.modProfile.name;
+            fileSize.text = Utility.GenerateHumanReadableStringForBytes(mod.modProfile.archiveFileSize);
+            failedToLoadMod.SetActive(mod.status == SubscribedModStatus.ProblemOccurred);
+            modLogo.color = Color.clear;
             gameObject.SetActive(true);
+            failedToLoadIcon.SetActive(false);
+            loadingIcon.SetActive(true);
+            ModIOUnity.DownloadTexture(mod.modProfile.logoImage_320x180, SetIcon);
+            
+            LayoutRebuilder.ForceRebuildLayoutImmediate(modName.transform.parent as RectTransform);
         }
 #endregion // Overrides
+
+        void SetIcon(ResultAnd<Texture2D> textureAnd)
+        {
+            if(textureAnd.result.Succeeded() && textureAnd.value != null)
+            {
+                modLogo.color = Color.white;
+                modLogo.sprite = Sprite.Create(textureAnd.value, new Rect(Vector2.zero, new Vector2(textureAnd.value.width, textureAnd.value.height)), Vector2.zero);
+            }
+            else
+            {
+                failedToLoadIcon.SetActive(true);
+            }
+            loadingIcon.SetActive(false);
+        }
         
         public void Unsubscribe()
         {
             Browser.UnsubscribeFromModEvent(profile);
+            Browser.Instance.RefreshDownloadHistoryPanel();
         }
 
         public void OnDeselect(BaseEventData eventData)

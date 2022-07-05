@@ -6,5 +6,6 @@
         NetworkError,
         HttpError,
         Succeeded,
+        AbortRequested,
     }
 }

@@ -1,29 +1,38 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using ModIO;
 using ModIO.Implementation;
+using ModIOBrowser.Implementation;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace ModIOBrowser
 {
-    public partial class Browser : MonoBehaviour
+    public partial class Browser
     {
         [Header("Authentication Panel")]
         [SerializeField] GameObject AuthenticationPanel;
+        [SerializeField] GameObject AuthenticationMainPanel;
         [SerializeField] GameObject AuthenticationPanelWaitingForResponseAnimation;
         [SerializeField] GameObject AuthenticationPanelEnterEmail;
+        [SerializeField] GameObject AuthenticationPanelLogo;
         [SerializeField] TMP_InputField AuthenticationPanelEmailField;
         [SerializeField] GameObject AuthenticationPanelEnterCode;
         [SerializeField] TMP_InputField[] AuthenticationPanelCodeFields;
         [SerializeField] Button AuthenticationPanelConnectViaSteamButton;
         [SerializeField] Button AuthenticationPanelConnectViaEmailButton;
         [SerializeField] Button AuthenticationPanelBackButton;
+        [SerializeField] TMP_Text AuthenticationPanelBackButtonText;
         [SerializeField] Button AuthenticationPanelAgreeButton;
         [SerializeField] Button AuthenticationPanelSendCodeButton;
         [SerializeField] Button AuthenticationPanelSubmitButton;
         [SerializeField] Button AuthenticationPanelCompletedButton;
+        [SerializeField] Button AuthenticationPanelLogoutButton;
+        [SerializeField] Button AuthenticationPanelTOSButton;
+        [SerializeField] Button AuthenticationPanelPrivacyPolicyButton;
         [SerializeField] GameObject AuthenticationPanelTermsOfUseLinks;
         [SerializeField] TMP_Text AuthenticationPanelTitleText;
         [SerializeField] TMP_Text AuthenticationPanelInfoText;
@@ -46,29 +55,57 @@ namespace ModIOBrowser
         public void CloseAuthenticationPanel()
         {
             AuthenticationPanel.SetActive(false);
-            
+            SelectionManager.Instance.SelectView(UiViews.Browse);
+
             // Get the default selection
             if(CollectionPanel.activeSelf)
             {
-                CollectionPanelFirstDropDownFilter.Select();
+                SelectSelectable(CollectionPanelFirstDropDownFilter);
             } 
             else if(ModDetailsPanel.activeSelf)
             {
-                defaultModDetailsSelection.Select();
+                SelectionManager.Instance.SelectView(UiViews.ModDetails);
             } 
-            else
+        }
+
+        public void UpdateBrowserModListItemDisplay()
+        {
+            List<SubscribedMod> subbedMods = ModIOUnity.GetSubscribedMods(out var result).ToList();
+
+            if(!result.Succeeded())
             {
-                defaultBrowserSelection.Select();
+                return;
             }
+
+            BrowserModListItem.listItems.Where(x => x.Value.isActiveAndEnabled)
+                .ToList()
+                .ForEach(x =>
+                {
+                    if(subbedMods.Any(mod => mod.modProfile.Equals(x.Value.profile)))
+                    {
+                        x.Value.Setup(x.Value.profile);
+                    }
+                });
+        }
+
+        public void Logout()
+        {
+            ModIOUnity.RemoveUserData();
+            Avatar.gameObject.SetActive(false);
+            isAuthenticated = false;
         }
 
         public void OpenAuthenticationPanel()
         {
             HideAuthenticationPanelObjects();
             AuthenticationPanel.SetActive(true);
+            AuthenticationMainPanel.SetActive(true);
+            
 
             AuthenticationPanelTitleText.gameObject.SetActive(true);
             AuthenticationPanelTitleText.text = "Authentication";
+            
+            AuthenticationPanelLogo.SetActive(true);
 
             AuthenticationPanelInfoText.gameObject.SetActive(true);
             AuthenticationPanelInfoText.text = "mod.io is a 3rd party utility that provides access to a mod workshop. Choose how you wish to be authenticated.";
@@ -81,12 +118,22 @@ namespace ModIOBrowser
             AuthenticationPanelBackButton.gameObject.SetActive(true);
             AuthenticationPanelBackButton.onClick.RemoveAllListeners();
             AuthenticationPanelBackButton.onClick.AddListener(CloseAuthenticationPanel);
+            
+            AuthenticationPanelBackButton.navigation = new Navigation{
+                mode = Navigation.Mode.Explicit,
+                selectOnRight = AuthenticationPanelConnectViaEmailButton
+            };
 
             AuthenticationPanelConnectViaEmailButton.gameObject.SetActive(true);
             AuthenticationPanelConnectViaEmailButton.onClick.RemoveAllListeners();
             AuthenticationPanelConnectViaEmailButton.onClick.AddListener(GetTermsOfUse);
             
-            AuthenticationPanelConnectViaEmailButton.Select();
+            AuthenticationPanelConnectViaEmailButton.navigation = new Navigation{
+                mode = Navigation.Mode.Explicit,
+                selectOnLeft = AuthenticationPanelBackButton
+            };
+
+            SelectionManager.Instance.SelectView(UiViews.AuthPanel);
         }
 
         internal void HideAuthenticationPanelObjects()
@@ -96,6 +143,7 @@ namespace ModIOBrowser
             TextAlignmentOptions alignment = AuthenticationPanelInfoText.alignment;
             alignment = TextAlignmentOptions.Left;
             AuthenticationPanelInfoText.alignment = alignment;
+            AuthenticationPanelBackButtonText.text = "Back";
             AuthenticationPanelEnterCode.SetActive(false);
             AuthenticationPanelEnterEmail.SetActive(false);
             AuthenticationPanelTermsOfUseLinks.SetActive(false);
@@ -107,6 +155,9 @@ namespace ModIOBrowser
             AuthenticationPanelConnectViaEmailButton.gameObject.SetActive(false);
             AuthenticationPanelConnectViaSteamButton.gameObject.SetActive(false);
             AuthenticationPanelCompletedButton.gameObject.SetActive(false);
+            AuthenticationPanelLogoutButton.gameObject.SetActive(false);
+            AuthenticationPanelWaitingForResponseAnimation.SetActive(false);
+            AuthenticationPanelLogo.SetActive(false);
         }
 
         internal void HyperLinkToTOS()
@@ -137,25 +188,73 @@ namespace ModIOBrowser
         {
             HideAuthenticationPanelObjects();
             AuthenticationPanel.SetActive(true);
-            
+            AuthenticationMainPanel.SetActive(false);
             AuthenticationPanelWaitingForResponseAnimation.SetActive(true);
-            
+
             AuthenticationPanelInfoText.gameObject.SetActive(true);
             AuthenticationPanelInfoText.text = "Waiting for response...";
             TextAlignmentOptions alignment = AuthenticationPanelInfoText.alignment;
             alignment = TextAlignmentOptions.Center;
             AuthenticationPanelInfoText.alignment = alignment;
+            
+            //AuthenticationWaitingPanelBackButton.Select();
+        }
+        
+        public void OpenAuthenticationPanel_Logout(Action onBack = null)
+        {
+            HideAuthenticationPanelObjects();
+            AuthenticationPanel.SetActive(true);
+            AuthenticationMainPanel.SetActive(true);
+
+            AuthenticationPanelTitleText.gameObject.SetActive(true);
+            AuthenticationPanelTitleText.text = "Are you sure you'd like to log out?";
+            
+            AuthenticationPanelLogo.SetActive(true);
+
+            AuthenticationPanelInfoText.gameObject.SetActive(true);
+            AuthenticationPanelInfoText.text = "This will log you out of your mod.io account."
+                                               + " You can still browse the mods but you will "
+                                               + "need to log back in to subscribe to a mod. Any"
+                                               + " ongoing downloads/installations will also be"
+                                               + " stopped.\n\nDo you wish to continue?";
+
+            AuthenticationPanelBackButtonText.text = "Cancel";
+            AuthenticationPanelBackButton.gameObject.SetActive(true);
+            AuthenticationPanelBackButton.onClick.RemoveAllListeners();
+            AuthenticationPanelBackButton.onClick.AddListener(delegate
+            {
+                CloseAuthenticationPanel();
+                onBack?.Invoke();
+            });
+            
+            AuthenticationPanelBackButton.navigation = new Navigation{
+                mode = Navigation.Mode.Explicit,
+                selectOnRight = AuthenticationPanelLogoutButton
+            };
+
+            AuthenticationPanelLogoutButton.gameObject.SetActive(true);
+            AuthenticationPanelLogoutButton.onClick.RemoveAllListeners();
+            AuthenticationPanelLogoutButton.onClick.AddListener(Logout);
+            
+            AuthenticationPanelLogoutButton.navigation = new Navigation{
+                mode = Navigation.Mode.Explicit,
+                selectOnLeft = AuthenticationPanelBackButton
+            };
+
+            SelectionManager.Instance.SelectView(UiViews.AuthPanel_LogOut);
         }
 
-        internal void OpenAuthenticationPanel_Problem(string problem = "", Action onBack = null)
+        internal void OpenAuthenticationPanel_Problem(string problem = null, string title = null, Action onBack = null)
         {
+            title = title ?? "Something went wrong!";
             problem = problem ?? "We were unable to connect to the mod.io server. Check you have a stable internet connection and try again.";
             
             HideAuthenticationPanelObjects();
             AuthenticationPanel.SetActive(true);
+            AuthenticationMainPanel.SetActive(true);
             
             AuthenticationPanelTitleText.gameObject.SetActive(true);
-            AuthenticationPanelTitleText.text = "Something went wrong!";
+            AuthenticationPanelTitleText.text = title;
 
             AuthenticationPanelInfoText.gameObject.SetActive(true);
             AuthenticationPanelInfoText.text = problem;
@@ -168,13 +267,18 @@ namespace ModIOBrowser
             }
             AuthenticationPanelBackButton.onClick.AddListener(delegate { onBack();});
             
-            AuthenticationPanelBackButton.Select();
+            AuthenticationPanelBackButton.navigation = new Navigation{
+                mode = Navigation.Mode.Explicit,
+            };
+
+            SelectSelectable(AuthenticationPanelBackButton);
         }
         
         internal void OpenAuthenticationPanel_TermsOfUse(string TOS)
         {
             HideAuthenticationPanelObjects();
             AuthenticationPanel.SetActive(true);
+            AuthenticationMainPanel.SetActive(true);
             AuthenticationPanelTermsOfUseLinks.SetActive(true);
             
             AuthenticationPanelTitleText.gameObject.SetActive(true);
@@ -186,47 +290,81 @@ namespace ModIOBrowser
             AuthenticationPanelBackButton.gameObject.SetActive(true);
             AuthenticationPanelBackButton.onClick.RemoveAllListeners();
             AuthenticationPanelBackButton.onClick.AddListener(CloseAuthenticationPanel);
+            
+            AuthenticationPanelBackButton.navigation = new Navigation{
+                mode = Navigation.Mode.Explicit,
+                selectOnRight = AuthenticationPanelAgreeButton,
+                selectOnUp = AuthenticationPanelTOSButton
+            };
 
             AuthenticationPanelAgreeButton.gameObject.SetActive(true);
             AuthenticationPanelAgreeButton.onClick.RemoveAllListeners();
             // TODO go to either steam or email auth next
             AuthenticationPanelAgreeButton.onClick.AddListener(OpenAuthenticationPanel_Email);
             
-            AuthenticationPanelAgreeButton.Select();
+            AuthenticationPanelAgreeButton.navigation = new Navigation{
+                mode = Navigation.Mode.Explicit,
+                selectOnLeft = AuthenticationPanelBackButton,
+                selectOnUp = AuthenticationPanelPrivacyPolicyButton
+            };
+
+            SelectSelectable(AuthenticationPanelAgreeButton);
         }
         
         internal void OpenAuthenticationPanel_Email()
         {
             HideAuthenticationPanelObjects();
             AuthenticationPanel.SetActive(true);
+            AuthenticationMainPanel.SetActive(true);
             
             AuthenticationPanelEnterEmail.SetActive(true);
             AuthenticationPanelEmailField.text = "";
             
+            AuthenticationPanelEmailField.navigation = new Navigation{
+                mode = Navigation.Mode.Explicit,
+                selectOnDown = AuthenticationPanelSendCodeButton
+            };
+            
             AuthenticationPanelTitleText.gameObject.SetActive(true);
             AuthenticationPanelTitleText.text = "Email authentication";
+
+            AuthenticationPanelInfoText.gameObject.SetActive(true);
+            AuthenticationPanelInfoText.text = LastReceivedTermsOfUse.termsOfUse;
 
             AuthenticationPanelBackButton.gameObject.SetActive(true);
             AuthenticationPanelBackButton.onClick.RemoveAllListeners();
             AuthenticationPanelBackButton.onClick.AddListener(CloseAuthenticationPanel);
+            
+            AuthenticationPanelBackButton.navigation = new Navigation{
+                mode = Navigation.Mode.Explicit,
+                selectOnRight = AuthenticationPanelSendCodeButton,
+                selectOnUp = AuthenticationPanelEmailField
+            };
 
             AuthenticationPanelSendCodeButton.gameObject.SetActive(true);
             AuthenticationPanelSendCodeButton.onClick.RemoveAllListeners();
             AuthenticationPanelSendCodeButton.onClick.AddListener(SendEmail);
             
-            AuthenticationPanelEmailField.Select();
+            AuthenticationPanelSendCodeButton.navigation = new Navigation{
+                mode = Navigation.Mode.Explicit,
+                selectOnLeft = AuthenticationPanelBackButton,
+                selectOnUp = AuthenticationPanelEmailField
+            };
+
+            SelectSelectable(AuthenticationPanelEmailField);
         }
 
         internal void OpenAuthenticationPanel_Code()
         {
             HideAuthenticationPanelObjects();
             AuthenticationPanel.SetActive(true);
+            AuthenticationMainPanel.SetActive(true);
             AuthenticationPanelEnterCode.SetActive(true);
             for (int i = 0; i < AuthenticationPanelCodeFields.Length; i++)
             {
                 if(i == 0)
                 {
-                    AuthenticationPanelCodeFields[i].Select();
+                    SelectSelectable(AuthenticationPanelCodeFields[i]);
                 }
                 AuthenticationPanelCodeFields[i].onValueChanged.RemoveAllListeners();
                 AuthenticationPanelCodeFields[i].text = "";
@@ -254,12 +392,20 @@ namespace ModIOBrowser
             AuthenticationPanelBackButton.gameObject.SetActive(true);
             AuthenticationPanelBackButton.onClick.RemoveAllListeners();
             AuthenticationPanelBackButton.onClick.AddListener(OpenAuthenticationPanel_Email);
+            
+            AuthenticationPanelBackButton.navigation = new Navigation{
+                mode = Navigation.Mode.Explicit,
+                selectOnRight = AuthenticationPanelSubmitButton
+            };
 
             AuthenticationPanelSubmitButton.gameObject.SetActive(true);
             AuthenticationPanelSubmitButton.onClick.RemoveAllListeners();
             AuthenticationPanelSubmitButton.onClick.AddListener(SubmitAuthenticationCode);
             
-            //AuthenticationPanelDefaultSelection_Code.Select();
+            AuthenticationPanelSubmitButton.navigation = new Navigation{
+                mode = Navigation.Mode.Explicit,
+                selectOnLeft = AuthenticationPanelBackButton
+            };
         }
 
         internal void CodeDigitFieldOnValueChangeBehaviour(Selectable previous, Selectable next, string field)
@@ -280,11 +426,11 @@ namespace ModIOBrowser
             {
                 if(string.IsNullOrEmpty(field))
                 {
-                    previous.Select();
+                    SelectSelectable(previous);
                 }
                 else
                 {
-                    next.Select();
+                    SelectSelectable(next);
                 }
             }
         }
@@ -298,7 +444,7 @@ namespace ModIOBrowser
         IEnumerator NextFrameSelectionChange(Selectable selectable)
         {
             yield return null;
-            selectable.Select();
+            SelectSelectable(selectable);
         }
         
         internal void OpenAuthenticationPanel_Complete()
@@ -307,6 +453,7 @@ namespace ModIOBrowser
             
             HideAuthenticationPanelObjects();
             AuthenticationPanel.SetActive(true);
+            AuthenticationMainPanel.SetActive(true);
             
             AuthenticationPanelTitleText.gameObject.SetActive(true);
             AuthenticationPanelTitleText.text = "Authentication completed";
@@ -316,14 +463,20 @@ namespace ModIOBrowser
             
             AuthenticationPanelCompletedButton.gameObject.SetActive(true);
             
-            AuthenticationPanelCompletedButton.Select();
+            AuthenticationPanelCompletedButton.navigation = new Navigation{
+                mode = Navigation.Mode.Explicit,
+            };
             
             // Update the user avatar display
             SetupUserAvatar();
-        }
-#endregion
 
-#region Send Request
+            //Hmmm
+            SelectionManager.Instance.SelectView(UiViews.AuthPanel_Complete);
+            SelectSelectable(AuthenticationPanelCompletedButton);
+        }
+        #endregion
+
+        #region Send Request
         internal void GetTermsOfUse()
         {
             OpenAuthenticationPanel_Waiting();
@@ -356,7 +509,20 @@ namespace ModIOBrowser
             }
             else
             {
-                OpenAuthenticationPanel_Problem();
+                if(result.IsInvalidEmailAddress())
+                {
+                    OpenAuthenticationPanel_Problem("That does not appear to be a valid email. Please check your email and try again."
+                                                    + " address.", "Invalid email address",
+                        OpenAuthenticationPanel_Email);
+                } 
+                else
+                {
+                    Debug.LogError("something else wrong email");
+                    OpenAuthenticationPanel_Problem("Make sure you entered a valid email address and"
+                                                    + " that you are still connected to the internet"
+                                                    + " before trying again.", "Something went wrong",
+                        OpenAuthenticationPanel_Email);
+                }
             }
         }
 
@@ -369,7 +535,10 @@ namespace ModIOBrowser
             }
             else
             {
-                OpenAuthenticationPanel_Problem();
+                OpenAuthenticationPanel_Problem("Unable to connect to the mod.io server. Please"
+                                                + " check your internet connection before retrying.",
+                                                "Something went wrong",
+                                                CloseAuthenticationPanel);
             }
         }
 
@@ -380,12 +549,20 @@ namespace ModIOBrowser
                 OpenAuthenticationPanel_Complete();
                 ModIOUnity.FetchUpdates(delegate { });
                 ModIOUnity.EnableModManagement(ModManagementEvent);
+                if(ModDetailsPanel.activeSelf)
+                {
+                    UpdateModDetailsSubscribeButtonText();
+                }
             }
             else
             {
                 if (result.IsInvalidSecurityCode())
                 {
-                    OpenAuthenticationPanel_Problem("Invalid code", OpenAuthenticationPanel_Code);
+                    OpenAuthenticationPanel_Problem("The code that you entered did not match the "
+                                                    + "one sent to the email address you provided. "
+                                                    + "Please check you entered the code correctly.",
+                                                    "Invalid code",
+                                                    OpenAuthenticationPanel_Code);
                 }
                 else
                 {

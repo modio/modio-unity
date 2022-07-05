@@ -18,7 +18,6 @@ namespace ModIOBrowser
 	    [SerializeField] TMP_Text ReportPanelText;
 	    [SerializeField] TMP_Text ReportPanelCaption;
 	    [SerializeField] GameObject ReportPanelReportOptions;
-	    [SerializeField] Button ReportPanelFirstReportOption;
 	    [SerializeField] GameObject ReportPanelEmailSection;
 	    [SerializeField] TMP_InputField ReportPanelEmailField;
 	    [SerializeField] GameObject ReportPanelDetailsSection;
@@ -44,7 +43,7 @@ namespace ModIOBrowser
 	    public void CloseReportPanel()
 	    {
 		    ReportPanel.SetActive(false);
-		    defaultSelectableOnReportClose?.Select();
+            SelectSelectable(defaultSelectableOnReportClose);
 	    }
 	    
         public void OpenReportPanel(ModProfile modToReport, Selectable selectableOnClose)
@@ -63,10 +62,13 @@ namespace ModIOBrowser
 	        ReportPanelText.text = "Report content violating the sites Terms of Use or submit a "
 	                               + "DMCA complaint using the form below. Make sure you include "
 	                               + "all relevant information and links. If you’d like to report "
-	                               + "Copyright Infringement and are the copyright holder, select "
+	                               + "Copyright Infringement and are the Copyright holder, select "
 	                               + "‘DMCA’ below.";
 
-	        ReportPanelFirstReportOption.Select();
+            SelectionManager.Instance.SelectView(UiViews.Report);
+	        
+	        ReportPanelButtons.SetActive(true);
+	        ReportPanelCancelButton.gameObject.SetActive(true);
         }
 
         public void OpenReportPanel_Email()
@@ -88,8 +90,8 @@ namespace ModIOBrowser
 	        
 	        ReportPanelNextButton.gameObject.SetActive(true);
 	        ReportPanelCancelButton.gameObject.SetActive(true);
-	        
-	        ReportPanelEmailField.Select();
+
+            SelectSelectable(ReportPanelEmailField);
         }
 
         public void OpenReportPanel_Details()
@@ -119,8 +121,8 @@ namespace ModIOBrowser
 	        ReportPanelSubmitButton.onClick.AddListener(OpenReportPanel_Summary);
 	        
 	        ReportPanelCancelButton.gameObject.SetActive(true);
-	        
-	        ReportPanelDetailsField.Select();
+
+            SelectSelectable(ReportPanelDetailsField);
         }
 
         public void OpenReportPanel_Summary()
@@ -150,8 +152,8 @@ namespace ModIOBrowser
 	        ReportPanelSubmitButton.onClick.AddListener(SendReport);
 	        
 	        ReportPanelCancelButton.gameObject.SetActive(true);
-	        
-	        ReportPanelSubmitButton.Select();
+
+            SelectSelectable(ReportPanelSubmitButton);
         }
 
         public void OpenReportPanel_Done()
@@ -166,8 +168,8 @@ namespace ModIOBrowser
 	        
 	        ReportPanelButtons.SetActive(true);
 	        ReportPanelDoneButton.gameObject.SetActive(true);
-	        
-	        ReportPanelDoneButton.Select();
+
+            SelectSelectable(ReportPanelDoneButton);
         }
 
         public void OpenReportPanel_Waiting()
@@ -185,6 +187,11 @@ namespace ModIOBrowser
 	        ReportPanel.SetActive(true);
 	        
 	        ReportPanelText.gameObject.SetActive(true);
+	        
+	        TextAlignmentOptions alignment = ReportPanelText.alignment;
+	        alignment = TextAlignmentOptions.Center;
+	        ReportPanelText.alignment = alignment;
+	        
 	        ReportPanelText.text = "Something went wrong when trying to send your report.";
 	        
 	        ReportPanelButtons.SetActive(true);
@@ -198,6 +205,9 @@ namespace ModIOBrowser
 
         public void HideReportPanelObjects()
         {
+	        TextAlignmentOptions alignment = ReportPanelText.alignment;
+	        alignment = TextAlignmentOptions.Left;
+	        ReportPanelText.alignment = alignment;
 	        ReportPanelEmailSection.SetActive(false);
 	        ReportPanelSubSubHeader.gameObject.SetActive(false);
 	        ReportPanelText.gameObject.SetActive(false);

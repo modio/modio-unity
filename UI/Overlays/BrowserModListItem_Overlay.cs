@@ -83,6 +83,8 @@ namespace ModIOBrowser.Implementation
                 subscribeButtonText.text = "Unsubscribe";
                 Browser.SubscribeToModEvent(listItemToReplicate.profile, UpdateSubscribeButton);
             }
+            
+            LayoutRebuilder.ForceRebuildLayoutImmediate(subscribeButtonText.transform.parent as RectTransform);
         }
 
         public void OpenModDetailsForThisModProfile()
@@ -151,6 +153,7 @@ namespace ModIOBrowser.Implementation
             {
                 subscribeButtonText.text = "Subscribe";
             }
+            LayoutRebuilder.ForceRebuildLayoutImmediate(subscribeButtonText.transform.parent as RectTransform);
         }
 
         void ReloadImage()
@@ -164,6 +167,7 @@ namespace ModIOBrowser.Implementation
         {
             if (!Browser.Instance.contextMenu.activeSelf)
             {
+                Browser.DeselectUiGameObject();
                 gameObject.SetActive(false);
             }
         }

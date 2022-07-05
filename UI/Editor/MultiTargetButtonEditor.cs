@@ -69,6 +69,7 @@ namespace ModIOBrowser
                         break;
                     case MultiTargetTransition.DisableEnable:
                         t.target = (Graphic)EditorGUILayout.ObjectField("Target", t.target, typeof(Graphic), true);
+                        t.isControllerButtonIcon = EditorGUILayout.Toggle("is Controller only icon", t.isControllerButtonIcon);
                         t.enableOnNormal = EditorGUILayout.Toggle("Normal", t.enableOnNormal);
                         t.enableOnHighlight = EditorGUILayout.Toggle("Highlighted", t.enableOnHighlight);
                         t.enableOnPressed = EditorGUILayout.Toggle("Pressed", t.enableOnPressed);

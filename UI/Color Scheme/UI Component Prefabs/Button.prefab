@@ -40,7 +40,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 80, y: -36}
-  m_SizeDelta: {x: 200, y: 48}
+  m_SizeDelta: {x: 160, y: 40}
   m_Pivot: {x: 0, y: 1}
 --- !u!222 &1635713923479228532
 CanvasRenderer:
@@ -68,7 +68,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: de620a661822071448a42c3581ca6cdf, type: 3}
+  m_Sprite: {fileID: 21300000, guid: c05eab6045e68c1449e9a85be63f1495, type: 3}
   m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -178,11 +178,11 @@ MonoBehaviour:
       ColorMultiplier: 1
       FadeDuration: 0.1
     spriteState:
-      m_HighlightedSprite: {fileID: 21300000, guid: 423546ea7805256409409fecffa70f1a,
+      m_HighlightedSprite: {fileID: 21300000, guid: 1e4c985c68da6a94396934b493a1ccad,
         type: 3}
-      m_PressedSprite: {fileID: 21300000, guid: 112e36328b6dede48a8400101174e0ce,
+      m_PressedSprite: {fileID: 21300000, guid: 55f176a6fe560d24bb3e650f8677edaa,
         type: 3}
-      m_DisabledSprite: {fileID: 21300000, guid: 112e36328b6dede48a8400101174e0ce,
+      m_DisabledSprite: {fileID: 21300000, guid: 55f176a6fe560d24bb3e650f8677edaa,
         type: 3}
     animationTriggers:
       m_NormalTrigger: Normal
@@ -305,7 +305,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 112e36328b6dede48a8400101174e0ce, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 55f176a6fe560d24bb3e650f8677edaa, type: 3}
   m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -377,8 +377,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 112e36328b6dede48a8400101174e0ce, type: 3}
-  m_Type: 1
+  m_Sprite: {fileID: 21300000, guid: db199e15a6375aa4ba43bbda0d9c8354, type: 3}
+  m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -492,8 +492,8 @@ MonoBehaviour:
   m_outlineColor:
     serializedVersion: 2
     rgba: 4278190080
-  m_fontSize: 16
-  m_fontSizeBase: 16
+  m_fontSize: 12
+  m_fontSizeBase: 12
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18

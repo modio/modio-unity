@@ -218,10 +218,6 @@ namespace ModIO.Implementation
         /// <summary>Moves extraction directory to the given installation location.</summary>
         public static Result MakeInstallationFromExtractionDirectory(long modId, long modfileId)
         {
-#if !UNITY_STANDALONE
-            throw new System.NotImplementedException();
-#endif // !UNITY_STANDALONE
-
             string extractionDirPath = DataStorage.GenerateExtractionDirectoryPath();
             string installDirPath = DataStorage.GenerateInstallationDirectoryPath(modId, modfileId);
             Result result;

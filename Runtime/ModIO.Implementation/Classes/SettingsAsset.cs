@@ -39,6 +39,7 @@ namespace ModIO.Implementation
 #region Data
 
         /// <summary>Server Settings</summary>
+        [HideInInspector]
         public ServerSettings serverSettings;
 
         // NOTE(@jackson):

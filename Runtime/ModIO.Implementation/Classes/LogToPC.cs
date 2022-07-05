@@ -2,27 +2,40 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace ModIO.Implementation
 {
     internal class LogToPC
     {
-        private string filenameHandle;
-        private const int MaxLogs = 100;
+        private class LogMessage
+        {
+            public LogLevel level;
+            public string message;
+        }
+
         public const string SessionIdentifier = "Session_Log_";
         public const string fileEnding = ".txt";
         public const string dateTimeFormat = "yyyy'-'MM'-'dd'T'HH'-'mm'-'ss";
+
+        private const int MaxLogs = 100;
+        private const int maxWritingDepth = 3;
+
+        private string filenameHandle;        
+        private List<LogMessage> messageCache = new List<LogMessage>();
+        private Task task;
+
         public bool halt = false;
+
+        public LogToPC(DateTime time)
+        {
+            Setup(time);
+        }
 
         public LogToPC()
         {
             Setup(DateTime.Now);
-        }
-
-        public LogToPC(DateTime date)
-        {
-            Setup(date);
         }
 
         private void Setup(DateTime date)
@@ -35,7 +48,12 @@ namespace ModIO.Implementation
 
             filenameHandle = ConstructFilePath(folderPath, date);
 
-            Log(LogLevel.Message, $"\n\n\n------ New Log for [{DateTime.Now.ToString(dateTimeFormat)}] ------\n\n");
+            //we add this, but we don't write it until we actually have to, to avoid unnecessary log files
+            messageCache.Add(new LogMessage()
+            {
+                level = LogLevel.Message,
+                message = $"\n\n\n------ New Log for [{DateTime.Now.ToString(dateTimeFormat)}] ------\n\n"
+            });
         }
 
         public static IEnumerable<string> GetOldLogs(int maxLogs, params string[] files)
@@ -76,6 +94,51 @@ namespace ModIO.Implementation
             return Application.persistentDataPath + @"/ModIoLogs";
         }
 
+        private async Task WriteMessagesToLog(int depth = 0)
+        {
+            try
+            {
+                using(StreamWriter w = File.AppendText(filenameHandle))
+                {
+                    int index = 0;
+
+                    while(index < messageCache.Count)
+                    {
+                        if(halt)
+                        {
+                            return;
+                        }
+
+                        string log = $"{messageCache[index].level} - {DateTime.Now.ToString("HH:mm:ss")}: {messageCache[index].message}";
+                        await w.WriteLineAsync(log);
+                        index++;
+                    }
+                    
+                    messageCache.Clear();
+                }
+            }
+            catch(Exception ex)
+            {
+                if(depth >= maxWritingDepth)
+                {
+                    Logger.Log(LogLevel.Error, $"Exception writing log to PC. Halting log to pc functionality for this session. Exception: {ex}", false);
+                    halt = true;
+                }
+                else
+                {
+                    messageCache.Add(new LogMessage()
+                    {
+                        level = LogLevel.Warning,
+                        message = $"Failed writing to disc, trying again in 1 second. Attempt {depth + 1} out of {maxWritingDepth}."
+                    });
+
+                    await Task.Delay(1000);
+                    await WriteMessagesToLog(depth++);
+                }
+            }
+        }
+
+
         public void Log(LogLevel level, string logMessage)
         {
             if(halt)
@@ -83,19 +146,11 @@ namespace ModIO.Implementation
                 return;
             }
 
-            try
-            {
-                using(StreamWriter w = File.AppendText(filenameHandle))
-                {
-                    string log = $"{level} - {DateTime.Now.ToString("HH:mm:ss")}: {logMessage}";
-                    w.WriteLine(log);
-                }
+            messageCache.Add(new LogMessage() { level = level, message = logMessage });
 
-            }
-            catch(Exception ex)
+            if(task == null || task.Status == TaskStatus.RanToCompletion)
             {
-                Logger.Log(LogLevel.Error, $"Exception writing log to PC. Halting log to pc functionality for this session. Exception: {ex}", false);
-                halt = true;
+                task = WriteMessagesToLog();
             }
         }
     }

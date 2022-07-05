@@ -9,13 +9,13 @@ namespace ModIO.Implementation.Platform
     internal static partial class PlatformConfiguration
     {
         /// <summary>Holds the value for the platform header value to use in requests.</summary>
-        public static string RESTAPI_HEADER = "windows";
+        public static string RESTAPI_HEADER = "osx";
 
         /// <summary>Creates the user data storage service.</summary>
         public static async Task<ResultAnd<IUserDataService>> CreateUserDataService(
             string userProfileIdentifier, long gameId, BuildSettings settings)
         {
-            IUserDataService service = new WindowsDataService();
+            IUserDataService service = new OsxDataService();
             Result result = await service.InitializeAsync(userProfileIdentifier, gameId, settings);
             return ResultAnd.Create(result, service);
         }
@@ -24,7 +24,7 @@ namespace ModIO.Implementation.Platform
         public static async Task<ResultAnd<IPersistentDataService>> CreatePersistentDataService(
             long gameId, BuildSettings settings)
         {
-            IPersistentDataService service = new WindowsDataService();
+            IPersistentDataService service = new OsxDataService();
             Result result = await service.InitializeAsync(gameId, settings);
             return ResultAnd.Create(result, service);
         }
@@ -33,7 +33,7 @@ namespace ModIO.Implementation.Platform
         public static async Task<ResultAnd<ITempDataService>> CreateTempDataService(
             long gameId, BuildSettings settings)
         {
-            ITempDataService service = new WindowsDataService();
+            ITempDataService service = new OsxDataService();
             Result result = await service.InitializeAsync(gameId, settings);
             return ResultAnd.Create(result, service);
         }

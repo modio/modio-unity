@@ -2,7 +2,7 @@
 
 namespace ModIO.Implementation.Platform
 {
-    /// <summary>Defines the data layout for Windows.</summary>
+    /// <summary>Defines the data layout for Linux.</summary>
     internal static class LinuxDataLayout
     {
         /// <summary>Global Settings data structure.</summary>

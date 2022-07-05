@@ -12,10 +12,15 @@ namespace ModIOBrowser.Implementation
 
         // Singleton
         public static SelectionOverlayHandler Instance;
-        
+
         void Awake()
         {
             Instance = this;
+        }
+
+        public void SetBrowserModListItemOverlayActive(bool state)
+        {
+            BrowserModListItemOverlay?.gameObject.SetActive(state);
         }
 
         public static bool TryToOpenMoreOptionsForBrowserOverlayObject()
@@ -75,13 +80,11 @@ namespace ModIOBrowser.Implementation
             {
                 return;
             }
-            if(BrowserModListItemOverlay != null)
+            if(BrowserModListItemOverlay != null
+               && BrowserModListItemOverlay.listItemToReplicate == listItem
+               && !Browser.mouseNavigation)
             {
-                if(BrowserModListItemOverlay.listItemToReplicate == listItem)
-                {
-                    // Not sure why this was a problem but replaced with IPointerExit in the _Overlay class
-                    //BrowserModListItemOverlay?.Hide();
-                }
+                BrowserModListItemOverlay?.gameObject.SetActive(false);
             }
         }
 
@@ -92,13 +95,11 @@ namespace ModIOBrowser.Implementation
             {
                 return;
             }
-            if(SearchResultListItemOverlay != null)
+            if(SearchResultListItemOverlay != null
+               && SearchResultListItemOverlay.listItemToReplicate == listItem
+               && !Browser.mouseNavigation)
             {
-                if(SearchResultListItemOverlay.listItemToReplicate == listItem)
-                {
-                    // Not sure why this was a problem but replaced with IPointerExit in the _Overlay class
-                    //SearchResultListItemOverlay?.Hide();
-                }
+                SearchResultListItemOverlay?.gameObject.SetActive(false);
             }
         }
     }

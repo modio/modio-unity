@@ -1,12 +1,15 @@
-﻿namespace ModIOBrowser
+﻿using ModIOBrowser.Implementation;
+
+namespace ModIOBrowser
 {
-	/// <summary>
-	/// This class is intended to be used to inform the Mod Browser UI of input presses.
-	/// Regular UI navigation, such as movement (left, right, up, down), will be detected by
-	/// default from the SandaloneInputModule component in scene. You can edit these from the unity
-	/// editor inspector panel when selecting the EventSystem gameObject in the scene.
-	/// </summary>
-	public static class InputReceiver
+
+    /// <summary>
+    /// This class is intended to be used to inform the Mod Browser UI of input presses.
+    /// Regular UI navigation, such as movement (left, right, up, down), will be detected by
+    /// default from the SandaloneInputModule component in scene. You can edit these from the unity
+    /// editor inspector panel when selecting the EventSystem gameObject in the scene.
+    /// </summary>
+    public static class InputReceiver
 	{
 		internal static InputBlockingForInputFieldComponent currentSelectedInputField;
 
@@ -18,7 +21,8 @@
 		/// </remarks>
 		public static void OnCancel()
 		{
-			Browser.Cancel();
+            Browser.Instance.SetToControllerNavigation();
+            Browser.Cancel();
 		}
 
 		/// <summary>
@@ -34,7 +38,8 @@
 			{
 				return;
 			}
-			Browser.Alternate();
+            Browser.Instance.SetToControllerNavigation();
+            Browser.Alternate();
 		}
 
 		/// <summary>
@@ -49,7 +54,8 @@
 			{
 				return;
 			}
-			Browser.Options();
+            Browser.Instance.SetToControllerNavigation();
+            Browser.Options();
 		}
 
 		/// <summary>
@@ -61,7 +67,8 @@
 			{
 				return;
 			}
-			Browser.TabRight();
+            Browser.Instance.SetToControllerNavigation();
+            Browser.TabRight();
 		}
 
 		/// <summary>
@@ -73,7 +80,8 @@
 			{
 				return;
 			}
-			Browser.TabLeft();
+            Browser.Instance.SetToControllerNavigation();
+            Browser.TabLeft();
 		}
 
 		/// <summary>
@@ -88,7 +96,8 @@
 			{
 				return;
 			}
-			Browser.SearchInput();
+            Browser.Instance.SetToControllerNavigation();
+            Browser.SearchInput();
 		}
 		
 		/// <summary>
@@ -103,7 +112,8 @@
 			{
 				return;
 			}
-			Browser.MenuInput();
+            Browser.Instance.SetToControllerNavigation();
+            Browser.MenuInput();
 		}
 
 		/// <summary>
@@ -119,7 +129,24 @@
 			{
 				return;
 			}
-			Browser.Scroll(direction);
+            Browser.Instance.SetToControllerNavigation();
+            Browser.Scroll(direction);
 		}
-	}
+
+        /// <summary>
+        /// Called when switching to keyboard / controller input
+        /// </summary>
+        public static void OnSetToControllerNavigation()
+        {
+            Browser.Instance.SetToControllerNavigation();
+        }
+
+        /// <summary>
+        /// Called when switching to mouse input
+        /// </summary>
+        public static void OnSetToMouseNavigation()
+        {
+            Browser.Instance.SetToMouseNavigation();
+        }
+    }
 }

@@ -120,7 +120,12 @@ namespace ModIOBrowser.Implementation
 
                 float delta = animationCurve.Evaluate(timePassed / transitionTime);
 
-                transform.position = start + distance * delta;
+                Vector3 positionNow = start + distance * delta;
+                
+                //preserve the Y position, we are only swiping horizontally
+                positionNow.y = transform.position.y;
+                
+                transform.position = positionNow;
                 rectTransform.sizeDelta = startingSize + growth * delta;
 
                 yield return new WaitForSecondsRealtime(0.01f);

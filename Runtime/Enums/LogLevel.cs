@@ -6,6 +6,6 @@
         Error = 0,
         Warning = 1,
         Message = 2,
-        Verbose,
+        Verbose = 3,
     }
 }

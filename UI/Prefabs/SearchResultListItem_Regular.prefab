@@ -170,6 +170,7 @@ GameObject:
   - component: {fileID: 791644432007414225}
   - component: {fileID: 9013224616036748342}
   - component: {fileID: 6982955001401787505}
+  - component: {fileID: 8091416456969391131}
   m_Layer: 5
   m_Name: SearchResultListItem_Regular
   m_TagString: Untagged
@@ -339,6 +340,14 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+--- !u!222 &8091416456969391131
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 791644432007414224}
+  m_CullTransparentMesh: 0
 --- !u!1 &1073569494398876597
 GameObject:
   m_ObjectHideFlags: 0
@@ -398,7 +407,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 0
+  m_RaycastTarget: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []

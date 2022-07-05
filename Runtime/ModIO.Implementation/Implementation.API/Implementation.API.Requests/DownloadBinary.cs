@@ -4,8 +4,8 @@
     {
         // (NOTE): This request does not use a response schema
 
-        public static readonly RequestTemplate Template =
-            new RequestTemplate { requireAuthToken = true, canCacheResponse = false,
+        public static readonly RequestConfig Template =
+            new RequestConfig { requireAuthToken = true, canCacheResponse = false,
                                   requestResponseType = WebRequestResponseType.File,
                                   requestMethodType = WebRequestMethodType.GET };
     }

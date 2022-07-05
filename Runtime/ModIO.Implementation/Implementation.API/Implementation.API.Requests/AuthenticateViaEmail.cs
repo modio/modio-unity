@@ -11,8 +11,8 @@ namespace ModIO.Implementation.API.Requests
             public string message;
         }
 
-        internal static RequestTemplate Template =
-            new RequestTemplate { canCacheResponse = true, requireAuthToken = false,
+        internal static RequestConfig Template =
+            new RequestConfig { canCacheResponse = true, requireAuthToken = false,
                                   requestMethodType = WebRequestMethodType.POST,
                                   requestResponseType = WebRequestResponseType.Text };
 

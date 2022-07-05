@@ -15,23 +15,23 @@ namespace ModIO
 #region Initialization and Maintenance
 
         /// <summary>
-        /// You can use this to quickly identify whether or not the plugin has been initialised.
+        /// You can use this to quickly identify whether or not the plugin has been initialized.
         /// </summary>
-        /// <returns>true if the plugin is initialised</returns>
+        /// <returns>true if the plugin is initialized</returns>
         /// <code>
         /// void Example()
         /// {
-        ///     if (ModIOUnity.IsInitialised())
+        ///     if (ModIOUnity.IsInitialized())
         ///     {
-        ///         Debug.Log("The plugin is initialised");
+        ///         Debug.Log("The plugin is initialized");
         ///     }
         ///     else
         ///     {
-        ///         Debug.Log("The plugin is not initialised");
+        ///         Debug.Log("The plugin is not initialized");
         ///     }
         /// }
         /// </code>
-        public static bool IsInitialised()
+        public static bool IsInitialized()
         {
             return ModIOUnityImplementation.isInitialized;
         }
@@ -69,7 +69,7 @@ namespace ModIO
         }
 
         /// <summary>
-        /// Initialises the Plugin using the provided settings for a specified user. Loads the
+        /// Initializes the Plugin using the provided settings for a specified user. Loads the
         /// local state of mods installed on the system as well as relevant mods to the user. Loads the
         /// state of mods installed on the system as well as the set of mods the
         /// specified user has installed on this device.
@@ -101,32 +101,32 @@ namespace ModIO
         ///     buildSettings.UserPortal = UserPortal.None;
         ///     buildSettings.requestCacheLimitKB = 0; // No limit
         /// 
-        ///     ModIOUnity.InitialiseForUserAsync("ExampleUser", serverSettings, buildSettings, InitialisationCallback);
+        ///     ModIOUnity.InitializeForUserAsync("ExampleUser", serverSettings, buildSettings, InitializationCallback);
         /// }
         ///
-        /// void InitialisationCallback(Result result)
+        /// void InitializationCallback(Result result)
         /// {
         ///     if (result.Succeeded())
         ///     {
-        ///         Debug.Log("Initialised plugin");
+        ///         Debug.Log("Initialized plugin");
         ///     }
         ///     else
         ///     {
-        ///         Debug.Log("Failed to initialise plugin");
+        ///         Debug.Log("Failed to initialize plugin");
         ///     {
         /// }
         /// </code>
-        public static void InitialiseForUser(string userProfileIdentifier,
+        public static void InitializeForUser(string userProfileIdentifier,
                                                   ServerSettings serverSettings,
                                                   BuildSettings buildSettings,
                                                   Action<Result> callback)
         {
-            ModIOUnityImplementation.InitialiseForUserAsync(userProfileIdentifier, serverSettings,
+            ModIOUnityImplementation.InitializeForUserAsync(userProfileIdentifier, serverSettings,
                                                             buildSettings, callback);
         }
 
         /// <summary>
-        /// Initialises the Plugin using the provided settings for a specified user. Loads the
+        /// Initializes the Plugin using the provided settings for a specified user. Loads the
         /// local state of mods installed on the system as well as relevant mods to the user. Loads the
         /// state of mods installed on the system as well as the set of mods the
         /// specified user has installed on this device.
@@ -139,25 +139,25 @@ namespace ModIO
         /// <code>
         /// void Example()
         /// {
-        ///     ModIOUnity.InitialiseForUserAsync("ExampleUser", InitialisationCallback);
+        ///     ModIOUnity.InitializeForUserAsync("ExampleUser", InitializationCallback);
         /// }
         ///
-        /// void InitialisationCallback(Result result)
+        /// void InitializationCallback(Result result)
         /// {
         ///     if (result.Succeeded())
         ///     {
-        ///         Debug.Log("Initialised plugin");
+        ///         Debug.Log("Initialized plugin");
         ///     }
         ///     else
         ///     {
-        ///         Debug.Log("Failed to initialise plugin");
+        ///         Debug.Log("Failed to initialize plugin");
         ///     {
         /// }
         /// </code>
-        public static void InitialiseForUser(string userProfileIdentifier,
+        public static void InitializeForUser(string userProfileIdentifier,
                                                   Action<Result> callback)
         {
-            ModIOUnityImplementation.InitialiseForUserAsync(userProfileIdentifier, callback);
+            ModIOUnityImplementation.InitializeForUserAsync(userProfileIdentifier, callback);
         }
 
         /// <summary>
@@ -196,7 +196,7 @@ namespace ModIO
         /// <remarks>
         /// The callback will return a Result object.
         /// If the email is successfully sent Result.Succeeded() will equal true.
-        /// If you haven't Initialized the plugin then Result.IsInitialisationError() will equal
+        /// If you haven't Initialized the plugin then Result.IsInitializationError() will equal
         /// true. If the string provided for the emailaddress is not .NET compliant
         /// Result.IsAuthenticationError() will equal true.
         /// </remarks>
@@ -859,7 +859,7 @@ namespace ModIO
         /// </summary>
         /// <remarks>
         /// If you dont want to erase a user be sure to use ModIOUnity.Shutdown() instead.
-        /// If you re-initialise the plugin after a shutdown the user will still be authenticated.
+        /// If you re-initialize the plugin after a shutdown the user will still be authenticated.
         /// </remarks>
         /// <seealso cref="EnableModManagement(ModIO.ModManagementEventDelegate)"/>
         /// <seealso cref="Result"/>

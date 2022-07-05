@@ -1,5 +1,7 @@
-﻿using ModIOBrowser;
+﻿using System.Collections.Generic;
+using ModIOBrowser;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 /// <summary>
 /// An Example script on how to setup the key/button bindings for the ModIO Browser. Inputs such as
@@ -34,6 +36,11 @@ public class ExampleInputCapture : MonoBehaviour
         //
         // eg.
         // if we detect an ESC button press we can inform the browser with InputReceiver.OnCancel()
+        HandleInputReceiver();
+    }
+
+    private void HandleInputReceiver()
+    {
         if(Input.GetKeyDown(Cancel))
         {
             InputReceiver.OnCancel();
@@ -53,18 +60,15 @@ public class ExampleInputCapture : MonoBehaviour
         else if(Input.GetKeyDown(TabRight))
         {
             InputReceiver.OnTabRight();
-        } 
+        }
         else if(Input.GetKeyDown(Search))
         {
             InputReceiver.OnSearch();
-        } 
+        }
         else if(Input.GetKeyDown(Menu))
         {
             InputReceiver.OnMenu();
-        } 
-        else if(Input.GetAxis("Vertical") != 0f)
-        {
-            InputReceiver.OnControllerScroll(Input.GetAxis("Vertical"));
         }
+
     }
 }

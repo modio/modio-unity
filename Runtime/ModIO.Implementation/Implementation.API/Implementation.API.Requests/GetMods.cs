@@ -25,8 +25,8 @@ namespace ModIO.Implementation.API.Requests
             internal int result_total;
         }
 
-        public static readonly RequestTemplate Template =
-            new RequestTemplate { requireAuthToken = false, canCacheResponse = true,
+        public static readonly RequestConfig Template =
+            new RequestConfig { requireAuthToken = false, canCacheResponse = true,
                                   requestResponseType = WebRequestResponseType.Text,
                                   requestMethodType = WebRequestMethodType.GET };
 

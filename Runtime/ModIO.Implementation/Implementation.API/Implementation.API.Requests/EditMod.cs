@@ -12,8 +12,8 @@ namespace ModIO.Implementation.API.Requests
         //     // This schema will only be used if the server schema changes or gets expanded on
         // }
 
-        public static readonly RequestTemplate Template =
-            new RequestTemplate { requireAuthToken = true, canCacheResponse = false,
+        public static readonly RequestConfig Template =
+            new RequestConfig { requireAuthToken = true, canCacheResponse = false,
                                   requestResponseType = WebRequestResponseType.Text,
                                   requestMethodType = WebRequestMethodType.PUT };
 

@@ -78,18 +78,18 @@ namespace ModIO.Implementation
                                             out result))
                                     {
                                         if(result.Succeeded())
-                                        {
-                                            // Hard and fast cleanup if the operation is cancelled
-                                            if(cancel || ModIOUnityImplementation.shuttingDown)
-                                            {
-                                                // See end of method
-                                                goto Cancel;
-                                            }
-
+                                        {                                            
                                             int size;
                                             byte[] data = new byte[1048760]; // 1 MiB buffer size
                                             while(true)
                                             {
+                                                // Hard and fast cleanup if the operation is cancelled
+                                                if(cancel || ModIOUnityImplementation.shuttingDown)
+                                                {
+                                                    // See end of method
+                                                    goto Cancel;
+                                                }
+
                                                 // These don't need to be async as it's already running 
                                                 // on another thread (consider testing this on larger
                                                 // mods, eg 5 GiB size mods)

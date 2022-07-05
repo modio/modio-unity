@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using ModIO;
 using UnityEngine;
 using UnityEngine.UI;
@@ -92,7 +93,7 @@ namespace ModIOBrowser.Implementation
 		public virtual void Setup(string title) { isPlaceholder = false; }
 		public virtual void Setup(string tagName, string tagCategory) { isPlaceholder = false; }
 		public virtual void Setup(ModProfile profile) { isPlaceholder = false; }
-		public virtual void Setup(SubscribedMod profile) { isPlaceholder = false; }
+		public virtual void Setup(SubscribedMod mod) { isPlaceholder = false; }
 		public virtual void Setup(InstalledMod profile) { isPlaceholder = false; }
 		public virtual void Setup(ModProfile profile, bool subscriptionStatus, string progressStatus) { isPlaceholder = false; }
 		public virtual void Setup(Action onClick) { isPlaceholder = false; }
@@ -164,5 +165,23 @@ namespace ModIOBrowser.Implementation
 				}
 			}
 		}
+
+        /// <summary>
+        /// Where wrapper for use with the ListItem
+        /// </summary>
+        /// <typeparam name="T">the type of list item</typeparam>
+        /// <param name="predicate">Predicate for selecting objects</param>
+        /// <returns>IEnumerable of type T</returns>
+        public static IEnumerable<T> Where<T>(Func<T, bool> predicate) where T : ListItem
+        {
+            Type type = typeof(T);
+
+            if(!ListItems.ContainsKey(type))
+            {
+                ListItems.Add(type, new List<ListItem>());
+            }
+
+            return ListItems[type].Where(x => predicate(x as T)).OfType<T>();
+        }
 	}
 }

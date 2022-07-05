@@ -29,7 +29,8 @@ namespace ModIOBrowser.Implementation
         [SerializeField] Button unsubscribeButton;
         [SerializeField] TMP_Text otherSubscribersText;
         [SerializeField] Button moreOptionsButton;
-        [SerializeField] GameObject failedToLoad;
+        [SerializeField] GameObject failedToLoadLogo;
+        [SerializeField] GameObject errorInstalling;
         [SerializeField] Transform contextMenuPosition;
         public Action imageLoaded;
         RectTransform rectTransform;
@@ -66,7 +67,7 @@ namespace ModIOBrowser.Implementation
         public override void PlaceholderSetup()
         {
             base.PlaceholderSetup();
-            failedToLoad.SetActive(false);
+            failedToLoadLogo.SetActive(false);
             imageBackground.gameObject.SetActive(false);
             title.text = string.Empty;
             //downloads.text = string.Empty;
@@ -74,8 +75,7 @@ namespace ModIOBrowser.Implementation
         
         public override void Select()
         {
-            base.Select();
-            listItemButton.Select();
+            Browser.SelectSelectable(listItemButton);
         }
 
         public override void SetViewportRestraint(RectTransform content, RectTransform viewport)
@@ -107,7 +107,17 @@ namespace ModIOBrowser.Implementation
             this.profile = profile;
             this.subscriptionStatus.text = subscriptionStatus ? "Subscribed" : "Unsubscribed";
             this.subscriptionStatus.color = subscriptionStatus ? scheme.Green : scheme.LightGrey1;
-            installStatus.text = installationStatus;
+            if(installationStatus == "Problem occurred")
+            {
+                installStatus.gameObject.SetActive(false);
+                errorInstalling.SetActive(true);
+            } 
+            else
+            {
+                installStatus.gameObject.SetActive(true);
+                errorInstalling.SetActive(false);
+                installStatus.text = installationStatus;
+            }
             unsubscribeButton.gameObject.SetActive(true);
             progressBar.SetActive(false);
             otherSubscribersText.transform.parent.gameObject.SetActive(false);
@@ -130,10 +140,10 @@ namespace ModIOBrowser.Implementation
         void Hydrate()
         {
             AddToStaticDictionaryCache();
-            failedToLoad.SetActive(false);
+            failedToLoadLogo.SetActive(false);
             imageBackground.gameObject.SetActive(false);
             title.text = profile.name;
-            // TODO show file size
+            fileSize.text = Utility.GenerateHumanReadableStringForBytes(profile.archiveFileSize);
             ModIOUnity.DownloadTexture(profile.logoImage_320x180, SetIcon);
             gameObject.SetActive(true);
             transform.SetAsLastSibling();
@@ -166,7 +176,7 @@ namespace ModIOBrowser.Implementation
             }
             else
             {
-                failedToLoad.SetActive(true);
+                failedToLoadLogo.SetActive(true);
             }
             imageLoaded?.Invoke();
         }
@@ -224,6 +234,7 @@ namespace ModIOBrowser.Implementation
         {
             // Always turn this off when state changes. It will auto get turned back on if needed
             progressBar.SetActive(false);
+            errorInstalling.SetActive(false);
             installStatus.gameObject.SetActive(true);
 
             switch(updatedStatus)
@@ -235,7 +246,8 @@ namespace ModIOBrowser.Implementation
                     installStatus.text = "Installed";
                     break;
                 case ModManagementEventType.InstallFailed:
-                    installStatus.text = "Problem occurred";
+                    installStatus.gameObject.SetActive(false);
+                    errorInstalling.SetActive(true);
                     break;
                 case ModManagementEventType.DownloadStarted:
                     installStatus.text = "Downloading";
@@ -244,7 +256,8 @@ namespace ModIOBrowser.Implementation
                     installStatus.text = "Ready to install";
                     break;
                 case ModManagementEventType.DownloadFailed:
-                    installStatus.text = "Problem occurred";
+                    installStatus.gameObject.SetActive(false);
+                    errorInstalling.SetActive(true);
                     break;
                 case ModManagementEventType.UninstallStarted:
                     installStatus.text = "Uninstalling";
@@ -253,7 +266,8 @@ namespace ModIOBrowser.Implementation
                     installStatus.text = "Uninstalled";
                     break;
                 case ModManagementEventType.UninstallFailed:
-                    installStatus.text = "Problem occurred";
+                    installStatus.gameObject.SetActive(false);
+                    errorInstalling.SetActive(true);
                     break;
                 case ModManagementEventType.UpdateStarted:
                     installStatus.text = "Updating";
@@ -262,7 +276,8 @@ namespace ModIOBrowser.Implementation
                     installStatus.text = "Installed";
                     break;
                 case ModManagementEventType.UpdateFailed:
-                    installStatus.text = "Problem occurred";
+                    installStatus.gameObject.SetActive(false);
+                    errorInstalling.SetActive(true);
                     break;
             }
         }
@@ -286,8 +301,8 @@ namespace ModIOBrowser.Implementation
                     break;
                 case ModManagementOperationType.None_ErrorOcurred:
                     progressBar.SetActive(false);
-                    installStatus.gameObject.SetActive(true);
-                    installStatus.text = "<color=red>Problem occurred</color>";
+                    installStatus.gameObject.SetActive(false);
+                    errorInstalling.SetActive(true);
                     break;
                 case ModManagementOperationType.Install:
                     progressBar.SetActive(true);

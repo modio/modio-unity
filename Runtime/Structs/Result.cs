@@ -9,11 +9,12 @@ namespace ModIO
     /// </summary>
     public struct Result
     {
-#region Internal Implementation
+        #region Internal Implementation
 
         /// <summary>Internal value of the result object.</summary>
         internal uint code;
         internal uint code_api;
+        internal string message { get { return ResultCode.GetErrorCodeMeaning(code); } }
 
 #endregion // Internal Implementation
 
@@ -27,7 +28,7 @@ namespace ModIO
             return code == ResultCode.Internal_OperationCancelled;
         }
 
-        public bool IsInitialisationError()
+        public bool IsInitializationError()
         {
             return code == ResultCode.Init_NotYetInitialized
                    || code == ResultCode.Init_FailedToLoadConfig;
@@ -43,7 +44,12 @@ namespace ModIO
 
         public bool IsInvalidSecurityCode()
         {
-            return code == ResultCode.RESTAPI_11012 || code == ResultCode.RESTAPI_11014;
+            return code_api == ResultCode.RESTAPI_11012 || code_api == ResultCode.RESTAPI_11014;
+        }
+
+        public bool IsInvalidEmailAddress()
+        {
+            return code == ResultCode.User_InvalidEmailAddress;
         }
 
         public bool IsPermissionError()

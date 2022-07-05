@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
 using ModIO.Implementation.API;
 using ModIO.Implementation.API.Objects;
 using ModIO.Implementation.API.Requests;

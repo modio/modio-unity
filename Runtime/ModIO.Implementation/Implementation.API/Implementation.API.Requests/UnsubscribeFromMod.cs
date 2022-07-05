@@ -4,8 +4,8 @@
     {
         // (NOTE): mod.io does not have a response schema for this request type
 
-        public static readonly RequestTemplate Template =
-            new RequestTemplate { requireAuthToken = true, canCacheResponse = false,
+        public static readonly RequestConfig Template =
+            new RequestConfig { requireAuthToken = true, canCacheResponse = false,
                                   requestMethodType = WebRequestMethodType.DELETE };
 
         public static string URL(long modId)

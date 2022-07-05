@@ -17,5 +17,6 @@ namespace ModIOBrowser
         public bool enableOnHighlight = true;
         public bool enableOnPressed = true;
         public bool enableOnDisabled = false;
+        public bool isControllerButtonIcon = false;
     }
 }

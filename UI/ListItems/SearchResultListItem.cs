@@ -78,8 +78,10 @@ namespace ModIOBrowser.Implementation
         public void OnPointerEnter(PointerEventData eventData)
         {
             // When using mouse we want to disable the viewport restraint from moving the screen
-            Browser.mouseAndKeyboardNavigation = true;
-            selectable.Select();
+            Browser.mouseNavigation = true;
+            
+            EventSystem.current.SetSelectedGameObject(null);
+            Browser.SelectSelectable(selectable, true);
         }
 #endregion // MonoBehaviour
 
@@ -129,7 +131,7 @@ namespace ModIOBrowser.Implementation
 
         void SetIcon(ResultAnd<Texture2D> textureAnd)
         {
-            if(textureAnd.result.Succeeded() && textureAnd != null)
+            if(textureAnd.result.Succeeded() && textureAnd.value != null)
             {
                 image.sprite = Sprite.Create(textureAnd.value, 
                     new Rect(Vector2.zero, new Vector2(textureAnd.value.width, textureAnd.value.height)), Vector2.zero);

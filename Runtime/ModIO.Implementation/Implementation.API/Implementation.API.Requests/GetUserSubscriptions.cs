@@ -10,8 +10,8 @@ namespace ModIO.Implementation.API.Requests
         {
         }
 
-        public static readonly RequestTemplate Template =
-            new RequestTemplate { requireAuthToken = true, canCacheResponse = true,
+        public static readonly RequestConfig Template =
+            new RequestConfig { requireAuthToken = true, canCacheResponse = true,
                                   requestResponseType = WebRequestResponseType.Text,
                                   requestMethodType = WebRequestMethodType.GET };
 

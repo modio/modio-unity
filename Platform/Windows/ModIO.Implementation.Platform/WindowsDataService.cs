@@ -1,6 +1,5 @@
 #if UNITY_STANDALONE_WIN || (MODIO_COMPILE_ALL && UNITY_EDITOR)
 
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;

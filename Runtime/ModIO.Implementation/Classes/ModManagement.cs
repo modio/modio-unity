@@ -74,7 +74,9 @@ namespace ModIO.Implementation
         /// </summary>
         public static ModManagementEventDelegate modManagementEventDelegate;
 
-#region Creation Tokens
+        private static HashSet<long> abortingDownloadsModObjectIds = new HashSet<long>();
+
+        #region Creation Tokens
         public static CreationToken GenerateNewCreationToken()
         {
             CreationToken token = new CreationToken();
@@ -103,12 +105,14 @@ namespace ModIO.Implementation
         public static void EnableModManagement()
         {
             isModManagementEnabled = true;
+            Logger.Log(LogLevel.Verbose, "ENABLED Mod Management");
             WakeUp();
         }
 
         public static void DisableModManagement()
         {
             isModManagementEnabled = false;
+            Logger.Log(LogLevel.Verbose, "DISABLED Mod Management");
         }
 
         /// <summary>
@@ -127,6 +131,7 @@ namespace ModIO.Implementation
 
             // AWAKE
             isModManagementAwake = true;
+            Logger.Log(LogLevel.Verbose,"Mod Management Awake");
             
             // Wait until we have no more jobs to run
             operation = PerformJobs();
@@ -134,6 +139,32 @@ namespace ModIO.Implementation
 
             // SLEEP
             isModManagementAwake = false;
+            Logger.Log(LogLevel.Verbose,"Mod Management Asleep");
+        }
+
+        public static void AbortCurrentInstallJob()
+        {
+            Logger.Log(LogLevel.Message,
+                $"Aborting installation of Mod[{currentJob.mod.modObject.id}_" +
+                $"{currentJob.mod.modObject.modfile.id}]");
+            ModManagement.currentJob.zipOperation.Cancel();
+
+            //I'm guessing this might put it into the tainted mods?
+            //Let's write a test.
+        }
+
+        public static void AbortCurrentDownloadJob()
+        {
+            Logger.Log(LogLevel.Message,
+                $"Aborting download of Mod[{currentJob.mod.modObject.id}_" +
+                $"{currentJob.mod.modObject.modfile.id}]");
+            ModManagement.currentJob.downloadWebRequest.Abort();
+            abortingDownloadsModObjectIds.Add(currentJob.mod.modObject.id);
+        }
+
+        private static bool DownloadIsAborting(long id)
+        {
+            return abortingDownloadsModObjectIds.Contains(id);
         }
 
         static async Task PerformJobs()
@@ -145,15 +176,24 @@ namespace ModIO.Implementation
             {
                 Result result = await PerformJob(currentJob);
 
+                //need to allow this job to fail if it was aborted.
                 if(!result.Succeeded())
                 {
-                    Logger.Log(LogLevel.Error,
-                               "ModManagement Failed to complete an operation."
-                                   + $" the Mod[{currentJob.mod.modObject.id}_{currentJob.mod.modObject.modfile.id}]"
-                                   + " will be ignored by ModManagement for the duration"
-                                   + " of the session.");
+                    if(DownloadIsAborting(currentJob.mod.modObject.id))
+                    {
+                        //clean this up, we shouldn't get here again
+                        abortingDownloadsModObjectIds.Remove(currentJob.mod.modObject.id);
+                    }
+                    else
+                    {
+                        Logger.Log(LogLevel.Error,
+                                   "ModManagement Failed to complete an operation."
+                                       + $" the Mod[{currentJob.mod.modObject.id}_{currentJob.mod.modObject.modfile.id}]"
+                                       + " will be ignored by ModManagement for the duration"
+                                       + " of the session.");
 
-                    taintedMods.Add((ModId)currentJob.mod.modObject.id);
+                        taintedMods.Add((ModId)currentJob.mod.modObject.id);
+                    }
                 }
                 
                 ModCollectionManager.SaveRegistry();
@@ -207,7 +247,8 @@ namespace ModIO.Implementation
                     job.progressHandle.OperationType = ModManagementOperationType.Install;
 
                     InvokeModManagementDelegate((ModId)modId,
-                                                ModManagementEventType.InstallStarted);
+                                                ModManagementEventType.InstallStarted,
+                                                ResultBuilder.Unknown);
 
                     result = await PerformOperation_Install(job);
 
@@ -215,13 +256,15 @@ namespace ModIO.Implementation
 
                     if(result.Succeeded())
                     {
-                        InvokeModManagementDelegate((ModId)modId, ModManagementEventType.Installed);
+                        InvokeModManagementDelegate((ModId)modId, ModManagementEventType.Installed,
+                            result);
                     }
                     else
                     {
                         job.progressHandle.Failed = true;
                         InvokeModManagementDelegate((ModId)modId,
-                                                    ModManagementEventType.InstallFailed);
+                                                    ModManagementEventType.InstallFailed,
+                                                    result);
                     }
 
                     break;
@@ -233,7 +276,8 @@ namespace ModIO.Implementation
                     job.progressHandle.OperationType = ModManagementOperationType.Download;
 
                     InvokeModManagementDelegate((ModId)modId,
-                                                ModManagementEventType.DownloadStarted);
+                                                ModManagementEventType.DownloadStarted,
+                                                ResultBuilder.Unknown);
 
                     result = await PerformOperation_Download(job);
 
@@ -243,13 +287,15 @@ namespace ModIO.Implementation
                     if(result.Succeeded())
                     {
                         InvokeModManagementDelegate((ModId)modId,
-                                                    ModManagementEventType.Downloaded);
+                                                    ModManagementEventType.Downloaded,
+                                                    result);
                     }
                     else
                     {
                         job.progressHandle.Failed = true;
                         InvokeModManagementDelegate((ModId)modId,
-                                                    ModManagementEventType.DownloadFailed);
+                                                    ModManagementEventType.DownloadFailed,
+                                                    result);
                     }
 
                     break;
@@ -279,7 +325,8 @@ namespace ModIO.Implementation
 
                     //---------------------------[ DOWNLOAD UPDATE ]------------------------------//
 
-                    InvokeModManagementDelegate((ModId)modId, ModManagementEventType.UpdateStarted);
+                    InvokeModManagementDelegate((ModId)modId, ModManagementEventType.UpdateStarted,
+                        ResultBuilder.Unknown);
 
                     result = await PerformOperation_Download(job);
 
@@ -288,7 +335,8 @@ namespace ModIO.Implementation
                         job.progressHandle.Completed = true;
                         job.progressHandle.Failed = true;
                         InvokeModManagementDelegate((ModId)modId,
-                                                    ModManagementEventType.UpdateFailed);
+                                                    ModManagementEventType.UpdateFailed,
+                                                    result);
                         break;
                     }
 
@@ -300,13 +348,15 @@ namespace ModIO.Implementation
 
                     if(result.Succeeded())
                     {
-                        InvokeModManagementDelegate((ModId)modId, ModManagementEventType.Updated);
+                        InvokeModManagementDelegate((ModId)modId, ModManagementEventType.Updated,
+                            ResultBuilder.Success);
                     }
                     else
                     {
                         job.progressHandle.Failed = true;
                         InvokeModManagementDelegate((ModId)modId,
-                                                    ModManagementEventType.UpdateFailed);
+                                                    ModManagementEventType.UpdateFailed,
+                                                    result);
                     }
 
                     break;
@@ -326,13 +376,15 @@ namespace ModIO.Implementation
                     if(result.Succeeded())
                     {
                         InvokeModManagementDelegate((ModId)modId,
-                                                    ModManagementEventType.Uninstalled);
+                                                    ModManagementEventType.Uninstalled,
+                                                    ResultBuilder.Success);
                     }
                     else
                     {
                         job.progressHandle.Failed = true;
                         InvokeModManagementDelegate((ModId)modId,
-                                                    ModManagementEventType.UninstallFailed);
+                                                    ModManagementEventType.UninstallFailed,
+                                                    result);
                     }
 
                     break;
@@ -577,9 +629,10 @@ namespace ModIO.Implementation
         }
 
         public static void InvokeModManagementDelegate(ModId modId,
-                                                       ModManagementEventType eventType)
+                                                       ModManagementEventType eventType,
+                                                       Result eventResult)
         {
-            modManagementEventDelegate?.Invoke(eventType, modId);
+            modManagementEventDelegate?.Invoke(eventType, modId, eventResult);
         }
 
         public static SubscribedModStatus GetModCollectionEntrysSubscribedModStatus(
@@ -625,6 +678,7 @@ namespace ModIO.Implementation
 
         static async Task<ModManagementJob> GetNextModManagementJob()
         {
+
             // Early out
             if(!ShouldModManagementBeRunning())
             {
@@ -640,10 +694,14 @@ namespace ModIO.Implementation
 
             // TODO I'm going to try and benchmark this later to see if it causes blocking issues
             // (what are the limits in mod count?)
+
             using(var enumerator = ModCollectionManager.Registry.mods.GetEnumerator())
             {
                 while(enumerator.MoveNext())
                 {
+                    //keep scanning for install jobs
+                    ModCollectionEntry mod = enumerator.Current.Value;
+
                     // Check if we should still be running
                     if(!ShouldModManagementBeRunning())
                     {
@@ -651,23 +709,43 @@ namespace ModIO.Implementation
                     }
 
                     ModManagementOperationType jobType =
-                        await GetNextJobTypeForModCollectionEntry(enumerator.Current.Value);
+                        await GetNextJobTypeForModCollectionEntry(mod);
 
                     if(jobType != ModManagementOperationType.None_AlreadyInstalled
-                       && jobType != ModManagementOperationType.None_ErrorOcurred)
+                        && jobType != ModManagementOperationType.None_ErrorOcurred)
                     {
-                        // Valid job found
-                        job =
-                            new ModManagementJob { mod = enumerator.Current.Value, type = jobType };
-                        break;
+                        if(jobType == ModManagementOperationType.Install)
+                        {
+                            job = new ModManagementJob { mod = mod, type = jobType };
+                            break;
+                        }
+                        else
+                        {
+                            job = FilterJob(job, mod, jobType);
+                        }
                     }
                 }
             }
 
-            // Remove any collections that no longer have subscribed users and installed files
+            //// Remove any collections that no longer have subscribed users and installed files
             foreach(ModId mod in uninstalledModsWithNoUserSubscriptions)
             {
                 ModCollectionManager.Registry.mods.Remove(mod);
+            }
+
+            return job;
+        }
+
+        private static ModManagementJob FilterJob(ModManagementJob job, ModCollectionEntry mod, ModManagementOperationType jobType)
+        {
+            if(job == null)
+            {
+                job = new ModManagementJob { mod = mod, type = jobType };
+            }
+
+            if(jobType < job.type)
+            {
+                job = new ModManagementJob { mod = mod, type = jobType };
             }
 
             return job;
@@ -711,14 +789,15 @@ namespace ModIO.Implementation
             else if(DataStorage.TryGetModfileArchive(modId, fileId, out string downloadFilepath))
             {
                 // Make sure the installed modfile has the correct md5
-                if (!await ValidateDownload_md5(mod.modObject.modfile.filehash.md5, downloadFilepath))
+                //DataStorage.TryGetModFileArchive(mod, out var downloadFilepath);
+                if(!await ValidateDownload_md5(mod.modObject.modfile.filehash.md5, downloadFilepath))
                 {
                     // if the md5 is incorrect re-download the file
                     // (it may have been interrupted from a previous session)
                     // TODO NOTE: @Steve look into what needs to be done for resuming downloads
                     return ModManagementOperationType.Download;
                 }
-                
+
                 return ModManagementOperationType.Install;
             }
             else
@@ -728,7 +807,6 @@ namespace ModIO.Implementation
 
             return ModManagementOperationType.None_AlreadyInstalled;
         }
-
         static bool ShouldThisModBeUninstalled(ModId modId)
         {
             List<long> users = new List<long>();
@@ -813,6 +891,11 @@ namespace ModIO.Implementation
             }
 
             return true;
+        }
+
+        public static void RemoveModFromTaintedJobs(ModId modid)
+        {
+            taintedMods.Remove(modid);
         }
     }
 }

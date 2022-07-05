@@ -11,8 +11,8 @@ namespace ModIO.Implementation.API.Requests
             // (Note): use AccessTokenObject as the response schema
         }
 
-        internal static RequestTemplate Template =
-            new RequestTemplate { canCacheResponse = true, requireAuthToken = false,
+        internal static RequestConfig Template =
+            new RequestConfig { canCacheResponse = true, requireAuthToken = false,
                                   requestMethodType = WebRequestMethodType.POST,
                                   requestResponseType = WebRequestResponseType.Text };
 

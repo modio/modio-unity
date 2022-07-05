@@ -5,7 +5,6 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
-using ModIO.Implementation;
 
 namespace ModIOBrowser.Implementation
 {
@@ -78,8 +77,10 @@ namespace ModIOBrowser.Implementation
         public void OnPointerEnter(PointerEventData eventData)
         {
             // When using mouse we want to disable the viewport restraint from moving the screen
-            Browser.mouseAndKeyboardNavigation = true;
-            selectable.Select();
+            Browser.mouseNavigation = true;
+            
+            EventSystem.current.SetSelectedGameObject(null);
+            Browser.SelectSelectable(selectable, true);
         }
 #endregion // MonoBehaviour
 
@@ -116,14 +117,10 @@ namespace ModIOBrowser.Implementation
         {
             base.SetViewportRestraint(content, viewport);
 
-            viewportRestraint.UseScreenAsViewport = true;
-            viewportRestraint.Top = 200;
-            viewportRestraint.Bottom = 200;
-
+            viewportRestraint.adjustVertically = false;
             viewportRestraint.adjustHorizontally = true;
-            viewportRestraint.HorizontalContainer = transform.parent as RectTransform;
-            viewportRestraint.Left = 80;
-            viewportRestraint.Right = 80;
+            viewportRestraint.Left = 64;
+            viewportRestraint.Right = 64;
         }
 
 #endregion // Overrides

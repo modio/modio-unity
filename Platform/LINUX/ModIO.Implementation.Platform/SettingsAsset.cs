@@ -2,10 +2,10 @@
 
 namespace ModIO.Implementation
 {
-    /// <summary>Windows extension to the SettingsAsset.</summary>
+    /// <summary>Linux extension to the SettingsAsset.</summary>
     internal partial class SettingsAsset : ScriptableObject
     {
-        /// <summary>Configuration for Windows.</summary>
+        /// <summary>Configuration for Linux.</summary>
         public BuildSettings linuxConfiguration;
 
 #if UNITY_STANDALONE_LINUX && !UNITY_EDITOR

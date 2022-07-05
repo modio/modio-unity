@@ -29,12 +29,12 @@ namespace ModIOBrowser
 
         public static void GoToPreviousSelection()
         {
-            selections[PreviousIndex()].selection.Select();
+            Browser.SelectSelectable(selections[PreviousIndex()].selection);
         }
 
         public static void GoToNextSelection()
         {
-            selections[NextIndex()].selection.Select();
+            Browser.SelectSelectable(selections[NextIndex()].selection);
         }
 
         static int CurrentIndex()

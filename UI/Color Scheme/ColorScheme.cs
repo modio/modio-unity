@@ -58,7 +58,7 @@ namespace ModIOBrowser
             
             ColorUtility.TryParseHtmlString("#07C1D8", out Accent);
             ColorUtility.TryParseHtmlString("#C1C4D7", out LightGrey1);
-            ColorUtility.TryParseHtmlString("#DADCE7", out LightGrey2);
+            ColorUtility.TryParseHtmlString("#AEB1C2", out LightGrey2);
             ColorUtility.TryParseHtmlString("#737684", out LightGrey3);
             ColorUtility.TryParseHtmlString("#7EEF8C", out Green);
             ColorUtility.TryParseHtmlString("#DB5355", out Red);

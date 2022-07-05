@@ -13,7 +13,7 @@ namespace ModIO
 #region Initialization and Maintenance
         
         /// <summary>
-        /// Initialises the Plugin using the provided settings for a specified user. Loads the
+        /// Initializes the Plugin using the provided settings for a specified user. Loads the
         /// local state of mods installed on the system as well as relevant mods to the user. Loads the
         /// state of mods installed on the system as well as the set of mods the
         /// specified user has installed on this device.
@@ -44,28 +44,28 @@ namespace ModIO
         ///     buildSettings.UserPortal = UserPortal.None;
         ///     buildSettings.requestCacheLimitKB = 0; // No limit
         /// 
-        ///     Result result = await ModIOUnityAsync.InitialiseForUserAsync("ExampleUser", serverSettings, buildSettings);
+        ///     Result result = await ModIOUnityAsync.InitializeForUserAsync("ExampleUser", serverSettings, buildSettings);
         /// 
         ///     if (result.Succeeded())
         ///     {
-        ///         Debug.Log("Initialised plugin");
+        ///         Debug.Log("Initialized plugin");
         ///     }
         ///     else
         ///     {
-        ///         Debug.Log("Failed to initialise plugin");
+        ///         Debug.Log("Failed to initialize plugin");
         ///     {
         /// }
         /// </code>
-        public static async Task<Result> InitialiseForUser(string userProfileIdentifier,
+        public static async Task<Result> InitializeForUser(string userProfileIdentifier,
                                                                 ServerSettings serverSettings,
                                                                 BuildSettings buildSettings)
         {
-            return await ModIOUnityImplementation.InitialiseForUserAsync(userProfileIdentifier,
+            return await ModIOUnityImplementation.InitializeForUserAsync(userProfileIdentifier,
                 serverSettings, buildSettings);
         }
 
         /// <summary>
-        /// Initialises the Plugin using the provided settings for a specified user. Loads the
+        /// Initializes the Plugin using the provided settings for a specified user. Loads the
         /// local state of mods installed on the system as well as relevant mods to the user. Loads the
         /// state of mods installed on the system as well as the set of mods the
         /// specified user has installed on this device.
@@ -77,21 +77,21 @@ namespace ModIO
         /// <code>
         /// void async Example()
         /// {
-        ///     Result result = await ModIOUnityAsync.InitialiseForUserAsync("ExampleUser");
+        ///     Result result = await ModIOUnityAsync.InitializeForUserAsync("ExampleUser");
         /// 
         ///     if (result.Succeeded())
         ///     {
-        ///         Debug.Log("Initialised plugin");
+        ///         Debug.Log("Initialized plugin");
         ///     }
         ///     else
         ///     {
-        ///         Debug.Log("Failed to initialise plugin");
+        ///         Debug.Log("Failed to initialize plugin");
         ///     {
         /// }
         /// </code>
-        public static async Task<Result> InitialiseForUser(string userProfileIdentifier)
+        public static async Task<Result> InitializeForUser(string userProfileIdentifier)
         {
-            return await ModIOUnityImplementation.InitialiseForUserAsync(userProfileIdentifier);
+            return await ModIOUnityImplementation.InitializeForUserAsync(userProfileIdentifier);
         }
 
         /// <summary>
@@ -126,7 +126,7 @@ namespace ModIO
         /// <remarks>
         /// The operation will return a Result object.
         /// If the email is successfully sent Result.Succeeded() will equal true.
-        /// If you haven't Initialized the plugin then Result.IsInitialisationError() will equal
+        /// If you haven't Initialized the plugin then Result.IsInitializationError() will equal
         /// true. If the string provided for the emailaddress is not .NET compliant
         /// Result.IsAuthenticationError() will equal true.
         /// </remarks>

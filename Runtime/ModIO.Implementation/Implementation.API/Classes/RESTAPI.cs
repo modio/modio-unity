@@ -101,7 +101,12 @@ namespace ModIO.Implementation.API
                     return ResponseCodeType.ProcessingError;
 
             }
-#else
+#else            
+            if(webRequest.error == "Request aborted")
+            {
+                return ResponseCodeType.AbortRequested;
+            }
+
             if(webRequest.isNetworkError)
             {
                 return ResponseCodeType.NetworkError;
@@ -127,7 +132,7 @@ namespace ModIO.Implementation.API
 #endif
         }
 
-        static UnityWebRequest GenerateWebRequest(string url, RequestTemplate template,
+        static UnityWebRequest GenerateWebRequest(string url, RequestConfig config,
                                                   [CanBeNull] WWWForm form,
                                                   [CanBeNull] DownloadHandler downloadHandler,
                                                   out string webLayoutLog)
@@ -139,7 +144,7 @@ namespace ModIO.Implementation.API
 
             // (NOTE) Steve: manually re-setting the request methods because I dont trust Unity (For
             // good reason)
-            switch(template.requestMethodType)
+            switch(config.requestMethodType)
             {
                 default:
                     webRequest = UnityWebRequest.Get(url);
@@ -159,7 +164,7 @@ namespace ModIO.Implementation.API
                     break;
             }
 
-            switch(template.requestResponseType)
+            switch(config.requestResponseType)
             {
                 case WebRequestResponseType.Texture:
                     webRequest.downloadHandler = new DownloadHandlerTexture();
@@ -170,7 +175,7 @@ namespace ModIO.Implementation.API
             }
 
             string headerLog;
-            SetRequestHeaders(webRequest, template, out headerLog);
+            SetRequestHeaders(webRequest, config, out headerLog);
 
             string formLog = string.Empty;
             if(form != null)
@@ -183,10 +188,14 @@ namespace ModIO.Implementation.API
                 }
             }
 
-            // we dont want to timeout if we are doing a large download
             if (downloadHandler == null)
             {
                 webRequest.timeout = WebRequestTimeoutSeconds;
+            }
+
+            if(config.ignoreTimeout)
+            {
+                webRequest.timeout = 0;
             }
 
             //---------------------------------------[ LOG APPENDING
@@ -206,7 +215,7 @@ namespace ModIO.Implementation.API
             return webRequest;
         }
 
-        static void SetRequestHeaders(UnityWebRequest webRequest, RequestTemplate template,
+        static void SetRequestHeaders(UnityWebRequest webRequest, RequestConfig template,
                                       out string headerLog)
         {
             headerLog = "HEADERS:\n";
@@ -362,7 +371,7 @@ namespace ModIO.Implementation.API
         // TODO(@Steve): Add request limit
         // TODO(@Steve): Implement partial result?
         public static async Task<ResultAnd<T[]>> TryRequestAllResults<T>(
-            string url, RequestTemplate requestTemplate)
+            string url, RequestConfig requestTemplate)
         {
             ResultAnd<T[]> finalResponse = new ResultAnd<T[]>();
             List<T> collatedData = new List<T>();
@@ -426,7 +435,7 @@ namespace ModIO.Implementation.API
         /// Just returns result and discards the response (T).
         /// </summary>
         /// <returns>returns the Result of the operation</returns>
-        public static async Task<Result> Request(string url, RequestTemplate requestTemplate,
+        public static async Task<Result> Request(string url, RequestConfig requestTemplate,
                                                  [CanBeNull] WWWForm form = null,
                                                  [CanBeNull] DownloadHandler downloadHandler = null,
                                                  [CanBeNull] ProgressHandle progressHandle = null)
@@ -437,7 +446,7 @@ namespace ModIO.Implementation.API
         }
 
         public static async Task<ResultAnd<T>> Request<T>(
-            string url, RequestTemplate requestTemplate, [CanBeNull] WWWForm form = null,
+            string url, RequestConfig requestTemplate, [CanBeNull] WWWForm form = null,
             [CanBeNull] DownloadHandler downloadHandler = null,
             [CanBeNull] ProgressHandle progressHandle = null)
         {
@@ -471,7 +480,7 @@ namespace ModIO.Implementation.API
         }
 
         static async Task<ResultAnd<T>> PerformRequest<T>(
-            string url, RequestTemplate requestTemplate, [CanBeNull] WWWForm form = null,
+            string url, RequestConfig requestTemplate, [CanBeNull] WWWForm form = null,
             [CanBeNull] DownloadHandler downloadHandler = null,
             [CanBeNull] ProgressHandle progressHandle = null)
         {
@@ -532,13 +541,12 @@ namespace ModIO.Implementation.API
                     goto Cancel;
                 }
 
-                //------------------------------------------[ LOG PARAMS
-                //]------------------------------------------------//
+                //--------------------------------[ LOG PARAMS ]----------------------------------//
                 string logTitle = string.Empty;
                 LogLevel logLevel = LogLevel.Error;
                 string responseLog =
                     $"------------------------------------------------------\nRESPONSE: {serializedResponse}";
-                //--------------------------------------------------------------------------------------------------------//
+                //--------------------------------------------------------------------------------//
 
                 // (NOTE) Steve: If result failed earlier, pass it in here to override a potentially
                 // incorrect success code.
@@ -548,9 +556,9 @@ namespace ModIO.Implementation.API
 
                 switch(responseCode)
                 {
-                    //--------------------------------------------------------------------------------//
+                    //----------------------------------------------------------------------------//
                     //                        UNKNOWN / PROCESSING ERROR //
-                    //--------------------------------------------------------------------------------//
+                    //----------------------------------------------------------------------------//
                     case ResponseCodeType.ProcessingError:
                         logTitle =
                             string.IsNullOrWhiteSpace(webRequest.error)
@@ -560,7 +568,7 @@ namespace ModIO.Implementation.API
                         logTitle += $"\nurl: {webRequest.url}";
 
                         internalResponse.result =
-                            ResultBuilder.Create((uint)webRequest.responseCode);
+                            ResultBuilder.Create(ResultCode.API_FailedToGetResponseFromWebRequest);
                         internalResponse.value = default;
                         break;
                     //--------------------------------------------------------------------------------//
@@ -571,7 +579,7 @@ namespace ModIO.Implementation.API
                             "NETWORK ERROR\nA Network error occurred. Check your Internet connection and/or Firewall settings.\n\n";
 
                         internalResponse.result =
-                            ResultBuilder.Create((uint)webRequest.responseCode);
+                            ResultBuilder.Create(ResultCode.API_FailedToConnect);
                         internalResponse.value = default;
                         break;
                     //--------------------------------------------------------------------------------//
@@ -591,17 +599,31 @@ namespace ModIO.Implementation.API
 
                         logTitle += $"\nurl: {webRequest.url}";
 
-                        internalResponse.result = ResultBuilder.Create((uint)error.error.code,
+                        internalResponse.result = ResultBuilder.Create(ResultCode.API_FailedToCompleteRequest,
                                                                        (uint)error.error.error_ref);
                         internalResponse.value = default;
 
+                        //I think this might be it?
                         // Has Access Token been rejected? If so, flag it so we don't re-use it
-                        if(error.error.error_ref == ResultCode.RESTAPI_OAuthTokenExpired)
+                        if(ResultCode.IsCacheClearingError(error))
                         {
+                            internalResponse.result.code = ResultCode.User_InvalidToken;
                             UserData.instance?.SetOAuthTokenAsRejected();
+                            ResponseCache.ClearCache();
                         }
 
                         break;
+
+                    //--------------------------------------------------------------------------------//
+                    //                                  USER ABORT //
+                    //--------------------------------------------------------------------------------//
+                    case ResponseCodeType.AbortRequested:
+
+                        logTitle = $"User aborted the webrequest.\nurl: {webRequest.url}";
+                        internalResponse.result = ResultBuilder.Success;
+
+                        break;
+
                     //--------------------------------------------------------------------------------//
                     //                                  SUCCEEDED //
                     //--------------------------------------------------------------------------------//
@@ -678,7 +700,6 @@ namespace ModIO.Implementation.API
 
                 Logger.Log(logLevel, $"{logTitle}{responseHeaders}{responseLog}");
 
-                //Might cause other issue, *sigh*
                 if (progressHandle != null)
                 {
                     UnpairProgressHandle(progressHandle);
@@ -695,7 +716,7 @@ namespace ModIO.Implementation.API
             return internalResponse;
         }
 
-        private static void ProgressHandleEnsureGracefulSuccessOnWebRequestPrematureDisposure(ProgressHandle progressHandle)
+        static void ProgressHandleEnsureGracefulSuccessOnWebRequestPrematureDisposure(ProgressHandle progressHandle)
         {
             if (progressHandle != null)
             {
@@ -805,13 +826,15 @@ namespace ModIO.Implementation.API
 
                 //rewire this so that it works both up and down
 
-                while(progressHandle != null && webRequest != null && !webRequest.isDone
-                      && !ModIOUnityImplementation.shuttingDown
+                while(progressHandle != null && !progressHandle.Completed 
+                      && webRequest != null && !webRequest.isDone 
+                      && !ModIOUnityImplementation.shuttingDown 
                       && liveProgressHandles.Contains(progressHandle))
                 {
                     // Calculate kb/s
                     // First off, figure out if we're downloading or uploading
-                    currentUploadedBytes = webRequest.uploadedBytes != 0 ? webRequest.uploadedBytes : webRequest.downloadedBytes;
+                    currentUploadedBytes = webRequest.uploadedBytes != 0 
+                        ? webRequest.uploadedBytes : webRequest.downloadedBytes;
 
                     bytesForThisSample = currentUploadedBytes - lastUploadedBytes;
                     lastUploadedBytes = currentUploadedBytes;
@@ -852,10 +875,10 @@ namespace ModIO.Implementation.API
             }
             catch(Exception e)
             {                
-                Logger.Log(LogLevel.Error,
-                           $"ProgressHandle failed to pair with "
+                Logger.Log(LogLevel.Warning,
+                           $"ProgressHandle failed to stay paired with "
                                + $"WebRequest. Likely because the UnityWebRequest was"
-                               + $" Disposed prematurely due to another exception. "
+                               + $" Disposed prematurely or finished during an awaited iteration. "
                                + $"(Exception: {e.Message})");
             }
 

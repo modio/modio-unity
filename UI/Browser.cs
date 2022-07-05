@@ -6,6 +6,7 @@ using ModIO;
 using ModIOBrowser.Implementation;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace ModIOBrowser
@@ -21,7 +22,7 @@ namespace ModIOBrowser
      * Browser_SearchPanel.cs
      * Browser_SearchResults.cs
      */
-    
+
     /// <summary>
     /// The main handler for opening and closing the mod IO Browser.
     /// Use Browser.OpenBrowser() to open and Browser.CloseBrowser() to close.
@@ -30,20 +31,22 @@ namespace ModIOBrowser
     {
         // All of the following fields with [SerializeField] attributes are assigned on the prefab
         // from the unity editor inspector 
+        [Header("Settings")]
+        [Tooltip("Setting this to false will stop the Browser from automatically initializing the plugin")]
+        [SerializeField] bool autoInitialize = true;
         
-        [SerializeField] ColorScheme colorScheme;
+        [Header("Main")]
+        public ColorScheme colorScheme;
         [SerializeField] GameObject BrowserCanvas;
 
         [Header("Browse Panel")]
         [SerializeField] GameObject BrowserPanel;
         [SerializeField] Transform BrowserPanelContent;
-        [SerializeField] Transform BrowserPanelRow_RecentlyAdded;
-        [SerializeField] Transform BrowserPanelRow_Trending;
-        [SerializeField] Transform BrowserPanelRow_MostPopular;
-        [SerializeField] Transform BrowserPanelRow_HighestRated;
-        [SerializeField] RectTransform BrowserPanelViewport;
+        [SerializeField] ModListRow BrowserPanelModListRow_HighestRated;
+        [SerializeField] ModListRow BrowserPanelModListRow_Trending;
+        [SerializeField] ModListRow BrowserPanelModListRow_MostPopular;
+        [SerializeField] ModListRow BrowserPanelModListRow_RecentlyAdded;
         [SerializeField] GameObject BrowserPanelListItem_Regular;
-        [SerializeField] GameObject BrowserPanelListItem_Featured;
         [SerializeField] TMP_Text BrowserPanelNavButton;
         [SerializeField] GameObject BrowserPanelNavButtonHighlights;
         [SerializeField] Image BrowserPanelHeaderBackground;
@@ -58,17 +61,18 @@ namespace ModIOBrowser
         [SerializeField] TMP_Text featuredSelectedName;
         [SerializeField] TMP_Text featuredSelectedSubscribeButtonText;
         [SerializeField] Transform featuredSelectedMoreOptionsButtonPosition;
+        [SerializeField] GameObject browserFeaturedSlotSelectionHighlightBorder;
+        [SerializeField] Image browserFeaturedSlotBackplate;
+        [SerializeField] GameObject browserFeaturedSlotInfo;
         internal bool isFeaturedItemSelected = false;
         ModProfile[] featuredProfiles;
         int featuredIndex;
 
         [Header("Settings")]
-        // TODO @Steve these aren't hooked up to all transitions. We may also want a global setting
-        // to include viewport adjustments used by the ViewportRestraint.cs class
-        [SerializeField] float swipeTransitionTime;
-        [SerializeField] AnimationCurve swipeAnimationCurve;
         static int waitingForCallbacks;
         static bool isAuthenticated = false;
+        [SerializeField] List<GameObject> ControllerButtonIcons = new List<GameObject>();
+        [SerializeField] List<GameObject> MouseButtonIcons = new List<GameObject>();
 
         /// <summary>
         /// This is set whenever GotoPanel is invoked, the current opened panel is cached so that
@@ -77,8 +81,8 @@ namespace ModIOBrowser
         GameObject currentFocusedPanel;
 
         [Header("Default Selections")]
-        [SerializeField] Selectable defaultBrowserSelection;
-        [SerializeField] Selectable defaultModDetailsSelection;
+        //[SerializeField] Selectable defaultBrowserSelection;
+        //[SerializeField] Selectable defaultModDetailsSelection;
         [SerializeField] Selectable defaultCollectionSelection;
 
         [Header("Context Menu")]
@@ -89,10 +93,13 @@ namespace ModIOBrowser
 
         [Header("Other Selections")]
         [SerializeField] Selectable browserFeaturedSlotSelection;
-        [SerializeField] GameObject browserFeaturedSlotSelectionHighlightBorder;
+        
+        // edge case solve for pressing rate mod repeatedly
+        ModId lastRatedMod;
+        ModRating lastRatingType;
         
         // Set this when we detect mouse behaviour so we can disable certain controller behaviours
-        internal static bool mouseAndKeyboardNavigation = false;
+        internal static bool mouseNavigation = false;
 
         // globally cached and used to keep track of the current mod management operation progress
         internal ProgressHandle currentModManagementOperationHandle;
@@ -100,13 +107,22 @@ namespace ModIOBrowser
         /// This is assigned on OpenBrowser() and will get invoked each time the Browser is closed.
         internal static Action OnClose;
 
+        // if the ModIO plugin hasn't been initialized yet but the user wishes to open the UI we set
+        // this to true and open the browser the moment we have been initialized
+        static bool openOnInitialize = false;
+
         // Singleton
         internal static Browser Instance;
 
-        // Use Awake() to setup the Singleton for Browser.cs
+        // Use Awake() to setup the Singleton for Browser.cs and initialize the plugin
         void Awake()
         {
             Instance = this;
+            
+            if (autoInitialize)
+            {
+                ModIOUnity.InitializeForUser("User", OnInitialize);
+            }
         }
 
         void Update()
@@ -131,6 +147,17 @@ namespace ModIOBrowser
                     }
                 }
             }
+
+            // If the user has indicated that they wish to open the Browser but we haven't been
+            // initialized yet, keep checking until we have been initialized
+            if(openOnInitialize)
+            {
+                if(ModIOUnity.IsInitialized())
+                {
+                    openOnInitialize = false;
+                    OpenBrowser_Initialized();
+                }
+            }
         }
 
 #region Frontend methods
@@ -144,16 +171,71 @@ namespace ModIOBrowser
         /// </remarks>
         public static void OpenBrowser([CanBeNull] Action onClose)
         {
-            if(!ModIOUnity.IsInitialised())
+            OnClose = onClose;
+            
+            if(!ModIOUnity.IsInitialized())
             {
-                // TODO Log error for not being initialized
-                Debug.LogWarning("[mod.io Browser] Could not open because the ModIO plugin"
-                                 + " hasn't been initialised");
+                openOnInitialize = true;
+            }
+            else
+            {
+                OpenBrowser_Initialized();
+            }
+        }
+
+        /// <summary>
+        /// Use this method to properly close and hide the Mod Browser UI.
+        /// </summary>
+        /// <remarks>
+        /// You may not need to use this method since the browser has the ability to close itself
+        /// </remarks>
+        public static void CloseBrowser()
+        {
+            openOnInitialize = false;
+            
+            if(Instance == null)
+            {
+                // REVIEW @Jackson see above
                 return;
             }
 
-            OnClose = onClose;
+            // Deactivate the Canvas
+            Instance.BrowserCanvas.SetActive(false);
+            OnClose?.Invoke();
+        }
+#endregion // Frontend methods
 
+#region Misc
+        /// <summary>
+        /// We use this to check initialization if the plugin hasn't been initialized we will first
+        /// attempt to initialize it ourselves, based on the current config file.
+        /// </summary>
+        /// <param name="result"></param>
+        static void OnInitialize(Result result)
+        {
+            if(result.Succeeded())
+            {
+                if(openOnInitialize)
+                {
+                    OpenBrowser_Initialized();
+                }
+                Debug.Log("[ExampleLoader] Initialized ModIO Plugin");
+            }
+            else
+            {
+                CloseBrowser();
+                Debug.LogWarning("[ExampleLoader] Failed to Initialize ModIO Plugin. "
+                                 + "Make sure your config file is setup, located in "
+                                 + "Assets/Resources/mod.io\nAlso check you are using the correct "
+                                 + "server address ('https://api.mod.io/v1' for production or "
+                                 + "'https://api.test.mod.io/v1' for the test server) and that "
+                                 + "you've supplied the API Key and game Id for your game.");
+            }
+        }
+
+        static void OpenBrowser_Initialized()
+        {
+            openOnInitialize = false;
             ModIOUnity.IsAuthenticated((r) =>
             {
                 if(r.Succeeded())
@@ -193,28 +275,29 @@ namespace ModIOBrowser
 
             Result result = ModIOUnity.EnableModManagement(Instance.ModManagementEvent);
         }
-
-        /// <summary>
-        /// Use this method to properly close and hide the Mod Browser UI.
-        /// </summary>
-        /// <remarks>
-        /// You may not need to use this method since the browser has the ability to close itself
-        /// </remarks>
-        public static void CloseBrowser()
+        
+        string GetModNameFromId(ModId id)
         {
-            if(Instance == null)
+            // Get the name of this mod
+            // check subscriptions
+            foreach(var mod in subscribedMods)
             {
-                // REVIEW @Jackson see above
-                return;
+                if(mod.modProfile.id == id)
+                {
+                    return mod.modProfile.name;
+                }
             }
-
-            // Deactivate the Canvas
-            Instance.BrowserCanvas.SetActive(false);
-            OnClose?.Invoke();
+            // check pending subscriptions
+            foreach(var mod in pendingSubscriptions)
+            {
+                if(mod.id == id)
+                {
+                    return mod.name;
+                }
+            }
+            return "A mod";
         }
-#endregion // Frontend methods
-
-#region Misc
+        
         /// <summary>
         /// This is used to get the installed and subscribed mods and cache them for use across the UI
         /// </summary>
@@ -255,6 +338,14 @@ namespace ModIOBrowser
                 Instance.CacheLocalSubscribedModStatuses();
             }
 
+            foreach(var mid in Instance.pendingUnsubscribes)
+            {
+                if(mid == id)
+                {
+                    status = SubscribedModStatus.None;
+                    return false;
+                }
+            }
             foreach(var m in Instance.subscribedMods)
             {
                 if(m.modProfile.id == id)
@@ -347,6 +438,13 @@ namespace ModIOBrowser
 
                     if(result.Succeeded())
                     {
+                        Instance.AddNotificationToQueue(new QueuedNotice
+                        {
+                            title = "Subscribed",
+                            description = $"{Instance.GetModNameFromId(profile.id)} has been added to the download queue",
+                            positiveAccent = true
+                        });
+                        
                         Instance.CacheLocalSubscribedModStatuses();
 
                         // if collection open, make another list item for the new subscribed item
@@ -354,6 +452,15 @@ namespace ModIOBrowser
                         {
                             Instance.RefreshCollectionListItems();
                         }
+                    }
+                    else
+                    {
+                        Instance.AddNotificationToQueue(new QueuedNotice
+                        {
+                            title = "Failed to subscribe",
+                            description = $"Unable to subscribe to '{Instance.GetModNameFromId(profile.id)}'",
+                            positiveAccent = false
+                        });
                     }
 
                     callback?.Invoke();
@@ -391,6 +498,13 @@ namespace ModIOBrowser
                     }
                     if(result.Succeeded())
                     {
+                        Instance.AddNotificationToQueue(new QueuedNotice
+                        {
+                            title = "Unsubscribed",
+                            description = $"{Instance.GetModNameFromId(profile.id)} has been removed from your collection",
+                            positiveAccent = true
+                        });
+                        
                         Instance.CacheLocalSubscribedModStatuses();
                     }
 
@@ -406,7 +520,7 @@ namespace ModIOBrowser
         /// <param name="modId">the mod id to rate</param>
         /// <param name="rating">the rating to apply, eg ModRating.Positive</param>
         /// <param name="callback">any extra callback to run once the response is received</param>
-        internal static void RateModEvent(ModId modId, ModRating rating, Action callback = null)
+        void RateModEvent(ModId modId, ModRating rating, Action callback = null)
         {
             if(!isAuthenticated)
             {
@@ -416,6 +530,31 @@ namespace ModIOBrowser
             ModIOUnity.RateMod(modId, rating, delegate(Result result)
             {
                 callback?.Invoke();
+
+                if(result.Succeeded())
+                {
+                    // make sure we arent repeatedly sending the same rating
+                    if (lastRatedMod != modId || lastRatingType != rating)
+                    {
+                        lastRatingType = rating;
+                        lastRatedMod = modId;
+                        AddNotificationToQueue(new QueuedNotice
+                        {
+                            title = "Rating added",
+                            description = $"Your rating has been added for {GetModNameFromId(modId)}",
+                            positiveAccent = true
+                        });
+                    }
+                }
+                else
+                {
+                    AddNotificationToQueue(new QueuedNotice
+                    {
+                        title = "Failed to add rating",
+                        description = $"Failed to submit your rating for {GetModNameFromId(modId)}",
+                        positiveAccent = false
+                    });
+                }
             });
         }
 
@@ -479,6 +618,25 @@ namespace ModIOBrowser
                 yield return new WaitForSecondsRealtime(0.025f);
             }
         }
+        IEnumerator TransitionImageAlphaFast(Image image, float targetAlphaValue)
+        {
+            float incrementSize = 0.05f;
+            Color color = image.color;
+            while(color.a != targetAlphaValue)
+            {
+                color.a = color.a > targetAlphaValue ? color.a - incrementSize : color.a + incrementSize;
+                
+                // make sure we dont go outside the bounds
+                if(color.a < 0f || color.a > 1f)
+                {
+                    color.a = targetAlphaValue;
+                }
+
+                image.color = color;
+                    
+                yield return new WaitForSecondsRealtime(0.01f);
+            }
+        }
 
         /// <summary>
         /// This updates the display of the bumper icons in the search panel, showing whether or not
@@ -497,12 +655,44 @@ namespace ModIOBrowser
 
         public void SetToControllerNavigation()
         {
-            mouseAndKeyboardNavigation = false;
+            mouseNavigation = false;
+            Cursor.lockState = CursorLockMode.Locked;
+
+            //Reselect a ui component in case the mouse has moved off
+            SelectionManager.Instance.SelectMostRecentStillActivatedUiItem();
+
+            ShowControllerButtonIconsAndHideMouseButtonIcons();
         }
 
-        public void SetToMouseAndKeyboardNavigation()
+        public void SetToMouseNavigation()
         {
-            mouseAndKeyboardNavigation = true;
+            Cursor.lockState = CursorLockMode.None;
+            HideControllerButtonIconsAndShowMouseButtonIcons();
+            mouseNavigation = true;
+        }
+
+        void ShowControllerButtonIconsAndHideMouseButtonIcons()
+        {
+            foreach(GameObject icon in ControllerButtonIcons)
+            {
+                icon?.SetActive(true);
+            }
+            foreach(GameObject icon in MouseButtonIcons)
+            {
+                icon?.SetActive(false);
+            }
+        }
+
+        void HideControllerButtonIconsAndShowMouseButtonIcons()
+        {
+            foreach(GameObject icon in ControllerButtonIcons)
+            {
+                icon?.SetActive(false);
+            }
+            foreach(GameObject icon in MouseButtonIcons)
+            {
+                icon?.SetActive(true);
+            }
         }
 
 #endregion // Misc
@@ -535,6 +725,10 @@ namespace ModIOBrowser
             else if(Instance.ModDetailsPanel.activeSelf)
             {
                 Instance.CloseModDetailsPanel();
+            }
+            else if(Instance.uninstallConfirmationPanel.activeSelf)
+            {
+                Instance.CloseUninstallConfirmation();
             }
             else if(Instance.currentFocusedPanel != Instance.BrowserPanel)
             {
@@ -774,13 +968,15 @@ namespace ModIOBrowser
                 Instance.OpenBrowserPanel();
             }
         }
-#endregion // Generic Navigation for panels
 
-#region Browser Panel
+        #endregion // Generic Navigation for panels
+
+
+        #region Browser Panel
         // These are all of the internal methods that pertain to managing the main home view panel
         // as well as populating it, eg the Featured row and other rows, recently added, most popular
         // etc etc
-        
+
         /// <summary>
         /// This is used internally when a panel wants to change back to the browser/home panel.
         /// This is not used to open the entire UI for the first time, use OpenBrowser() instead.
@@ -788,7 +984,7 @@ namespace ModIOBrowser
         public void OpenBrowserPanel()
         {
             GoToPanel(Instance.BrowserPanel);
-            Instance.defaultBrowserSelection.Select();
+            SelectionManager.Instance.SelectView(UiViews.Browse); 
             UpdateNavbarSelection();
         }
 
@@ -819,11 +1015,16 @@ namespace ModIOBrowser
         /// </summary>
         public void OpenMoreOptionsForFeaturedSlot()
         {
+            if(Instance.featuredProfiles == null || Instance.featuredProfiles.Length == 0)
+            {
+                return;
+            }
+            
             List<ContextMenuOption> options = new List<ContextMenuOption>();
 
             // Add Vote up option to context menu
             options.Add(new ContextMenuOption
-            {
+            { 
                 name = "Vote up",
                 action = delegate
                 {
@@ -892,81 +1093,6 @@ namespace ModIOBrowser
                     delegate { UpdateFeaturedSubscribeButtonText(featuredProfiles[featuredIndex].id); });
             }
             RefreshSelectedFeaturedModDetails();
-        }
-
-        /// <summary>
-        /// This will swipe the entire row one full screen width to the right. If there is no more
-        /// width to display it will line up the left edge of the transform to the left edge of the
-        /// screen.
-        /// </summary>
-        /// <param name="row">the RectTransform of the gameObject to be moved</param>
-        public void PageRowLeft(RectTransform row)
-        {
-            // Rect rect = row.rect;
-            // Vector2 v = row.position;
-
-            ListItem listItemToSnapTo = null;
-            float posX = 0;
-            
-            // find the left most item that is partially offscreen
-            foreach(var item in cachedModListItemsByRow[row.gameObject])
-            {
-                if(item.transform is RectTransform rectTransform)
-                {
-                    float radius = rectTransform.sizeDelta.x / 2f;
-                    float leftSidePositionX = rectTransform.position.x - radius;
-                    
-                    // Check if this list item is off the left side of the screen
-                    if(leftSidePositionX < 0)
-                    {
-                        // make sure it's closer than any other (if any) item we've found
-                        if (leftSidePositionX > posX || posX == 0)
-                        {
-                            posX = leftSidePositionX;
-                            listItemToSnapTo = item;
-                        }
-                    }
-                }
-            }
-
-            listItemToSnapTo?.viewportRestraint?.CheckSelectionHorizontalVisibility();
-            listItemToSnapTo?.selectable?.Select();
-        }
-        
-        /// <summary>
-        /// This will swipe the entire row one full screen width to the left. If there is no more
-        /// width to display it will line up the right edge of the transform to the right edge of
-        /// the screen.
-        /// </summary>
-        /// <param name="row">the RectTransform of the gameObject to be moved</param>
-        public void PageRowRight(RectTransform row)
-        {
-            ListItem listItemToSnapTo = null;
-            float posX = 0;
-            
-            // find the left most item that is partially offscreen
-            foreach(var item in cachedModListItemsByRow[row.gameObject])
-            {
-                if(item.transform is RectTransform rectTransform)
-                {
-                    float radius = rectTransform.sizeDelta.x / 2f;
-                    float rightSidePositionX = rectTransform.position.x + radius;
-                    
-                    // Check if this list item is off the left side of the screen
-                    if(rightSidePositionX > Screen.width)
-                    {
-                        // make sure it's closer than other (if any) item we've found
-                        if (rightSidePositionX < posX || posX == 0)
-                        {
-                            posX = rightSidePositionX;
-                            listItemToSnapTo = item;
-                        }
-                    }
-                }
-            }
-
-            listItemToSnapTo?.viewportRestraint?.CheckSelectionHorizontalVisibility();
-            listItemToSnapTo?.selectable?.Select();
         }
 
         /// <summary>
@@ -1049,6 +1175,9 @@ namespace ModIOBrowser
         internal void HideFeaturedHighlight()
         {
             browserFeaturedSlotSelectionHighlightBorder.SetActive(false);
+            StartCoroutine(TransitionImageAlphaFast(browserFeaturedSlotBackplate, 0f));
+            // browserFeaturedSlotBackplate.gameObject.SetActive(false);
+            browserFeaturedSlotInfo.SetActive(false);
         }
 
         /// <summary>
@@ -1057,6 +1186,10 @@ namespace ModIOBrowser
         internal void ShowFeaturedHighlight()
         {
             browserFeaturedSlotSelectionHighlightBorder.SetActive(true);
+            StartCoroutine(TransitionImageAlphaFast(browserFeaturedSlotBackplate, 1f));
+            browserFeaturedSlotBackplate.gameObject.SetActive(true);
+            browserFeaturedSlotInfo.SetActive(true);
+            RefreshSelectedFeaturedModDetails();
         }
 
         /// <summary>
@@ -1067,7 +1200,9 @@ namespace ModIOBrowser
         {
             featuredSelectedName.text = featuredProfiles[featuredIndex].name;
             UpdateFeaturedSubscribeButtonText(featuredProfiles[featuredIndex].id);
-            
+            DeselectUiGameObject();
+            SelectionManager.Instance.SelectView(UiViews.Browse);
+
             // Some of the featured slots will represent a different mod after the carousel moves
             // because there are 10 featured mods but we only have 5 prefabs displayed at a time,
             // therefore reset their progress pips to their proper profile each time we swipe.
@@ -1100,6 +1235,8 @@ namespace ModIOBrowser
             {
                 featuredSelectedSubscribeButtonText.text = "Subscribe";
             }
+            LayoutRebuilder.ForceRebuildLayoutImmediate(featuredSelectedSubscribeButtonText.transform.parent as RectTransform);
+            LayoutRebuilder.ForceRebuildLayoutImmediate(featuredSelectedSubscribeButtonText.transform.parent as RectTransform);
         }
 
         /// <summary>
@@ -1124,45 +1261,60 @@ namespace ModIOBrowser
             ModIOUnity.GetMods(filter, AddModProfilesToFeaturedCarousel);
 
             // Edit filter for next row
+            filter = new SearchFilter();
+            filter.SetPageIndex(0);
             filter.SetPageSize(20);
             filter.SortBy(SortModsBy.DateSubmitted);
             filter.SetToAscending(false);
 
             // Get Mods for Recently Added row
-            waitingForCallbacks++;
-            AddPlaceholdersToList<BrowserModListItem>(BrowserPanelRow_RecentlyAdded,
-                BrowserPanelListItem_Regular, 20);
-            ModIOUnity.GetMods(filter, (result, mods) => { AssignModsToRow(result, mods, BrowserPanelRow_RecentlyAdded);});
+            BrowserPanelModListRow_RecentlyAdded.AttemptToPopulateRowWithMods(filter);
+            // waitingForCallbacks++;
+            // AddPlaceholdersToList<BrowserModListItem>(BrowserPanelRow_RecentlyAdded,
+            //     BrowserPanelListItem_Regular, 20);
+            // ModIOUnity.GetMods(filter, (result, mods) => { AssignModsToRow(result, mods, BrowserPanelRow_RecentlyAdded);});
 
             // Edit filter for next row
+            filter = new SearchFilter();
+            filter.SetPageIndex(0);
+            filter.SetPageSize(20);
             filter.SortBy(SortModsBy.Subscribers);
             filter.SetToAscending(true);
 
             // Get Mods for Trending row
-            waitingForCallbacks++;
-            AddPlaceholdersToList<BrowserModListItem>(BrowserPanelRow_Trending,
-                BrowserPanelListItem_Regular, 20);
-            ModIOUnity.GetMods(filter, (result, mods) => { AssignModsToRow(result, mods, BrowserPanelRow_Trending);});
+            BrowserPanelModListRow_Trending.AttemptToPopulateRowWithMods(filter);
+            // waitingForCallbacks++;
+            // AddPlaceholdersToList<BrowserModListItem>(BrowserPanelRow_Trending,
+            //     BrowserPanelListItem_Regular, 20);
+            // ModIOUnity.GetMods(filter, (result, mods) => { AssignModsToRow(result, mods, BrowserPanelRow_Trending);});
 
             // Edit filter for next row
+            filter = new SearchFilter();
+            filter.SetPageIndex(0);
+            filter.SetPageSize(20);
             filter.SortBy(SortModsBy.Popular);
             filter.SetToAscending(false);
 
             // Get Mods for Most Popular row
-            waitingForCallbacks++;
-            AddPlaceholdersToList<BrowserModListItem>(BrowserPanelRow_MostPopular,
-                BrowserPanelListItem_Regular, 20);
-            ModIOUnity.GetMods(filter, (result, mods) => { AssignModsToRow(result, mods, BrowserPanelRow_MostPopular);});
+            BrowserPanelModListRow_MostPopular.AttemptToPopulateRowWithMods(filter);
+            // waitingForCallbacks++;
+            // AddPlaceholdersToList<BrowserModListItem>(BrowserPanelRow_MostPopular,
+            //     BrowserPanelListItem_Regular, 20);
+            // ModIOUnity.GetMods(filter, (result, mods) => { AssignModsToRow(result, mods, BrowserPanelRow_MostPopular);});
 
             // Edit filter for next row
+            filter = new SearchFilter();
+            filter.SetPageIndex(0);
+            filter.SetPageSize(20);
             filter.SortBy(SortModsBy.Rating);
             filter.SetToAscending(true);
 
             // Get Mods for highest rated row
-            waitingForCallbacks++;
-            AddPlaceholdersToList<BrowserModListItem>(BrowserPanelRow_HighestRated,
-                BrowserPanelListItem_Regular, 20);
-            ModIOUnity.GetMods(filter, (result, mods) => { AssignModsToRow(result, mods, BrowserPanelRow_HighestRated);});
+            BrowserPanelModListRow_HighestRated.AttemptToPopulateRowWithMods(filter);
+            // waitingForCallbacks++;
+            // AddPlaceholdersToList<BrowserModListItem>(BrowserPanelRow_HighestRated,
+            //     BrowserPanelListItem_Regular, 20);
+            // ModIOUnity.GetMods(filter, (result, mods) => { AssignModsToRow(result, mods, BrowserPanelRow_HighestRated);});
         }
 
         /// <summary>
@@ -1221,7 +1373,7 @@ namespace ModIOBrowser
             }
         }
 
-        void AddModListItemToRowDictionaryCache(ListItem item, GameObject row)
+        internal void AddModListItemToRowDictionaryCache(ListItem item, GameObject row)
         {
             // Make sure this row has an entry
             if(!cachedModListItemsByRow.ContainsKey(row))
@@ -1256,10 +1408,25 @@ namespace ModIOBrowser
             waitingForCallbacks--;
             if(!result.Succeeded())
             {
+                // TODO should we re-attempt this?
                 return;
             }
 
             featuredProfiles = modPage.modProfiles;
+            if(modPage.modProfiles.Length < 10)
+            {
+                featuredProfiles = new ModProfile[10];
+                int next = 0;
+                for(int i = 0; i < 10; i++)
+                {
+                    if(next >= modPage.modProfiles.Length)
+                    {
+                        next = 0;
+                    }
+                    featuredProfiles[i] = modPage.modProfiles[next];
+                    next++;
+                }
+            }
 
             if(featuredProfiles.Length < 5)
             {
@@ -1417,9 +1584,10 @@ namespace ModIOBrowser
                 }
             }
 
-            if (!mouseAndKeyboardNavigation)
+            if (!mouseNavigation)
             {
-                optionToSelect?.Select();
+                SelectionManager.Instance.SetNewViewDefaultSelection(UiViews.ContextMenu, optionToSelect);
+                SelectionManager.Instance.SelectView(UiViews.ContextMenu);
             }
             LayoutRebuilder.ForceRebuildLayoutImmediate(contextMenuList as RectTransform);
         }
@@ -1433,7 +1601,37 @@ namespace ModIOBrowser
             contextMenu.SetActive(false);
             if(contextMenuPreviousSelection != null)
             {
-                contextMenuPreviousSelection.Select();
+                SelectSelectable(contextMenuPreviousSelection);
+            }
+        }
+
+        public static void DeselectUiGameObject()
+        {
+            if(!mouseNavigation)
+            {
+                EventSystem.current.SetSelectedGameObject(null);
+            }
+        }
+
+        public static void SelectGameObject(GameObject go)
+        {         
+            if(!mouseNavigation)
+            {
+                EventSystem.current.SetSelectedGameObject(go);
+            }
+        }
+
+        public static void SelectSelectable(Selectable s, bool selectEvenWhenUsingMouse = false)
+        {
+            if(s == null)
+            {
+                return;
+            }
+
+            if(!mouseNavigation || selectEvenWhenUsingMouse)
+            {
+                EventSystem.current.SetSelectedGameObject(s.gameObject, null);
+                // s.Select();
             }
         }
 
@@ -1446,12 +1644,14 @@ namespace ModIOBrowser
          */
         
         /// <summary>
-        /// This is assigned when the browser is initialised and EnableModManagement is invoked
+        /// This is assigned when the browser is initialized and EnableModManagement is invoked
         /// </summary>
         /// <param name="type">the type of MM event</param>
         /// <param name="id">the mod id pertaining to this event</param>
-        internal void ModManagementEvent(ModManagementEventType type, ModId id)
+        internal void ModManagementEvent(ModManagementEventType type, ModId id, Result eventResult)
         {
+            ProcessModManagementEventIntoNotification(type, id);
+            
             currentModManagementOperationHandle = ModIOUnity.GetCurrentModManagementOperation();
             if(currentModManagementOperationHandle.Completed)
             {
@@ -1467,6 +1667,10 @@ namespace ModIOBrowser
             if(BrowserModListItem.listItems.ContainsKey(id))
             {
                 BrowserModListItem.listItems[id].UpdateStatus(type, id);
+            }
+            if(ModDetailsPanel.activeSelf)
+            {
+                ModDetailsProgressTab.UpdateStatus(type, id);
             }
             if(featuredProfiles != null)
             {

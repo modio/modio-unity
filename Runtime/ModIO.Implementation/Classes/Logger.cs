@@ -31,23 +31,34 @@ namespace ModIO.Implementation
             Logger.LogDelegate = UnityLogDelegate;
         }
 
-        internal static void UnityLogDelegate(LogLevel logLevel, string logMessge)
+        internal static void UnityLogDelegate(LogLevel logLevel, string logMessage)
         {
+            // check the log level
+            if(IsThisLogAboveMaxLogLevelSetting(logLevel))
+            {
+                return;
+            }
+            
             switch(logLevel)
             {
                 case LogLevel.Error:
-                    Debug.LogWarning(logMessge);
+                    Debug.LogWarning(logMessage);
                     break;
                 case LogLevel.Warning:
-                    Debug.LogWarning(logMessge);
+                    Debug.LogWarning(logMessage);
                     break;
                 case LogLevel.Message:
-                    Debug.Log(logMessge);
+                    Debug.Log(logMessage);
                     break;
                 case LogLevel.Verbose:
-                    Debug.Log(logMessge);
+                    Debug.Log(logMessage);
                     break;
             }
+        }
+
+        static bool IsThisLogAboveMaxLogLevelSetting(LogLevel level)
+        {
+            return (int)level > (int)Settings.build.logLevel;
         }
 
         internal static void Log(LogLevel logLevel, string logMessage, bool attemptLogToPc = true)
@@ -67,7 +78,7 @@ namespace ModIO.Implementation
                     Debug.LogError($"Error trying to write a message to pc log. Halting log to pc functionality for this session. Exception: {ex}.");
                     Logger.LogDelegate?.Invoke(logLevel, $"Error trying to write a message to pc log. Halting log to pc functionality for this session. Exception: {ex}.");
                     LogToPC.halt = true;
-                }                
+                }
             }            
 #endif
         }

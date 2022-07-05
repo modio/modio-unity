@@ -41,6 +41,7 @@ namespace ModIOBrowser
         [SerializeField] TMP_Text ModDetailsDownloadProgressRemaining;
         [SerializeField] TMP_Text ModDetailsDownloadProgressSpeed;
         [SerializeField] TMP_Text ModDetailsDownloadProgressCompleted;
+        [SerializeField] SubscribedProgressTab ModDetailsProgressTab;
         bool galleryImageInUse;
         Sprite[] ModDetailsGalleryImages;
         bool[] ModDetailsGalleryImagesFailedToLoad;
@@ -60,9 +61,11 @@ namespace ModIOBrowser
 
         internal void OpenModDetailsPanel(ModProfile profile, Action actionToInvokeWhenClosed)
         {
+            ModDetailsProgressTab.Setup(profile);
+            
             modDetailsOnCloseAction = actionToInvokeWhenClosed;
             GoToPanel(ModDetailsPanel);
-            defaultModDetailsSelection.Select();
+            SelectionManager.Instance.SelectView(UiViews.ModDetails);
             HydrateModDetailsPanel(profile);
         }
 
@@ -70,12 +73,21 @@ namespace ModIOBrowser
         {
             ModDetailsPanel.SetActive(false);
             modDetailsOnCloseAction?.Invoke();
+
+            if(mouseNavigation)
+            {
+                SelectionOverlayHandler.Instance.SetBrowserModListItemOverlayActive(false);
+            }
+            else
+            {
+                SelectionManager.Instance.SelectView(UiViews.Browse); 
+            }                
         }
 
         internal void HydrateModDetailsPanel(ModProfile profile)
         {
             currentModProfileBeingViewed = profile;
-            UpdateSubscribeButtonText();
+            UpdateModDetailsSubscribeButtonText();
             ModDetailsGalleryLoadingAnimation.SetActive(true);
             ModDetailsGalleryImage[0].color = Color.clear;
             ModDetailsGalleryImage[1].color = Color.clear;
@@ -86,8 +98,8 @@ namespace ModIOBrowser
             ModDetailsLastUpdated.text = profile.dateUpdated.ToShortDateString();
             ModDetailsReleaseDate.text = profile.dateLive.ToShortDateString();
             ModDetailsCreatedBy.text = profile.creatorUsername;
-            ModDetailsUpVotes.text = "+" + Utility.GenerateHumanReadableNumber(profile.stats.ratingsPositive);
-            ModDetailsDownVotes.text = "-" + Utility.GenerateHumanReadableNumber(profile.stats.ratingsNegative);
+            ModDetailsUpVotes.text = Utility.GenerateHumanReadableNumber(profile.stats.ratingsPositive);
+            ModDetailsDownVotes.text = Utility.GenerateHumanReadableNumber(profile.stats.ratingsNegative);
             ModDetailsSubscribers.text = Utility.GenerateHumanReadableNumber(profile.stats.subscriberTotal);
 
             int position = 0;
@@ -95,12 +107,6 @@ namespace ModIOBrowser
             ModDetailsGalleryImages = new Sprite[profile.galleryImages_640x360.Length + 1];
             ModDetailsGalleryImagesFailedToLoad = new bool[ModDetailsGalleryImages.Length];
             
-            ModDetailsGalleryNavBar.SetActive(ModDetailsGalleryImages.Length > 1);
-
-            // TODO add mod logo to first position
-            // download gallery images and setup navbar buttons
-
-            ModDetailsGalleryNavBar.SetActive(true);
 
             ListItem.HideListItems<GalleryImageButtonListItem>();
 
@@ -108,21 +114,25 @@ namespace ModIOBrowser
 
             images.Add(profile.logoImage_640x360);
             images.AddRange(profile.galleryImages_640x360);
+            
+            ModDetailsGalleryNavBar.SetActive(images.Count > 1);
 
             foreach(var downloadReference in images)
             {
                 int thisPosition = position;
                 position++;
 
-                ListItem li = ListItem.GetListItem<GalleryImageButtonListItem>(ModDetailsGalleryNavButtonPrefab, ModDetailsGalleryNavButtonParent, colorScheme);
+                // if we have more than one image make pips for navigation
+                if(images.Count > 1)
+                {
+                    ListItem li = ListItem.GetListItem<GalleryImageButtonListItem>(ModDetailsGalleryNavButtonPrefab, ModDetailsGalleryNavButtonParent, colorScheme);
 
-                // setup the delegate for the button click
-                Action transitionGalleryImage = delegate { TransitionToDifferentGalleryImage(thisPosition); };
+                    // setup the delegate for the button click
+                    Action transitionGalleryImage = delegate { TransitionToDifferentGalleryImage(thisPosition); };
 
-                li.Setup(transitionGalleryImage);
-
-                // REVIEW @Jackson the most sensible use for this is to use a lambda, in which case
-                // we may want to re-think the design for how it is used
+                    li.Setup(transitionGalleryImage);
+                }
+                
                 Action<ResultAnd<Texture2D>> imageDownloaded = r =>
                 {
                     if(r.result.Succeeded())
@@ -171,20 +181,24 @@ namespace ModIOBrowser
             if(!isAuthenticated)
             {
                 ModDetailsSubscribeButtonText.text = "Log in to Subscribe";
-                SubscribeToModEvent(currentModProfileBeingViewed, UpdateSubscribeButtonText);
+                SubscribeToModEvent(currentModProfileBeingViewed, UpdateModDetailsSubscribeButtonText);
             }
             else if(IsSubscribed(currentModProfileBeingViewed.id))
             {
                 // This isnt actually subscribed to 'yet' but we make the UI toggle straight away
                 ModDetailsSubscribeButtonText.text = "Subscribe";
-                UnsubscribeFromModEvent(currentModProfileBeingViewed, UpdateSubscribeButtonText);
+                UnsubscribeFromModEvent(currentModProfileBeingViewed, UpdateModDetailsSubscribeButtonText);
             }
             else
             {
                 // This isnt actually unsubscribed 'yet' but we make the UI toggle straight away
                 ModDetailsSubscribeButtonText.text = "Unsubscribe";
-                SubscribeToModEvent(currentModProfileBeingViewed, UpdateSubscribeButtonText);
+                SubscribeToModEvent(currentModProfileBeingViewed, UpdateModDetailsSubscribeButtonText);
             }
+            
+            ModDetailsProgressTab.Setup(currentModProfileBeingViewed);
+
+            LayoutRebuilder.ForceRebuildLayoutImmediate(ModDetailsSubscribeButtonText.transform.parent as RectTransform);
         }
 
         public void ModDetailsRatePositiveButtonPress()
@@ -209,20 +223,18 @@ namespace ModIOBrowser
 
         public void ModDetailsReportButtonPress()
         {
-            if(!isAuthenticated)
-            {
-                OpenAuthenticationPanel();
-                return;
-            }
             Selectable selectionOnClose = EventSystem.current.currentSelectedGameObject.GetComponent<Selectable>();
             if (selectionOnClose == null)
             {
-                selectionOnClose = defaultModDetailsSelection;
+                //selectionOnClose = SelectionManager.Instance.GetSelectableForView(UiViews.ModDetails);
+                //This won't work - it'll back to the previous view which will override any behaviour set up
+                //What is the intended behaviour when backing from report in mod details?
+                //Am I missing something?
             }
             Instance.OpenReportPanel(currentModProfileBeingViewed, selectionOnClose);
         }
 
-        void UpdateSubscribeButtonText()
+        void UpdateModDetailsSubscribeButtonText()
         {
             if(!isAuthenticated)
             {
@@ -253,6 +265,8 @@ namespace ModIOBrowser
         /// <param name="handle"></param>
         void UpdateModDetailsDownloadProgress(ProgressHandle handle)
         {
+            ModDetailsProgressTab.UpdateProgress(handle);
+            
             if( handle == null || handle.modId != currentModProfileBeingViewed.id || handle.Completed)
             {
                 ModDetailsDownloadProgressDisplay.SetActive(false);
@@ -270,6 +284,14 @@ namespace ModIOBrowser
 
             // progress bar fill amount
             ModDetailsDownloadProgressFill.fillAmount = handle.Progress;
+
+            if(handle.OperationType == ModManagementOperationType.Install)
+            {
+                ModDetailsDownloadProgressRemaining.text = "Installing...";
+                ModDetailsDownloadProgressCompleted.text = "";
+                ModDetailsDownloadProgressSpeed.text = "";
+                return;
+            }
             
             // TODO At some point add a smarter average for displaying total time remaining
             // Remaining time text

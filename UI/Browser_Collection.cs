@@ -43,7 +43,6 @@ namespace ModIOBrowser
         [SerializeField] GameObject uninstallConfirmationPanel;
         [SerializeField] TMP_Text uninstallConfirmationPanelModName;
         [SerializeField] TMP_Text uninstallConfirmationPanelFileSize;
-        [SerializeField] Selectable uninstallConfirmationPanelDefaultSelection;
         ModProfile currentSelectedModForUninstall;
 
 #region Mod Collection
@@ -52,6 +51,7 @@ namespace ModIOBrowser
             GoToPanel(CollectionPanel);
             RefreshCollectionListItems();
             UpdateNavbarSelection();
+            SelectionManager.Instance.SelectView(UiViews.Collection);
         }
 
         internal void RefreshLocalModCollection()
@@ -73,11 +73,12 @@ namespace ModIOBrowser
             }
         }
 
-        public void RefreshCollectionListItems(bool forceSelection = true)
+        public void RefreshCollectionListItems()
         {
             // TODO refresh existing list items so we dont lose/change selection (feels jarring) and
             // TODO cull no longer required list items
             // TODO only hide/enable items we need to, dont do a complete refresh
+            // TODO dynamically load collection on scroll so we dont try and populate more than a hundred items at a time
             
             CollectionPanelCheckForUpdatesText.text = checkingForUpdates ? "Checking..." : "Check for updates";
             RefreshLocalModCollection();
@@ -94,8 +95,9 @@ namespace ModIOBrowser
             }
             subscribedAndPending.AddRange(pendingSubscriptions);
             List<InstalledMod> installed = new List<InstalledMod>(installedMods);
-            
-            CollectionPanelTitle.text = subscribedMods == null ? "Collection" : $"Collection <size=30>({subscribedAndPending.Count})</size>";
+
+            string accentHashColor = ColorUtility.ToHtmlStringRGBA(colorScheme.GetSchemeColor(ColorSetterType.Accent));
+            CollectionPanelTitle.text = subscribedMods == null ? "Collection" : $"Collection <size=20><color=#{accentHashColor}>({subscribedAndPending.Count})</color></size>";
             
             //--------------------------------------------------------------------------------//
             //                              GET FILTER SETTINGS                               //
@@ -159,7 +161,7 @@ namespace ModIOBrowser
             // hide list items @UNDONE not needed with current setup
             // ListItem.HideListItems<CollectionModListItem>();
 
-            bool hasSelection = !forceSelection;
+            bool hasSelection = false;
 
             // SUBSCRIBED MODS
             foreach(ModProfile mod in subscribedAndPending)
@@ -179,7 +181,7 @@ namespace ModIOBrowser
                     if(!hasSelection)
                     {
                         hasSelection = true;
-                        CollectionModListItem.listItems[mod.id].selectable?.Select();
+                        SelectSelectable(CollectionModListItem.listItems[mod.id].selectable);
                         SetExplicitDownNavigationForTopRowButtonsInCollectionPanel(CollectionModListItem.listItems[mod.id].selectable);
                     }
                 } 
@@ -196,7 +198,7 @@ namespace ModIOBrowser
                     if(!hasSelection)
                     {
                         hasSelection = true;
-                        li.selectable?.Select();
+                        SelectSelectable(li.selectable);
                         SetExplicitDownNavigationForTopRowButtonsInCollectionPanel(li.selectable);
                     }
                 }
@@ -262,16 +264,16 @@ namespace ModIOBrowser
                         if(!hasSelection)
                         {
                             hasSelection = true;
-                            li.selectable?.Select();
+                            SelectSelectable(li.selectable);
                             SetExplicitDownNavigationForTopRowButtonsInCollectionPanel(li.selectable);
                         }
                     }
                 }
             }
-            
+
             if(!hasSelection)
             {
-                defaultCollectionSelection?.Select();
+                SelectSelectable(defaultCollectionSelection);
             }
 
             LayoutRebuilder.ForceRebuildLayoutImmediate(CollectionPanelModListItemParent as RectTransform);
@@ -354,6 +356,7 @@ namespace ModIOBrowser
         public void CloseUninstallConfirmation()
         {
             uninstallConfirmationPanel.SetActive(false);
+            SelectionManager.Instance.SelectView(UiViews.Collection);
         }
 
         public void OpenUninstallConfirmation(ModProfile profile)
@@ -361,8 +364,8 @@ namespace ModIOBrowser
             uninstallConfirmationPanelModName.text = profile.name;
             uninstallConfirmationPanelFileSize.text = ""; // TODO need to add file size
             currentSelectedModForUninstall = profile;
-            uninstallConfirmationPanel.SetActive(true);
-            uninstallConfirmationPanelDefaultSelection?.Select();
+            uninstallConfirmationPanel.SetActive(true);            
+            SelectionManager.Instance.SelectView(UiViews.ConfirmUninstall);
         }
 
         public void ConfirmUninstall()

@@ -163,7 +163,7 @@ namespace ModIO.Implementation
         /// <summary>Initializes the Plugin for the given settings. Loads the
         /// state of mods installed on the system as well as the set of mods the
         /// specified user has installed on this device.</summary>
-        public static async Task<Result> InitialiseForUserAsync(string userProfileIdentifier,
+        public static async Task<Result> InitializeForUserAsync(string userProfileIdentifier,
                                                                 ServerSettings serverSettings,
                                                                 BuildSettings buildSettings)
         {
@@ -260,12 +260,12 @@ namespace ModIO.Implementation
         /// <summary>Initializes the Plugin for the given settings. Loads the
         /// state of mods installed on the system as well as the set of mods the
         /// specified user has installed on this device.</summary>
-        public static async void InitialiseForUserAsync(string userProfileIdentifier,
+        public static async void InitializeForUserAsync(string userProfileIdentifier,
                                                         ServerSettings serverSettings,
                                                         BuildSettings buildSettings,
                                                         Action<Result> callback)
         {
-            Result result = await InitialiseForUserAsync(userProfileIdentifier,
+            Result result = await InitializeForUserAsync(userProfileIdentifier,
                 serverSettings, buildSettings);
 
             callback(result);
@@ -274,7 +274,7 @@ namespace ModIO.Implementation
         /// <summary>Initializes the Plugin for the given settings. Loads the
         /// state of mods installed on the system as well as the set of mods the
         /// specified user has installed on this device.</summary>
-        public static async Task<Result> InitialiseForUserAsync(string userProfileIdentifier)
+        public static async Task<Result> InitializeForUserAsync(string userProfileIdentifier)
         {
             TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
             openCallbacks.Add(callbackConfirmation, null);
@@ -286,7 +286,7 @@ namespace ModIO.Implementation
 
             if(r.Succeeded())
             {
-                Task<Result> initTask = ModIOUnityImplementation.InitialiseForUserAsync(
+                Task<Result> initTask = ModIOUnityImplementation.InitializeForUserAsync(
                     userProfileIdentifier, serverSettings, buildSettings);
 
                 openCallbacks[callbackConfirmation] = initTask;
@@ -302,10 +302,10 @@ namespace ModIO.Implementation
         /// <summary>Initializes the Plugin for the given settings. Loads the
         /// state of mods installed on the system as well as the set of mods the
         /// specified user has installed on this device.</summary>
-        public static async void InitialiseForUserAsync(string userProfileIdentifier,
+        public static async void InitializeForUserAsync(string userProfileIdentifier,
                                                         Action<Result> callback)
         {
-            var result = await InitialiseForUserAsync(userProfileIdentifier);
+            var result = await InitializeForUserAsync(userProfileIdentifier);
             callback(result);
         }
 
@@ -1175,19 +1175,26 @@ namespace ModIO.Implementation
                 result = await task;
                 openCallbacks[callbackConfirmation] = null;
 
-                if(result.Succeeded()
-                   || result.code_api == ResultCode.RESTAPI_ModSubscriptionNotFound)
+                var success = result.Succeeded()
+                   || result.code_api == ResultCode.RESTAPI_ModSubscriptionNotFound;
+
+                if(success)
                 {
                     result = ResultBuilder.Success;
                     ModCollectionManager.RemoveModFromUserSubscriptions(modId, false);
+
+                    if(ShouldAbortDueToDownloading(modId))
+                    {
+                        ModManagement.AbortCurrentDownloadJob();
+                    }
+                    else if(ShouldAbortDueToInstalling(modId))
+                    {
+                        ModManagement.AbortCurrentInstallJob();
+                    }
                     ModManagement.WakeUp();
                 }
-                else
-                {
-                    // Add unsubscribe to queue (we dont know why this failed, could ne a network
-                    // error)
-                    ModCollectionManager.RemoveModFromUserSubscriptions(modId, true);
-                }
+
+                ModCollectionManager.RemoveModFromUserSubscriptions(modId, success);
             }
 
             callbackConfirmation.SetResult(true);
@@ -1195,6 +1202,22 @@ namespace ModIO.Implementation
             return result;
         }
 
+        private static bool ShouldAbortDueToDownloading(ModId modId)
+        {
+            return ModManagement.currentJob != null 
+                   && ModManagement.currentJob.mod.modObject.id == modId
+                   && ModManagement.currentJob.type == ModManagementOperationType.Download
+                   && ModManagement.currentJob.progressHandle.Progress > 0f
+                   && ModManagement.currentJob.progressHandle.Progress < 100f;
+        }
+
+        private static bool ShouldAbortDueToInstalling(ModId modId)
+        {
+            return ModManagement.currentJob != null
+                && ModManagement.currentJob.mod.modObject.id == modId
+                && ModManagement.currentJob.type == ModManagementOperationType.Install
+                && ModManagement.currentJob.zipOperation != null;
+        }
 
         public static async void UnsubscribeFrom(ModId modId, Action<Result> callback)
         {
@@ -1874,7 +1897,7 @@ namespace ModIO.Implementation
                 ResultAnd<AddModMedia.AddModMediaUrlResult> urlResult = await urlResultTask;
                 openCallbacks[callbackConfirmation] = null;
 
-                if(urlResult.result.Succeeded())
+                if(urlResult.result.Succeeded()) 
                 {
                     Task<ResultAnd<ModMediaObject>> task = RESTAPI.Request<ModMediaObject>(
                         urlResult.value.url, AddModMedia.Template, urlResult.value.form, null, currentUploadHandle);

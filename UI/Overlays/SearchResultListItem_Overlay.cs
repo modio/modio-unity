@@ -29,6 +29,7 @@ namespace ModIOBrowser.Implementation
                 MimicProgressBar();
             }
         }
+        
         // Mimics the look of a SearchResultListItem
         public void Setup(SearchResultListItem listItem)
         {
@@ -82,6 +83,8 @@ namespace ModIOBrowser.Implementation
                 subscribeButtonText.text = "Unsubscribe";
                 Browser.SubscribeToModEvent(listItemToReplicate.profile, UpdateSubscribeButton);
             }
+            
+            LayoutRebuilder.ForceRebuildLayoutImmediate(subscribeButtonText.transform.parent as RectTransform);
         }
 
         public void OpenModDetailsForThisModProfile()
@@ -163,6 +166,7 @@ namespace ModIOBrowser.Implementation
         {
             if (!Browser.Instance.contextMenu.activeSelf)
             {
+                Browser.DeselectUiGameObject();
                 gameObject.SetActive(false);
             }
         }
