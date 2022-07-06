@@ -1,15 +1,14 @@
-# <a href="https://www.youtube.com/watch?v=pmECrkdzHzQ">Watch the video tutorial</a>
-<a href="https://www.youtube.com/watch?v=pmECrkdzHzQ"><img src="https://img.youtube.com/vi/pmECrkdzHzQ/0.jpg" alt="mod.io" width="420"/></a>
-
 <a href="https://mod.io"><img src="https://beta.mod.io/images/branding/modio_logo_bluewhite.svg" alt="mod.io" width="360" align="right"/></a>
-# Mod.io Unity Plugin
-[![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)](https://github.com/modio/modio-unity/blob/master/LICENSE)
+# mod.io Unity Plugin
+[![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)](https://github.com/modio/modio-unity/blob/main/LICENSE.md)
 [![Discord](https://img.shields.io/discord/389039439487434752.svg?label=Discord&logo=discord&color=7289DA&labelColor=2C2F33)](https://discord.mod.io)
 [![Master docs](https://img.shields.io/badge/docs-master-green.svg)](https://github.com/modio/modio-unity-v2/wiki)
 [![Unity 3D](https://img.shields.io/badge/Unity-2018.4+-lightgrey.svg)](https://unity3d.com)
 
 ## Installation
-Requires **Unity 2018.4** or later. Tested on Windows, and MacOS.
+
+### <a href="https://www.youtube.com/watch?v=pmECrkdzHzQ">Watch the video tutorial</a>
+<a href="https://www.youtube.com/watch?v=pmECrkdzHzQ"><img src="https://img.youtube.com/vi/pmECrkdzHzQ/0.jpg" alt="mod.io" width="420"/></a>
 
 ### Git Repository or .unitypackage
 You can import the plugin directly from the [Unity Asset Store](https://assetstore.unity.com/packages/tools/integration/mod-browser-manager-by-mod-io-138866), or by downloading the package directly from the [Releases page](https://github.com/modio/modio-unity/releases). If you have any previous versions of the plugin installed, it is highly recommended to delete them before importing a newer version.
@@ -21,9 +20,9 @@ Alternatively, you can download an archive of the code using GitHub's download f
 1. Set up your [game profile on mod.io](https://mod.io/games/add) (or our [private test environment](https://test.mod.io/games/add)) to get your game ID and API key. 
 2. Add the plugin to your project using the installation instructions above.
 3. Ensure you dont have any conflicting libraries by going to Assets/Plugins/mod.io/ThirdParty to remove any libraries you may already have in your project (such as JsonNet).
-4. Restart unity to ensure it recognises the new assembly definitions.
+4. Restart Unity to ensure it recognises the new assembly definitions.
 5. Go to Tools > mod.io > Edit Settings to locate the config file.
-6. Select the config file and use the inspector to assign your game ID and API key in server settings (Make sure to deselect the config file before using playmode in the editor. A known unity bug can cause the editor to crash in 2019-2021).
+6. Select the config file and use the inspector to assign your game ID and API key in server settings (Make sure to deselect the config file before using playmode in the editor. A known Unity bug can cause the editor to crash in 2019-2021).
 7. Setup complete! Join us [on Discord](https://discord.mod.io) if you have any questions or need help.
 
 ## Setting up the Browser UI
@@ -41,23 +40,23 @@ In the current version of the plugin it is required that a user session is authe
 
 
 ## Usage
-below are a couple examples for some of the common usages of the plugin. Such as initialising, authenticating, enabling automatic downloads and installs, and getting a few mods from the mod.io server.
+Below are a couple examples for some of the common usages of the plugin. Such as initialising, authenticating, enabling automatic downloads and installs, and getting a few mods from the mod.io server.
 
 All of the methods required to use the plugin can be found in ModIOUnity.cs. If you prefer using async methods over callbacks you can alternatively use ModIOUnityAsync.cs to use an async variation of the same methods.
 
-### Initialise the plugin
+### Initialize the plugin
 ```javascript
 void async Example()
 {
-    Result result = await ModIOUnityAsync.InitialiseForUserAsync("ExampleUser");
+    Result result = await ModIOUnityAsync.InitializeForUserAsync("ExampleUser");
  
     if (result.Succeeded())
     {
-        Debug.Log("Initialised plugin");
+        Debug.Log("Initialized plugin");
     }
     else
     {
-        Debug.Log("Failed to initialise plugin");
+        Debug.Log("Failed to initialize plugin");
     {
 }
 ```
@@ -157,7 +156,7 @@ void async Example()
 }
 ```
 
-##Submitting mods
+## Submitting mods
 You can also submit mods directly from the plugin. Refer to the documentation for methods such as ModIOUnity.CreateModProfile and ModIOUnity.UploadModfile.
 
 Users can also submit mods directly from the mod.io website by going to your game profile page. Simply create an account and upload mods directly.
@@ -181,7 +180,7 @@ mod.io offers the same core functionality as Steamworks Workshop (1 click mod in
 A private white label option is available to license, if you want a fully featured mod-platform that you can control and host in-house. [Contact us](mailto:developers@mod.io?subject=Whitelabel) to discuss.
 
 ## Contributions Welcome
-Our Unity plugin is public and open source. Game developers are welcome to utilize it directly, to add support for mods in their games, or fork it for their games customized use. Want to make changes to our plugin? Submit a pull request with your recommended changes to be reviewed.
+Our Unity plugin is public and open source. Game developers are welcome to utilize it directly, to add support for mods in their games, or fork it for their games customized use.
 
 ## Other Repositories
 Our aim with [mod.io](https://mod.io), is to provide an [open modding API](https://docs.mod.io). You are welcome to [view, fork and contribute to our other codebases](https://github.com/modio) in use.
