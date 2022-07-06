@@ -13,7 +13,7 @@ namespace ModIO.Implementation.Platform
     {
         /// <summary>Root directory for all data services.</summary>
         public readonly static string GlobalRootDirectory =
-            $@"{System.IO.Directory.GetCurrentDirectory()}/mod.io";
+            $@"{Application.persistentDataPath}/mod.io";
         
 #region Data
 
