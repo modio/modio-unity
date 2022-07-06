@@ -1,179 +1,187 @@
-<a href="https://mod.io"><img src="https://static.mod.io/v1/images/branding/modio-color-dark.svg" alt="mod.io" width="360" align="right"/></a>
-# Unity Engine Plugin
+# <a href="https://www.youtube.com/watch?v=pmECrkdzHzQ">Watch the video tutorial</a>
+<a href="https://www.youtube.com/watch?v=pmECrkdzHzQ"><img src="https://img.youtube.com/vi/pmECrkdzHzQ/0.jpg" alt="mod.io" width="420"/></a>
+
+<a href="https://mod.io"><img src="https://beta.mod.io/images/branding/modio_logo_bluewhite.svg" alt="mod.io" width="360" align="right"/></a>
+# Mod.io Unity Plugin
 [![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)](https://github.com/modio/modio-unity/blob/master/LICENSE)
 [![Discord](https://img.shields.io/discord/389039439487434752.svg?label=Discord&logo=discord&color=7289DA&labelColor=2C2F33)](https://discord.mod.io)
-[![Unity 3D](https://img.shields.io/badge/Unity-2017.8+-lightgrey.svg)](https://unity3d.com)
-<!--- [![Master docs](https://img.shields.io/badge/docs-master-green.svg)](https://github.com/modio/modio-unity/wiki) -->
-
-Welcome to [mod.io](https://mod.io) Unity Plugin. It allows game developers to easily control the browsing and installation of User-Generated Content in UGC-supported games. The C# interface built on the Unity Engine provides an easy way of connecting to the [mod.io API](https://docs.mod.io). We have a [test environment](https://test.mod.io) available which offers developers a private sandbox to try the Unity Plugin.
-
-<p align="center"><a href="https://assetstore.unity.com/packages/templates/systems/mod-browser-manager-138866"><img src="https://cdn-images-1.medium.com/max/1600/1*eopj1hgjlJJZ8Q9l8dNVBA.png"></a></p>
-
-## Features
-* Platform agnostic (support 1 click mod installs on Steam, Epic Games Store, Discord, GOG, itch.io and even consoles in the future)
-* Clientless (it has no other dependencies and works behind the scenes in your game)
-* Ready-to-go, fully functional and customizable mod browsing UI
-* C# interface built on the Unity Engine for connecting to the [mod.io API](https://docs.mod.io)
-* Powerful search, filtering and tagging of mods
-* Player preference and account management
+[![Master docs](https://img.shields.io/badge/docs-master-green.svg)](https://github.com/modio/modio-unity-v2/wiki)
+[![Unity 3D](https://img.shields.io/badge/Unity-2018.4+-lightgrey.svg)](https://unity3d.com)
 
 ## Installation
-Requires **Unity 2018.4** or later. Tested in-editor on Windows and MacOS.
+Requires **Unity 2018.4** or later. Tested on Windows, and MacOS.
 
-### Asset Store or .unitypackage
-Import a package from the [Asset Store](https://assetstore.unity.com/packages/templates/systems/mod-browser-manager-138866)
-or the [Releases page](https://github.com/modio/modio-unity/releases).
-If you have any previous versions of the plugin installed, it is highly recommended to delete them before importing a newer version.
+### Git Repository or .unitypackage
+You can import the plugin directly from the [Unity Asset Store](https://assetstore.unity.com/packages/tools/integration/mod-browser-manager-by-mod-io-138866), or by downloading the package directly from the [Releases page](https://github.com/modio/modio-unity/releases). If you have any previous versions of the plugin installed, it is highly recommended to delete them before importing a newer version.
 
 Alternatively, you can download an archive of the code using GitHub's download feature and place it in the Assets/Plugins directory within your Unity project.
 
 ## Getting started
 
-1. Implement support for user-generated content in your project. Maps, skins, or game modes are often a good place to start.
-1. Set up your [game profile on mod.io](https://mod.io/games/add) (or our [private test environment](https://test.mod.io/games/add)) to get your game ID and API key.
-1. Add the plugin to your game using the installation instructions above.
-1. Drop the ModBrowser prefab into your menu scene, or adapt the Example Scene for your purposes.
-1. Input your ID and API key under the `Tools/mod.io/Edit Settings` menu item.
-1. In your code, initialize the plugin with `ModIOUnity.InitializeForUser()` then make use of the `ModIOUnity` interface to get the information you need.
-1. Setup complete! Join us [on Discord](https://discord.mod.io) if you have questions or need help.
+1. Set up your [game profile on mod.io](https://mod.io/games/add) (or our [private test environment](https://test.mod.io/games/add)) to get your game ID and API key. 
+2. Add the plugin to your project using the installation instructions above.
+3. Ensure you dont have any conflicting libraries by going to Assets/Plugins/mod.io/ThirdParty to remove any libraries you may already have in your project (such as JsonNet).
+4. Restart unity to ensure it recognises the new assembly definitions.
+5. Go to Tools > mod.io > Edit Settings to locate the config file.
+6. Select the config file and use the inspector to assign your game ID and API key in server settings (Make sure to deselect the config file before using playmode in the editor. A known unity bug can cause the editor to crash in 2019-2021).
+7. Setup complete! Join us [on Discord](https://discord.mod.io) if you have any questions or need help.
 
-All mods [submitted to mod.io](https://mod.io/mods/add) will be automatically fetched and managed by the plugin, and are instantly downloadable and testable.
+## Setting up the Browser UI
+
+If you do not wish to create your own UI implementation you can use our default UI that comes built in to the plugin. (If you dont wish to use the UI it is safe to delete the UI folder located at Assets/Plugins/mod.io/UI)
+
+1. Follow the steps above to setup the config.
+2. Navigate to the ModIOBrowser prefab at Assets/Plugins/mod.io/UI/Examples and drag it into your scene.
+3. Use the ModIOBrowser.Browser.OpenBrowser() method to open the browser in your scene. 
+`ModIOBrowser.Browser.OpenBrowser(null)`
+4. The Browser UI is now setup!
+
+## Authentication
+In the current version of the plugin it is required that a user session is authenticated. Either via email or through another third party, such as Steam or Google. The process is fairly simply. Examples can be found below. 
+
 
 ## Usage
-### Browse Mods
-```java
-// -- Get as many mods as possible (unfiltered) --
-APIClient.GetAllMods(RequestFilter.None,
-                     null,
-                     (r) => OnModsReceived(r.items),
-                     (e) => OnError(e));
+below are a couple examples for some of the common usages of the plugin. Such as initialising, authenticating, enabling automatic downloads and installs, and getting a few mods from the mod.io server.
 
+All of the methods required to use the plugin can be found in ModIOUnity.cs. If you prefer using async methods over callbacks you can alternatively use ModIOUnityAsync.cs to use an async variation of the same methods.
 
-// -- Get a specified subset of filtered mods --
-RequestFilter filter = new RequestFilter();
-filter.sortFieldName = API.GetAllModsFilterFields.dateLive;
-filter.isSortAscending = false;
-filter.fieldFilters[API.GetAllModsFilterFields.name]
-	= new StringLikeFilter() { likeValue = "mod" };
-
-APIPaginationParameters pagination = new APIPaginationParameters()
+### Initialise the plugin
+```javascript
+void async Example()
 {
-	offset = 20,
-	limit = 10,
-};
-
-APIClient.GetAllMods(filter
-                     pagination
-                     (r) => OnModsReceived(r.items),
-                     (e) => OnError(e));
+    Result result = await ModIOUnityAsync.InitialiseForUserAsync("ExampleUser");
+ 
+    if (result.Succeeded())
+    {
+        Debug.Log("Initialised plugin");
+    }
+    else
+    {
+        Debug.Log("Failed to initialise plugin");
+    {
+}
 ```
 
-### User Authentication
-```java
-// -- Authenticate using external service using wrapper functions --
-APIClient.GetTermsOfUse(UserPortal.GOG,
-                        (termsInfo) => DisplayTermsOfUse(termsInfo),
-                        (e) => OnError(e));
-
-bool hasUserConsentedToTermsOfUse = true;
-
-UserAccountManagement.AuthenticateWithGOGEncryptedAppTicket(ticketData, ticketSize,
-                                                            hasUserConsentedToTermsOfUse,
-                                                            (userProfile) => OnUserAuthenticated(userProfile),
-                                                            (e) => OnError(e));
-
-
-
-// -- Authenticate via email-flow manually using APIClient --
-APIClient.SendSecurityCode("player@email_address.com",
-                           (message) => OnSecurityCodeSent(),
-                           (e) => OnError(e));
-
-APIClient.GetOAuthToken(securityCodeFromEmail,
-                        (token) => OnTokenReceived(token),
-                        (e) => OnError(e));
-
-LocalUser.instance = new LocalUser();
-LocalUser.OAuthToken = receivedOAuthToken;
-
-APIClient.GetAuthenticatedUser((userProfile) => OnProfileReceived(userProfile),
-                               (e) => OnError(e));
-
-LocalUser.Profile = userProfile;
-LocalUser.Save();
+### Get the user's installed mods
+```javascript
+void Example()
+{
+    SubscribedMod[] mods = ModIOUnity.GetSubscribedMods(out Result result);
+    if (result.Succeeded())
+    {
+        foreach(var mod in mods)
+        {
+            if(mod.status == SubscribedModStatus.Installed)
+            {
+                string directoryWithInstalledMod = mod.directory;
+            }
+        }
+    }
+}
 ```
 
-### Manage Subscriptions
-```java
-// -- Sub/Unsubscribe --
-UserAccountManagement.SubscribedToMod(modId);
-UserAccountManagement.UnsubscribeFromMod(modId);
+### Enable automatic mod downloads and installs
+```javascript
+void Example()
+{
+    Result result = ModIOUnity.EnableModManagement(ModManagementDelegate);
 
-// -- Fetch and Store ---
-APIClient.GetUserSubscriptions(RequestFilter.None,
-                               null,
-                               (subscribedMods) => OnSubscriptionsReceived(subscribedMods),
-                               (e) => OnError(e));
-
-int[] modIds = Utility.MapProfileIds(subscribedMods);
-LocalUser.SubscribedModIds = new List<int>(modIds);
-
-// -- Download, Update, and Install Subscribed Mods --
-activeSceneComponent.StartCoroutine(ModManager.DownloadAndUpdateMods_Coroutine(modIds,
-                                                                               () => OnCompleted()));
+    if (result.Succeeded())
+    {
+        Debug.Log("Enabled mod management");
+    }
+    else
+    {
+        Debug.Log("Failed to enable mod management");
+    {
+}
+ 
+// The following method will get invoked whenever an event concerning mod management occurs
+void ModManagementDelegate(ModManagementEventType eventType, ModId modId)
+{
+    Debug.Log("a mod management event of type " + eventType.ToString() + " has been invoked");
+}
 ```
 
-### Submit Mods
-```java
-// -- Changes to a Mod Profile --
-EditableModProfile modEdits = EditableModProfile.CreateFromProfile(existingModProfile);
-modEdits.name.value = "Updated Mod Name";
-modEdits.name.isDirty = true;
-modEdits.tags.value = new string[] { "campaign" };
-modEdits.tags.isDirty = true;
+### Authenticate a user
+In the current version of the plugin it is required that a user session is authenticated in order to subscribe and download mods. You can accomplish this with an email address or through another third party service, such as Steam or Google. Below is an example of how to do this from an email address provided by the user. A security code will be sent to their email account and can be used to authenticate (The plugin will cache the session token to avoid having to re-authenticate every time they run the application).
+```javascript
+void async RequestEmailCode()
+{
+    Result result = await ModIOUnityAsync.RequestAuthenticationEmail("johndoe@gmail.com");
+ 
+    if (result.Succeeded())
+    {
+        Debug.Log("Succeeded to send security code");
+    }
+    else
+    {
+        Debug.Log("Failed to send security code to that email address");
+    }
+}
 
-ModManager.SubmitModChanges(modId,
-                            modEdits,
-                            (updatedProfile) => OnChangesSubmitted(updatedProfile),
-                            (e) => OnError(e));
-
-// -- Upload a new build --
-EditableModfile modBuildInformation = new EditableModfile();
-modBuildInformation.version.value = "1.2.0";
-modBuildInformation.version.isDirty = true;
-modBuildInformation.version.changelog = "Changes were made!";
-modBuildInformation.version.isDirty = true;
-modBuildInformation.version.metadatBlob = "Some game-specific metadata";
-modBuildInformation.version.isDirty = true;
-
-ModManager.UploadModBinaryDirectory(modId,
-                                    modBuildInformation,
-                                    true, // set as the current build
-                                    (modfile) => OnUploaded(modfile),
-                                    (e) => OnError(e));
+void async SubmitCode(string userSecurityCode)
+{
+    Result result = await ModIOUnityAsync.SubmitEmailSecurityCode(userSecurityCode);
+ 
+    if (result.Succeeded())
+    {
+        Debug.Log("You have successfully authenticated the user");
+    }
+    else
+    {
+        Debug.Log("Failed to authenticate the user");
+    }
+}
 ```
+
+### Get Mod profiles from the mod.io server
+```javascript
+void async Example()
+{
+    // create a filter to retreive the first ten mods for your game
+    SearchFilter filter = new SearchFilter();
+    filter.SetPageIndex(0);
+    filter.SetPageSize(10);
+    
+    ResultAnd<ModPage> response = await ModIOUnityAsync.GetMods(filter);
+
+    if (response.result.Succeeded())
+    {
+        Debug.Log("ModPage has " + response.value.mods.Length + " mods");
+    }
+    else
+    {
+        Debug.Log("failed to get mods");
+    }
+}
+```
+
+##Submitting mods
+You can also submit mods directly from the plugin. Refer to the documentation for methods such as ModIOUnity.CreateModProfile and ModIOUnity.UploadModfile.
+
+Users can also submit mods directly from the mod.io website by going to your game profile page. Simply create an account and upload mods directly.
 
 ## Dependencies
-The [mod.io](https://mod.io) Unity Plugin requires the functionality of two other open-source Unity plugins to run.
-These two plugins have been vendored in and can be found under `mod.io/ThirdParty`:
+The [mod.io](https://mod.io) Unity Plugin requires the functionality of two other open-source Unity plugins to run. These are included as libraries in the UnityPackage in the `Assets/Plugins/mod.io/ThirdParty` directory:
 * Json.Net for improved Json serialization. ([GitHub Repo](https://github.com/SaladLab/Json.Net.Unity3D) || [Unity Asset Store Page](https://assetstore.unity.com/packages/tools/input-management/json-net-for-unity-11347))
 * SharpZipLib to zip and unzip transmitted files. ([GitHub Repo](https://github.com/icsharpcode/SharpZipLib))
 
 ## Benefits
 mod.io offers the same core functionality as Steamworks Workshop (1 click mod installs in-game), plus mod hosting, moderation and all of the critical pieces needed. Where we differ is our approach to modding and the flexibility a REST API offers. For example: 
 
-* Our API is not dependent on a client or SDK, allowing you to run mod.io in many places such as your homepage and launchers
-* Designing a good mod browsing UI is hard, our plugin ships with a UI built in to save you a lot of effort and help your mods stand out
-* We don’t apply rules globally, so if you want to enable patronage, sales or other experimental features, reach out to discuss
-* Our platform is built by the super experienced ModDB.com team and is continually improving for your benefit
-* Your community can consume the mod.io API to build modding fan sites or discord bots if they want
+* Our API is not dependent on a client, platform or SDK, allowing you to run mod.io in many places such as your homepage and launchers.
+* Designing a good mod browsing UI is hard, our plugin ships with a UI built in to save you a lot of effort and help your mods stand out.
+* We don’t apply rules globally, so if you want to enable patronage, sales or other experimental features, reach out to discuss.
+* Our platform is built by the super experienced ModDB.com team and is continually improving for your benefit.
+* Your community can consume the mod.io API to build modding fan sites or discord bots if they want.
 * Communicate and interact with your players, using our built-in emailer
 
 ## Large studios and Publishers
 A private white label option is available to license, if you want a fully featured mod-platform that you can control and host in-house. [Contact us](mailto:developers@mod.io?subject=Whitelabel) to discuss.
 
 ## Contributions Welcome
-Our Unity plugin is public and open source. Game developers are welcome to utilize it directly, to add support for mods in their games, or fork it for their games customized use.
+Our Unity plugin is public and open source. Game developers are welcome to utilize it directly, to add support for mods in their games, or fork it for their games customized use. Want to make changes to our plugin? Submit a pull request with your recommended changes to be reviewed.
 
 ## Other Repositories
 Our aim with [mod.io](https://mod.io), is to provide an [open modding API](https://docs.mod.io). You are welcome to [view, fork and contribute to our other codebases](https://github.com/modio) in use.
