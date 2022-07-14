@@ -1,7 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using ModIO.Implementation.API.Requests;
 using ModIO.Implementation.API.Objects;
-using UnityEngine;
 
 namespace ModIO.Implementation
 {
@@ -136,6 +136,13 @@ namespace ModIO.Implementation
             profile.creatorUsername = modObject.submitted_by.username ?? "";
             profile.archiveFileSize = modObject.modfile.id == ModProfileNullId ? 
                 ModProfileUnsetFilesize : modObject.modfile.filesize;
+            
+            List<string> tags = new List<string>();
+            foreach(ModTagObject tag in modObject.tags)
+            {
+                tags.Add(tag.name);
+            }
+            profile.tags = tags.ToArray();
 
             // set time dates
             profile.dateLive = GetUTCDateTime(modObject.date_live);
