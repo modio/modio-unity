@@ -56,8 +56,12 @@ public class SettingsAssetEditor : Editor
 			}
 		}
 		
-		EditorUtility.SetDirty(this);
-		EditorUtility.SetDirty(myTarget);
+		if(GUI.changed)
+		{
+			AssetDatabase.Refresh();
+			EditorUtility.SetDirty(myTarget);
+			AssetDatabase.SaveAssets();
+		}
 	}
 
 }
