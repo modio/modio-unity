@@ -1,5 +1,8 @@
 ﻿namespace ModIO
 {
+    /// <summary>
+    /// Detailed stats about a Mod's ratings, downloads, subscribers, popularity etc
+    /// </summary>
     [System.Serializable]
     public struct ModStats
     {

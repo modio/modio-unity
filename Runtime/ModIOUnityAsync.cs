@@ -8,6 +8,12 @@ using System.Threading.Tasks;
 
 namespace ModIO
 {
+    /// <summary>
+    /// Main async interface for the mod.io Unity plugin. Every method within
+    /// ModIOUnity.cs that has a callback can also be found in ModIOUnityAsync with an asynchronous
+    /// alternative method (if you'd rather not use callbacks).
+    /// </summary>
+    /// <seealso cref="ModIOUnity"/>
     public static class ModIOUnityAsync
     {
 #region Initialization and Maintenance

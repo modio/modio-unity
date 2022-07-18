@@ -1,6 +1,10 @@
 namespace ModIO
 {
-    /// <summary>Values representing the valid User Portals that mod.io works with.</summary>
+    /// <summary>
+    /// Values representing the valid User Portals that mod.io works with.
+    /// Used when setting up BuildSettings.
+    /// </summary>
+    /// <seealso cref="BuildSettings"/>
     public enum UserPortal
     {
         None = 0,

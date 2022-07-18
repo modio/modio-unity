@@ -2,6 +2,9 @@
 
 namespace ModIO
 {
+    /// <summary>
+    /// A struct representing the globally unique identifier for a specific mod profile.
+    /// </summary>
     [System.Serializable, TypeConverter(typeof(ModIdConverter))]
     public struct ModId
     {

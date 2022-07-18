@@ -1,6 +1,13 @@
 ﻿namespace ModIO
 {
-    /// <summary>Describes the server settings to use for the ModIO Plugin.</summary>
+    /// <summary>
+    /// Describes the server settings to use for the ModIO Plugin.
+    /// This can be setup directly from the inspector when editing the config settings file, or you
+    /// can instantiate and use this at runtime with the Initialize method
+    /// </summary>
+    /// <seealso cref="BuildSettings"/>
+    /// <seealso cref="ModIOUnity.InitializeForUser"/>
+    /// <seealso cref="ModIOUnityAsync.InitializeForUser"/>
     [System.Serializable]
     public struct ServerSettings
     {

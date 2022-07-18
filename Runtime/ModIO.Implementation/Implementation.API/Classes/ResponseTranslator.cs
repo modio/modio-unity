@@ -5,6 +5,10 @@ using ModIO.Implementation.API.Objects;
 
 namespace ModIO.Implementation
 {
+    /// <summary>
+    /// Used to convert raw objects received from web requests into curated objects for the user.
+    /// such as converting a ModObject into a ModProfile.
+    /// </summary>
     internal static class ResponseTranslator
     {
         const int ModProfileNullId = 0;
@@ -132,11 +136,21 @@ namespace ModIO.Implementation
             profile.id = new ModId(modObject.id);
             profile.name = modObject.name ?? "";
             profile.summary = modObject.summary ?? "";
+            profile.status = (ModStatus)modObject.status;
+            profile.visible = modObject.visible == 1;
+            profile.contentWarnings = (ContentWarnings)modObject.maturity_option;
             profile.description = modObject.description_plaintext ?? "";
             profile.creatorUsername = modObject.submitted_by.username ?? "";
+            profile.metadata = modObject.metadata_blob;
             profile.archiveFileSize = modObject.modfile.id == ModProfileNullId ? 
                 ModProfileUnsetFilesize : modObject.modfile.filesize;
-            
+
+            // set time dates
+            profile.dateLive = GetUTCDateTime(modObject.date_live);
+            profile.dateAdded = GetUTCDateTime(modObject.date_added);
+            profile.dateUpdated = GetUTCDateTime(modObject.date_updated);
+
+            // set tags
             List<string> tags = new List<string>();
             foreach(ModTagObject tag in modObject.tags)
             {
@@ -144,10 +158,17 @@ namespace ModIO.Implementation
             }
             profile.tags = tags.ToArray();
 
-            // set time dates
-            profile.dateLive = GetUTCDateTime(modObject.date_live);
-            profile.dateAdded = GetUTCDateTime(modObject.date_added);
-            profile.dateUpdated = GetUTCDateTime(modObject.date_updated);
+            // set metadata kvps
+            if(modObject.metadata_kvp != null)
+            {
+                profile.metadataKeyValuePairs = new KeyValuePair<string, string>[modObject.metadata_kvp.Length];
+                for(int i = 0; i < modObject.metadata_kvp.Length; i++)
+                {
+                    profile.metadataKeyValuePairs[i] = new KeyValuePair<string, string>(
+                        modObject.metadata_kvp[i].metakey,
+                        modObject.metadata_kvp[i].metavalue);
+                }
+            }
             
             // Create DownloadReferences
             // Gallery
@@ -172,6 +193,7 @@ namespace ModIO.Implementation
                                                 modObject.media.images[i].original, profile.id);
                 }
             }
+            
             // Logo
             profile.logoImage_320x180 = CreateDownloadReference(
                 modObject.logo.filename, modObject.logo.thumb_320x180, profile.id);
@@ -181,6 +203,7 @@ namespace ModIO.Implementation
                 modObject.logo.filename, modObject.logo.thumb_1280x720, profile.id);
             profile.logoImage_Original = CreateDownloadReference(
                 modObject.logo.filename, modObject.logo.original, profile.id);
+            
             // Avatar
             profile.creatorAvatar_100x100 =
                 CreateDownloadReference(modObject.submitted_by.avatar.filename,

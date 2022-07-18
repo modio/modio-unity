@@ -1,8 +1,14 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace ModIO
 {
-    [System.Serializable]
+    /// <summary>
+    /// A struct representing all of the information available for a ModProfile.
+    /// </summary>
+    /// <seealso cref="ModIOUnity.GetMod"/>
+    /// <seealso cref="ModIOUnityAsync.GetMod"/>
+    [Serializable]
     public struct ModProfile
     {
         public ModId id;
@@ -28,6 +34,7 @@ namespace ModIO
         public DownloadReference creatorAvatar_100x100;
         public DownloadReference creatorAvatar_Original;
         public string metadata;
+        public KeyValuePair<string, string>[] metadataKeyValuePairs;
         public ModStats stats;
         public long archiveFileSize;
     }

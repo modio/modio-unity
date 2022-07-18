@@ -73,7 +73,7 @@ namespace ModIO.Implementation.API
                     LogLevel.Error,
                     $"Failed to deserialize a response from the mod.io server. The data"
                         + $" may have been corrupted or isnt a valid Json format.\n\n[JsonUtility:"
-                        + $" {e.Message}] - Raw Response: {response}");
+                        + $" {e.Message}] - {e.InnerException} - Raw Response: {response}");
                 return default;
             }
         }

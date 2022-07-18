@@ -1,6 +1,12 @@
 ﻿
 namespace ModIO
 {
+    /// <summary>
+    /// Represents a particular category of tags.
+    /// </summary>
+    /// <seealso cref="ModIOUnity.GetTagCategories"/>
+    /// <seealso cref="ModIOUnityAsync.GetTagCategories"/>
+    /// <seealso cref="Tag"/>
     [System.Serializable]
     public struct TagCategory
     {

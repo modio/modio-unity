@@ -9,6 +9,8 @@ namespace ModIO
     /// summary, otherwise the submission will be rejected (All fields except modId are optional if
     /// submitting this via EditModProfile)
     /// </summary>
+    /// <seealso cref="ModIOUnity.CreateModProfile"/>
+    /// <seealso cref="ModIOUnity.EditModProfile"/>
     public class ModProfileDetails
     {
         /// <summary>

@@ -61,8 +61,8 @@ namespace ModIO.Implementation
                 Logger.Log(
                     LogLevel.Error,
                     "You attempted to use a method but the plugin hasn't been initialized yet."
-                    + " Be sure to use ModIOUnity.InitializeForUserAsync to initialize the plugin "
-                    + "before attempting this method again.");
+                    + " Be sure to use ModIOUnity.InitializeForUser to initialize the plugin "
+                    + "before attempting this method again (Or ModIOUnityAsync.InitializeForUser).");
                 return false;
             }
         }

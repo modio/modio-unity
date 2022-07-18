@@ -2,8 +2,8 @@
 {
     public enum ModStatus
     {
-        Accepted,
-        NotAccepted,
-        Deleted
+        Accepted = 0,
+        NotAccepted = 1,
+        Deleted = 3
     }
 }
