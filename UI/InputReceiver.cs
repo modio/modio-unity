@@ -11,7 +11,7 @@ namespace ModIOBrowser
     /// </summary>
     public static class InputReceiver
 	{
-		internal static InputBlockingForInputFieldComponent currentSelectedInputField;
+		internal static InputFieldCoadjutant currentSelectedInputField;
 
 		/// <summary>
 		/// Used as a 'back' option.
@@ -34,10 +34,6 @@ namespace ModIOBrowser
 		/// </remarks>
 		public static void OnAlternate()
 		{
-			if(currentSelectedInputField != null)
-			{
-				return;
-			}
             Browser.Instance.SetToControllerNavigation();
             Browser.Alternate();
 		}
@@ -50,10 +46,6 @@ namespace ModIOBrowser
 		/// </remarks>
 		public static void OnOptions()
 		{
-			if(currentSelectedInputField != null)
-			{
-				return;
-			}
             Browser.Instance.SetToControllerNavigation();
             Browser.Options();
 		}
@@ -63,10 +55,6 @@ namespace ModIOBrowser
 		/// </summary>
 		public static void OnTabRight()
 		{
-			if(currentSelectedInputField != null)
-			{
-				return;
-			}
             Browser.Instance.SetToControllerNavigation();
             Browser.TabRight();
 		}
@@ -76,10 +64,6 @@ namespace ModIOBrowser
 		/// </summary>
 		public static void OnTabLeft()
 		{
-			if(currentSelectedInputField != null)
-			{
-				return;
-			}
             Browser.Instance.SetToControllerNavigation();
             Browser.TabLeft();
 		}
@@ -92,10 +76,6 @@ namespace ModIOBrowser
 		/// </remarks>
 		public static void OnSearch()
 		{
-			if(currentSelectedInputField != null)
-			{
-				return;
-			}
             Browser.Instance.SetToControllerNavigation();
             Browser.SearchInput();
 		}
@@ -108,10 +88,6 @@ namespace ModIOBrowser
 		/// </remarks>
 		public static void OnMenu()
 		{
-			if(currentSelectedInputField != null)
-			{
-				return;
-			}
             Browser.Instance.SetToControllerNavigation();
             Browser.MenuInput();
 		}
@@ -125,10 +101,6 @@ namespace ModIOBrowser
 		/// </remarks>
 		public static void OnControllerScroll(float direction)
 		{
-			if(currentSelectedInputField != null)
-			{
-				return;
-			}
             Browser.Instance.SetToControllerNavigation();
             Browser.Scroll(direction);
 		}

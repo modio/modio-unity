@@ -5,7 +5,6 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
-using ModIO.Implementation;
 
 namespace ModIOBrowser.Implementation
 {
@@ -94,7 +93,7 @@ namespace ModIOBrowser.Implementation
             loadingIcon.SetActive(true);
             failedToLoadIcon.SetActive(false);
             title.text = string.Empty;
-            //downloads.text = string.Empty;
+            gameObject.SetActive(true);
         }
 
         public override void Setup(ModProfile profile)
@@ -117,16 +116,15 @@ namespace ModIOBrowser.Implementation
         public override void SetViewportRestraint(RectTransform content, RectTransform viewport)
         {
             base.SetViewportRestraint(content, viewport);
-            viewportRestraint.Top = 376;
-            viewportRestraint.Bottom = 124;
+            
+            viewportRestraint.PercentPaddingVertical = 0.3f;
         }
         
 #endregion // Overrides
         
         public void SetAsLastRowItem()
         {
-            viewportRestraint.Top = 100;
-            viewportRestraint.Bottom = 540;
+            viewportRestraint.PercentPaddingVertical = 0.375f;
         }
 
         void SetIcon(ResultAnd<Texture2D> textureAnd)

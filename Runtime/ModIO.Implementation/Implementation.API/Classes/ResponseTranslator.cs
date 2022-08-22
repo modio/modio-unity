@@ -253,6 +253,7 @@ namespace ModIO.Implementation
             user.avatar_100x100 = CreateDownloadReference(
                 userObject.avatar.filename, userObject.avatar.thumb_100x100, (ModId)0);
             user.username = userObject.username;
+            user.portal_username = userObject.display_name_portal;
             user.language = userObject.language;
             user.timezone = userObject.timezone;
             return user;

@@ -3,6 +3,7 @@ using ModIO;
 
 namespace ModIOBrowser.Implementation
 {
+
     /// <summary>
     /// Generic utility class for repeated calculations or operations.
     /// </summary>

@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using ModIO;
-using ModIO.Implementation;
 using ModIOBrowser.Implementation;
 using TMPro;
 using UnityEngine;
@@ -42,6 +41,7 @@ namespace ModIOBrowser
         [SerializeField] TMP_Text ModDetailsDownloadProgressSpeed;
         [SerializeField] TMP_Text ModDetailsDownloadProgressCompleted;
         [SerializeField] SubscribedProgressTab ModDetailsProgressTab;
+        [SerializeField] GameObject ModDetailsScrollToggleGameObject;
         bool galleryImageInUse;
         Sprite[] ModDetailsGalleryImages;
         bool[] ModDetailsGalleryImagesFailedToLoad;
@@ -50,6 +50,8 @@ namespace ModIOBrowser
         IEnumerator galleryTransition;
         ModProfile currentModProfileBeingViewed;
         IEnumerator downloadProgressUpdater;
+        
+        // We set this action from where the panel is opened so we can also set which panel to re-open when this details panel is closed
         Action modDetailsOnCloseAction;
         
         // measuring the progress bar
@@ -64,7 +66,7 @@ namespace ModIOBrowser
             ModDetailsProgressTab.Setup(profile);
             
             modDetailsOnCloseAction = actionToInvokeWhenClosed;
-            GoToPanel(ModDetailsPanel);
+            GoToPanel_deprecating(ModDetailsPanel);
             SelectionManager.Instance.SelectView(UiViews.ModDetails);
             HydrateModDetailsPanel(profile);
         }
@@ -78,13 +80,17 @@ namespace ModIOBrowser
             {
                 SelectionOverlayHandler.Instance.SetBrowserModListItemOverlayActive(false);
             }
+            else if (modDetailsOnCloseAction == null)
+            {
+                SelectionManager.Instance.SelectPreviousView();
+            }
             else
             {
-                SelectionManager.Instance.SelectView(UiViews.Browse); 
-            }                
+                modDetailsOnCloseAction.Invoke();
+            }
         }
 
-        internal void HydrateModDetailsPanel(ModProfile profile)
+        void HydrateModDetailsPanel(ModProfile profile)
         {
             currentModProfileBeingViewed = profile;
             UpdateModDetailsSubscribeButtonText();

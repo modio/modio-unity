@@ -5,7 +5,6 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
-using ModIO.Implementation;
 
 namespace ModIOBrowser.Implementation
 {
@@ -82,9 +81,7 @@ namespace ModIOBrowser.Implementation
         {
             base.SetViewportRestraint(content, viewport);
 
-            viewportRestraint.UseScreenAsViewport = true;
-            viewportRestraint.Top = 423;
-            viewportRestraint.Bottom = 557;
+            viewportRestraint.PercentPaddingVertical = 0.35f;
         }
 
         public override void Setup(InstalledMod profile)

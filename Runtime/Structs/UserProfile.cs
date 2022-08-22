@@ -7,7 +7,17 @@
     [System.Serializable]
     public struct UserProfile
     {
+        /// <summary>
+        /// The display name of the user's mod.io account
+        /// </summary>
         public string username;
+        
+        /// <summary>
+        /// The display name of the user's account they authenticated with. Eg if they authenticated
+        /// with Steam it would be their Steam username.
+        /// </summary>
+        public string portal_username;
+        
         public DownloadReference avatar_original;
         public DownloadReference avatar_50x50;
         public DownloadReference avatar_100x100;

@@ -18,6 +18,7 @@ namespace ModIOBrowser
      * Browser_Collection.cs         
      * Browser_DownloadQueue.cs
      * Browser_ModDetails.cs
+     * Browser_Notifications.cs
      * Browser_Report.cs
      * Browser_SearchPanel.cs
      * Browser_SearchResults.cs
@@ -27,8 +28,9 @@ namespace ModIOBrowser
     /// The main handler for opening and closing the mod IO Browser.
     /// Use Browser.OpenBrowser() to open and Browser.CloseBrowser() to close.
     /// </summary>
-    public partial class Browser : MonoBehaviour
+    public partial class Browser : SimpleMonoSingleton<Browser>
     {
+        
         // All of the following fields with [SerializeField] attributes are assigned on the prefab
         // from the unity editor inspector 
         [Header("Settings")]
@@ -37,10 +39,10 @@ namespace ModIOBrowser
         
         [Header("Main")]
         public ColorScheme colorScheme;
-        [SerializeField] GameObject BrowserCanvas;
+        public GameObject BrowserCanvas;
 
         [Header("Browse Panel")]
-        [SerializeField] GameObject BrowserPanel;
+        public GameObject BrowserPanel;
         [SerializeField] Transform BrowserPanelContent;
         [SerializeField] ModListRow BrowserPanelModListRow_HighestRated;
         [SerializeField] ModListRow BrowserPanelModListRow_Trending;
@@ -78,7 +80,7 @@ namespace ModIOBrowser
         /// This is set whenever GotoPanel is invoked, the current opened panel is cached so that
         /// when the user uses 'back' it knows which panel to close and go back to
         /// </summary>
-        GameObject currentFocusedPanel;
+        GameObject currentFocusedPanel_deprecating;
 
         [Header("Default Selections")]
         //[SerializeField] Selectable defaultBrowserSelection;
@@ -104,21 +106,48 @@ namespace ModIOBrowser
         // globally cached and used to keep track of the current mod management operation progress
         internal ProgressHandle currentModManagementOperationHandle;
 
-        /// This is assigned on OpenBrowser() and will get invoked each time the Browser is closed.
+        // This is assigned on OpenBrowser() and will get invoked each time the Browser is closed.
         internal static Action OnClose;
+
+        // When we receive onClose callbacks from virtual keyboards we need to ensure they're run on
+        // the main thread. We use the following list to add actions that need to be run, and then
+        // run them in Browser.Update
+        // We add actions to this list via the method AddActionToQueueForMainThread()
+        internal static List<Action> ActionsQueuedForMainThread = new List<Action>();
+        
+        /// <summary>
+        /// This delegate will get invoked whenever an InputField is selected. You can specify what
+        /// virtual keyboard you'd like to open by providing the Browser with a delegate.
+        /// </summary>
+        public static VirtualKeyboardDelegate OpenVirtualKeyboard;
+
+        public delegate void VirtualKeyboardDelegate(string title, 
+                                                     string text, 
+                                                     string placeholder, 
+                                                     VirtualKeyboardType virtualKeyboardType,
+                                                     int characterLimit,
+                                                     bool multiline,
+                                                     Action<string> onClose);
+        
+        /// <summary>
+        /// Represents the type of keyboard layout appropriate for the type of InputField being selected
+        /// </summary>
+        public enum VirtualKeyboardType
+        {
+            Default,
+            Search,
+            EmailAddress
+        }
 
         // if the ModIO plugin hasn't been initialized yet but the user wishes to open the UI we set
         // this to true and open the browser the moment we have been initialized
         static bool openOnInitialize = false;
 
-        // Singleton
-        internal static Browser Instance;
-
         // Use Awake() to setup the Singleton for Browser.cs and initialize the plugin
-        void Awake()
+        protected override void Awake()
         {
-            Instance = this;
-            
+            base.Awake();
+
             if (autoInitialize)
             {
                 ModIOUnity.InitializeForUser("User", OnInitialize);
@@ -158,6 +187,19 @@ namespace ModIOBrowser
                     OpenBrowser_Initialized();
                 }
             }
+
+            // Run queued actions from other threads
+            lock( ActionsQueuedForMainThread )
+            {
+                if(ActionsQueuedForMainThread.Count > 0)
+                {
+                    foreach(Action action in ActionsQueuedForMainThread)
+                    {
+                        action();
+                    }
+                    ActionsQueuedForMainThread.Clear();
+                }
+            }
         }
 
 #region Frontend methods
@@ -180,32 +222,116 @@ namespace ModIOBrowser
             else
             {
                 OpenBrowser_Initialized();
+                //Turn on selection manager and exampleinpute capture?
             }
+        }
+
+        /// <summary>
+        /// Using this method will enable an option in the Authentication modal for a user to
+        /// log in with their Xbox credentials. Simply provide the xbox token and the user's email
+        /// address and the authentication flow for steam will be available.
+        /// </summary>
+        /// <param name="xboxToken">Xbox token</param>
+        /// <param name="userEmail">(Optional) provide the users email address</param>
+        public static void SetupXboxAuthenticationOption(string xboxToken, string userEmail = null)
+        {
+            AddActionToQueueForMainThread(delegate
+            {
+                optionalXboxToken = xboxToken;
+                optionalThirdPartyEmailAddressUsedForAuthentication = userEmail;
+            });
+        }
+
+        /// <summary>
+        /// Using this method will enable an option in the Authentication modal for a user to
+        /// log in with their steam credentials. Simply provide the steam ticket (base 64 encoded)
+        /// and the user's email address and the authentication flow for steam will be available.
+        /// </summary>
+        /// <remarks>
+        /// You can use our utility method to encode the ticket if you're unsure:
+        /// Browser.EncodeEncryptedSteamAppTicket(byte[] ticketData, uint ticketSize).
+        /// If you're using the Facepunch library the app ticket you receive is already pre-trimmed
+        /// so you can simply use ticketData.Length for the ticketSize parameter.
+        /// </remarks>
+        /// <param name="steamToken">base64 encoded app ticket</param>
+        /// <param name="userEmail">(Optional) provide the users email address</param>
+        /// <seealso cref="EncodeEncryptedSteamAppTicket"/>
+        public static void SetupSteamAuthenticationOption(string steamTicket, string userEmail = null)
+        {
+            AddActionToQueueForMainThread(delegate
+            {
+                optionalSteamAppTicket = steamTicket;
+                optionalThirdPartyEmailAddressUsedForAuthentication = userEmail;
+            });
+        }
+
+        /// <summary>
+        /// You can use this to convert your byte[] steam app ticket into a trimmed base64 encoded
+        /// string to be used for the steam authentication.
+        /// </summary>
+        /// <param name="ticketData">the byte[] steam app ticket data</param>
+        /// <param name="ticketSize">the desired length of the ticket to be trimmed to</param>
+        /// <seealso cref="SetupSteamAuthenticationOption"/>
+        /// <returns>base 64 encoded string from the provided steam app ticket</returns>
+        public static string EncodeEncryptedSteamAppTicket(byte[] ticketData, uint ticketSize)
+        {
+            //--------------------------- Assert correct parameters ------------------------------//
+            Debug.Assert(ticketData != null);
+            Debug.Assert(ticketData.Length > 0 && ticketData.Length <= 1024,
+                "[mod.io Browser] Invalid ticketData length. Make sure you have a valid "
+                + "steam app ticket");
+            Debug.Assert(ticketSize > 0 && ticketSize <= ticketData.Length, 
+                "[mod.io Browser] Invalid ticketSize. The ticketSize cannot be larger than"
+                + " the length of the app ticket and must be greater than zero.");
+
+            //------------------------------- Trim the app ticket --------------------------------//
+            byte[] trimmedTicket = new byte[ticketSize];
+            Array.Copy(ticketData, trimmedTicket, ticketSize);
+
+            string base64Ticket = null;
+            try
+            {
+                base64Ticket = Convert.ToBase64String(trimmedTicket);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError($"[mod.io Browser] Unable to convert the app ticket to a "
+                               + $"base64 string, caught exception: {exception.Message} - "
+                               + $"{exception.InnerException?.Message}");
+            }
+
+            return base64Ticket;
         }
 
         /// <summary>
         /// Use this method to properly close and hide the Mod Browser UI.
         /// </summary>
         /// <remarks>
-        /// You may not need to use this method since the browser has the ability to close itself
+        /// You may not need to use this method since the browser has the ability to close itself,
+        /// however if you need to close it for any reason you can do so via this method.
         /// </remarks>
         public static void CloseBrowser()
         {
             openOnInitialize = false;
-            
-            if(Instance == null)
-            {
-                // REVIEW @Jackson see above
-                return;
-            }
 
             // Deactivate the Canvas
-            Instance.BrowserCanvas.SetActive(false);
+            Instance?.BrowserCanvas?.SetActive(false);
             OnClose?.Invoke();
+
+            ExampleInputCapture.Instance.gameObject.SetActive(false);
+            SelectionManager.Instance.gameObject.SetActive(false);
         }
 #endregion // Frontend methods
 
 #region Misc
+        internal static void AddActionToQueueForMainThread(Action action)
+        {
+            lock( ActionsQueuedForMainThread )
+            {
+                ActionsQueuedForMainThread.Add(action);
+            }
+        }
+        
         /// <summary>
         /// We use this to check initialization if the plugin hasn't been initialized we will first
         /// attempt to initialize it ourselves, based on the current config file.
@@ -219,12 +345,12 @@ namespace ModIOBrowser
                 {
                     OpenBrowser_Initialized();
                 }
-                Debug.Log("[ExampleLoader] Initialized ModIO Plugin");
+                Debug.Log("[mod.io Browser] Initialized ModIO Plugin");
             }
             else
             {
                 CloseBrowser();
-                Debug.LogWarning("[ExampleLoader] Failed to Initialize ModIO Plugin. "
+                Debug.LogWarning("[mod.io Browser] Failed to Initialize ModIO Plugin. "
                                  + "Make sure your config file is setup, located in "
                                  + "Assets/Resources/mod.io\nAlso check you are using the correct "
                                  + "server address ('https://api.mod.io/v1' for production or "
@@ -274,6 +400,9 @@ namespace ModIOBrowser
             Instance.RefreshBrowserPanel();
 
             Result result = ModIOUnity.EnableModManagement(Instance.ModManagementEvent);
+
+            ExampleInputCapture.Instance.gameObject.SetActive(true);
+            SelectionManager.Instance.gameObject.SetActive(true);
         }
         
         string GetModNameFromId(ModId id)
@@ -730,7 +859,7 @@ namespace ModIOBrowser
             {
                 Instance.CloseUninstallConfirmation();
             }
-            else if(Instance.currentFocusedPanel != Instance.BrowserPanel)
+            else if(Instance.currentFocusedPanel_deprecating != Instance.BrowserPanel)
             {
                 Instance.OpenBrowserPanel();
             }
@@ -864,7 +993,9 @@ namespace ModIOBrowser
 
         internal static void Scroll(float direction)
         {
-            if(Instance.ModDetailsPanel.activeSelf && !Instance.ReportPanel.activeSelf)
+            if(Instance.ModDetailsPanel.activeSelf
+                && !Instance.ReportPanel.activeSelf
+                && EventSystem.current.currentSelectedGameObject == Instance.ModDetailsScrollToggleGameObject)
             {
                 Vector3 position = Instance.ModDetailsContentRect.position;
                 position.y += direction * (100f * Time.fixedDeltaTime) * -1f;
@@ -879,7 +1010,7 @@ namespace ModIOBrowser
         /// Closes all panels and opens the specified one.
         /// </summary>
         /// <param name="panel">the new GameObject UI panel to enable</param>
-        internal static void GoToPanel(GameObject panel)
+        internal static void GoToPanel_deprecating(GameObject panel)
         {
             // Ensure no other panels are open
             CloseAll();
@@ -887,7 +1018,7 @@ namespace ModIOBrowser
             // Open the specified panel
             panel.SetActive(true);
 
-            Instance.currentFocusedPanel = panel;
+            Instance.currentFocusedPanel_deprecating = panel;
         }
 
         /// <summary>
@@ -918,6 +1049,7 @@ namespace ModIOBrowser
             if(Instance.SearchResultsPanel.activeSelf)
             {
                 Instance.SearchResultsPanel.SetActive(false);
+                SelectionOverlayHandler.Instance.SearchResultListItemOverlay.gameObject.SetActive(false);
             }
             if(Instance.AuthenticationPanel.activeSelf)
             {
@@ -945,7 +1077,15 @@ namespace ModIOBrowser
         {
             if(!isAuthenticated)
             {
-                Instance.OpenAuthenticationPanel();
+                // Toggle authentication panel
+                if(AuthenticationPanel.activeSelf)
+                {
+                    Instance.CloseAuthenticationPanel();
+                }
+                else
+                {
+                    Instance.OpenAuthenticationPanel();
+                }
             }
             else
             {
@@ -972,7 +1112,7 @@ namespace ModIOBrowser
         #endregion // Generic Navigation for panels
 
 
-        #region Browser Panel
+#region Browser Panel
         // These are all of the internal methods that pertain to managing the main home view panel
         // as well as populating it, eg the Featured row and other rows, recently added, most popular
         // etc etc
@@ -983,7 +1123,7 @@ namespace ModIOBrowser
         /// </summary>
         public void OpenBrowserPanel()
         {
-            GoToPanel(Instance.BrowserPanel);
+            GoToPanel_deprecating(Instance.BrowserPanel);
             SelectionManager.Instance.SelectView(UiViews.Browse); 
             UpdateNavbarSelection();
         }
@@ -1200,8 +1340,6 @@ namespace ModIOBrowser
         {
             featuredSelectedName.text = featuredProfiles[featuredIndex].name;
             UpdateFeaturedSubscribeButtonText(featuredProfiles[featuredIndex].id);
-            DeselectUiGameObject();
-            SelectionManager.Instance.SelectView(UiViews.Browse);
 
             // Some of the featured slots will represent a different mod after the carousel moves
             // because there are 10 featured mods but we only have 5 prefabs displayed at a time,
@@ -1351,6 +1489,7 @@ namespace ModIOBrowser
             {
                 ListItem li = ListItem.GetListItem<T>(prefab, list, colorScheme, true);
                 li.PlaceholderSetup();
+                li.SetViewportRestraint(SearchResultsListItemParent as RectTransform, null);
             }
         }
 
@@ -1408,7 +1547,7 @@ namespace ModIOBrowser
             waitingForCallbacks--;
             if(!result.Succeeded())
             {
-                // TODO should we re-attempt this?
+                // TODO we need to setup a reattempt option similar to mod list rows
                 return;
             }
 
@@ -1614,7 +1753,12 @@ namespace ModIOBrowser
         }
 
         public static void SelectGameObject(GameObject go)
-        {         
+        {
+            if(!Instance.BrowserCanvas.activeSelf)
+            {
+                return;
+            }
+            
             if(!mouseNavigation)
             {
                 EventSystem.current.SetSelectedGameObject(go);
@@ -1623,7 +1767,7 @@ namespace ModIOBrowser
 
         public static void SelectSelectable(Selectable s, bool selectEvenWhenUsingMouse = false)
         {
-            if(s == null)
+            if(!Instance.BrowserCanvas.activeSelf || s == null)
             {
                 return;
             }

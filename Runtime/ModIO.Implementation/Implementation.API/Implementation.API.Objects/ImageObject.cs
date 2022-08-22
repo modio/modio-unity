@@ -1,7 +1,7 @@
 ﻿namespace ModIO
 {
     [System.Serializable]
-    internal class ImageObject
+    internal struct ImageObject
     {
         public string filename;
         public string original;

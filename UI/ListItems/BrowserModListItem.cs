@@ -119,8 +119,7 @@ namespace ModIOBrowser.Implementation
 
             viewportRestraint.adjustVertically = false;
             viewportRestraint.adjustHorizontally = true;
-            viewportRestraint.Left = 64;
-            viewportRestraint.Right = 64;
+            viewportRestraint.PercentPaddingHorizontal = 0.025f;
         }
 
 #endregion // Overrides

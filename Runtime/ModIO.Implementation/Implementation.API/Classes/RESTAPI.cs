@@ -576,7 +576,9 @@ namespace ModIO.Implementation.API
                     //--------------------------------------------------------------------------------//
                     case ResponseCodeType.NetworkError:
                         logTitle =
-                            "NETWORK ERROR\nA Network error occurred. Check your Internet connection and/or Firewall settings.\n\n";
+                            $"NETWORK ERROR\nA Network error occurred. Check your Internet "
+                            + $"connection and/or Firewall settings.\n URL: {webRequest.url}\n "
+                            + $"ERROR: {webRequest.error}";
 
                         internalResponse.result =
                             ResultBuilder.Create(ResultCode.API_FailedToConnect);

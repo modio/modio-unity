@@ -1,7 +1,4 @@
 ﻿using System.Collections;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -9,30 +6,22 @@ namespace ModIOBrowser.Implementation
 {
     public class ViewportRestraint : MonoBehaviour, ISelectHandler
     {
+        public float PercentPaddingHorizontal = 0.05f;
+        public float PercentPaddingVertical = 0.25f;
+
         public bool adjustHorizontally = false;
         public bool adjustVertically = true;
-        RectTransform rectTransform;
-        //static AnimationCurve animationCurve = AnimationCurve.Constant(0,1,1);
         static float transitionTime = 0.25f;
 
-        public bool UseScreenAsViewport = true;
         public RectTransform Viewport;
-        public RectTransform Container;
-        public RectTransform HorizontalContainer;
+        
+        // These containers are what is getting moved in the adjustment check
+        public RectTransform DefaultViewportContainer;
+        public RectTransform HorizontalViewportContainer;
 
-        [Header("Padding")]
-        public int Left = 24;
-        public int Right = 24;
-        public int Top = 24;
-        public int Bottom = 24;
 
         static IEnumerator HorizontalTransitionCoroutine;
         static IEnumerator VerticalTransitionCoroutine;
-
-        void OnEnable()
-        {
-            rectTransform = transform as RectTransform;
-        }
 
         public void OnSelect(BaseEventData eventData)
         {
@@ -46,141 +35,108 @@ namespace ModIOBrowser.Implementation
             {
                 CheckSelectionVerticalVisibility();
             }
-            if(adjustHorizontally)
+            else if(adjustHorizontally)
             {
                 CheckSelectionHorizontalVisibility();
             }
         }
 
-        /// <summary>
-        /// Use this to inform the handler that a new selectable component has been selected via OnSelect
-        /// </summary>
-        /// <param name="Container">the RectTransform of the selectable</param>
-        public void CheckSelectionVerticalVisibility()
+        void BeginTransition(IEnumerator coroutineHandle, IEnumerator coroutine, Vector2 containersNewTargetPosition)
         {
-
-            float viewportTopEdge = UseScreenAsViewport ? Screen.height : Viewport.position.y + Viewport.rect.height * (1 - Viewport.pivot.y);
-            float viewportBottomEdge = UseScreenAsViewport ? 0 : Viewport.position.y - Viewport.rect.height * Viewport.pivot.y;
-
-            // get position of top edge
-            float y = rectTransform.position.y;
-            float height = rectTransform.rect.height;
-            float topEdgeY = y + height * (1 - rectTransform.pivot.y);
-            float bottomEdgeY = y - height * rectTransform.pivot.y;
-
-            // if top/bottom edge is off screen, transition
-            if(topEdgeY > viewportTopEdge - Top)
+            if(coroutineHandle != null)
             {
-                if(VerticalTransitionCoroutine != null)
-                {
-                    StopCoroutine(VerticalTransitionCoroutine);
-                }
-                float distance = topEdgeY - (viewportTopEdge - Top);
-                float end = Container.position.y - distance;
-                Vector2 transitionDestination = Container.position;
-                transitionDestination.y = end;
-                VerticalTransitionCoroutine = TransitionVertically(transitionDestination, Container);
-                StartCoroutine(VerticalTransitionCoroutine);
+                StopCoroutine(coroutineHandle);
             }
-            else if(bottomEdgeY < viewportBottomEdge + Bottom)
+
+            // run a new movement coroutine
+            coroutineHandle = coroutine;
+            StartCoroutine(coroutineHandle);
+        }
+        
+        public void CheckSelectionHorizontalVisibility()
+        {
+            RectTransform rt = transform as RectTransform;
+            RectTransformOverlap rto = new RectTransformOverlap(rt);
+
+            RectTransformOverlap viewport = new RectTransformOverlap(Viewport ?? Browser.Instance.BrowserPanel.transform as RectTransform);
+
+            if(rto.IsOutsideOfRectX(viewport, PercentPaddingHorizontal))
             {
-                if(VerticalTransitionCoroutine != null)
-                {
-                    StopCoroutine(VerticalTransitionCoroutine);
-                }
-                float distance = bottomEdgeY - (Bottom + viewportBottomEdge);
-                float end = Container.position.y - distance;
-                Vector2 transitionDestination = Container.position;
-                transitionDestination.y = end;
-                VerticalTransitionCoroutine = TransitionVertically(transitionDestination, Container);
-                StartCoroutine(VerticalTransitionCoroutine);
+                float distance = RectTransformOverlap.DistanceFromEdgeX(rto, viewport, PercentPaddingHorizontal);
+
+                Vector2 containerPosition = HorizontalViewportContainer == null 
+                                            ? DefaultViewportContainer.position
+                                            : HorizontalViewportContainer.position;
+                
+                Vector2 targetPosition = new Vector2(
+                    containerPosition.x + distance,
+                    containerPosition.y);
+
+                BeginTransition(HorizontalTransitionCoroutine,
+                    TransitionHorizontally(targetPosition, HorizontalViewportContainer ?? DefaultViewportContainer),
+                    targetPosition);
             }
         }
 
-        public void CheckSelectionHorizontalVisibility()
+        public void CheckSelectionVerticalVisibility()
         {
-            RectTransform content = HorizontalContainer ?? Container;
+            RectTransform rt = transform as RectTransform;
+            RectTransformOverlap rto = new RectTransformOverlap(rt);
 
-            float viewportRightEdge = UseScreenAsViewport ? Screen.width : Viewport.position.x + Viewport.rect.width * 1 - (Viewport.pivot.x);
-            float viewportLeftEdge = UseScreenAsViewport ? 0 : Viewport.position.x - Viewport.rect.width * (Viewport.pivot.x);
+            RectTransformOverlap viewport = new RectTransformOverlap(Viewport ?? Browser.Instance.BrowserPanel.transform as RectTransform);
 
-            // get position of top edge
-            float x = rectTransform.position.x;
-            float width = rectTransform.rect.width;
-            float rightEdgeX = x + width * (1 - rectTransform.pivot.x);
-            float leftEdgeX = x - width * rectTransform.pivot.x;
-
-            // if top/bottom edge is off screen, transition
-            if(rightEdgeX > viewportRightEdge - Right)
+            if(rto.IsOutsideOfRectY(viewport, PercentPaddingVertical))
             {
-                if(HorizontalTransitionCoroutine != null)
-                {
-                    StopCoroutine(HorizontalTransitionCoroutine);
-                }
-                float distance = rightEdgeX - (viewportRightEdge - Right);
-                float end = content.position.x - distance;
-                Vector2 transitionDestination = content.position;
-                transitionDestination.x = end;
-                HorizontalTransitionCoroutine = TransitionHorizontally(transitionDestination, content);
-                StartCoroutine(HorizontalTransitionCoroutine);
+                float distance = RectTransformOverlap.DistanceFromEdgeY(rto, viewport, PercentPaddingVertical);
+
+                Vector2 targetPosition = new Vector2(
+                    DefaultViewportContainer.position.x,
+                    DefaultViewportContainer.position.y + distance);
+
+                BeginTransition(HorizontalTransitionCoroutine,
+                    TransitionVertically(targetPosition, DefaultViewportContainer),
+                    targetPosition);
             }
-            else if(leftEdgeX < viewportLeftEdge + Left)
+        }
+
+        static IEnumerator Transition(Vector2 end, Transform parent, bool lockX, bool lockY)
+        {
+            Vector2 start = parent.position;
+            Vector2 distance = end - start;
+            Vector2 current;
+            float timePassed = 0f;
+            float time;
+
+            while(timePassed <= transitionTime)
             {
-                if(HorizontalTransitionCoroutine != null)
-                {
-                    StopCoroutine(HorizontalTransitionCoroutine);
-                }
-                float distance = leftEdgeX - (viewportLeftEdge + Left);
-                float end = content.position.x - distance;
-                Vector2 transitionDestination = content.position;
-                transitionDestination.x = end;
-                HorizontalTransitionCoroutine = TransitionHorizontally(transitionDestination, content);
-                StartCoroutine(HorizontalTransitionCoroutine);
+                timePassed += Time.fixedDeltaTime;
+                time = timePassed / transitionTime;
+                current = start;
+                current += distance * time;
+
+                //The locks are super important. If you don't lock according to axis you can get strange behaviours
+                //if you move left / right AND up / down at the same time.
+
+                if(lockX)
+                    current.x = parent.position.x;
+
+                if(lockY)
+                    current.y = parent.position.y;
+
+                parent.position = current;
+
+                yield return new WaitForSecondsRealtime(0.01f);
             }
         }
 
         static IEnumerator TransitionHorizontally(Vector2 end, Transform parent)
         {
-            Vector2 start = parent.position;
-            Vector2 distance = end - start;
-            Vector2 current;
-            float timePassed = 0f;
-            float time;
-
-            while(timePassed <= transitionTime)
-            {
-                timePassed += Time.fixedDeltaTime;
-                time = timePassed / transitionTime;
-                //time = animationCurve.Evaluate(time);
-                current = start;
-                current += distance * time;
-                current.y = parent.position.y;
-                parent.position = current;
-
-                yield return new WaitForSecondsRealtime(0.01f);
-            }
+            yield return Transition(end, parent, false, true);
         }
 
         static IEnumerator TransitionVertically(Vector2 end, Transform parent)
         {
-            Vector2 start = parent.position;
-            Vector2 distance = end - start;
-            Vector2 current;
-            float timePassed = 0f;
-            float time;
-
-            while(timePassed <= transitionTime)
-            {
-                timePassed += Time.fixedDeltaTime;
-                time = timePassed / transitionTime;
-                //time = animationCurve.Evaluate(time);
-                current = start;
-                current += distance * time;
-                current.x = parent.position.x;
-                parent.position = current;
-
-                yield return new WaitForSecondsRealtime(0.01f);
-            }
+            yield return Transition(end, parent, true, false);
         }
     }
 }

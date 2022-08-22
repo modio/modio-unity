@@ -430,7 +430,7 @@ namespace ModIO.Implementation
             IDataService dataService = DataStorage.persistent;
             
 #if UNITY_EDITOR
-            // // Note @Steve: I dont see what the point of this is?
+            // // Note from Steve: I dont see what the point of this is?
             // EditorDataService pds = (EditorDataService)DataStorage.persistent;
             // EditorDataService tds = (EditorDataService)DataStorage.temp;
             // EditorDataService uds = (EditorDataService)DataStorage.user;
@@ -448,7 +448,7 @@ namespace ModIO.Implementation
             //     dataService = uds;
             // }
             dataService = DataStorage.persistent;
-#elif UNITY_STANDALONE_WIN || UNITY_STANDALONE_OSX || UNITY_STANDALONE_LINUX
+#elif UNITY_STANDALONE || UNITY_GAMECORE
             dataService = DataStorage.persistent;
 #endif // UNITY_EDITOR
 

@@ -61,14 +61,13 @@ namespace ModIO
                    || this.code_api == ResultCode.RESTAPI_InsufficientDeletePermission;
         }
 
+        /// <summary>
+        /// Checks if the result failed due to no internet connection
+        /// </summary>
+        /// <returns>true if the result failed due to no internet connection</returns>
         public bool IsNetworkError()
         {
-            throw new NotImplementedException();
-        }
-
-        public bool IsHttpError()
-        {
-            throw new NotImplementedException();
+            return this.code == ResultCode.API_FailedToConnect;
         }
     }
 }

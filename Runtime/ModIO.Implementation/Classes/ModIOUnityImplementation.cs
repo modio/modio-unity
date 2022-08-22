@@ -1395,6 +1395,9 @@ namespace ModIO.Implementation
             // remove the user's auth token and credentials, clear the session
             UserData.instance?.ClearUser();
             
+            // clear the UserProfile from the cache as it is no longer valid
+            ResponseCache.ClearUserFromCache();
+            
             ModManagement.WakeUp();
 
             bool userExists = ModCollectionManager.DoesUserExist();
@@ -1422,43 +1425,55 @@ namespace ModIO.Implementation
             Texture2D texture = null;
             //-------------------------------------------------------------------------------------
 
-            if(IsInitialized(out result) && AreCredentialsValid(false, out result))
+            if(downloadReference.IsValid())
             {
-                // Check cache asynchronously for texture in temp folder
-                Task<ResultAnd<Texture2D>> cacheTask =
-                    ResponseCache.GetTextureFromCache(downloadReference);
-
-                openCallbacks[callbackConfirmation] = cacheTask;
-                ResultAnd<Texture2D> cacheResponse = await cacheTask;
-                openCallbacks[callbackConfirmation] = null;
-
-                if(cacheResponse.result.Succeeded())
+                if(IsInitialized(out result) && AreCredentialsValid(false, out result))
                 {
-                    // CACHE SUCCEEDED
+                    // Check cache asynchronously for texture in temp folder
+                    Task<ResultAnd<Texture2D>> cacheTask =
+                        ResponseCache.GetTextureFromCache(downloadReference);
 
-                    result = cacheResponse.result;
-                    texture = cacheResponse.value;
-                }
-                else
-                {
-                    // MAKE RESTAPI REQUEST
-                    Task<ResultAnd<Texture2D>> task =
-                        RESTAPI.Request<Texture2D>(downloadReference.url, DownloadImage.Template);
-
-                    openCallbacks[callbackConfirmation] = task;
-                    ResultAnd<Texture2D> response = await task;
+                    openCallbacks[callbackConfirmation] = cacheTask;
+                    ResultAnd<Texture2D> cacheResponse = await cacheTask;
                     openCallbacks[callbackConfirmation] = null;
 
-                    result = response.result;
-
-                    if(response.result.Succeeded())
+                    if(cacheResponse.result.Succeeded())
                     {
-                        texture = response.value;
+                        // CACHE SUCCEEDED
 
-                        await ResponseCache.AddTextureToCache(downloadReference, response.value);
+                        result = cacheResponse.result;
+                        texture = cacheResponse.value;
                     }
+                    else
+                    {
+                        // MAKE RESTAPI REQUEST
+                        Task<ResultAnd<Texture2D>> task =
+                            RESTAPI.Request<Texture2D>(downloadReference.url, DownloadImage.Template);
+
+                        openCallbacks[callbackConfirmation] = task;
+                        ResultAnd<Texture2D> response = await task;
+                        openCallbacks[callbackConfirmation] = null;
+
+                        result = response.result;
+
+                        if(response.result.Succeeded())
+                        {
+                            texture = response.value;
+
+                            await ResponseCache.AddTextureToCache(downloadReference, response.value);
+                        }
+                    }
+                    // continue to invoke at the end of this method
                 }
-                // continue to invoke at the end of this method
+            }
+            else
+            {
+                Logger.Log(
+                    LogLevel.Warning,
+                    "The DownloadReference provided for the DownloadTexture method was not"
+                    + " valid. Consider using the DownloadReference.IsValid() method to check if the"
+                    + "DownloadReference has an existing URL before using this method.");
+                result = ResultBuilder.Create(ResultCode.InvalidParameter_DownloadReferenceIsntValid);
             }
 
             callbackConfirmation.SetResult(true);

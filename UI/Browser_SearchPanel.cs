@@ -1,12 +1,9 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using ModIO;
-using ModIO.Implementation;
 using ModIOBrowser.Implementation;
 using TMPro;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace ModIOBrowser
@@ -39,16 +36,32 @@ namespace ModIOBrowser
             SearchPanel.SetActive(true);
             SelectionManager.Instance.SelectView(UiViews.SearchFilters);
             SearchPanelField.text = "";
-            
+
+            SearchPanelFieldNavigationLock();
+
             //ScrollRectViewHandler.Instance.CurrentViewportContent = SearchPanelTagParent;
             SetupSearchPanelTags();
+        }
+
+        void SearchPanelFieldNavigationLock()
+        {
+            Navigation nav = SearchPanelField.navigation;
+            nav.mode = Navigation.Mode.None;
+            SearchPanelField.navigation = nav;
+        }
+
+        void SearchPanelFieldNavigationUnlock()
+        {
+            Navigation nav = SearchPanelField.navigation;
+            nav.mode = Navigation.Mode.Vertical;
+            SearchPanelField.navigation = nav;
         }
 
         public void CloseSearchPanel()
         {
             InputReceiver.currentSelectedInputField = null;
             SearchPanel.SetActive(false);
-            SelectionManager.Instance.SelectView(UiViews.Browse);
+            SelectionManager.Instance.SelectPreviousView();
         }
 
         public void ClearSearchFilter()
@@ -58,7 +71,7 @@ namespace ModIOBrowser
             SetupSearchPanelTags();
         }
 
-        internal void SetupSearchPanelTags()
+        void SetupSearchPanelTags()
         {
             if(tags != null)
             {
@@ -70,7 +83,7 @@ namespace ModIOBrowser
             }
         }
 
-        internal void GetTags(ResultAnd<TagCategory[]> resultAndTags)
+        void GetTags(ResultAnd<TagCategory[]> resultAndTags)
         {
             if(resultAndTags.result.Succeeded())
             {
@@ -79,7 +92,7 @@ namespace ModIOBrowser
             }
         }
 
-        internal void CreateTagCategoryListItems(TagCategory[] tags)
+        void CreateTagCategoryListItems(TagCategory[] tags)
         {
             if(tags == null || tags.Length < 1)
             {
@@ -104,6 +117,8 @@ namespace ModIOBrowser
             UpdateSearchPanelBumperIcons();
             ReorderAndSetNavigation(listItems);
             LayoutRebuilder.ForceRebuildLayoutImmediate(SearchPanelTagParent as RectTransform);
+
+            SearchPanelFieldNavigationUnlock();
         }
 
         void ReorderAndSetNavigation(IEnumerable<Selectable> items)

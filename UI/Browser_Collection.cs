@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using ModIO;
 using ModIOBrowser.Implementation;
 using TMPro;
@@ -17,7 +18,7 @@ namespace ModIOBrowser
         [Header("Collection Panel")]
         [SerializeField] GameObject CollectionPanel;
         [SerializeField] TMP_Text CollectionPanelTitle;
-        [SerializeField] InputField CollectionPanelSearchField;
+        [SerializeField] TMP_InputField CollectionPanelSearchField;
         [SerializeField] GameObject CollectionPanelModListItem;
         [SerializeField] RectTransform CollectionPanelContentParent;
         [SerializeField] Scrollbar CollectionPanelContentScrollBar;
@@ -48,7 +49,7 @@ namespace ModIOBrowser
 #region Mod Collection
         public void OpenModCollection()
         {
-            GoToPanel(CollectionPanel);
+            GoToPanel_deprecating(CollectionPanel);
             RefreshCollectionListItems();
             UpdateNavbarSelection();
             SelectionManager.Instance.SelectView(UiViews.Collection);
@@ -65,11 +66,25 @@ namespace ModIOBrowser
             }
             foreach(InstalledMod mod in installedMods)
             {
-                modStatus.Add(mod.modProfile.id, "Installed");
+                if (!modStatus.ContainsKey(mod.modProfile.id))
+                {
+                    modStatus.Add(mod.modProfile.id, "Installed");
+                }
+                else
+                {
+                    modStatus[mod.modProfile.id] = "Installed";
+                }
             }
             foreach(ModProfile mod in pendingSubscriptions)
             {
-                modStatus.Add(mod.id, "Pending...");
+                if(!modStatus.ContainsKey(mod.id))
+                {
+                    modStatus.Add(mod.id, "Pending...");
+                } 
+                else
+                {
+                    modStatus[mod.id] = "Pending...";
+                }
             }
         }
 
@@ -104,13 +119,15 @@ namespace ModIOBrowser
             //--------------------------------------------------------------------------------//
             // check the first dropdown filter to decide if we show/hide subs/unsubs
             bool hideSubs = false;
+            bool hideUnsubs = true;
             switch(CollectionPanelFirstDropDownFilter.value)
             {
                 case 0:
                     hideSubs = false;
                     break;
                 case 1:
-                    hideSubs = true;
+                    hideSubs = true; 
+                    hideUnsubs = false;
                     break;
                 case 2:
                     hideSubs = false;
@@ -212,7 +229,7 @@ namespace ModIOBrowser
                     ModId modId = mod.modProfile.id;
                     
                     // Check if this has a pending subscription, if so, hide it
-                    bool hide = hideSubs ? hideSubs : mod.subscribedUsers.Count > 0;
+                    bool hide = hideUnsubs ? hideUnsubs : mod.subscribedUsers.Count > 0;
 
                     // check if we need to hide this if it's filtered out via search phrase
                     if(!hide)

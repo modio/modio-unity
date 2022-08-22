@@ -30,7 +30,7 @@ namespace ModIOBrowser
         [SerializeField] GameObject DownloadQueueListItem;
         [SerializeField] GameObject DownloadQueueNoPendingNotice;
         [SerializeField] GameObject DownloadQueueNoCurrentNotice;
-        [SerializeField] Image DownloadQueueAvatarIcon;
+        [SerializeField] Image Avatar_DownloadQueue;
         ModProfile downloadQueueCurrentModProfileOfOperationInProgress;
 
         // This is set when the panel is opened and selected when closed
@@ -68,7 +68,7 @@ namespace ModIOBrowser
             DownloadQueuePanel.SetActive(false);
             SelectSelectable(downloadQueueSelectionOnClose);
             RefreshDownloadHistoryPanel();
-            SelectionManager.Instance.SelectView(UiViews.Browse);
+            SelectionManager.Instance.SelectPreviousView();
         }
         
         /// <summary>
@@ -81,7 +81,8 @@ namespace ModIOBrowser
             DownloadQueueNoCurrentNotice.SetActive(false);
             
             // Username
-            DownloadQueueUsernameText.text = currentUserProfile.username;
+            DownloadQueueUsernameText.text = currentUserProfile.portal_username 
+                                             ?? currentUserProfile.username;
             
             // Setup explicit navigation for current Unsubscibe button
             Navigation mainUnsubscribeNavigation = DownloadQueueCurrentUnsubscribeButton.navigation;

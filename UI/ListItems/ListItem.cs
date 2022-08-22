@@ -82,9 +82,9 @@ namespace ModIOBrowser.Implementation
 			if(viewportRestraint == null)
 			{
 				viewportRestraint = gameObject.AddComponent<ViewportRestraint>();
-				viewportRestraint.Container = content;
-				viewportRestraint.Viewport = viewport;
 			}
+			viewportRestraint.DefaultViewportContainer = content;
+			viewportRestraint.Viewport = viewport;
 		}
 
 		public virtual void Select() { }
@@ -127,6 +127,10 @@ namespace ModIOBrowser.Implementation
 			// Try to find an unused list item of this type to recycle
 			foreach(ListItem li in ListItems[type])
 			{
+				if(li == null)
+				{
+					continue;
+				}
 				if(!li.gameObject.activeSelf || (li.isPlaceholder && !getPlaceholders))
 				{
 					li.SetColorScheme(scheme);
@@ -152,17 +156,50 @@ namespace ModIOBrowser.Implementation
 		public static void HideListItems<T>(bool placeholdersOnly = false)
 		{
 			Type type = typeof(T);
+			bool needToCleanupOldReferences = false;
 
 			if(ListItems.ContainsKey(type))
 			{
 				foreach(ListItem li in ListItems[type])
 				{
+					// make sure the list item isnt null
+					if(li == null)
+					{
+						needToCleanupOldReferences = true;
+						continue;
+					}
 					if(placeholdersOnly && !li.isPlaceholder)
 					{
 						continue;
 					}
+					// deactivate the list item
 					li.gameObject.SetActive(false);
 				}
+			}
+
+			if(needToCleanupOldReferences)
+			{
+				CleanupMissingReferencesInListItemGroup<T>();
+			}
+		}
+
+		public static void CleanupMissingReferencesInListItemGroup<T>()
+		{
+			List<ListItem> validItems = new List<ListItem>();
+			
+			Type type = typeof(T);
+
+			if(ListItems.ContainsKey(type))
+			{
+				foreach(ListItem li in ListItems[type])
+				{
+					if(li != null)
+					{
+						validItems.Add(li);
+					}
+				}
+
+				ListItems[type] = validItems;
 			}
 		}
 

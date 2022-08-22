@@ -2,8 +2,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using ModIO;
-using ModIO.Implementation;
 using ModIOBrowser.Implementation;
 using TMPro;
 using UnityEngine;
@@ -23,6 +23,7 @@ namespace ModIOBrowser
         [SerializeField] GameObject AuthenticationPanelEnterCode;
         [SerializeField] TMP_InputField[] AuthenticationPanelCodeFields;
         [SerializeField] Button AuthenticationPanelConnectViaSteamButton;
+        [SerializeField] Button AuthenticationPanelConnectViaXboxButton;
         [SerializeField] Button AuthenticationPanelConnectViaEmailButton;
         [SerializeField] Button AuthenticationPanelBackButton;
         [SerializeField] TMP_Text AuthenticationPanelBackButtonText;
@@ -36,13 +37,27 @@ namespace ModIOBrowser
         [SerializeField] GameObject AuthenticationPanelTermsOfUseLinks;
         [SerializeField] TMP_Text AuthenticationPanelTitleText;
         [SerializeField] TMP_Text AuthenticationPanelInfoText;
-        [SerializeField] Image Avatar;
+        [SerializeField] Image Avatar_Main;
         [SerializeField] Image AvatarDownloadBar;
 
+        [Header("Platform Avatar Icons")]
+        [SerializeField] Image PlatformIcon_Main;
+        [SerializeField] Image PlatformIcon_DownloadQueue;
+        [SerializeField] Sprite SteamAvatar;
+        [SerializeField] Sprite XboxAvatar;
+
+        // Authentication Delegates
+        Action authenticationMethodAfterAgreeingToTheTOS;
+        static string optionalThirdPartyEmailAddressUsedForAuthentication;
+        static string optionalSteamAppTicket;
+        static string optionalXboxToken;
+        
         UserProfile currentUserProfile;
         TermsOfUse LastReceivedTermsOfUse;
         string privacyPolicyURL;
         string termsOfUseURL;
+
+        UserPortal currentAuthenticationPortal = UserPortal.None;
 
 #region Download bar
         internal void UpdateAvatarDownloadProgressBar(ProgressHandle handle)
@@ -55,17 +70,7 @@ namespace ModIOBrowser
         public void CloseAuthenticationPanel()
         {
             AuthenticationPanel.SetActive(false);
-            SelectionManager.Instance.SelectView(UiViews.Browse);
-
-            // Get the default selection
-            if(CollectionPanel.activeSelf)
-            {
-                SelectSelectable(CollectionPanelFirstDropDownFilter);
-            } 
-            else if(ModDetailsPanel.activeSelf)
-            {
-                SelectionManager.Instance.SelectView(UiViews.ModDetails);
-            } 
+            SelectionManager.Instance.SelectPreviousView();
         }
 
         public void UpdateBrowserModListItemDisplay()
@@ -91,7 +96,7 @@ namespace ModIOBrowser
         public void Logout()
         {
             ModIOUnity.RemoveUserData();
-            Avatar.gameObject.SetActive(false);
+            Avatar_Main.gameObject.SetActive(false);
             isAuthenticated = false;
         }
 
@@ -109,28 +114,72 @@ namespace ModIOBrowser
 
             AuthenticationPanelInfoText.gameObject.SetActive(true);
             AuthenticationPanelInfoText.text = "mod.io is a 3rd party utility that provides access to a mod workshop. Choose how you wish to be authenticated.";
-            
-            // TODO implement steam authentication
-            //AuthenticationPanelConnectViaSteamButton.gameObject.SetActive(true);
-            //AuthenticationPanelConnectViaSteamButton.onClick.RemoveAllListeners();
-            //AuthenticationPanelConnectViaSteamButton.onClick.AddListener(GetTermsOfUse);
-            
+
             AuthenticationPanelBackButton.gameObject.SetActive(true);
             AuthenticationPanelBackButton.onClick.RemoveAllListeners();
             AuthenticationPanelBackButton.onClick.AddListener(CloseAuthenticationPanel);
-            
-            AuthenticationPanelBackButton.navigation = new Navigation{
-                mode = Navigation.Mode.Explicit,
-                selectOnRight = AuthenticationPanelConnectViaEmailButton
-            };
 
             AuthenticationPanelConnectViaEmailButton.gameObject.SetActive(true);
             AuthenticationPanelConnectViaEmailButton.onClick.RemoveAllListeners();
-            AuthenticationPanelConnectViaEmailButton.onClick.AddListener(GetTermsOfUse);
+            AuthenticationPanelConnectViaEmailButton.onClick.AddListener(() =>
+            {
+                GetTermsOfUse();
+                authenticationMethodAfterAgreeingToTheTOS = OpenAuthenticationPanel_Email;
+            });
             
+            //-----------------------------------------------------------------------------------//
+            //                            THIRD PARTY AUTHENTICATION                             //
+            //-----------------------------------------------------------------------------------//
+            Selectable thirdPartyOptionSelectable = null;
+            if(optionalSteamAppTicket != null)
+            {
+                AuthenticationPanelConnectViaSteamButton.gameObject.SetActive(true);
+                AuthenticationPanelConnectViaSteamButton.onClick.RemoveAllListeners();
+                AuthenticationPanelConnectViaSteamButton.onClick.AddListener(() =>
+                {
+                    GetTermsOfUse();
+                    authenticationMethodAfterAgreeingToTheTOS = SubmitSteamAuthenticationRequest;
+                });
+                thirdPartyOptionSelectable = AuthenticationPanelConnectViaSteamButton;
+            }
+            else if(optionalXboxToken != null)
+            {
+                AuthenticationPanelConnectViaXboxButton.gameObject.SetActive(true);
+                AuthenticationPanelConnectViaXboxButton.onClick.RemoveAllListeners();
+                AuthenticationPanelConnectViaXboxButton.onClick.AddListener(() =>
+                {
+                    GetTermsOfUse();
+                    authenticationMethodAfterAgreeingToTheTOS = SubmitXboxAuthenticationRequest;
+                });
+                thirdPartyOptionSelectable = AuthenticationPanelConnectViaXboxButton;
+            }
+            
+            //-----------------------------------------------------------------------------------//
+            //                            EXPLICIT BUTTON NAVIGATION                             //
+            //-----------------------------------------------------------------------------------//
+
+            // Back button
+            AuthenticationPanelBackButton.navigation = new Navigation{
+                mode = Navigation.Mode.Explicit,
+                selectOnRight = thirdPartyOptionSelectable == null 
+                    ? AuthenticationPanelConnectViaEmailButton : thirdPartyOptionSelectable
+            };
+            
+            // Third party Auth button (This button may or may not be present)
+            if(thirdPartyOptionSelectable != null)
+            {
+                thirdPartyOptionSelectable.navigation = new Navigation{
+                    mode = Navigation.Mode.Explicit,
+                    selectOnLeft = AuthenticationPanelBackButton,
+                    selectOnRight = AuthenticationPanelConnectViaEmailButton
+                };
+            }
+            
+            // email auth button
             AuthenticationPanelConnectViaEmailButton.navigation = new Navigation{
                 mode = Navigation.Mode.Explicit,
-                selectOnLeft = AuthenticationPanelBackButton
+                selectOnLeft = thirdPartyOptionSelectable == null 
+                    ? AuthenticationPanelBackButton : thirdPartyOptionSelectable
             };
 
             SelectionManager.Instance.SelectView(UiViews.AuthPanel);
@@ -154,6 +203,7 @@ namespace ModIOBrowser
             AuthenticationPanelSendCodeButton.gameObject.SetActive(false);
             AuthenticationPanelConnectViaEmailButton.gameObject.SetActive(false);
             AuthenticationPanelConnectViaSteamButton.gameObject.SetActive(false);
+            AuthenticationPanelConnectViaXboxButton.gameObject.SetActive(false);
             AuthenticationPanelCompletedButton.gameObject.SetActive(false);
             AuthenticationPanelLogoutButton.gameObject.SetActive(false);
             AuthenticationPanelWaitingForResponseAnimation.SetActive(false);
@@ -242,6 +292,9 @@ namespace ModIOBrowser
             };
 
             SelectionManager.Instance.SelectView(UiViews.AuthPanel_LogOut);
+            
+            LayoutRebuilder.ForceRebuildLayoutImmediate(AuthenticationPanelInfoText.transform as RectTransform);
+            LayoutRebuilder.ForceRebuildLayoutImmediate(AuthenticationPanel.transform as RectTransform);
         }
 
         internal void OpenAuthenticationPanel_Problem(string problem = null, string title = null, Action onBack = null)
@@ -300,7 +353,7 @@ namespace ModIOBrowser
             AuthenticationPanelAgreeButton.gameObject.SetActive(true);
             AuthenticationPanelAgreeButton.onClick.RemoveAllListeners();
             // TODO go to either steam or email auth next
-            AuthenticationPanelAgreeButton.onClick.AddListener(OpenAuthenticationPanel_Email);
+            AuthenticationPanelAgreeButton.onClick.AddListener(delegate { authenticationMethodAfterAgreeingToTheTOS(); });
             
             AuthenticationPanelAgreeButton.navigation = new Navigation{
                 mode = Navigation.Mode.Explicit,
@@ -476,7 +529,7 @@ namespace ModIOBrowser
         }
         #endregion
 
-        #region Send Request
+#region Send Request
         internal void GetTermsOfUse()
         {
             OpenAuthenticationPanel_Waiting();
@@ -499,6 +552,34 @@ namespace ModIOBrowser
             ModIOUnity.SubmitEmailSecurityCode(code, CodeSubmitted);
         }
 #endregion
+        
+#region Third party authentication submissions
+        internal void SubmitSteamAuthenticationRequest()
+        {
+            OpenAuthenticationPanel_Waiting();
+
+            ModIOUnity.AuthenticateUserViaSteam(optionalSteamAppTicket, 
+                optionalThirdPartyEmailAddressUsedForAuthentication,
+                LastReceivedTermsOfUse.hash,
+                delegate (Result result)
+                {
+                    ThirdPartyAuthenticationSubmitted(result, UserPortal.Steam);
+                });
+        }
+
+        internal void SubmitXboxAuthenticationRequest()
+        {
+            OpenAuthenticationPanel_Waiting();
+
+            ModIOUnity.AuthenticateUserViaXbox(optionalXboxToken, 
+                optionalThirdPartyEmailAddressUsedForAuthentication,
+                LastReceivedTermsOfUse.hash,
+                delegate (Result result)
+                {
+                    ThirdPartyAuthenticationSubmitted(result, UserPortal.XboxLive);
+                });
+        }
+#endregion // Third party authentication submissions
         
 #region Receive Response
         internal void EmailSent(Result result)
@@ -586,40 +667,105 @@ namespace ModIOBrowser
                 }
             }
         }
+
+        internal void ThirdPartyAuthenticationSubmitted(Result result, UserPortal authenticationPortal)
+        {
+            if(result.Succeeded())
+            {
+                currentAuthenticationPortal = authenticationPortal;
+                OpenAuthenticationPanel_Complete();
+                ModIOUnity.FetchUpdates(delegate { });
+                ModIOUnity.EnableModManagement(ModManagementEvent);
+                if(ModDetailsPanel.activeSelf)
+                {
+                    UpdateModDetailsSubscribeButtonText();
+                }
+            }
+            else
+            {
+                currentAuthenticationPortal = UserPortal.None;
+                OpenAuthenticationPanel_Problem("We were unable to validate your credentials with"
+                                                + " the mod.io server.");
+            }
+        }
 #endregion
         
 #region Avatar
-        internal void SetupUserAvatar()
+        internal async void SetupUserAvatar()
         {
-            ModIOUnity.GetCurrentUser(CurrentUserReceived);
+            switch(currentAuthenticationPortal)
+            {
+                case UserPortal.Steam:
+                    SetAvatarSprite(SteamAvatar);
+                    break;
+                case UserPortal.XboxLive:
+                    SetAvatarSprite(XboxAvatar);
+                    break;
+                default:
+                    await GetCurrentUser();
+                    DownloadAvatar();
+                    break;
+            }
         }
 
-        internal void CurrentUserReceived(ResultAnd<UserProfile> resultAnd)
+        internal async Task GetCurrentUser()
         {
+            ResultAnd<UserProfile> resultAnd = await ModIOUnityAsync.GetCurrentUser();
+            
             if (resultAnd.result.Succeeded())
             {
                 currentUserProfile = resultAnd.value;
-                ModIOUnity.DownloadTexture(resultAnd.value.avatar_50x50, DownloadedAvatar);
-            }
-            else
-            {
-                Avatar.gameObject.SetActive(false);
             }
         }
 
-        internal void DownloadedAvatar(ResultAnd<Texture2D> resultTexture)
+        internal async void DownloadAvatar()
         {
+            ResultAnd<Texture2D> resultTexture = await ModIOUnityAsync.DownloadTexture(currentUserProfile.avatar_50x50);
+            
             if(resultTexture.result.Succeeded())
             {
+                // convert texture 2D into sprite for the Image component
                 Sprite sprite = Sprite.Create(resultTexture.value, 
                     new Rect(0, 0, resultTexture.value.width, resultTexture.value.height), Vector2.zero);
-                Avatar.gameObject.SetActive(true);
-                Avatar.sprite = sprite;
-                DownloadQueueAvatarIcon.sprite = sprite;
+                SetAvatarSprite(sprite);
             }
             else
             {
-                Avatar.gameObject.SetActive(false);
+                // If this failed we turn off the renderer so the default icon can be displayed behind it
+                Avatar_Main.gameObject.SetActive(false);
+            }
+        }
+
+        // This might be worth setting up as a Message
+        internal void SetAvatarSprite(Sprite sprite)
+        {
+            if (currentAuthenticationPortal == UserPortal.None)
+            {
+                // turn on main avatar image
+                Avatar_Main.gameObject.SetActive(true);
+                Avatar_DownloadQueue.gameObject.SetActive(true);
+                
+                // turn off platform icon
+                PlatformIcon_Main.transform.parent.gameObject.SetActive(false);
+                PlatformIcon_DownloadQueue.transform.parent.gameObject.SetActive(false);
+                
+                // change sprites
+                Avatar_Main.sprite = sprite;
+                Avatar_DownloadQueue.sprite = sprite;
+            }
+            else
+            {
+                // turn off main avatar icons
+                Avatar_Main.gameObject.SetActive(false);
+                Avatar_DownloadQueue.gameObject.SetActive(false);
+                
+                // turn on platform icon
+                PlatformIcon_Main.transform.parent.gameObject.SetActive(true);
+                PlatformIcon_DownloadQueue.transform.parent.gameObject.SetActive(true);
+                
+                // change sprites
+                PlatformIcon_Main.sprite = sprite;
+                PlatformIcon_DownloadQueue.sprite = sprite;
             }
         }
 #endregion

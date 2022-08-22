@@ -2,21 +2,13 @@
 
 namespace ModIOBrowser.Implementation
 {
-    internal class SelectionOverlayHandler : MonoBehaviour
+    internal class SelectionOverlayHandler : SimpleMonoSingleton<SelectionOverlayHandler>
     {
         [Header("Selection Overlay Objects")]
         [SerializeField] BrowserModListItem_Overlay BrowserModListItemOverlay;
-        [SerializeField] SearchResultListItem_Overlay SearchResultListItemOverlay;
+        public SearchResultListItem_Overlay SearchResultListItemOverlay;
         [SerializeField] GameObject CollectionListItemOverlay;
         [SerializeField] GameObject SearchModListItemOverlay;
-
-        // Singleton
-        public static SelectionOverlayHandler Instance;
-
-        void Awake()
-        {
-            Instance = this;
-        }
 
         public void SetBrowserModListItemOverlayActive(bool state)
         {

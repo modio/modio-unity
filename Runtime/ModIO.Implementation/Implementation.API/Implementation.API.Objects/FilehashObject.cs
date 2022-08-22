@@ -2,7 +2,7 @@
 namespace ModIO.Implementation.API.Objects
 {
     [System.Serializable]
-    internal class FilehashObject
+    internal struct FilehashObject
     {
         public string md5;
     }

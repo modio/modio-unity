@@ -1,27 +1,27 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using ModIOBrowser;
+using ModIOBrowser.Implementation;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-class SelectionManager : MonoBehaviour
-{ 
-    public static SelectionManager Instance;
+class SelectionManager : SimpleMonoSingleton<SelectionManager>
+{
+    public UiViews currentView { get; private set; } = UiViews.Nothing;
+    UiViews previousView { get; set; } = UiViews.Nothing;
 
-    public UiViews startView;
-    public UiViews currentView;
-
-    private Dictionary<UiViews, List<GameObject>> selectionHistory = new Dictionary<UiViews, List<GameObject>>();
-    private Dictionary<UiViews, GameObject> viewConfig;
+    Dictionary<UiViews, List<GameObject>> selectionHistory = new Dictionary<UiViews, List<GameObject>>();
+    Dictionary<UiViews, GameObject> viewConfig;
 
     public List<SelectionViewConfigItem> defaultViews = new List<SelectionViewConfigItem>();
 
-    private void Awake()
+    protected override void Awake()
     {
-        Instance = this;
+        base.Awake();
+
+        gameObject.SetActive(false);
 
         if(defaultViews.Any(x => x.viewType == UiViews.Nothing))
         {
@@ -31,38 +31,57 @@ class SelectionManager : MonoBehaviour
         }
 
         viewConfig = defaultViews.ToDictionary(x => x.viewType, x => x.defaultSelectedObject);
-        SelectView(startView);
     }
 
     public void Update()
-    {        
+    {
+        if(!Browser.Instance.BrowserCanvas.activeSelf)
+        {
+            return;
+        }
+
+        if(currentView == UiViews.Nothing)
+        {
+            return;
+        }
+
         if(EventSystem.current.currentSelectedGameObject != null)
         {
-            if(selectionHistory[currentView].LastOrDefault() != EventSystem.current.currentSelectedGameObject)
+            if(CurrentViewHistory().LastOrDefault() != EventSystem.current.currentSelectedGameObject)
             {
-                selectionHistory[currentView].Add(EventSystem.current.currentSelectedGameObject);
+                CurrentViewHistory().Add(EventSystem.current.currentSelectedGameObject);
             }
         }
         else
         {
-            Browser.SelectGameObject(selectionHistory[currentView].Last());
+            Browser.SelectGameObject(CurrentViewHistory().Last());
         }
+    }
+
+    List<GameObject> CurrentViewHistory()
+    {
+        if(selectionHistory[currentView] == null)
+        {
+            return LazyInstantiateHistory(currentView);
+        }
+
+        return selectionHistory[currentView];
     }
 
     public void SelectMostRecentStillActivatedUiItem(bool force = false)
     {
         if(EventSystem.current.currentSelectedGameObject == null || force)
         {
-            GameObject item = selectionHistory[currentView].LastOrDefault(x => x.activeSelf);
-            item = item == null ? viewConfig[currentView] : item;            
-            selectionHistory[currentView].Clear();
-            selectionHistory[currentView].Add(item);
+            GameObject item = CurrentViewHistory().LastOrDefault(x => x.activeSelf);
+            item = item == null ? viewConfig[currentView] : item;
+            CurrentViewHistory().Clear();
+            CurrentViewHistory().Add(item);
 
             Browser.SelectGameObject(item);
         }
     }
 
-    private void ForceSelectMostRecentStillActivatedUiItem()
+    void ForceSelectMostRecentStillActivatedUiItem()
     {
         SelectMostRecentStillActivatedUiItem(true);
     }
@@ -74,7 +93,11 @@ class SelectionManager : MonoBehaviour
         viewConfig[view] = selectable.gameObject;
         LazyInstantiateHistory(view);
         selectionHistory[view].Clear();
+    }
 
+    public void SelectPreviousView()
+    {
+        SelectView(previousView);
     }
 
     public void SelectView(UiViews view)
@@ -83,25 +106,26 @@ class SelectionManager : MonoBehaviour
         {
             throw new UnityException("No views with the type 'Error' allowed.");
         }
-        else if(!defaultViews.Any(x => x.viewType == view))
+        if(!defaultViews.Any(x => x.viewType == view))
         {
             throw new UnityException($"There is no configuration for the view {view}.");
         }
 
         SelectionViewConfigItem viewConfigItem = GetViewConfigItem(view);
 
+        previousView = currentView;
         currentView = viewConfigItem.viewType;
 
         LazyInstantiateHistory(currentView);
 
-        bool revertToDefaultSelection = (view != UiViews.Browse || selectionHistory[currentView].Count() == 0);
+        bool revertToDefaultSelection = (view != UiViews.Browse || CurrentViewHistory().Count() == 0);
         if(revertToDefaultSelection)
         {
             GameObject defaultObject = viewConfig[currentView];
             Browser.SelectGameObject(defaultObject);
 
-            selectionHistory[currentView].Clear();
-            selectionHistory[currentView].Add(defaultObject);
+            CurrentViewHistory().Clear();
+            CurrentViewHistory().Add(defaultObject);
         }
         else
         {
@@ -109,15 +133,19 @@ class SelectionManager : MonoBehaviour
         }
     }
 
-    private void LazyInstantiateHistory(UiViews view)
+    List<GameObject> LazyInstantiateHistory(UiViews view)
     {
         if(!selectionHistory.ContainsKey(view))
         {
-            selectionHistory.Add(view, new List<GameObject>());
+            var list = new List<GameObject>();
+            selectionHistory.Add(view, list);
+            return list;
         }
+
+        return selectionHistory[view];
     }
 
-    private SelectionViewConfigItem GetViewConfigItem(UiViews view)
+    SelectionViewConfigItem GetViewConfigItem(UiViews view)
     {
         SelectionViewConfigItem viewConfigItem = defaultViews.FirstOrDefault(x => x.viewType == view);
         if(viewConfigItem == null)

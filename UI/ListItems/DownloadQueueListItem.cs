@@ -32,7 +32,6 @@ namespace ModIOBrowser.Implementation
         public override void SetViewportRestraint(RectTransform content, RectTransform viewport)
         {
             base.SetViewportRestraint(content, viewport);
-            viewportRestraint.UseScreenAsViewport = false;
         }
 
         public override void Setup(SubscribedMod mod)

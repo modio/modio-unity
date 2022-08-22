@@ -49,7 +49,7 @@ namespace ModIOBrowser
         public void OpenReportPanel(ModProfile modToReport, Selectable selectableOnClose)
         {
 	        defaultSelectableOnReportClose = selectableOnClose;
-	        currentFocusedPanel = ReportPanel;
+	        currentFocusedPanel_deprecating = ReportPanel;
 	        modBeingReported = modToReport;
 	        
 	        HideReportPanelObjects();

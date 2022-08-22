@@ -27,9 +27,8 @@ namespace ModIOBrowser.Implementation
         public override void SetViewportRestraint(RectTransform content, RectTransform viewport)
         {
             base.SetViewportRestraint(content, viewport);
-            viewportRestraint.UseScreenAsViewport = false;
-            viewportRestraint.Top = 168;
-            viewportRestraint.Bottom = 168;
+            
+            viewportRestraint.PercentPaddingVertical = 0.15f;
         }
 
         public override void Setup(string tagName, string tagCategory)

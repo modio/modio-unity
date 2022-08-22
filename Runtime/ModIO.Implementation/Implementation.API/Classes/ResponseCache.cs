@@ -388,6 +388,14 @@ namespace ModIO.Implementation.API
         }
 
         /// <summary>
+        /// If the user has logged out we need to clear the cache for the user data.
+        /// </summary>
+        public static void ClearUserFromCache()
+        {
+            currentUser = null;
+        }
+
+        /// <summary>
         /// Clears the entire cache, used when performing a shutdown operation.
         /// </summary>
         public static void ClearCache()
@@ -397,7 +405,7 @@ namespace ModIO.Implementation.API
             termsHash = default;
             termsOfUse = null;
             gameTags = null;
-            currentUser = null;
+            ClearUserFromCache();
         }
 #endregion // Clearing Cache entries
 

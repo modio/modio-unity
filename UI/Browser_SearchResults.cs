@@ -36,6 +36,7 @@ namespace ModIOBrowser
         [SerializeField] TMP_Text SearchResultsEndOfResultsText;
         [SerializeField] Selectable SearchResultsRefineFilter;
         [SerializeField] Selectable SearchResultsFilterBy;
+        [SerializeField] GameObject ProcessingAnimation;
 
         bool moreResultsToShow;
         long numberOfRemainingResultsToShow;
@@ -54,26 +55,25 @@ namespace ModIOBrowser
 
 #region Search Results
 
+        /// <summary>
+        /// This opens the search results panel as well as inputs a search phrase to be used
+        /// </summary>
+        /// <param name="searchPhrase"></param>
         internal void OpenSearchResults(string searchPhrase)
         {
-            //could have a clear out here?
-            //No, this is something with highlighted?
-            //ListItem.HideListItems<SearchResultListItem>();
-
-
-            SelectionManager.Instance.SelectView(UiViews.SearchResults);
             SearchResults_ClearButtonNavigation();
 
             lastUsedSearchPhrase = searchPhrase;
-            GoToPanel(SearchResultsPanel);
+            GoToPanel_deprecating(SearchResultsPanel);
 
             RefreshSearch();
+            SelectionManager.Instance.SelectView(UiViews.SearchResults);
         }
 
         internal void OpenSearchResultsWithoutRefreshing()
         {            
             SelectionManager.Instance.SelectView(UiViews.SearchResults);
-            GoToPanel(SearchResultsPanel);
+            GoToPanel_deprecating(SearchResultsPanel);
         }
 
         internal SearchFilter GetSearchResultFilter(int page = 0, string searchPhrase = null)
@@ -116,10 +116,13 @@ namespace ModIOBrowser
             SearchResultsMainTag.SetActive(false);
             SearchResultsSearchPhrase.SetActive(false);
             SearchResultsFoundText.text = "";
+            SearchResultsEndOfResultsHeader.text = "";
+            SearchResultsEndOfResultsText.text = "";
             
             searchResultsStatus = SearchResultsStatus.GettingFirstResults;
             ListItem.HideListItems<SearchResultListItem>();
-            AddPlaceholdersToList<SearchResultListItem>(SearchResultsListItemParent, SearchResultsListItemPrefab, 100);
+            SearchResultsNoResultsText.SetActive(false);
+            ProcessingAnimation.gameObject.SetActive(true);
             ModIOUnity.GetMods(GetSearchResultFilter(), GetSearchResult);
         }
 
@@ -141,12 +144,12 @@ namespace ModIOBrowser
                 return;
             }
             
-            RectTransform rectTransform = SearchResultsListItemParent as RectTransform;
-            float YPositionOfBottomEdge = rectTransform.position.y - rectTransform.rect.height;
-            
+            RectTransformOverlap container = new RectTransformOverlap(SearchResultsListItemParent as RectTransform);
+            RectTransformOverlap screen = new RectTransformOverlap(BrowserPanel.transform as RectTransform);
+
             // Check how close we are to the bottom. If we are half a screen height from the last
             // result to display, lets begin loading in more results
-            if(YPositionOfBottomEdge < 0 && Mathf.Abs(YPositionOfBottomEdge) < Screen.height / 2f)
+            if(container.yMin < 0 && Mathf.Abs(container.yMin) < screen.height / 2f)
             {
                 searchResultsStatus = SearchResultsStatus.GettingMoreResults;
                 AddPlaceholdersToList<SearchResultListItem>(SearchResultsListItemParent, SearchResultsListItemPrefab, (int)numberOfRemainingResultsToShow);
@@ -294,12 +297,14 @@ namespace ModIOBrowser
                     : $"{numberOfResults} Mods found for \"{lastUsedSearchPhrase}\"";
 
                 // Create list items for the mod profiles we now have
-                PopulateSearchResults(modPage.modProfiles);
+                PopulateSearchResults(modPage.modProfiles);                
             }
             else
             {
                 SearchResultsFoundText.text = $"A problem occurred";
             }
+
+            ProcessingAnimation.gameObject.SetActive(false);
         }
 
         internal void PopulateSearchResults(ModProfile[] mods)
@@ -331,7 +336,7 @@ namespace ModIOBrowser
 
         #endregion
 
-        #region Button navigation helper methods
+#region Button navigation helper methods
 
         void SearchResults_ClearButtonNavigation()
         {
@@ -371,6 +376,6 @@ namespace ModIOBrowser
             }            
         }
 
-        #endregion
+#endregion
     }
 }

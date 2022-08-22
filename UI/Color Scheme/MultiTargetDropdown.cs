@@ -68,7 +68,7 @@ namespace ModIOBrowser
                         newSprite = target.spriteState.highlightedSprite;
                         triggername = target.animationTriggers.highlightedTrigger;
                         break;
-#if UNITY_2020_1_OR_NEWER
+#if UNITY_2019_4_OR_NEWER
                     case Selectable.SelectionState.Selected:
                         color = target.colors.highlightedColor;
                         newSprite = target.spriteState.highlightedSprite;
@@ -135,7 +135,7 @@ namespace ModIOBrowser
                 case SelectionState.Highlighted:
                     color = scheme.GetSchemeColor(target.colorSchemeBlock.Highlighted);
                     break;
-#if UNITY_2020_1_OR_NEWER
+#if UNITY_2019_4_OR_NEWER
                 case SelectionState.Selected:
                     color = scheme.GetSchemeColor(target.colorSchemeBlock.Highlighted);
                     break;
@@ -161,7 +161,7 @@ namespace ModIOBrowser
                 case SelectionState.Highlighted:
                     target?.target?.gameObject.SetActive(target.enableOnHighlight);
                     break;
-#if UNITY_2020_1_OR_NEWER
+#if UNITY_2019_4_OR_NEWER
                 case SelectionState.Selected:
                     target.target.gameObject.SetActive(target.enableOnHighlight);
                     break;

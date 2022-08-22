@@ -532,7 +532,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6288028451827600422}
   m_Layer: 5
-  m_Name: Search bar
+  m_Name: InputField
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -715,9 +715,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 6288028452663676796}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b0a09bdabaeaee243b102299f8a88182, type: 3}
+  m_Script: {fileID: 11500000, guid: 65f053af8f7d2fc4c9ce3f4452f26201, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  inputFieldTitle: Search
+  inputFieldPlaceholderText: Search...
+  keyboardtype: 1
   inputField: {fileID: 6288028452663676033}
 --- !u!1 &6288028452739536916
 GameObject:
@@ -870,6 +873,21 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 6288028451827600422}
     m_Modifications:
+    - target: {fileID: 4548728663795401311, guid: c7116525927426f48accdb6f43c34b35,
+        type: 3}
+      propertyPath: inputFieldTitle
+      value: Search
+      objectReference: {fileID: 0}
+    - target: {fileID: 4548728663795401311, guid: c7116525927426f48accdb6f43c34b35,
+        type: 3}
+      propertyPath: inputFieldPlaceholderText
+      value: Search...
+      objectReference: {fileID: 0}
+    - target: {fileID: 4548728663795401311, guid: c7116525927426f48accdb6f43c34b35,
+        type: 3}
+      propertyPath: keyboardtype
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6119197495652215440, guid: c7116525927426f48accdb6f43c34b35,
         type: 3}
       propertyPath: m_Name
