@@ -21,8 +21,11 @@ namespace ModIOBrowser
 		/// </remarks>
 		public static void OnCancel()
 		{
-            Browser.Instance.SetToControllerNavigation();
-            Browser.Cancel();
+			if(Browser.Instance.BrowserCanvas.activeSelf)
+			{
+				Browser.Instance.SetToControllerNavigation();
+				Browser.Cancel();
+			}
 		}
 
 		/// <summary>
@@ -34,8 +37,11 @@ namespace ModIOBrowser
 		/// </remarks>
 		public static void OnAlternate()
 		{
-            Browser.Instance.SetToControllerNavigation();
-            Browser.Alternate();
+			if(Browser.Instance.BrowserCanvas.activeSelf)
+			{
+				Browser.Instance.SetToControllerNavigation();
+				Browser.Alternate();
+			}
 		}
 
 		/// <summary>
@@ -46,8 +52,11 @@ namespace ModIOBrowser
 		/// </remarks>
 		public static void OnOptions()
 		{
-            Browser.Instance.SetToControllerNavigation();
-            Browser.Options();
+			if(Browser.Instance.BrowserCanvas.activeSelf)
+			{
+				Browser.Instance.SetToControllerNavigation();
+				Browser.Options();
+			}
 		}
 
 		/// <summary>
@@ -55,8 +64,11 @@ namespace ModIOBrowser
 		/// </summary>
 		public static void OnTabRight()
 		{
-            Browser.Instance.SetToControllerNavigation();
-            Browser.TabRight();
+			if(Browser.Instance.BrowserCanvas.activeSelf)
+			{
+				Browser.Instance.SetToControllerNavigation();
+				Browser.TabRight();
+			}
 		}
 
 		/// <summary>
@@ -64,8 +76,11 @@ namespace ModIOBrowser
 		/// </summary>
 		public static void OnTabLeft()
 		{
-            Browser.Instance.SetToControllerNavigation();
-            Browser.TabLeft();
+			if(Browser.Instance.BrowserCanvas.activeSelf)
+			{
+				Browser.Instance.SetToControllerNavigation();
+				Browser.TabLeft();
+			}
 		}
 
 		/// <summary>
@@ -76,8 +91,11 @@ namespace ModIOBrowser
 		/// </remarks>
 		public static void OnSearch()
 		{
-            Browser.Instance.SetToControllerNavigation();
-            Browser.SearchInput();
+			if(Browser.Instance.BrowserCanvas.activeSelf)
+			{
+				Browser.Instance.SetToControllerNavigation();
+				Browser.SearchInput();
+			}
 		}
 		
 		/// <summary>
@@ -88,8 +106,11 @@ namespace ModIOBrowser
 		/// </remarks>
 		public static void OnMenu()
 		{
-            Browser.Instance.SetToControllerNavigation();
-            Browser.MenuInput();
+			if(Browser.Instance.BrowserCanvas.activeSelf)
+			{
+				Browser.Instance.SetToControllerNavigation();
+				Browser.MenuInput();
+			}
 		}
 
 		/// <summary>
@@ -101,8 +122,11 @@ namespace ModIOBrowser
 		/// </remarks>
 		public static void OnControllerScroll(float direction)
 		{
-            Browser.Instance.SetToControllerNavigation();
-            Browser.Scroll(direction);
+			if(Browser.Instance.BrowserCanvas.activeSelf)
+			{
+				Browser.Instance.SetToControllerNavigation();
+				Browser.Scroll(direction);
+			}
 		}
 
         /// <summary>
@@ -110,7 +134,10 @@ namespace ModIOBrowser
         /// </summary>
         public static void OnSetToControllerNavigation()
         {
-            Browser.Instance.SetToControllerNavigation();
+	        if(Browser.Instance.BrowserCanvas.activeSelf)
+	        {
+		        Browser.Instance.SetToControllerNavigation();
+	        }
         }
 
         /// <summary>
@@ -118,7 +145,10 @@ namespace ModIOBrowser
         /// </summary>
         public static void OnSetToMouseNavigation()
         {
-            Browser.Instance.SetToMouseNavigation();
+	        if(Browser.Instance.BrowserCanvas.activeSelf)
+	        {
+		        Browser.Instance.SetToMouseNavigation();
+	        }
         }
     }
 }

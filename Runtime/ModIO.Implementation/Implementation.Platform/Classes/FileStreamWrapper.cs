@@ -155,7 +155,7 @@ namespace ModIO.Implementation.Platform
             /// Stream cleanup logic in the Dispose(Boolean) method. For more information, see
             /// Implementing a Dispose Method.
 
-            this.fileStream.Close();
+            base.Close();
         }
 
         /// <summary>
@@ -645,7 +645,7 @@ namespace ModIO.Implementation.Platform
         {
             if(disposing)
             {
-                this.fileStream.Dispose();
+                this.fileStream?.Dispose();
             }
 
             base.Dispose(disposing);

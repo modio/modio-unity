@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using ModIO.Implementation.API;
 using ModIO.Implementation.API.Requests;
 using ModIO.Implementation.API.Objects;
 
@@ -79,7 +80,7 @@ namespace ModIO.Implementation
 
             return categories;
         }
-        public static ModPage ConvertResponseSchemaToModPage(GetMods.ResponseSchema schema)
+        public static ModPage ConvertResponseSchemaToModPage(GetMods.ResponseSchema schema, SearchFilter filter)
         {
             ModPage page = new ModPage();
             if(schema == null)
@@ -89,17 +90,33 @@ namespace ModIO.Implementation
             
             page.totalSearchResultsFound = schema.result_total;
 
+            List<ModProfile> mods = new List<ModProfile>();
+            int offset = filter.pageSize * filter.pageIndex;
+            int highestModIndex = offset + filter.pageSize;
+            // Only return the range of mods the user asked for (because we always take a minimum
+            // of 100 mods per request, but they may have only asked for 10. We cache the other 90)
+            for(int i = offset; i < highestModIndex && i < schema.data.Length; i++)
+            {
+                mods.Add(ConvertModObjectToModProfile(schema.data[i]));
+            }
+            
             ModProfile[] profiles = schema.data == null
                                         ? Array.Empty<ModProfile>()
                                         : ConvertModObjectsToModProfile(schema.data);
 
-            page.modProfiles = profiles;
-
+            page.modProfiles = mods.ToArray();
+            
+            // Add this response into the cache
+            ModPage pageForCache = new ModPage();
+            pageForCache.totalSearchResultsFound = schema.result_total;
+            pageForCache.modProfiles = profiles;
+            ResponseCache.AddModsToCache(GetMods.URL_Unpaginated(filter), offset, pageForCache);
+            
             return page;
         }
 
         // The schema is identical to GetMods but left in here in case it changes in the future
-        public static ModPage ConvertResponseSchemaToModPage(PaginatingRequest<ModObject> schema)
+        public static ModPage ConvertResponseSchemaToModPage(PaginatingRequest<ModObject> schema, SearchFilter filter)
         {
             ModPage page = new ModPage();
             if(schema == null)
@@ -107,12 +124,23 @@ namespace ModIO.Implementation
                 return page;
             }
             page.totalSearchResultsFound = schema.result_total;
+            
+            List<ModProfile> mods = new List<ModProfile>();
+            int offset = filter.pageSize * filter.pageIndex;
+            int highestModIndex = offset + filter.pageSize;
+            // Only return the range of mods the user asked for (because we always take a minimum
+            // of 100 mods per request, but they may have only asked for 10. We cache the other 90)
+            for(int i = offset; i < highestModIndex && i < schema.data.Length; i++)
+            {
+                mods.Add(ConvertModObjectToModProfile(schema.data[i]));
+            }
+            
+            // LEGACY (Response Cache makes this no longer needed)
+            // ModProfile[] profiles = schema.data == null
+            //                             ? Array.Empty<ModProfile>()
+            //                             : ConvertModObjectsToModProfile(schema.data);
 
-            ModProfile[] profiles = schema.data == null
-                                        ? Array.Empty<ModProfile>()
-                                        : ConvertModObjectsToModProfile(schema.data);
-
-            page.modProfiles = profiles;
+            page.modProfiles = mods.ToArray();
 
             return page;
         }

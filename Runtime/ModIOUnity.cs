@@ -615,13 +615,13 @@ namespace ModIO
         ///     }
         /// }
         /// </code>
-        public static void AuthenticateUserViaSwitch(string switchToken,
+        public static void AuthenticateUserViaSwitch(string SwitchNsaId,
                                                      [CanBeNull] string emailAddress,
                                                      [CanBeNull] TermsHash? hash,
                                                      Action<Result> callback)
         {
             ModIOUnityImplementation.AuthenticateUser(
-                switchToken, AuthenticationServiceProvider.Switch, emailAddress, hash, null, null,
+                SwitchNsaId, AuthenticationServiceProvider.Switch, emailAddress, hash, null, null,
                 null, callback);
         }
 
@@ -864,21 +864,21 @@ namespace ModIO
         /// <seealso cref="EnableModManagement(ModIO.ModManagementEventDelegate)"/>
         /// <seealso cref="Result"/>
         /// <code>
-        /// void Example()
-        /// {
-        ///     Result result = ModIOUnity.RemoveUserData();
+        /// //static async void Example()
+        ///{
+        ///    Result result = await ModIOUnity.LogOutCurrentUser();
         ///
-        ///     if (result.Succeeded())
-        ///     {
-        ///         Debug.Log("The current user has been logged and their local data removed");
-        ///     }
-        ///     else
-        ///     {
-        ///         Debug.Log("Failed to log out the current user");
-        ///     }
-        /// }
+        ///    if(result.Succeeded())
+        ///    {
+        ///        Debug.Log("The current user has been logged and their local data removed");
+        ///    }
+        ///    else
+        ///    {
+        ///        Debug.Log("Failed to log out the current user");
+        ///    }
+        ///}
         /// </code>
-        public static Result RemoveUserData()
+        public static Result LogOutCurrentUser()
         {
             return ModIOUnityImplementation.RemoveUserData();
         }
@@ -1340,14 +1340,14 @@ namespace ModIO
         /// Gets an array of mods that are installed on the current device.
         /// </summary>
         /// <remarks>
-        /// Note that these may not all be subscribed by the current user. If you wish to get all
+        /// Note that these will not be subscribed by the current user. If you wish to get all
         /// of the current user's installed mods use ModIOUnity.GetSubscribedMods() and check the
         /// SubscribedMod.status equals SubscribedModStatus.Installed.
         /// </remarks>
         /// <param name="result">an out Result to inform whether or not it was able to get installed mods</param>
         /// <seealso cref="InstalledMod"/>
         /// <seealso cref="GetSubscribedMods"/>
-        /// <returns>an array of InstalledMod for each existing mod installed on the current device</returns>
+        /// <returns>an array of InstalledMod for each existing mod installed on the current device (and not subscribed by the current user)</returns>
         /// <code>
         /// void Example()
         /// {
@@ -1369,6 +1369,33 @@ namespace ModIO
         }
 
         /// <summary>
+        /// Gets an array of mods that are installed for the current user.
+        /// </summary>
+        /// <param name="result">an out Result to inform whether or not it was able to get installed mods</param>
+        /// <seealso cref="UserInstalledMod"/>
+        /// <seealso cref="GetSubscribedMods"/>
+        /// <returns>an array of InstalledModUser for each existing mod installed for the user</returns>
+        /// <code>
+        /// void Example()
+        /// {
+        ///     InstalledModUser[] mods = ModIOUnity.GetSystemInstalledModsUser(out Result result);
+        /// 
+        ///     if (result.Succeeded())
+        ///     {
+        ///         Debug.Log("found " + mods.Length.ToString() + " mods installed");
+        ///     }
+        ///     else
+        ///     {
+        ///         Debug.Log("failed to get installed mods");
+        ///     }
+        /// }
+        /// </code>
+        public static UserInstalledMod[] GetInstalledModsForUser(out Result result)
+        {
+            return ModIOUnityImplementation.GetInstalledModsForUser(out result);
+        }
+
+        /// <summary>
         /// This informs the mod management system that this mod should be uninstalled if not
         /// subscribed by the current user. (such as a mod installed by a different user not
         /// currently active).
@@ -1387,7 +1414,7 @@ namespace ModIO
         /// <seealso cref="SubscribeToMod"/>
         /// <seealso cref="UnsubscribeFromMod"/>
         /// <seealso cref="EnableModManagement"/>
-        /// <seealso cref="RemoveUserData"/>
+        /// <seealso cref="LogOutCurrentUser"/>
         /// <code>
         ///
         /// ModProfile mod;
@@ -1516,7 +1543,8 @@ namespace ModIO
         }
 
         /// <summary>
-        /// This is used to edit or change data in an existing mod profile on the mod.io server.
+        /// This is used to edit or change data (except images) in an existing mod profile on the
+        /// mod.io server. If you want to add or edit images, use UploadModMedia.
         /// </summary>
         /// <remarks>
         /// You need to assign the ModId of the mod you want to edit inside of the ModProfileDetails
@@ -1534,7 +1562,7 @@ namespace ModIO
         /// {
         ///     ModProfileDetails profile = new ModProfileDetails();
         ///     profile.id = modId;
-        ///     profile.summary = "a new brief summary about this mod being edited"
+        ///     profile.summary = "a new brief summary about this mod being edited";
         /// 
         ///     ModIOUnity.EditModProfile(profile, EditProfileCallback);
         /// }
@@ -1586,6 +1614,10 @@ namespace ModIO
         /// actual archive of a mod. This method can be used to update a mod to a newer version
         /// (you can include changelog information in ModfileDetails).
         /// </summary>
+        /// <remarks>
+        /// If you want to upload images such as a new logo or gallery images, you can use
+        /// UploadModMedia instead.
+        /// </remarks>
         /// <param name="modfile">the mod file and details to upload</param>
         /// <param name="callback">callback with the Result of the upload when the operation finishes</param>
         /// <seealso cref="Result"/>
@@ -1593,6 +1625,7 @@ namespace ModIO
         /// <seealso cref="ArchiveModProfile"/>
         /// <seealso cref="GetCurrentUploadHandle"/>
         /// <seealso cref="ModIOUnityAsync.UploadModfile"/>
+        /// <seealso cref="UploadModMedia"/>
         /// <code>
         /// 
         /// ModId modId;
@@ -1623,9 +1656,44 @@ namespace ModIO
             ModIOUnityImplementation.UploadModfile(modfile, callback);
         }
 
-        public static void UploadModMedia(ModProfileDetails modfileDetails, Action<Result> callback)
+        /// <summary>
+        /// This is used to update the logo of a mod or the gallery images. This works very similar
+        /// to EditModProfile except it only affects the images.
+        /// </summary>
+        /// <param name="modProfileDetails">this holds the reference to the images you wish to upload</param>
+        /// <param name="callback">a callback with the Result of the operation</param>
+        /// <seealso cref="ModProfileDetails"/>
+        /// <seealso cref="Result"/>
+        /// <seealso cref="EditModProfile"/>
+        /// <seealso cref="ModIOUnityAsync.UploadModMedia"/>
+        /// <code>
+        /// ModId modId;
+        /// Texture2D newTexture;
+        /// 
+        /// void Example()
+        /// {
+        ///     ModProfileDetails profile = new ModProfileDetails();
+        ///     profile.id = modId;
+        ///     profile.logo = newTexture;
+        /// 
+        ///     ModIOUnity.UploadModMedia(profile, UploadProfileCallback);
+        /// }
+        ///
+        /// void UploadProfileCallback(Result result)
+        /// {
+        ///     if (result.Succeeded())
+        ///     {
+        ///         Debug.Log("uploaded new mod logo");
+        ///     }
+        ///     else
+        ///     {
+        ///         Debug.Log("failed to uploaded mod logo");
+        ///     }
+        /// }
+        /// </code>
+        public static void UploadModMedia(ModProfileDetails modProfileDetails, Action<Result> callback)
         {
-            ModIOUnityImplementation.UploadModMedia(modfileDetails, callback);
+            ModIOUnityImplementation.UploadModMedia(modProfileDetails, callback);
         }
 
         /// <summary>
@@ -1672,6 +1740,81 @@ namespace ModIO
         public static void GetCurrentUserCreations(Action<ResultAnd<ModProfile[]>> callback)
         {
             ModIOUnityImplementation.GetCurrentUserCreations(callback);
+        }
+
+        /// <summary>
+        /// Adds the provided tags to the specified mod id. In order for this to work the
+        /// authenticated user must have permission to edit the specified mod. Only existing tags
+        /// as part of the game Id will be added.
+        /// </summary>
+        /// <param name="modId">Id of the mod to add tags to</param>
+        /// <param name="tags">array of tags to be added</param>
+        /// <param name="callback">callback with the result of the operation</param>
+        /// <seealso cref="Result"/>
+        /// <seealso cref="DeleteTags"/>
+        /// <seealso cref="ModIOUnityAsync.AddTags"/>
+        /// <code>
+        /// 
+        /// ModId modId;
+        /// string[] tags;
+        /// 
+        /// void Example()
+        /// {
+        ///     ModIOUnity.AddTags(modId, tags, AddTagsCallback);
+        /// }
+        ///
+        /// void AddTagsCallback(Result result)
+        /// {
+        ///     if (result.Succeeded())
+        ///     {
+        ///         Debug.Log("added tags");
+        ///     }
+        ///     else
+        ///     {
+        ///         Debug.Log("failed to add tags");
+        ///     }
+        /// }
+        /// </code>
+        public static void AddTags(ModId modId, string[] tags, Action<Result> callback)
+        {
+            ModIOUnityImplementation.AddTags(modId, tags, callback);
+        }
+
+        /// <summary>
+        /// Deletes the specified tags from the mod. In order for this to work the
+        /// authenticated user must have permission to edit the specified mod.
+        /// </summary>
+        /// <param name="modId">the id of the mod for deleting tags</param>
+        /// <param name="tags">array of tags to be deleted</param>
+        /// <param name="callback">callback with the result of the operation</param>
+        /// <seealso cref="Result"/>
+        /// <seealso cref="AddTags"/>
+        /// <seealso cref="ModIOUnityAsync.DeleteTags"/>
+        /// <code>
+        /// 
+        /// ModId modId;
+        /// string[] tags;
+        /// 
+        /// void Example()
+        /// {
+        ///     ModIOUnity.DeleteTags(modId, tags, DeleteTagsCallback);
+        /// }
+        ///
+        /// void DeleteTagsCallback(Result result)
+        /// {
+        ///     if (result.Succeeded())
+        ///     {
+        ///         Debug.Log("deleted tags");
+        ///     }
+        ///     else
+        ///     {
+        ///         Debug.Log("failed to delete tags");
+        ///     }
+        /// }
+        /// </code>
+        public static void DeleteTags(ModId modId, string[] tags, Action<Result> callback)
+        {
+            ModIOUnityImplementation.DeleteTags(modId, tags, callback);
         }
 #endregion // Mod Uploading
 

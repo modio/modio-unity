@@ -47,7 +47,7 @@ namespace ModIOBrowser
 
 #region Notification Panel
 
-	    void ProcessModManagementEventIntoNotification(ModManagementEventType type, ModId modId)
+	    void ProcessModManagementEventIntoNotification(ModManagementEventType type, ModId modId, Result result)
 	    {
 		    switch(type)
 		    {
@@ -60,18 +60,28 @@ namespace ModIOBrowser
 				    });
 				    break;
 			    case ModManagementEventType.InstallFailed:
+				    
+				    string description = result.IsStorageSpaceInsufficient() ?
+					    "Not enough space" :
+					    $"{GetModNameFromId(modId)} failed to install";
+				    
 				    AddNotificationToQueue(new QueuedNotice
 				    {
 					    title = "Mod installation failed",
-					    description = $"{GetModNameFromId(modId)} failed to install",
+					    description = description,
 					    positiveAccent = false
 				    });
 				    break;
 			    case ModManagementEventType.DownloadFailed:
+				    
+				    description = result.IsStorageSpaceInsufficient() ?
+					    "Not enough space" :
+					    $"{GetModNameFromId(modId)} failed to download";
+				    
 				    AddNotificationToQueue(new QueuedNotice
 				    {
 					    title = "Mod download failed",
-					    description = $"{GetModNameFromId(modId)} failed to download",
+					    description = description,
 					    positiveAccent = false
 				    });
 				    break;

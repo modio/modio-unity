@@ -24,6 +24,10 @@
 
     //Minor panels:
     ConfirmUninstall, 
-    ContextMenu 
+    ContextMenu,
+
+    NotificationPopup
+
+
 }
 

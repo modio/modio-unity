@@ -13,6 +13,8 @@
         /// <summary>Holds the value for the platform header value to use in requests.</summary>
         public static string RESTAPI_HEADER = null;
 
+        public const bool SynchronizedDataJobs = false;
+
         /// <summary>Creates the user data storage service.</summary>
         public static async Task<ResultAnd<IUserDataService>> CreateUserDataService(
             string userProfileIdentifier, long gameId, BuildSettings settings)

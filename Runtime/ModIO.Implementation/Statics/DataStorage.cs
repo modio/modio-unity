@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading.Tasks;
 using ModIO.Implementation.API.Objects;
 using ModIO.Implementation.Platform;
@@ -11,11 +10,13 @@ namespace ModIO.Implementation
     /// <summary>Static interface for reading and writing files.</summary>
     internal static class DataStorage
     {
-#region Running Methods for Open / Close File
-        static Task<Result> lastRegistryTask = null;
-        // static Task<Result> queueToOpenRegistry = null;
-#endregion // Running Methods for Open / Close File
-
+        // TODO Revisit this later, as most of it's benefits are now met with the mutex. Maybe expand this to more generic tasks or for ModManagement
+        internal static TaskQueueRunner taskRunner = new TaskQueueRunner(1, true, PlatformConfiguration.SynchronizedDataJobs);
+        
+        static Mutex FileWriteMutex = new Mutex();
+        
+        public static Mutex GetFileWriteMutex() => FileWriteMutex;
+        
 #region Data Services
 
         /// <summary>Persistent data storage service.</summary>
@@ -37,22 +38,20 @@ namespace ModIO.Implementation
         public static async Task<Result> SaveUserData()
         {
             byte[] userDataJSON = IOUtil.GenerateUTF8JSONData(UserData.instance);
-            return await DataStorage.user.WriteFileAsync(
-                $@"{DataStorage.user.RootDirectory}/{DataStorage.UserDataFilePath}", userDataJSON);
+
+            return await taskRunner.AddTask(TaskPriority.HIGH, 1, 
+                async () => await user.WriteFileAsync($@"{user.RootDirectory}/{UserDataFilePath}", userDataJSON));
         }
 
         /// <summary>Reads the user data from disk.</summary>
         public static async Task<Result> LoadUserData()
-        {
-            UserData userData = null;
-            Result result;
-
-            ResultAnd<byte[]> userDataRead = await DataStorage.user.ReadFileAsync(
-                $@"{DataStorage.user.RootDirectory}/{DataStorage.UserDataFilePath}");
-            result = userDataRead.result;
+        {            
+            var userDataReadTask = await taskRunner.AddTask(TaskPriority.HIGH, 1,
+                async () => await user.ReadFileAsync($@"{user.RootDirectory}/{UserDataFilePath}"));
+            Result result = userDataReadTask.result;
 
             if(result.Succeeded()
-               && IOUtil.TryParseUTF8JSONData(userDataRead.value, out userData, out result))
+               && IOUtil.TryParseUTF8JSONData(userDataReadTask.value, out UserData userData, out result))
             {
                 UserData.instance = userData;
             }
@@ -81,14 +80,14 @@ namespace ModIO.Implementation
             // URL: https://blog.codinghorror.com/url-shortening-hashes-in-practice/
 
             string filename = IOUtil.GenerateMD5(imageURL);
-            return $@"{DataStorage.temp.RootDirectory}/images/{filename}.png";
+            return $@"{temp.RootDirectory}/images/{filename}.png";
         }
 
         /// <summary>Stores an image to the temporary cache.</summary>
         public static async Task<Result> StoreImage(DownloadReference imageURL, Texture2D texture)
         {
             // - generate file path -
-            string filePath = DataStorage.GenerateImageCacheFilePath(imageURL.url);
+            string filePath = GenerateImageCacheFilePath(imageURL.url);
             if(filePath == null)
             {
                 return ResultBuilder.Create(ResultCode.Internal_InvalidParameter);
@@ -100,9 +99,11 @@ namespace ModIO.Implementation
             {
                 return ResultBuilder.Create(ResultCode.Internal_InvalidParameter);
             }
-
-            // - store -
-            Result result = await DataStorage.temp.WriteFileAsync(filePath, pngData);
+            
+            // - store -            
+            Result result = await taskRunner.AddTask(TaskPriority.HIGH, 1, 
+                async () => await temp.WriteFileAsync(filePath, pngData));
+            
             return result;
         }
 
@@ -110,14 +111,16 @@ namespace ModIO.Implementation
         public static async Task<ResultAnd<Texture2D>> TryRetrieveImage(DownloadReference imageURL)
         {
             // - generate file path -
-            string filePath = DataStorage.GenerateImageCacheFilePath(imageURL.url);
+            string filePath = GenerateImageCacheFilePath(imageURL.url);
             if(filePath == null)
             {
                 return ResultAnd.Create<Texture2D>(ResultCode.Internal_InvalidParameter, null);
             }
 
             // - read -
-            ResultAnd<byte[]> readResult = await DataStorage.temp.ReadFileAsync(filePath);
+            ResultAnd<byte[]> readResult = await taskRunner.AddTask(TaskPriority.HIGH, 1, 
+                async () => await temp.ReadFileAsync(filePath));
+            
             if(!readResult.result.Succeeded())
             {
                 return ResultAnd.Create<Texture2D>(readResult.result, null);
@@ -143,13 +146,13 @@ namespace ModIO.Implementation
         /// <summary>Generates the path for the extraction directory.</summary>
         public static string GenerateExtractionDirectoryPath()
         {
-            return $@"{DataStorage.persistent.RootDirectory}/installation";
+            return $@"{persistent.RootDirectory}/installation";
         }
 
         /// <summary>Generates the path for an installation directory.</summary>
         public static string GenerateInstallationDirectoryPath(long modId, long modfileId)
         {
-            return $@"{DataStorage.persistent.RootDirectory}/mods/{modId}_{modfileId}";
+            return $@"{persistent.RootDirectory}/mods/{modId}_{modfileId}";
         }
 
         // REVIEW @Jackson TODO Please implement (if this is how you'd use it)
@@ -163,15 +166,15 @@ namespace ModIO.Implementation
         /// <summary>Generates the path for a modfile archive.</summary>
         public static string GenerateModfileArchiveFilePath(long modId, long modfileId)
         {
-            return $@"{DataStorage.temp.RootDirectory}/{modId}_{modfileId}.zip";
+            return $@"{temp.RootDirectory}/{modId}_{modfileId}.zip";
         }
 
         /// <summary>Tests if a mod installation directory exists.</summary>
         public static bool TryGetInstallationDirectory(long modId, long modfileId,
                                                        out string directoryPath)
         {
-            directoryPath = DataStorage.GenerateInstallationDirectoryPath(modId, modfileId);
-            return DataStorage.persistent.DirectoryExists(directoryPath);
+            directoryPath = GenerateInstallationDirectoryPath(modId, modfileId);
+            return persistent.DirectoryExists(directoryPath);
         }
 
         // REVIEW @Jackson TODO Please implement
@@ -179,16 +182,15 @@ namespace ModIO.Implementation
         public static bool TryGetModfileDetailsDirectory(string directoryPath,
                                                          out string properDirectory)
         {
-            Debug.Log("Not Implemented Yet");
-            properDirectory = DataStorage.GenerateModfileDetailsDirectoryPath(directoryPath);
-            return System.IO.Directory.Exists(directoryPath);
+            properDirectory = GenerateModfileDetailsDirectoryPath(directoryPath);
+            return persistent.DirectoryExists(directoryPath);
         }
 
         /// <summary>Tests to see if a modfile archive exists.</summary>
         public static bool TryGetModfileArchive(long modId, long modfileId, out string filePath)
         {
-            filePath = DataStorage.GenerateModfileArchiveFilePath(modId, modfileId);
-            return DataStorage.temp.FileExists(filePath);
+            filePath = GenerateModfileArchiveFilePath(modId, modfileId);
+            return temp.FileExists(filePath);
         }
 
         /// <summary>Attempts to delete a modfile archive.</summary>
@@ -202,9 +204,9 @@ namespace ModIO.Implementation
         /// pair.</summary>
         public static bool TryDeleteInstalledMod(long modId, long modfileId, out Result result)
         {
-            string directory = DataStorage.GenerateInstallationDirectoryPath(modId, modfileId);
+            string directory = GenerateInstallationDirectoryPath(modId, modfileId);
 
-            result = DataStorage.persistent.DeleteDirectory(directory);
+            result = persistent.DeleteDirectory(directory);
 
             return (result.Succeeded());
         }
@@ -212,26 +214,37 @@ namespace ModIO.Implementation
         /// <summary>Deletes the extraction directory.</summary>
         public static void DeleteExtractionDirectory()
         {
-            DataStorage.persistent.DeleteDirectory(DataStorage.GenerateExtractionDirectoryPath());
+            persistent.DeleteDirectory(GenerateExtractionDirectoryPath());
         }
 
         /// <summary>Moves extraction directory to the given installation location.</summary>
         public static Result MakeInstallationFromExtractionDirectory(long modId, long modfileId)
         {
-            string extractionDirPath = DataStorage.GenerateExtractionDirectoryPath();
-            string installDirPath = DataStorage.GenerateInstallationDirectoryPath(modId, modfileId);
+            string extractionDirPath = GenerateExtractionDirectoryPath();
+            string installDirPath = GenerateInstallationDirectoryPath(modId, modfileId);
             Result result;
 
             try
             {
-                result = DataStorage.persistent.DeleteDirectory(installDirPath);
-
+                result = persistent.DeleteDirectory(installDirPath);
+                
                 if(result.Succeeded()
-                   && SystemIOWrapper.TryCreateParentDirectory(installDirPath, out result))
+                   && persistent.TryCreateParentDirectory(installDirPath))
                 {
-                    Directory.Move(extractionDirPath, installDirPath);
+                    result = persistent.MoveDirectory(extractionDirPath, installDirPath);
 
-                    result = ResultBuilder.Success;
+                    if(!result.Succeeded())
+                    {
+                        Logger.Log(LogLevel.Error,
+                            "Failed to move the extracted files into the proper directory."
+                            + $"\n.src={extractionDirPath}" + $"\n.dest={installDirPath}");
+                    }
+                    else
+                    {
+                        Logger.Log(LogLevel.Verbose,
+                            "Moved the extracted files into the proper directory."
+                            + $"\n.src={extractionDirPath}" + $"\n.dest={installDirPath}");
+                    }
                 }
             }
             catch(Exception e)
@@ -254,7 +267,8 @@ namespace ModIO.Implementation
             string filePath = GenerateModfileArchiveFilePath(modId, modfileId);
 
             ResultAnd<(long fileSize, string fileHash)> sizeAndHashResult =
-                await DataStorage.temp.GetFileSizeAndHash(filePath);
+                await taskRunner.AddTask(TaskPriority.HIGH, 1, 
+                    async () => await temp.GetFileSizeAndHash(filePath));
 
             if(!sizeAndHashResult.result.Succeeded())
             {
@@ -277,110 +291,33 @@ namespace ModIO.Implementation
         /// <summary>Generates the system registry path.</summary>
         public static string GenerateSystemRegistryFilePath()
         {
-            return $@"{DataStorage.persistent.RootDirectory}/state.json";
+            return $@"{persistent.RootDirectory}/state.json";
         }
 
         /// <summary>Writes the ModCollectionRegistry to disk.</summary>
         public static async Task<Result> SaveSystemRegistry(ModCollectionRegistry registry)
         {
-            Result result;
-
-            Task<Result> task =
-                new Task<Result>(() => SaveSystemRegistryOperation(registry).Result);
-            
-            // if there is already a save operation running, wait for it to finish
-            if(lastRegistryTask != null)
-            {
-                Task taskToWaitFor = lastRegistryTask;
-                lastRegistryTask = task;
-                await taskToWaitFor;
-            }
-            
-            // now run our own task to make changes to the registry
-            task.Start();
-                
-            result = await task;
-
-            if(lastRegistryTask == task)
-            {
-                lastRegistryTask = null;
-            }
-            
-            return result;
-            
-            // // This is the old method
-            //
-            // result = await openRegistry;
-            //
-            // // when the task is finished make sure we remove any reference to it
-            // openRegistry = null;
-            //
-            // return result;
-            //
-            //
-            // /*
-            //  This may look like nonsense but the basic concept is there only ever needs to be ONE
-            //  queued Task. Because if ten operations are waiting for the current Save operation to be
-            //  completed, they can all queue or wait for the same result of whatever save operation is
-            //  run next.
-            // */
-            // Result result;
-            // if(openRegistry != null)
-            // {
-            //     if(queueToOpenRegistry != null)
-            //     {
-            //         return await queueToOpenRegistry;
-            //     }
-            //
-            //     // The reason we put this async task into a lambda function is so that we can delay
-            //     // the start. We can then cache it and the next time this method is run we can see
-            //     // if there is already a task waiting to start.
-            //     queueToOpenRegistry =
-            //         new Task<Result>(() => SaveSystemRegistryOperation(registry).Result);
-            //     
-            //     // Wait for the current running task to finish
-            //     await openRegistry;
-            //     
-            //     // now run our own task to make changes to the registry
-            //     queueToOpenRegistry.Start();
-            //     
-            //     result = await queueToOpenRegistry;
-            //     
-            //     queueToOpenRegistry = null;
-            //     
-            //     return result;
-            // }
-            //
-            // // cache the task for saving the registry so we dont overlap tasks
-            // openRegistry = SaveSystemRegistryOperation(registry);
-            //
-            // result = await openRegistry;
-            //
-            // // when the task is finished make sure we remove any reference to it
-            // openRegistry = null;
-            //
-            // return result;
-        }
-
-        static async Task<Result> SaveSystemRegistryOperation(ModCollectionRegistry registry)
-        {
-            string filePath = DataStorage.GenerateSystemRegistryFilePath();
+            // TODO For some platform implementations, check build settings, and create a cooldown/batching feature if required
+            string filePath = GenerateSystemRegistryFilePath();
             byte[] data = IOUtil.GenerateUTF8JSONData(registry);
-            return await DataStorage.persistent.WriteFileAsync(filePath, data);
+
+            return await taskRunner.AddTask(TaskPriority.HIGH, 1, 
+                async () => await persistent.WriteFileAsync(filePath, data));
         }
 
         /// <summary>Reads the ModCollectionRegistry from disk.</summary>
         public static async Task<ResultAnd<ModCollectionRegistry>> LoadSystemRegistry()
         {
-            string filePath = DataStorage.GenerateSystemRegistryFilePath();
+            string filePath = GenerateSystemRegistryFilePath();
 
-            if(!DataStorage.persistent.FileExists(filePath))
+            if(!persistent.FileExists(filePath))
             {
                 // Registry hasn't been created yet, returning new object
                 return ResultAnd.Create(ResultBuilder.Success, new ModCollectionRegistry());
             }
 
-            ResultAnd<byte[]> readResult = await DataStorage.persistent.ReadFileAsync(filePath);
+            ResultAnd<byte[]> readResult = await taskRunner.AddTask(TaskPriority.HIGH, 1, 
+                async () => await persistent.ReadFileAsync(filePath));
 
             Result result = readResult.result;
             ModCollectionRegistry registry = null;
@@ -401,21 +338,34 @@ namespace ModIO.Implementation
             Debug.LogWarning("Not Implemented Yet");
             return ResultBuilder.Success;
         }
+        
+        public static ModIOFileStream OpenArchiveReadStream(string filePath,
+                                                            out Result result)
+        {
+            return temp.OpenReadStream(filePath, out result);
+        }
 
         /// <summary>Opens an archive read stream.</summary>
         public static ModIOFileStream OpenArchiveReadStream(long modId, long modfileId,
                                                             out Result result)
         {
-            string filePath = DataStorage.GenerateModfileArchiveFilePath(modId, modfileId);
-            return DataStorage.temp.OpenReadStream(filePath, out result);
+            string filePath = GenerateModfileArchiveFilePath(modId, modfileId);
+            return OpenArchiveReadStream(filePath, out result);
         }
 
-        /// <summary>Opens an archive read stream.</summary>
+        /// <summary>Opens an archive output stream.</summary>
         public static ModIOFileStream OpenArchiveEntryOutputStream(string relativePath,
                                                                    out Result result)
         {
-            string absPath = $@"{DataStorage.GenerateExtractionDirectoryPath()}/{relativePath}";
-            return DataStorage.persistent.OpenWriteStream(absPath, out result);
+            string absPath = $@"{GenerateExtractionDirectoryPath()}/{relativePath}";
+            return persistent.OpenWriteStream(absPath, out result);
+        }
+
+        /// <summary>Creates a modfile download output stream.</summary>
+        public static ModIOFileStream CreateArchiveDownloadStream(string absolutePath,
+                                                                  out Result result)
+        {
+            return temp.OpenWriteStream(absolutePath, out result);
         }
 
         /// <summary>
@@ -427,8 +377,8 @@ namespace ModIO.Implementation
         public static IEnumerable<ResultAnd<ModIOFileStream>> IterateFilesInDirectory(
             string directoryPath)
         {
-            IDataService dataService = DataStorage.persistent;
-            
+            IDataService dataService = persistent;
+
 #if UNITY_EDITOR
             // // Note from Steve: I dont see what the point of this is?
             // EditorDataService pds = (EditorDataService)DataStorage.persistent;
@@ -447,7 +397,7 @@ namespace ModIO.Implementation
             // {
             //     dataService = uds;
             // }
-            dataService = DataStorage.persistent;
+            dataService = persistent;
 #elif UNITY_STANDALONE || UNITY_GAMECORE
             dataService = DataStorage.persistent;
 #endif // UNITY_EDITOR
@@ -461,7 +411,8 @@ namespace ModIO.Implementation
                 ResultAnd<List<string>> filesResult = dataService.ListAllFiles(directoryPath);
                 resultCode = filesResult.result.code;
                 fileList = filesResult.value;
-                //Logger.Log(LogLevel.Error, $"Failed list all files. Result: [{filesResult.result.code};{filesResult.result.code_api}]");
+                // Logger.Log(LogLevel.Error, $"Failed list all files. Result:
+                // [{filesResult.result.code};{filesResult.result.code_api}]");
             }
 
             if(resultCode == ResultCode.Success)
@@ -476,7 +427,9 @@ namespace ModIO.Implementation
                     }
                     else
                     {
-                        Logger.Log(LogLevel.Error, $"Failed open stream. Result: [{result.code};{result.code_api}]");
+                        Logger.Log(
+                            LogLevel.Error,
+                            $"Failed open stream. Result: [{result.code};{result.code_api}]");
                         resultCode = result.code;
                         break;
                     }

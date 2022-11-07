@@ -30,6 +30,7 @@ namespace ModIOBrowser.Implementation
         [SerializeField] Button moreOptionsButton;
         [SerializeField] GameObject failedToLoadLogo;
         [SerializeField] GameObject errorInstalling;
+        [SerializeField] TMP_Text errorInstallingText;
         [SerializeField] Transform contextMenuPosition;
         public Action imageLoaded;
         RectTransform rectTransform;
@@ -108,6 +109,9 @@ namespace ModIOBrowser.Implementation
             {
                 installStatus.gameObject.SetActive(false);
                 errorInstalling.SetActive(true);
+                errorInstallingText.text = 
+                        Browser.Instance.notEnoughSpaceForTheseMods.Contains(profile.id)
+                            ? "Full storage" : "Error";
             } 
             else
             {

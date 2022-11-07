@@ -28,6 +28,11 @@ namespace ModIO.Implementation.Platform
         /// <summary>Deletes a directory and its contents recursively.</summary>
         Result DeleteDirectory(string directoryPath);
 
+        /// <summary> Moves a directory to a new filepath (Can also be used to rename) </summary>
+        Result MoveDirectory(string directoryPath, string newDirectoryPath);
+
+        bool TryCreateParentDirectory(string directoryPath);
+
         // --- Utility ---
         /// <summary>Determines whether a file exists.</summary>
         bool FileExists(string filePath);
@@ -40,5 +45,8 @@ namespace ModIO.Implementation.Platform
 
         /// <summary>Lists all the files in the given directory recursively.</summary>
         ResultAnd<List<string>> ListAllFiles(string directoryPath);
+
+        /// <summary>Gets the remaining amount of space available to write for this data service </summary>
+        bool IsThereEnoughDiskSpaceFor(long numberOfBytes);
     }
 }

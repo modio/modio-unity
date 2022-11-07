@@ -39,6 +39,7 @@ namespace ModIOBrowser
         HashSet<ModId> pendingUnsubscribes = new HashSet<ModId>();
         IEnumerator collectionHeaderTransition;
         float collectionHeaderLastAlphaTarget = -1;
+        public HashSet<ModId> notEnoughSpaceForTheseMods = new HashSet<ModId>();
         
         [Header("Uninstall Confirmation")]
         [SerializeField] GameObject uninstallConfirmationPanel;

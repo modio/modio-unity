@@ -41,6 +41,12 @@ namespace ModIO.Implementation
         static HashSet<ModId> taintedMods = new HashSet<ModId>();
 
         /// <summary>
+        /// ModIds that fail to be downloaded/installed due to disk space being full get added to
+        /// this group and will be removed after a delete job occurs.
+        /// </summary>
+        static HashSet<ModId> notEnoughStorageMods = new HashSet<ModId>();
+
+        /// <summary>
         /// This list is used to tag orphan mod collection entries that no longer need to exist in
         /// the Registry. Once tagged, they will periodically get cleared when a new ModManagement
         /// job is checked for.
@@ -158,7 +164,7 @@ namespace ModIO.Implementation
             Logger.Log(LogLevel.Message,
                 $"Aborting download of Mod[{currentJob.mod.modObject.id}_" +
                 $"{currentJob.mod.modObject.modfile.id}]");
-            ModManagement.currentJob.downloadWebRequest.Abort();
+            currentJob.downloadWebRequest.Abort();
             abortingDownloadsModObjectIds.Add(currentJob.mod.modObject.id);
         }
 
@@ -187,10 +193,11 @@ namespace ModIO.Implementation
                     else
                     {
                         Logger.Log(LogLevel.Error,
-                                   "ModManagement Failed to complete an operation."
-                                       + $" the Mod[{currentJob.mod.modObject.id}_{currentJob.mod.modObject.modfile.id}]"
-                                       + " will be ignored by ModManagement for the duration"
-                                       + " of the session.");
+                            "ModManagement Failed to complete an operation."
+                            + $" the Mod[{currentJob.mod.modObject.id}_{currentJob.mod.modObject.modfile.id}]"
+                            + " will be ignored by ModManagement for the duration"
+                            + " of the session. If it failed due to insufficient storage"
+                            + " space it will re-attempt after a mod deletion has occurred.");
 
                         taintedMods.Add((ModId)currentJob.mod.modObject.id);
                     }
@@ -378,6 +385,26 @@ namespace ModIO.Implementation
                         InvokeModManagementDelegate((ModId)modId,
                                                     ModManagementEventType.Uninstalled,
                                                     ResultBuilder.Success);
+                        
+                        // Re-check mods that may not have installed from low storage space
+                        if(notEnoughStorageMods.Count > 0)
+                        {
+                            // Also remove the temp archive file if we know we ran into storage issues
+                            // We do not need to check the result
+                            DataStorage.TryDeleteModfileArchive(modId, job.mod.currentModfile.id, out Result _);
+                            // the reason we dont always delete the archive is because a user may 
+                            // accidentally hit unsubscribe or change their mind a few seconds later
+                            // and if it is a large mod it would take a long time to re-download it.
+                        }
+                        // Flush not enough space mods from the tainted list so they will be re-attempted
+                        foreach(var mod in notEnoughStorageMods)
+                        {
+                            if(taintedMods.Contains(mod))
+                            {
+                                taintedMods.Remove(mod);
+                            }
+                        }
+                        notEnoughStorageMods.Clear();
                     }
                     else
                     {
@@ -407,7 +434,15 @@ namespace ModIO.Implementation
         {
             long modId = job.mod.modObject.id;
             long fileId = job.mod.modObject.modfile.id;
-
+            
+            // Check for enough storage space
+            if(!DataStorage.temp.IsThereEnoughDiskSpaceFor(job.mod.modObject.modfile.filesize))
+            {
+                Logger.Log(LogLevel.Error, $"INSUFFICIENT STORAGE FOR DOWNLOAD [{modId}_{fileId}]");
+                notEnoughStorageMods.Add((ModId)modId);
+                return ResultBuilder.Create(ResultCode.IO_InsufficientStorage);
+            }
+            
             Logger.Log(LogLevel.Message, $"DOWNLOADING MODFILE[{modId}_{fileId}]");
 
             Result result = ResultBuilder.Unknown;
@@ -436,7 +471,7 @@ namespace ModIO.Implementation
 
             if(!ShouldModManagementBeRunning())
             {
-                goto Cleanup;
+                return DownloadCleanup(result, modId, fileId);
             }
 
             // Get Modfile url from ModObject
@@ -447,8 +482,9 @@ namespace ModIO.Implementation
             string downloadFilepath = DataStorage.GenerateModfileArchiveFilePath(modId, fileId);
 
             // Begin download
+            DownloadHandlerFile downloadHandler = new DownloadHandlerFile(downloadFilepath);
             ResultAnd<string> downloadResponse = await RESTAPI.Request<string>(
-                fileURL, DownloadBinary.Template, null, new DownloadHandlerFile(downloadFilepath),
+                fileURL, DownloadBinary.Template, null, downloadHandler,
                 job.progressHandle);
 
             // Check download result
@@ -469,8 +505,11 @@ namespace ModIO.Implementation
             {
                 Logger.Log(LogLevel.Error, $"Failed to download modfile[{modId}_{fileId}]");
 
-                result = ResultBuilder.Create(ResultCode.Internal_ModManagementOperationFailed);
-                goto Cleanup;
+                result = downloadResponse.result.code == ResultCode.Internal_OperationCancelled 
+                    ? downloadResponse.result 
+                    : ResultBuilder.Create(ResultCode.Internal_ModManagementOperationFailed);
+                
+                return DownloadCleanup(result, modId, fileId);
             }
 
             // Make sure the downloaded file MD5 matches the given MD5
@@ -490,21 +529,21 @@ namespace ModIO.Implementation
                 Logger.Log(LogLevel.Error,
                            $"Failed to verify downloaded modfile[{modId}_{fileId}]");
                 result = ResultBuilder.Create(ResultCode.Internal_ModManagementOperationFailed);
-                goto Cleanup;
+                
+                return DownloadCleanup(result, modId, fileId);
             }
 
             return result;
+        }
 
-        // If any of the blocks above fail we jump to the cleanup and end of method
-        Cleanup:;
-
+        static Result DownloadCleanup(Result result, long modId, long fileId)
+        {
             if(!result.Succeeded())
             {
                 // cleanup any file that may or may not have downloaded because it's corrupted
                 DataStorage.TryDeleteModfileArchive(
-                    modId, fileId, out Result notBeingCheckedBecauseThisIsACleanup);
+                    modId, fileId, out Result _);
             }
-
             return result;
         }
 
@@ -513,6 +552,16 @@ namespace ModIO.Implementation
             long modId = job.mod.modObject.id;
             long fileId = job.mod.modObject.modfile.id;
 
+            // Check for enough storage space
+            // TODO update this later when we can confirm actual extracted file size
+            // For now we are just making sure we have double the available space of the archive size as the estimate for the extracted file
+            if(!DataStorage.persistent.IsThereEnoughDiskSpaceFor(job.mod.modObject.modfile.filesize * 2L))
+            {
+                Logger.Log(LogLevel.Error, $"INSUFFICIENT STORAGE FOR INSTALLATION [{modId}_{fileId}]");
+                notEnoughStorageMods.Add((ModId)modId);
+                return ResultBuilder.Create(ResultCode.IO_InsufficientStorage);
+            }
+            
             Logger.Log(LogLevel.Verbose, $"INSTALLING MODFILE[{modId}_{fileId}]");
 
             ExtractOperation extractOperation =
@@ -536,7 +585,7 @@ namespace ModIO.Implementation
                 {
                     long currentFileId = job.mod.currentModfile.id;
                     if(DataStorage.TryGetInstallationDirectory(modId, currentFileId,
-                                                               out string notusingthishere))
+                                                               out string _))
                     {
                         DataStorage.TryDeleteInstalledMod(modId, currentFileId, out result);
                         if(!result.Succeeded())
@@ -857,7 +906,7 @@ namespace ModIO.Implementation
         public static async Task<bool> ValidateDownload_md5(string correctMD5,
                                                             string zippedFilepath)
         {
-            string md5 = await IOUtil.GenerateMD5Async(zippedFilepath);
+            string md5 = await IOUtil.GenerateArchiveMD5Async(zippedFilepath);
 
             bool isCorrect = correctMD5.Equals(md5);
             if(!isCorrect)

@@ -21,7 +21,6 @@ namespace ModIOBrowser.Implementation
         [SerializeField] Selectable AboveSelection;
         [SerializeField] Selectable BelowSelection;
             
-        int numberOfItemsThatCanFitOnScreen = 5;
         internal static Vector2 currentSelectedPosition = Vector2.zero;
         List<ListItem> items = new List<ListItem>();
         SearchFilter lastUsedFilter;

@@ -9,14 +9,18 @@ namespace ModIO
     /// </summary>
     public struct Result
     {
-        #region Internal Implementation
+#region Internal Implementation
 
         /// <summary>Internal value of the result object.</summary>
         internal uint code;
         internal uint code_api;
-        internal string message { get { return ResultCode.GetErrorCodeMeaning(code); } }
 
 #endregion // Internal Implementation
+        
+        /// <summary>
+        /// A string message explaining the result error code in more detail (If one exists).
+        /// </summary>
+        public string message => ResultCode.GetErrorCodeMeaning(code);
 
         public bool Succeeded()
         {
@@ -69,5 +73,11 @@ namespace ModIO
         {
             return this.code == ResultCode.API_FailedToConnect;
         }
+
+        public bool IsStorageSpaceInsufficient()
+        {
+            return this.code == ResultCode.IO_InsufficientStorage;
+        }
+
     }
 }

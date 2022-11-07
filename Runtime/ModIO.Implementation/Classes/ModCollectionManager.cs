@@ -48,6 +48,9 @@ namespace ModIO.Implementation
             // Early out
             if(!IsRegistryLoaded())
             {
+                Logger.Log(LogLevel.Error,
+                    "ModCollectionManager was unable to save the Registry to disk because"
+                    + " the registry hasn't been loaded yet");
                 return;
             }
 
@@ -56,7 +59,8 @@ namespace ModIO.Implementation
             if(!result.Succeeded())
             {
                 Logger.Log(LogLevel.Error,
-                           "ModCollectionManager was unable to save the Registry to disk");
+                           "ModCollectionManager was unable to save the Registry to disk"
+                           + " because DataStorage.SaveSystemRegistry failed");
             }
         }
 
@@ -654,6 +658,7 @@ namespace ModIO.Implementation
             mod.updatePending = entry.currentModfile.id != entry.modObject.modfile.id;
             mod.directory = directory;
             mod.subscribedUsers = new List<long>();
+            mod.metadata = entry.modObject.modfile.metadata_blob;
 
             foreach(long user in Registry.existingUsers.Keys)
             {

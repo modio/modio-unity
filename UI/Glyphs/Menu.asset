@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e14bacfe5e795ab49894c37ba2556411, type: 3}
+  m_Name: Menu
+  m_EditorClassIdentifier: 
+  glyph: 13
+  color: 0
+  PC: {fileID: 21300000, guid: ea6c2bed6b5cad84aa3d9e515f40883f, type: 3}
+  Xbox: {fileID: 21300000, guid: ea6c2bed6b5cad84aa3d9e515f40883f, type: 3}
+  Steamdeck: {fileID: 21300000, guid: ea6c2bed6b5cad84aa3d9e515f40883f, type: 3}
+  Playstation4: {fileID: 21300000, guid: 29fadb9eb6d0f7941bad461200aa1cb5, type: 3}
+  Playstation5: {fileID: 21300000, guid: 29fadb9eb6d0f7941bad461200aa1cb5, type: 3}
+  NintendoSwitch: {fileID: 21300000, guid: 4e18ed919515e1f4e96bb57f52c67f25, type: 3}

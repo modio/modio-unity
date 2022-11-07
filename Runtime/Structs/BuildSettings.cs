@@ -11,7 +11,7 @@ namespace ModIO
     /// <seealso cref="ModIOUnity.InitializeForUser"/>
     /// <seealso cref="ModIOUnityAsync.InitializeForUser"/>
     [System.Serializable]
-    public struct BuildSettings
+    public class BuildSettings
     {
         /// <summary>Level to log at.</summary>
         public LogLevel logLevel;
@@ -22,8 +22,5 @@ namespace ModIO
         // TODO Needs to be implemented alongside RequestCache.cs
         /// <summary>Size limit for the request cache.</summary>
         public uint requestCacheLimitKB;
-
-        /// <summary>Extra values necessary for the initialization of a platform.</summary>
-        public List<string> extData;
     }
 }

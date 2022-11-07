@@ -61,8 +61,8 @@ namespace ModIO.Implementation
         public static string AddPagination(SearchFilter filter, string url)
         {
             // Set Pagination
-            int limit = filter.pageSize;
-            int offset = 100 * filter.pageIndex; // always get 100
+            int limit = 100;
+            int offset = filter.pageIndex * filter.pageSize;
 
             url += $"&{Filtering.Limit}{limit}&{Filtering.Offset}{offset}";
 

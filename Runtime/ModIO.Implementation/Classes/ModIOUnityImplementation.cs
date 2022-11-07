@@ -9,6 +9,7 @@ using ModIO.Implementation.API.Requests;
 using ModIO.Implementation.API.Objects;
 using ModIO.Implementation.Platform;
 using UnityEngine;
+using System.Linq;
 
 namespace ModIO.Implementation
 {
@@ -170,6 +171,9 @@ namespace ModIO.Implementation
             TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
             openCallbacks.Add(callbackConfirmation, null);
 
+            // clean user profile identifier in case of filename usage
+            userProfileIdentifier = IOUtil.CleanFileNameForInvalidCharacters(userProfileIdentifier);
+            
             Settings.server = serverSettings;
             Settings.build = buildSettings;
 
@@ -234,8 +238,10 @@ namespace ModIO.Implementation
             // - load registry -
             Task<Result> registryTask = ModCollectionManager.LoadRegistry();
 
+            Logger.Log(LogLevel.Verbose, "LOADING REGISTRY");
             openCallbacks[callbackConfirmation] = registryTask;
             result = await registryTask;
+            Logger.Log(LogLevel.Verbose, "loaded REGISTRY");
             openCallbacks[callbackConfirmation] = null;
 
             if(!result.Succeeded())
@@ -315,6 +321,12 @@ namespace ModIO.Implementation
         /// </summary>
         public static async Task Shutdown(Action shutdownComplete)
         {
+            if(!IsInitialized(out Result _))
+            {
+                Logger.Log(LogLevel.Verbose, "ALREADY SHUTDOWN");
+                return;
+            }
+            
             // This first block ensures we dont have conflicting shutdown operations
             // being called at the same time.
             if(shuttingDown && shutdownOperation != null)
@@ -323,17 +335,30 @@ namespace ModIO.Implementation
             }
             else
             {
-                shuttingDown = true;
+                Logger.Log(LogLevel.Verbose, "SHUTTING DOWN");
+                
+                try
+                {
+                    shuttingDown = true;
+                    
+                    // This passthrough ensures we can properly check for ongoing shutdown
+                    // operations (see the above block)
+                    shutdownOperation = ShutdownTask();
 
-                // This passthrough ensures we can properly check for ongoing shutdown
-                // operations (see the above block)
-                shutdownOperation = ShutdownTask();
+                    await shutdownOperation;
 
-                await shutdownOperation;
+                    shutdownOperation = null;
+                    
+                    shuttingDown = false;
+                }
+                catch(Exception e)
+                {
+                    shuttingDown = false;
+                    Logger.Log(LogLevel.Error, $"Exception caught when shutting down plugin: {e.Message} - inner={e.InnerException?.Message}");
+                }
 
-                shutdownOperation = null;
-
-                shuttingDown = false;
+                
+                Logger.Log(LogLevel.Verbose, "FINISHED SHUTDOWN");
             }
 
             shutdownComplete?.Invoke();
@@ -345,13 +370,14 @@ namespace ModIO.Implementation
         /// </summary>
         static async Task ShutdownTask()
         {
-            ModIOUnityImplementation.isInitialized = false;
+            RESTAPI.Shutdown(); 
+            await ModManagement.ShutdownOperations(); 
+
+            isInitialized = false;
             UserData.instance = null;
-            Settings.server = default;
-            Settings.build = default;
-            RESTAPI.Shutdown();
+            // Settings.server = default;
+            // Settings.build = default;
             ResponseCache.ClearCache();
-            await ModManagement.ShutdownOperations();
             ModCollectionManager.ClearRegistry();
 
             // get new instance of dictionary so it's thread safe
@@ -791,10 +817,10 @@ namespace ModIO.Implementation
                 if(response.result.Succeeded())
                 {
                     // Convert the ModObject response into ModProfiles
-                    page = ResponseTranslator.ConvertResponseSchemaToModPage(response.value);
+                    page = ResponseTranslator.ConvertResponseSchemaToModPage(response.value, filter);
 
                     // Add the ModProfiles to the cache
-                    ResponseCache.AddModsToCache(url, offset, page);
+                    // ResponseCache.AddModsToCache(url, offset, page);
 
                     // Return the exact number of mods that were requested (not more)
                     if(page.modProfiles.Length > filter.pageSize)
@@ -823,55 +849,8 @@ namespace ModIO.Implementation
                     + "returned from the server wont be used. This operation  has been cancelled.");
                 return;
             }
-
-            TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
-            openCallbacks.Add(callbackConfirmation, null);
-
-            //------------------------------[ Setup callback params ]------------------------------
-            Result result;
-            ModPage page = new ModPage();
-            //-------------------------------------------------------------------------------------
-            string referenceURL = API.Requests.GetMods.URL_Unpaginated(filter);
-            int offset = filter.pageIndex * filter.pageSize;
-
-            if(IsInitialized(out result) && IsSearchFilterValid(filter, out result)
-                                         && AreCredentialsValid(false, out result)
-                                         && !ResponseCache.GetModsFromCache(referenceURL, offset, filter.pageSize, out page))
-            {
-                //      Synchronous checks SUCCEEDED
-
-                string url = API.Requests.GetMods.URL_Paginated(filter);
-
-                // MAKE RESTAPI REQUEST
-                Task<ResultAnd<GetMods.ResponseSchema>> task =
-                    RESTAPI.Request<GetMods.ResponseSchema>(url, API.Requests.GetMods.Template);
-
-                openCallbacks[callbackConfirmation] = task;
-                ResultAnd<GetMods.ResponseSchema> response = await task;
-                openCallbacks[callbackConfirmation] = null;
-
-                result = response.result;
-
-                if(response.result.Succeeded())
-                {
-                    // Convert the ModObject response into ModProfiles
-                    page = ResponseTranslator.ConvertResponseSchemaToModPage(response.value);
-
-                    // Add the ModProfiles to the cache
-                    ResponseCache.AddModsToCache(url, offset, page);
-
-                    // Return the exact number of mods that were requested (not more)
-                    if(page.modProfiles.Length > filter.pageSize)
-                    {
-                        Array.Copy(page.modProfiles, page.modProfiles, filter.pageSize);
-                    }
-                }
-            }
-
-            // FINAL SUCCESS / FAILURE depending on callback params set previously
-            callback?.Invoke(result, page);
-            callbackConfirmation.SetResult(true);
-            openCallbacks.Remove(callbackConfirmation);
+            ResultAnd<ModPage> result = await GetMods(filter);
+            callback?.Invoke(result.result, result.value);
         }
 
 
@@ -1206,9 +1185,7 @@ namespace ModIO.Implementation
         {
             return ModManagement.currentJob != null 
                    && ModManagement.currentJob.mod.modObject.id == modId
-                   && ModManagement.currentJob.type == ModManagementOperationType.Download
-                   && ModManagement.currentJob.progressHandle.Progress > 0f
-                   && ModManagement.currentJob.progressHandle.Progress < 100f;
+                   && ModManagement.currentJob.type == ModManagementOperationType.Download;
         }
 
         private static bool ShouldAbortDueToInstalling(ModId modId)
@@ -1355,7 +1332,7 @@ namespace ModIO.Implementation
 
                 if(response.result.Succeeded())
                 {
-                    page = ResponseTranslator.ConvertResponseSchemaToModPage(response.value);
+                    page = ResponseTranslator.ConvertResponseSchemaToModPage(response.value, filter);
                 }
             }
 
@@ -1387,8 +1364,32 @@ namespace ModIO.Implementation
             return null;
         }
 
+        public static UserInstalledMod[] GetInstalledModsForUser(out Result result)
+        {
+            //Filter for user
+            if(IsInitialized(out result) && AreCredentialsValid(false, out result))
+            {
+                var mods = ModCollectionManager.GetInstalledMods(out result);
+                return FilterInstalledModsIntoUserInstalledMods(UserData.instance.userObject.id, mods);
+            }
+
+            return null;
+        }
+
+        public static UserInstalledMod[] FilterInstalledModsIntoUserInstalledMods(long userId, params InstalledMod[] mods)
+            => mods.Select(x => x.AsInstalledModsUser(userId))
+                   .Where(x => !x.Equals(default(UserInstalledMod)))
+                   .ToArray();
+        
         public static Result RemoveUserData()
         {
+            // We do not need to await this MM shutdown, it can happen silently
+#pragma warning disable
+            ModManagement.ShutdownOperations();
+#pragma warning restore
+
+            DisableModManagement();
+
             // remove the user from mod collection registry of subscribed mods
             ModCollectionManager.ClearUserData();
             
@@ -1397,8 +1398,6 @@ namespace ModIO.Implementation
             
             // clear the UserProfile from the cache as it is no longer valid
             ResponseCache.ClearUserFromCache();
-            
-            ModManagement.WakeUp();
 
             bool userExists = ModCollectionManager.DoesUserExist();
 
@@ -1743,9 +1742,258 @@ namespace ModIO.Implementation
             callback?.Invoke(result);
         }
 
+        public static async void DeleteTags(ModId modId, string[] tags,
+                                         Action<Result> callback)
+        {
+            // Check callback
+            if(callback == null)
+            {
+                Logger.Log(
+                    LogLevel.Warning,
+                    "No callback was given to the DeleteTags method. You will not "
+                    + "be informed of the result for this action. It is highly recommended to "
+                    + "provide a valid callback.");
+            }
+
+            var result = await DeleteTags(modId, tags);
+            callback?.Invoke(result);
+        }
+        
+        public static async Task<Result> DeleteTags(ModId modId, string[] tags)
+        {
+            // - Early Outs -
+            // Check disableUploads
+            if(Settings.server.disableUploads)
+            {
+                Logger.Log(LogLevel.Error,
+                    "The current plugin configuration has uploading disabled.");
+
+                return ResultBuilder.Create(ResultCode.Settings_UploadsDisabled);
+            }
+
+            TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
+            openCallbacks.Add(callbackConfirmation, null);
+
+            //------------------------------[ Setup callback param ]-------------------------------
+            Result result;
+            //-------------------------------------------------------------------------------------
+
+            // Check for modId
+
+            if(modId == 0)
+            {
+                Logger.Log(LogLevel.Error,
+                    "You must provide a valid mod id to delete tags.");
+                result = ResultBuilder.Create(ResultCode.InvalidParameter_MissingModId);
+            }
+            else if(tags == null || tags.Length == 0)
+            {
+                Logger.Log(
+                    LogLevel.Error,
+                    "You must provide tags to be deleted from the mod");
+                result = ResultBuilder.Create(
+                    ResultCode.InvalidParameter_CantBeNull);
+            }
+            else if(IsInitialized(out result) && AreCredentialsValid(true, out result))
+            {
+                //      Synchronous checks SUCCEEDED
+
+                string url = DeleteModTags.URL(modId, tags, out WWWForm form);
+
+                // MAKE RESTAPI REQUEST
+                Task<ResultAnd<MessageObject>> task =
+                    RESTAPI.Request<MessageObject>(url, AddModTags.Template, form);
+
+                openCallbacks[callbackConfirmation] = task;
+                ResultAnd<MessageObject> response = await task;
+                openCallbacks[callbackConfirmation] = null;
+
+                result = response.result;
+
+                if(result.Succeeded())
+                {
+                    // Succeeded
+                }
+                else
+                {
+                    // Failed
+                }
+            }
+
+            callbackConfirmation.SetResult(true);
+            openCallbacks.Remove(callbackConfirmation);
+
+            return result;
+        }
+
+        public static async void AddTags(ModId modId, string[] tags,
+                                                Action<Result> callback)
+        {
+            // Check callback
+            if(callback == null)
+            {
+                Logger.Log(
+                    LogLevel.Warning,
+                    "No callback was given to the AddTags method. You will not "
+                    + "be informed of the result for this action. It is highly recommended to "
+                    + "provide a valid callback.");
+            }
+
+            var result = await AddTags(modId, tags);
+            callback?.Invoke(result);
+        }
+        
+        public static async Task<Result> AddTags(ModId modId, string[] tags)
+        {
+            // - Early Outs -
+            // Check disableUploads
+            if(Settings.server.disableUploads)
+            {
+                Logger.Log(LogLevel.Error,
+                    "The current plugin configuration has uploading disabled.");
+
+                return ResultBuilder.Create(ResultCode.Settings_UploadsDisabled);
+            }
+
+            TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
+            openCallbacks.Add(callbackConfirmation, null);
+
+            //------------------------------[ Setup callback param ]-------------------------------
+            Result result;
+            //-------------------------------------------------------------------------------------
+
+            // Check for modId
+
+            if(modId == 0)
+            {
+                Logger.Log(LogLevel.Error,
+                    "You must provide a valid mod id to add tags.");
+                result = ResultBuilder.Create(ResultCode.InvalidParameter_MissingModId);
+            }
+            else if(tags == null || tags.Length == 0)
+            {
+                Logger.Log(
+                    LogLevel.Error,
+                    "You must provide tags to be added to the mod");
+                result = ResultBuilder.Create(
+                    ResultCode.InvalidParameter_CantBeNull);
+            }
+            else if(IsInitialized(out result) && AreCredentialsValid(true, out result))
+            {
+                //      Synchronous checks SUCCEEDED
+
+                string url = AddModTags.URL(modId, tags, out WWWForm form);
+
+                // MAKE RESTAPI REQUEST
+                Task<ResultAnd<MessageObject>> task =
+                    RESTAPI.Request<MessageObject>(url, AddModTags.Template, form);
+
+                openCallbacks[callbackConfirmation] = task;
+                ResultAnd<MessageObject> response = await task;
+                openCallbacks[callbackConfirmation] = null;
+
+                result = response.result;
+
+                if(result.Succeeded())
+                {
+                    // Succeeded
+                }
+                else
+                {
+                    // Failed
+                }
+            }
+
+            callbackConfirmation.SetResult(true);
+            openCallbacks.Remove(callbackConfirmation);
+
+            return result;
+        }
+
         public static ProgressHandle GetCurrentUploadHandle()
         {
             return currentUploadHandle;
+        }
+
+        public static async Task<Result> UploadModMedia(ModProfileDetails modProfileDetails)
+        {
+            // - Early outs -
+            // Check Modfile
+            if (modProfileDetails == null)
+            {
+                Logger.Log(LogLevel.Error, "ModfileDetails parameter cannot be null.");
+
+                return ResultBuilder.Create(ResultCode.InvalidParameter_CantBeNull);
+            }
+
+            // Check mod id
+            if (modProfileDetails.modId == null)
+            {
+                Logger.Log(
+                    LogLevel.Error,
+                    "The provided ModfileDetails has not been assigned a ModId. Ensure"
+                        + " you assign the Id of the mod you intend to edit to the ModProfileDetails.modId"
+                        + " field.");
+
+                return ResultBuilder.Create(ResultCode.InvalidParameter_MissingModId);
+            }
+
+            // Check disableUploads
+            if (Settings.server.disableUploads)
+            {
+                Logger.Log(LogLevel.Error,
+                           "The current plugin configuration has uploading disabled.");
+
+                return ResultBuilder.Create(ResultCode.Settings_UploadsDisabled);
+            }
+
+            ProgressHandle handle = new ProgressHandle();
+            currentUploadHandle = handle;
+            currentUploadHandle.OperationType = ModManagementOperationType.Upload;
+
+            TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
+            openCallbacks.Add(callbackConfirmation, null);
+
+            //------------------------------[ Setup callback param ]-------------------------------
+            Result result;
+            //-------------------------------------------------------------------------------------
+
+            if (IsInitialized(out result) && AreCredentialsValid(true, out result)
+               && IsModProfileDetailsValidForEdit(modProfileDetails, out result))
+            {
+                Task<ResultAnd<AddModMedia.AddModMediaUrlResult>> urlResultTask =
+                    AddModMedia.URL(modProfileDetails);
+
+                openCallbacks[callbackConfirmation] = urlResultTask;
+                ResultAnd<AddModMedia.AddModMediaUrlResult> urlResult = await urlResultTask;
+                openCallbacks[callbackConfirmation] = null;
+
+                if(urlResult.result.Succeeded()) 
+                {
+                    Task<ResultAnd<ModMediaObject>> task = RESTAPI.Request<ModMediaObject>(
+                        urlResult.value.url, AddModMedia.Template, urlResult.value.form, null, currentUploadHandle);
+
+                    openCallbacks[callbackConfirmation] = task;
+                    ResultAnd<ModMediaObject> response = await task;
+                    openCallbacks[callbackConfirmation] = null;
+
+                    result = response.result;
+
+                    if(!result.Succeeded())
+                    {
+                        currentUploadHandle.Failed = true;
+                    }
+                }
+
+            }
+
+            currentUploadHandle.Completed = true;
+            currentUploadHandle = null;
+
+            callbackConfirmation.SetResult(true);
+            openCallbacks.Remove(callbackConfirmation);
+
+            return result;
         }
 
         public static async Task<Result> UploadModfile(ModfileDetails modfile)
@@ -1848,95 +2096,18 @@ namespace ModIO.Implementation
 
         public static async void UploadModMedia(ModProfileDetails modProfileDetails, Action<Result> callback)
         {
-            // - Early outs -
-            // Check Modfile
-            if (modProfileDetails == null)
-            {
-                Logger.Log(LogLevel.Error, "ModfileDetails parameter cannot be null.");
-
-                callback?.Invoke(ResultBuilder.Create(ResultCode.InvalidParameter_CantBeNull));
-                return;
-            }
-
-            // Check mod id
-            if (modProfileDetails.modId == null)
-            {
-                Logger.Log(
-                    LogLevel.Error,
-                    "The provided ModfileDetails has not been assigned a ModId. Ensure"
-                        + " you assign the Id of the mod you intend to edit to the ModProfileDetails.modId"
-                        + " field.");
-
-                callback?.Invoke(ResultBuilder.Create(ResultCode.InvalidParameter_MissingModId));
-                return;
-            }
-
-            // Check disableUploads
-            if (Settings.server.disableUploads)
-            {
-                Logger.Log(LogLevel.Error,
-                           "The current plugin configuration has uploading disabled.");
-
-                callback?.Invoke(ResultBuilder.Create(ResultCode.Settings_UploadsDisabled));
-                return;
-            }
-
             // Check for callback
-            if (callback == null)
+            if(callback == null)
             {
                 Logger.Log(
                     LogLevel.Warning,
-                    "No callback was given to the EditModProfile method. You will not "
-                        + "be informed of the result for this action. It is highly recommended to "
-                        + "provide a valid callback.");
+                    "No callback was given to the UploadModMedia method. You will not "
+                    + "be informed of the result for this action. It is highly recommended to "
+                    + "provide a valid callback.");
             }
 
-            ProgressHandle handle = new ProgressHandle();
-            currentUploadHandle = handle;
-            currentUploadHandle.OperationType = ModManagementOperationType.Upload;
-
-            TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
-            openCallbacks.Add(callbackConfirmation, null);
-
-            //------------------------------[ Setup callback param ]-------------------------------
-            Result result;
-            //-------------------------------------------------------------------------------------
-
-            if (IsInitialized(out result) && AreCredentialsValid(true, out result)
-               && IsModProfileDetailsValidForEdit(modProfileDetails, out result))
-            {
-                Task<ResultAnd<AddModMedia.AddModMediaUrlResult>> urlResultTask =
-                    AddModMedia.URL(modProfileDetails);
-
-                openCallbacks[callbackConfirmation] = urlResultTask;
-                ResultAnd<AddModMedia.AddModMediaUrlResult> urlResult = await urlResultTask;
-                openCallbacks[callbackConfirmation] = null;
-
-                if(urlResult.result.Succeeded()) 
-                {
-                    Task<ResultAnd<ModMediaObject>> task = RESTAPI.Request<ModMediaObject>(
-                        urlResult.value.url, AddModMedia.Template, urlResult.value.form, null, currentUploadHandle);
-
-                    openCallbacks[callbackConfirmation] = task;
-                    ResultAnd<ModMediaObject> response = await task;
-                    openCallbacks[callbackConfirmation] = null;
-
-                    result = response.result;
-
-                    if(!result.Succeeded())
-                    {
-                        currentUploadHandle.Failed = true;
-                    }
-                }
-
-            }
-
-            currentUploadHandle.Completed = true;
-            currentUploadHandle = null;
-
+            Result result = await UploadModMedia(modProfileDetails);
             callback?.Invoke(result);
-            callbackConfirmation.SetResult(true);
-            openCallbacks.Remove(callbackConfirmation);
         }
 
         public static async void UploadModfile(ModfileDetails modfile, Action<Result> callback)
@@ -1946,7 +2117,7 @@ namespace ModIO.Implementation
             {
                 Logger.Log(
                     LogLevel.Warning,
-                    "No callback was given to the EditModProfile method. You will not "
+                    "No callback was given to the UploadModfile method. You will not "
                     + "be informed of the result for this action. It is highly recommended to "
                     + "provide a valid callback.");
             }

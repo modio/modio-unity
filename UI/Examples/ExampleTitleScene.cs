@@ -21,12 +21,14 @@ public class ExampleTitleScene : MonoBehaviour
     {
         // Assign the 'GoBackToTitleScene' method as the onClose method so we can maintain a focused
         // selectable highlight if we're on controller
+        ModIOBrowser.Browser.Instance.gameObject.SetActive(true);
         ModIOBrowser.Browser.OpenBrowser(OpenTitle);
         gameObject.transform.parent.gameObject.SetActive(false);
     }
 
     public void OpenTitle()
     {
+        ModIOBrowser.Browser.Instance.gameObject.SetActive(false);
         gameObject.transform.parent.gameObject.SetActive(true);
         DefaultSelection.Select();
     }

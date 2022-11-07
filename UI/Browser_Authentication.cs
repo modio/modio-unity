@@ -24,6 +24,7 @@ namespace ModIOBrowser
         [SerializeField] TMP_InputField[] AuthenticationPanelCodeFields;
         [SerializeField] Button AuthenticationPanelConnectViaSteamButton;
         [SerializeField] Button AuthenticationPanelConnectViaXboxButton;
+        [SerializeField] Button AuthenticationPanelConnectViaSwitchButton;
         [SerializeField] Button AuthenticationPanelConnectViaEmailButton;
         [SerializeField] Button AuthenticationPanelBackButton;
         [SerializeField] TMP_Text AuthenticationPanelBackButtonText;
@@ -51,6 +52,7 @@ namespace ModIOBrowser
         static string optionalThirdPartyEmailAddressUsedForAuthentication;
         static string optionalSteamAppTicket;
         static string optionalXboxToken;
+        static string optionalSwitchToken;
         
         UserProfile currentUserProfile;
         TermsOfUse LastReceivedTermsOfUse;
@@ -95,9 +97,15 @@ namespace ModIOBrowser
 
         public void Logout()
         {
-            ModIOUnity.RemoveUserData();
-            Avatar_Main.gameObject.SetActive(false);
-            isAuthenticated = false;
+            if(ModIOUnity.LogOutCurrentUser().Succeeded())
+            {
+                Avatar_Main.gameObject.SetActive(false);
+                isAuthenticated = false;
+            }
+            else
+            {
+                // TODO inform the user if this failed (Which really shouldn't ever fail)
+            }
         }
 
         public void OpenAuthenticationPanel()
@@ -153,6 +161,17 @@ namespace ModIOBrowser
                 });
                 thirdPartyOptionSelectable = AuthenticationPanelConnectViaXboxButton;
             }
+            else if(optionalSwitchToken != null)
+            {
+                AuthenticationPanelConnectViaSwitchButton.gameObject.SetActive(true);
+                AuthenticationPanelConnectViaSwitchButton.onClick.RemoveAllListeners();
+                AuthenticationPanelConnectViaSwitchButton.onClick.AddListener(() =>
+                {
+                    GetTermsOfUse();
+                    authenticationMethodAfterAgreeingToTheTOS = SubmitSwitchAuthenticationRequest;
+                });
+                thirdPartyOptionSelectable = AuthenticationPanelConnectViaSwitchButton;
+            }
             
             //-----------------------------------------------------------------------------------//
             //                            EXPLICIT BUTTON NAVIGATION                             //
@@ -204,6 +223,7 @@ namespace ModIOBrowser
             AuthenticationPanelConnectViaEmailButton.gameObject.SetActive(false);
             AuthenticationPanelConnectViaSteamButton.gameObject.SetActive(false);
             AuthenticationPanelConnectViaXboxButton.gameObject.SetActive(false);
+            AuthenticationPanelConnectViaSwitchButton.gameObject.SetActive(false);
             AuthenticationPanelCompletedButton.gameObject.SetActive(false);
             AuthenticationPanelLogoutButton.gameObject.SetActive(false);
             AuthenticationPanelWaitingForResponseAnimation.SetActive(false);
@@ -577,6 +597,19 @@ namespace ModIOBrowser
                 delegate (Result result)
                 {
                     ThirdPartyAuthenticationSubmitted(result, UserPortal.XboxLive);
+                });
+        }
+
+        internal void SubmitSwitchAuthenticationRequest()
+        {
+            OpenAuthenticationPanel_Waiting();
+
+            ModIOUnity.AuthenticateUserViaSwitch(optionalSwitchToken, 
+                optionalThirdPartyEmailAddressUsedForAuthentication,
+                LastReceivedTermsOfUse.hash,
+                delegate (Result result)
+                {
+                    ThirdPartyAuthenticationSubmitted(result, UserPortal.Nintendo);
                 });
         }
 #endregion // Third party authentication submissions

@@ -1,7 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Security;
 using System.Threading.Tasks;
-using System;
 using UnityEngine;
 
 namespace ModIO.Implementation.Platform
@@ -21,8 +22,8 @@ namespace ModIO.Implementation.Platform
             ModIOFileStream fileStream = null;
             result = ResultBuilder.Unknown;
 
-            if(SystemIOWrapper.IsPathValid(filePath, out result)
-               && SystemIOWrapper.FileExists(filePath, out result))
+            if(IsPathValid(filePath, out result)
+               && FileExists(filePath, out result))
             {
                 FileStream internalStream = null;
 
@@ -56,8 +57,8 @@ namespace ModIO.Implementation.Platform
             ModIOFileStream fileStream = null;
             result = ResultBuilder.Unknown;
 
-            if(SystemIOWrapper.IsPathValid(filePath, out result)
-               && SystemIOWrapper.TryCreateParentDirectory(filePath, out result))
+            if(IsPathValid(filePath, out result)
+               && TryCreateParentDirectory(filePath, out result))
             {
                 FileStream internalStream = null;
 
@@ -100,8 +101,8 @@ namespace ModIO.Implementation.Platform
             // add this filepath to a table of all currently open files
             currentlyOpenFiles.Add(filePath);
 
-            if(SystemIOWrapper.IsPathValid(filePath, out result)
-               && SystemIOWrapper.DoesFileExist(filePath, out result))
+            if(IsPathValid(filePath, out result)
+               && DoesFileExist(filePath, out result))
             {
                 try
                 {
@@ -125,7 +126,7 @@ namespace ModIO.Implementation.Platform
 
             Logger.Log(
                 LogLevel.Verbose,
-                $"Read file: {filePath} - Result: [{result.code}] - Data: {(data == null ? "NULL" : data.Length.ToString()+"B")}");
+                $"Read file: {filePath} - Result: [{result.code}] - Data: {(data == null ? "NULL" : data.Length+"B")}");
 
             // now that we are done with this file, remove it from the table of open files
             currentlyOpenFiles.Remove(filePath);
@@ -156,8 +157,8 @@ namespace ModIO.Implementation.Platform
             // add this filepath to a table of all currently open files
             currentlyOpenFiles.Add(filePath);
 
-            if(SystemIOWrapper.IsPathValid(filePath, out result)
-               && SystemIOWrapper.TryCreateParentDirectory(filePath, out result))
+            if(IsPathValid(filePath, out result)
+               && TryCreateParentDirectory(filePath, out result))
             {
                 try
                 {
@@ -192,8 +193,8 @@ namespace ModIO.Implementation.Platform
         {
             Result result;
 
-            if(SystemIOWrapper.IsPathValid(directoryPath, out result)
-               && !SystemIOWrapper.DirectoryExists(directoryPath))
+            if(IsPathValid(directoryPath, out result)
+               && !DirectoryExists(directoryPath))
             {
                 try
                 {
@@ -229,7 +230,7 @@ namespace ModIO.Implementation.Platform
         {
             Result result;
 
-            if(SystemIOWrapper.IsPathValid(path, out result))
+            if(IsPathValid(path, out result))
             {
                 try
                 {
@@ -284,6 +285,57 @@ namespace ModIO.Implementation.Platform
             return result;
         }
 
+        public static Result MoveDirectory(string directoryPath, string newDirectoryPath)
+        {
+            Result result = default;
+            
+            try
+            {
+                Directory.Move(directoryPath, newDirectoryPath);
+            }
+            catch(IOException e)
+            {
+                // IOException
+                // A file with the same name and location specified by path exists.
+                // -or-
+                // The directory specified by path is read-only, or recursive is false and path
+                // is not an empty directory.
+                // -or-
+                // The directory is the application's current working directory.
+                // -or-
+                // The directory contains a read-only file.
+                // -or-
+                // The directory is being used by another process.
+
+                Logger.Log(LogLevel.Verbose, "IOException when attempting to move directory."
+                                             + $"\n.path={directoryPath}"
+                                             + $"\n.Exception:{e.Message}");
+
+                result = ResultBuilder.Create(ResultCode.IO_AccessDenied);
+            }
+            catch(UnauthorizedAccessException e)
+            {
+                // UnauthorizedAccessException
+                // The caller does not have the required permission.
+
+                Logger.Log(LogLevel.Verbose,
+                    "UnauthorizedAccessException when attempting to move directory."
+                    + $"\n.path={directoryPath}" + $"\n.Exception:{e.Message}");
+
+                result = ResultBuilder.Create(ResultCode.IO_AccessDenied);
+            }
+            catch(Exception e)
+            {
+                Logger.Log(LogLevel.Warning,
+                    "Unhandled error when attempting to move directory."
+                    + $"\n.path={directoryPath}" + $"\n.Exception:{e.Message}");
+
+                result = ResultBuilder.Create(ResultCode.IO_DirectoryCouldNotBeDeleted);
+            }
+
+            return result;
+        }
+
 #endregion // Operations
 
 #region Utility
@@ -329,11 +381,8 @@ namespace ModIO.Implementation.Platform
                 result = ResultBuilder.Success;
                 return true;
             }
-            else
-            {
-                result = ResultBuilder.Create(ResultCode.IO_FileDoesNotExist);
-                return false;
-            }
+            result = ResultBuilder.Create(ResultCode.IO_FileDoesNotExist);
+            return false;
         }
 
         /// <summary>Gets the size and hash of a file.</summary>
@@ -344,8 +393,8 @@ namespace ModIO.Implementation.Platform
             string fileHash = null;
             Result result;
 
-            if(!SystemIOWrapper.IsPathValid(filePath, out result)
-               || !SystemIOWrapper.DoesFileExist(filePath, out result))
+            if(!IsPathValid(filePath, out result)
+               || !DoesFileExist(filePath, out result))
             {
                 return ResultAnd.Create(result, (fileSize, fileHash));
             }
@@ -449,24 +498,21 @@ namespace ModIO.Implementation.Platform
                 result = ResultBuilder.Success;
                 return true;
             }
-            else
+            try
             {
-                try
-                {
-                    Directory.CreateDirectory(dirToCreate);
+                Directory.CreateDirectory(dirToCreate);
 
-                    result = ResultBuilder.Success;
-                    return true;
-                }
-                catch(Exception exception)
-                {
-                    Logger.Log(
-                        LogLevel.Warning,
-                        $"Unhandled directory creation exception was thrown.\n.dirToCreate={dirToCreate}\n.exception={exception.Message}");
+                result = ResultBuilder.Success;
+                return true;
+            }
+            catch(Exception exception)
+            {
+                Logger.Log(
+                    LogLevel.Warning,
+                    $"Unhandled directory creation exception was thrown.\n.dirToCreate={dirToCreate}\n.exception={exception.Message}");
 
-                    result = ResultBuilder.Create(ResultCode.IO_DirectoryCouldNotBeCreated);
-                    return false;
-                }
+                result = ResultBuilder.Create(ResultCode.IO_DirectoryCouldNotBeCreated);
+                return false;
             }
         }
 
@@ -506,7 +552,7 @@ namespace ModIO.Implementation.Platform
 
                 return ResultAnd.Create<List<string>>(ResultCode.IO_FilePathInvalid, null);
             }
-            catch(System.Security.SecurityException e)
+            catch(SecurityException e)
             {
                 // SecurityException
                 // The caller does not have the required permission.
@@ -551,7 +597,7 @@ namespace ModIO.Implementation.Platform
                 // path is a file name.
 
                 Logger.Log(LogLevel.Error,
-                           $"Unhandled Exception when attempting to list directory contents."
+                           "Unhandled Exception when attempting to list directory contents."
                                + $"\n.directoryPath={directoryPath}" + $"\n.Exception:{e.Message}");
 
                 return ResultAnd.Create<List<string>>(ResultCode.IO_AccessDenied, null);
@@ -602,7 +648,7 @@ namespace ModIO.Implementation.Platform
                 return false;
             }
 
-            if(!SystemIOWrapper.DeleteFile(destination))
+            if(!DeleteFile(destination))
             {
                 return false;
             }
@@ -615,9 +661,9 @@ namespace ModIO.Implementation.Platform
             }
             catch(Exception e)
             {
-                string warningInfo = $"Failed to move file." + "\nSource File: {source}"
-                                     + $"\nDestination: {destination}\n\n"
-                                     + $"Exception: {e}\n\n";
+                string warningInfo = "Failed to move file." + "\nSource File: {source}"
+                                                            + $"\nDestination: {destination}\n\n"
+                                                            + $"Exception: {e}\n\n";
                 // Debug.LogWarning(warningInfo + Utility.GenerateExceptionDebugString(e));
 
                 return false;
@@ -673,28 +719,28 @@ namespace ModIO.Implementation.Platform
 
         // --- Directory Management ---
         /// <summary>Moves a directory.</summary>
-        public static bool MoveDirectory(string source, string destination)
-        {
-            Debug.Assert(!string.IsNullOrEmpty(source));
-            Debug.Assert(!string.IsNullOrEmpty(destination));
-
-            try
-            {
-                Directory.Move(source, destination);
-
-                return true;
-            }
-            catch(Exception e)
-            {
-                string warningInfo = "[mod.io] Failed to move directory." + "\nSource Directory: "
-                                      + $"{source}\nDestination: {destination}\n\n"
-                                      + $"Exception: {e}";
-                // + Utility.GenerateExceptionDebugString(e));
-                // Debug.LogWarning(warningInfo + Utility.GenerateExceptionDebugString(e));
-
-                return false;
-            }
-        }
+        // public static bool MoveDirectory(string source, string destination)
+        // {
+        //     Debug.Assert(!string.IsNullOrEmpty(source));
+        //     Debug.Assert(!string.IsNullOrEmpty(destination));
+        //
+        //     try
+        //     {
+        //         Directory.Move(source, destination);
+        //
+        //         return true;
+        //     }
+        //     catch(Exception e)
+        //     {
+        //         string warningInfo = "[mod.io] Failed to move directory." + "\nSource Directory: "
+        //                               + $"{source}\nDestination: {destination}\n\n"
+        //                               + $"Exception: {e}";
+        //         // + Utility.GenerateExceptionDebugString(e));
+        //         // Debug.LogWarning(warningInfo + Utility.GenerateExceptionDebugString(e));
+        //
+        //         return false;
+        //     }
+        // }
 
         /// <summary>Gets the sub-directories at a location.</summary>
         public static IList<string> GetDirectories(string path)

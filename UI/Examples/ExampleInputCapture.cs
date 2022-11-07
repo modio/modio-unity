@@ -15,7 +15,7 @@ using UnityEngine.EventSystems;
 /// For example: when the input is captured for KeyCode.Joystick1Button2, the method on InputReceiver.Alternate()
 /// is invoked. You can use InputReceiver.cs to tell the browser when a specific input has been used
 /// </summary>
-public class ExampleInputCapture : SimpleMonoSingleton<ExampleInputCapture>
+public class ExampleInputCapture : MonoBehaviour
 {    
     // Submit and Horizontal/Vertical directional input is handled by default with Unity's built in
     // UI system. You can set those bindings up with the current or new Unity Input system.
@@ -36,12 +36,6 @@ public class ExampleInputCapture : SimpleMonoSingleton<ExampleInputCapture>
     public List<string> controllerAndKeyboardInput = new List<string>();
     public List<string> mouseInput = new List<string>();
     public string verticalControllerInput = "Vertical";
-
-    protected override void Awake()
-    {
-        base.Awake();
-        gameObject.SetActive(false);
-    }
 
     void Update()
     {

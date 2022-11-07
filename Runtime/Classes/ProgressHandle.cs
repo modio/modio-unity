@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace ModIO
 {
+
     /// <summary>
     /// A ProgressHandle can only be used to monitor the progress of an operation and cannot be
     /// used to cancel or suspend ongoing operations.
@@ -11,7 +12,7 @@ namespace ModIO
     /// The Completed and Failed fields can be used to determine if the operation is complete and
     /// whether or not it failed.
     /// </summary>
-    public class ProgressHandle
+    public partial class ProgressHandle
     {
         /// <summary>
         /// The ModId of the mod that this operation pertains to.
@@ -47,5 +48,6 @@ namespace ModIO
         /// Is set to True if the operation encounters an error or is cancelled before completion
         /// </summary>
         public bool Failed { get; internal set; }
+
     }
 }

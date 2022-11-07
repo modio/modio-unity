@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+﻿using System;
 using UnityEngine;
 
 namespace ModIO.Implementation
@@ -23,12 +23,12 @@ namespace ModIO.Implementation
 
         internal static void SetLoggingDelegate(LogMessageDelegate loggingDelegate)
         {
-            Logger.LogDelegate = loggingDelegate ?? UnityLogDelegate;
+            LogDelegate = loggingDelegate ?? UnityLogDelegate;
         }
 
         internal static void ResetLoggingDelegate()
         {
-            Logger.LogDelegate = UnityLogDelegate;
+            LogDelegate = UnityLogDelegate;
         }
 
         internal static void UnityLogDelegate(LogLevel logLevel, string logMessage)
@@ -58,13 +58,18 @@ namespace ModIO.Implementation
 
         static bool IsThisLogAboveMaxLogLevelSetting(LogLevel level)
         {
-            return (int)level > (int)Settings.build.logLevel;
+            if (Settings.build != null)
+            {
+                return (int)level > (int)Settings.build.logLevel;
+            }
+            
+            return true;
         }
 
         internal static void Log(LogLevel logLevel, string logMessage, bool attemptLogToPc = true)
         {
             logMessage = $"{ModioLogPrefix} {logMessage}";
-            Logger.LogDelegate?.Invoke(logLevel, logMessage);
+            LogDelegate?.Invoke(logLevel, logMessage);
 
 #if UNITY_STANDALONE || UNITY_EDITOR
             if(attemptLogToPc)
@@ -73,11 +78,15 @@ namespace ModIO.Implementation
                 {
                     LogToPC.Log(logLevel, logMessage);
                 }
-                catch(System.Exception ex)
+                catch(Exception ex)
                 {
-                    Debug.LogError($"Error trying to write a message to pc log. Halting log to pc functionality for this session. Exception: {ex}.");
-                    Logger.LogDelegate?.Invoke(logLevel, $"Error trying to write a message to pc log. Halting log to pc functionality for this session. Exception: {ex}.");
-                    LogToPC.halt = true;
+                    Log(LogLevel.Error, "Error trying to write a message to pc "
+                                               + "log. Halting log to pc functionality for this "
+                                               + $"session. Exception: {ex}.", false);
+                    LogDelegate?.Invoke(logLevel, "Error trying to write a "
+                                                         + "message to pc log. Halting log to pc"
+                                                         + " functionality for this session. "
+                                                         + $"Exception: {ex}.");
                 }
             }            
 #endif

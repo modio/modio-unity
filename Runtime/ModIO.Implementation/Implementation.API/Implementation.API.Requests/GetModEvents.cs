@@ -17,7 +17,7 @@ namespace ModIO.Implementation.API.Requests
         public static string URL()
         {
             return $"{Settings.server.serverURL}{@"/games/"}"
-                   + $"{Settings.server.gameId}{@"/mods/events/"}?";
+                   + $"{Settings.server.gameId}{@"/mods/events"}?";
         }
     }
 }

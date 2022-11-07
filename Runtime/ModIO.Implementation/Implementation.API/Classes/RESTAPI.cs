@@ -101,7 +101,7 @@ namespace ModIO.Implementation.API
                     return ResponseCodeType.ProcessingError;
 
             }
-#else            
+#else
             if(webRequest.error == "Request aborted")
             {
                 return ResponseCodeType.AbortRequested;
@@ -137,6 +137,9 @@ namespace ModIO.Implementation.API
                                                   [CanBeNull] DownloadHandler downloadHandler,
                                                   out string webLayoutLog)
         {
+            // Trim trailing slashes
+            url = url.Trim('/');
+            
             UnityWebRequest webRequest;
 
             // NOTE: On GDK all POST requests require a form body to be valid.
@@ -493,7 +496,7 @@ namespace ModIO.Implementation.API
             using(UnityWebRequest webRequest = GenerateWebRequest(
                       url, requestTemplate, form, downloadHandler, out webRequestLog))
             {
-                PairProgressHandleToWebRequest(webRequest, progressHandle);
+                DecoupledProgressHandleToWebRequestRunner(new ModIoWebRequest(webRequest), progressHandle);
 
                 //--------------------------------------------------------------------------------//
                 //                          SEND -> WAIT -> EXTRACT                               //
@@ -505,7 +508,7 @@ namespace ModIO.Implementation.API
                 Texture2D textureResponse = null;
 
                 Logger.Log(LogLevel.Message, $"SENDING\n{webRequest.url}\n\n" + webRequestLog);
-
+                
                 switch(requestTemplate.requestResponseType)
                 {
                     case WebRequestResponseType.Text:
@@ -538,7 +541,7 @@ namespace ModIO.Implementation.API
                 // Check for cancellation
                 if(ModIOUnityImplementation.shuttingDown)
                 {
-                    goto Cancel;
+                    RequestShutdown(internalResponse);
                 }
 
                 //--------------------------------[ LOG PARAMS ]----------------------------------//
@@ -622,7 +625,7 @@ namespace ModIO.Implementation.API
                     case ResponseCodeType.AbortRequested:
 
                         logTitle = $"User aborted the webrequest.\nurl: {webRequest.url}";
-                        internalResponse.result = ResultBuilder.Success;
+                        internalResponse.result = ResultBuilder.Create(ResultCode.Internal_OperationCancelled);
 
                         break;
 
@@ -708,14 +711,21 @@ namespace ModIO.Implementation.API
                 }
             }
 
+            if(ModIOUnityImplementation.shuttingDown)
+            {
+                // the web request could have failed at different points producing different error codes
+                // therefore, ensure we are giving a consistent error code if the plugin is shutting down.
+                internalResponse.result = ResultBuilder.Create(ResultCode.Internal_OperationCancelled);
+            }
             return internalResponse;
+        }
 
         // This is a cleanup GOTO if the plugin is being shutdown
-        Cancel:
-
+        static ResultAnd<T> RequestShutdown<T>(ResultAnd<T> internalResponse)
+        {
             internalResponse.value = default;
             internalResponse.result = ResultBuilder.Create(ResultCode.Internal_OperationCancelled);
-            return internalResponse;
+            return internalResponse; 
         }
 
         static void ProgressHandleEnsureGracefulSuccessOnWebRequestPrematureDisposure(ProgressHandle progressHandle)
@@ -788,14 +798,11 @@ namespace ModIO.Implementation.API
             return null;
         }
 
-#endregion // Request Handling
+        #endregion // Request Handling
 
-#region Progress Handle Tracking
+        #region Progress Handle Tracking
 
-        /// <summary>
-        /// Begins updating the progress of the handle from the WebRequest.
-        /// </summary>
-        static async void PairProgressHandleToWebRequest(UnityWebRequest webRequest,
+        static async void DecoupledProgressHandleToWebRequestRunner(IModIoWebRequest webRequest,
                                                          ProgressHandle progressHandle)
         {
             // Early out
@@ -809,80 +816,7 @@ namespace ModIO.Implementation.API
                 liveProgressHandles.Add(progressHandle);
             }
 
-            // If the PerformRequest method throws an exception (unlikely) then the UWR will get
-            // disposed before unpairing the progress handle and will cause a weird exception.
-            // This try-catch is to keep things cleaner and easier to read if said happens.
-            try
-            {
-                // We cache these outside of the while loop to create less garbage for the GC
-                bool trackDownload =
-                    progressHandle.OperationType == ModManagementOperationType.Download;
-                ulong lastUploadedBytes = 0;
-                int updateRate = 10; // milliseconds between progress updates
-                int sampleTimeInMilliseconds = 2000; // amount of time to calculate average  bytes/s
-                int maxSamples = sampleTimeInMilliseconds / updateRate;
-                ulong bytesForThisSample;
-                ulong currentUploadedBytes;
-                List<ulong> samples = new List<ulong>();
-                ulong samplesTotalSize;
-
-                //rewire this so that it works both up and down
-
-                while(progressHandle != null && !progressHandle.Completed 
-                      && webRequest != null && !webRequest.isDone 
-                      && !ModIOUnityImplementation.shuttingDown 
-                      && liveProgressHandles.Contains(progressHandle))
-                {
-                    // Calculate kb/s
-                    // First off, figure out if we're downloading or uploading
-                    currentUploadedBytes = webRequest.uploadedBytes != 0 
-                        ? webRequest.uploadedBytes : webRequest.downloadedBytes;
-
-                    bytesForThisSample = currentUploadedBytes - lastUploadedBytes;
-                    lastUploadedBytes = currentUploadedBytes;
-
-                    // Add this sample to the samples list
-                    samples.Add(bytesForThisSample);
-                    if(samples.Count > maxSamples)
-                    {
-                        samples.RemoveAt(0);
-                    }
-
-                    // Get the total samples size
-                    samplesTotalSize = 0;
-                    foreach(ulong p in samples) { samplesTotalSize += p; }
-
-                    // calculate the bytes per second average off of total sample size
-                    if (samplesTotalSize != 0)
-                    {
-                        progressHandle.BytesPerSecond =
-                            (long)(samplesTotalSize / (ulong)(sampleTimeInMilliseconds/1000f));
-                    }
-
-                    progressHandle.Progress =
-                        trackDownload ? webRequest.downloadProgress : webRequest.uploadProgress;
-
-                    if (progressHandle.Progress == -1)
-                    {
-                        progressHandle.Progress = 0;
-                    }
-
-                    if(progressHandle.Progress >= 1f)
-                    {
-                        break;
-                    }
-
-                    await Task.Delay(updateRate);
-                }
-            }
-            catch(Exception e)
-            {                
-                Logger.Log(LogLevel.Warning,
-                           $"ProgressHandle failed to stay paired with "
-                               + $"WebRequest. Likely because the UnityWebRequest was"
-                               + $" Disposed prematurely or finished during an awaited iteration. "
-                               + $"(Exception: {e.Message})");
-            }
+            progressHandle.CoupleToWebRequest(webRequest, () => !ModIOUnityImplementation.shuttingDown && liveProgressHandles.Contains(progressHandle));
 
             UnpairProgressHandle(progressHandle);
         }

@@ -123,13 +123,17 @@ namespace ModIO.Implementation
             }
         }
 
-        /// <summary>Generates an MD5 hash for a given stream.</summary>
-        public static async Task<string> GenerateMD5Async(string filepath)
+        /// <summary>Generates an MD5 hash from a given stream.</summary>
+        public static async Task<string> GenerateArchiveMD5Async(string filepath)
         {
             string fileHash = string.Empty;
             
-            using(var stream = File.OpenRead(filepath))
+            using(var stream = DataStorage.OpenArchiveReadStream(filepath, out Result result))
             {
+                if(!result.Succeeded())
+                {
+                    return string.Empty;
+                }
                 ResultAnd<string> hashResult = await IOUtil.GenerateMD5Async(stream);
                 fileHash = hashResult.value;
             }
@@ -137,7 +141,7 @@ namespace ModIO.Implementation
         }
 
         /// <summary>Generates an MD5 hash for a given stream.</summary>
-        public static async Task<ResultAnd<string>> GenerateMD5Async(System.IO.Stream stream)
+        public static async Task<ResultAnd<string>> GenerateMD5Async(Stream stream)
         {
             // TODO @Jackson, why is this here?
             await Task.Delay(1); // ???
@@ -171,6 +175,24 @@ namespace ModIO.Implementation
         {
             await Task.Delay(1);
             throw new NotImplementedException();
+        }
+
+        internal static string CleanFileNameForInvalidCharacters(string filename)
+        {
+            // replace spaces with dashes
+            string cleanedName = filename.Replace(" ", "-");
+            
+            // trim - and . from ends of string
+            char[] invalidToTrim = {'-','.'};
+            cleanedName = cleanedName.Trim(invalidToTrim);
+            
+            // completely remove any invalid characters
+            foreach(char c in Path.GetInvalidFileNameChars())
+            {
+                cleanedName = cleanedName.Replace(c.ToString(), "");
+            }
+            
+            return cleanedName;
         }
     }
 }

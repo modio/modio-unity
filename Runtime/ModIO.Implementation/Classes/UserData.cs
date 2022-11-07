@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using ModIO.Implementation.API.Objects;
@@ -5,7 +6,7 @@ using ModIO.Implementation.API.Objects;
 namespace ModIO.Implementation
 {
     /// <summary>Stores the user data for the session.</summary>
-    [System.Serializable]
+    [Serializable]
     internal class UserData
     {
         /// <summary>Variable backing for the singleton.</summary>
@@ -20,7 +21,7 @@ namespace ModIO.Implementation
         public long oAuthExpiryDate;
 
         /// <summary>Has the token been rejected.</summary>
-        public bool oAuthTokenWasRejected = false;
+        public bool oAuthTokenWasRejected;
 
         // TODO Consolidate this with Registry
         public Dictionary<ModId, SubscribedMod> queuedUnsubscribedMods =
@@ -36,19 +37,19 @@ namespace ModIO.Implementation
         /// <summary>Convenience wrapper for determining if a valid token is in use.</summary>
         public bool IsOAuthTokenValid()
         {
-            return (!string.IsNullOrEmpty(this.oAuthToken) && !this.oAuthTokenWasRejected);
+            return (!string.IsNullOrEmpty(oAuthToken) && !oAuthTokenWasRejected);
         }
 
         public async Task SetUserObject(UserObject user)
         {
-            this.userObject = user;
+            userObject = user;
             ModCollectionManager.AddUserToRegistry(user);
             await DataStorage.SaveUserData();
         }
 
         public async Task ClearUser()
         {
-            this.userObject = default;
+            userObject = default;
             ClearAuthenticatedSession();
             await DataStorage.SaveUserData();
         }
@@ -56,15 +57,15 @@ namespace ModIO.Implementation
         /// <summary>Convenience wrapper that sets OAuthToken and clears rejected flag.</summary>
         public async Task SetOAuthToken(AccessTokenObject newToken)
         {
-            this.oAuthToken = newToken.access_token;
-            this.oAuthExpiryDate = newToken.date_expires;
-            this.oAuthTokenWasRejected = false;
+            oAuthToken = newToken.access_token;
+            oAuthExpiryDate = newToken.date_expires;
+            oAuthTokenWasRejected = false;
             await DataStorage.SaveUserData();
         }
 
         public void SetOAuthTokenAsRejected()
         {
-            this.oAuthTokenWasRejected = true;
+            oAuthTokenWasRejected = true;
         }
 
         internal void ClearAuthenticatedSession()

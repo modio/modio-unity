@@ -1106,6 +1106,43 @@ namespace ModIO
         {
             return await ModIOUnityImplementation.UploadModfile(modfile);
         }
+
+        
+
+        /// <summary>
+        /// This is used to update the logo of a mod or the gallery images. This works very similar
+        /// to EditModProfile except it only affects the images.
+        /// </summary>
+        /// <param name="modProfileDetails">this holds the reference to the images you wish to upload</param>
+        /// <seealso cref="ModProfileDetails"/>
+        /// <seealso cref="Result"/>
+        /// <seealso cref="EditModProfile"/>
+        /// <code>
+        /// ModId modId;
+        /// Texture2D newTexture;
+        /// 
+        /// async void Example()
+        /// {
+        ///     ModProfileDetails profile = new ModProfileDetails();
+        ///     profile.id = modId;
+        ///     profile.logo = newTexture;
+        /// 
+        ///     Result result = await ModIOUnityAsync.UploadModMedia(profile);
+        /// 
+        ///     if (result.Succeeded())
+        ///     {
+        ///         Debug.Log("uploaded new mod logo");
+        ///     }
+        ///     else
+        ///     {
+        ///         Debug.Log("failed to uploaded mod logo");
+        ///     }
+        /// }
+        /// </code>
+        public static async Task<Result> UploadModMedia(ModProfileDetails modProfileDetails)
+        {
+            return await ModIOUnityImplementation.UploadModMedia(modProfileDetails);
+        }
         
         /// <summary>
         /// Removes a mod from being visible on the mod.io server.
@@ -1146,6 +1183,73 @@ namespace ModIO
         public static async Task<ResultAnd<ModProfile[]>> GetCurrentUserCreations()
         {
             return await ModIOUnityImplementation.GetCurrentUserCreations();
+        }
+
+        /// <summary>
+        /// Adds the provided tags to the specified mod id. In order for this to work the
+        /// authenticated user must have permission to edit the specified mod. Only existing tags
+        /// as part of the game Id will be added.
+        /// </summary>
+        /// <param name="modId">Id of the mod to add tags to</param>
+        /// <param name="tags">array of tags to be added</param>
+        /// <seealso cref="Result"/>
+        /// <seealso cref="DeleteTags"/>
+        /// <seealso cref="ModIOUnityAsync.AddTags"/>
+        /// <code>
+        /// 
+        /// ModId modId;
+        /// string[] tags;
+        /// 
+        /// void Example()
+        /// {
+        ///     Result result = await ModIOUnity.AddTags(modId, tags);
+        /// 
+        ///     if (result.Succeeded())
+        ///     {
+        ///         Debug.Log("added tags");
+        ///     }
+        ///     else
+        ///     {
+        ///         Debug.Log("failed to add tags");
+        ///     }
+        /// }
+        /// </code>
+        public static void AddTags(ModId modId, string[] tags)
+        {
+            ModIOUnityImplementation.AddTags(modId, tags);
+        }
+
+        /// <summary>
+        /// Deletes the specified tags from the mod. In order for this to work the
+        /// authenticated user must have permission to edit the specified mod.
+        /// </summary>
+        /// <param name="modId">the id of the mod for deleting tags</param>
+        /// <param name="tags">array of tags to be deleted</param>
+        /// <seealso cref="Result"/>
+        /// <seealso cref="AddTags"/>
+        /// <seealso cref="ModIOUnityAsync.DeleteTags"/>
+        /// <code>
+        /// 
+        /// ModId modId;
+        /// string[] tags;
+        /// 
+        /// async void Example()
+        /// {
+        ///     Result result = await ModIOUnity.DeleteTags(modId, tags);
+        /// 
+        ///     if (result.Succeeded())
+        ///     {
+        ///         Debug.Log("deleted tags");
+        ///     }
+        ///     else
+        ///     {
+        ///         Debug.Log("failed to delete tags");
+        ///     }
+        /// }
+        /// </code>
+        public static void DeleteTags(ModId modId, string[] tags)
+        {
+            ModIOUnityImplementation.DeleteTags(modId, tags);
         }
 #endregion // Mod Uploading
 

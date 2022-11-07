@@ -34,8 +34,8 @@ namespace ModIO.Implementation
 
         public async Task<Result> Extract()
         {
-            operation = ExtractAll();
-            return await operation;
+            return await DataStorage.taskRunner.AddTask(TaskPriority.HIGH, 1, 
+                async () => await ExtractAll());
         }
 
         // ---------[ Interface ]---------
@@ -56,6 +56,8 @@ namespace ModIO.Implementation
                     {
                         using(ZipInputStream stream = new ZipInputStream(fileStream))
                         {
+                            stream.IsStreamOwner = false;
+                            
                             ZipEntry entry;
                             while((entry = stream.GetNextEntry()) != null)
                             {
@@ -87,7 +89,8 @@ namespace ModIO.Implementation
                                                 if(cancel || ModIOUnityImplementation.shuttingDown)
                                                 {
                                                     // See end of method
-                                                    goto Cancel;
+                                                    cancel = true;
+                                                    break;
                                                 }
 
                                                 // These don't need to be async as it's already running 
@@ -114,16 +117,11 @@ namespace ModIO.Implementation
                                         }
                                         else
                                         {
-                                            goto Cancel;
+                                            cancel = true;
+                                            break;
                                         }
                                     }
                                 }
-                            }
-
-                            result = DataStorage.MakeInstallationFromExtractionDirectory(modId, fileId);
-                            if(!result.Succeeded())
-                            {
-                                goto Cancel;
                             }
                         }
                     }
@@ -131,29 +129,55 @@ namespace ModIO.Implementation
                     {
                         Logger.Log(LogLevel.Error,
                             $"Unhandled exception extracting file. MODFILE [{modId}_{fileId}. Exception: {e.Message}");
-                        goto Cancel;
+                        cancel = true;
                     }
                 }
             }
 
+            //-----------------------------------------------------------------------------------//
+            //                            MOVE FINISHED EXTRACTION
+            //-----------------------------------------------------------------------------------//
+            try
+            {
+                result = DataStorage.MakeInstallationFromExtractionDirectory(modId, fileId);
+                if(!result.Succeeded())
+                {
+                    cancel = true;
+                }
+            }
+            catch(Exception e)
+            {
+                Logger.Log(LogLevel.Error,
+                    $"Unhandled exception extracting file. MODFILE [{modId}_{fileId}. Exception: {e.Message}");
+                cancel = true;
+            }
+
+            if(cancel)
+            {
+                return CancelAndCleanup(result);
+            }
+            
+            // End
             Logger.Log(LogLevel.Verbose,
                        $"EXTRACTED RESULT [{result.code}] MODFILE [{modId}_{fileId}]");
-            return await Task.FromResult(result);
+            return result;
+        }
 
-        // This is a GOTO cleanup if the extract operation is cancelled
-        Cancel:
-
+        Result CancelAndCleanup(Result result)
+        {
             Logger.Log(LogLevel.Verbose,
-                       $"FAILED EXTRACTION [{result.code}] MODFILE [{modId}_{fileId}]");
+                $"FAILED EXTRACTION [{result.code}] MODFILE [{modId}_{fileId}]");
 
             // Delete any files we may have already extracted
             DataStorage.TryDeleteInstalledMod(modId, fileId, out result);
+
             if(result.code == ResultCode.Unknown || result.code == ResultCode.Success)
             {
                 // If result wasn't assigned, we have been cancelled
                 result = ResultBuilder.Create(ResultCode.Internal_OperationCancelled);
             }
-            return await Task.FromResult(result);
+            
+            return result;
         }
 
         // Implemented from IModIOZipOperation interface

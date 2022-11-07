@@ -120,6 +120,7 @@ namespace ModIOBrowser
         /// virtual keyboard you'd like to open by providing the Browser with a delegate.
         /// </summary>
         public static VirtualKeyboardDelegate OpenVirtualKeyboard;
+        public static ModManagementEventDelegate OnModManagementEvent;
 
         public delegate void VirtualKeyboardDelegate(string title, 
                                                      string text, 
@@ -128,6 +129,8 @@ namespace ModIOBrowser
                                                      int characterLimit,
                                                      bool multiline,
                                                      Action<string> onClose);
+
+
         
         /// <summary>
         /// Represents the type of keyboard layout appropriate for the type of InputField being selected
@@ -144,10 +147,8 @@ namespace ModIOBrowser
         static bool openOnInitialize = false;
 
         // Use Awake() to setup the Singleton for Browser.cs and initialize the plugin
-        protected override void Awake()
+        void Start()
         {
-            base.Awake();
-
             if (autoInitialize)
             {
                 ModIOUnity.InitializeForUser("User", OnInitialize);
@@ -229,7 +230,7 @@ namespace ModIOBrowser
         /// <summary>
         /// Using this method will enable an option in the Authentication modal for a user to
         /// log in with their Xbox credentials. Simply provide the xbox token and the user's email
-        /// address and the authentication flow for steam will be available.
+        /// address and the authentication flow for Xbox will be available.
         /// </summary>
         /// <param name="xboxToken">Xbox token</param>
         /// <param name="userEmail">(Optional) provide the users email address</param>
@@ -238,6 +239,22 @@ namespace ModIOBrowser
             AddActionToQueueForMainThread(delegate
             {
                 optionalXboxToken = xboxToken;
+                optionalThirdPartyEmailAddressUsedForAuthentication = userEmail;
+            });
+        }
+
+        /// <summary>
+        /// Using this method will enable an option in the Authentication modal for a user to
+        /// log in with their Switch account. Simply provide the NSA ID of the user and their email
+        /// address and the authentication flow for Switch will be available.
+        /// </summary>
+        /// <param name="switchNsaId">Switch NSA ID of the user</param>
+        /// <param name="userEmail">(Optional) provide the users email address</param>
+        public static void SetupSwitchAuthenticationOption(string switchNsaId, string userEmail = null)
+        {
+            AddActionToQueueForMainThread(delegate
+            {
+                optionalSwitchToken = switchNsaId;
                 optionalThirdPartyEmailAddressUsedForAuthentication = userEmail;
             });
         }
@@ -308,7 +325,8 @@ namespace ModIOBrowser
         /// </summary>
         /// <remarks>
         /// You may not need to use this method since the browser has the ability to close itself,
-        /// however if you need to close it for any reason you can do so via this method.
+        /// however if you need to close it for any reason you can do so via this method. Keep in
+        /// that the OnClose delegate provided from OpenBrowser will get invoked from this method.
         /// </remarks>
         public static void CloseBrowser()
         {
@@ -318,7 +336,6 @@ namespace ModIOBrowser
             Instance?.BrowserCanvas?.SetActive(false);
             OnClose?.Invoke();
 
-            ExampleInputCapture.Instance.gameObject.SetActive(false);
             SelectionManager.Instance.gameObject.SetActive(false);
         }
 #endregion // Frontend methods
@@ -380,11 +397,6 @@ namespace ModIOBrowser
                 Debug.LogWarning("[mod.io Browser] Could not open because the Browser.cs"
                                  + " singleton hasn't been set yet. (Check the gameObject holding"
                                  + " the Browser.cs component isn't set to inactive)");
-                // REVIEW @Jackson the Logger is internal, should we use debug? make a separate
-                // logger for the browser?
-                // Logger.Log(LogLevel.Error, "[modio-browser] The Browser singleton hasnt been "
-                //                            + "initialized yet. Make sure this method is not being "
-                //                            + "called inside Awake(), consider using Start() instead.");
                 return;
             }
 
@@ -401,7 +413,6 @@ namespace ModIOBrowser
 
             Result result = ModIOUnity.EnableModManagement(Instance.ModManagementEvent);
 
-            ExampleInputCapture.Instance.gameObject.SetActive(true);
             SelectionManager.Instance.gameObject.SetActive(true);
         }
         
@@ -912,14 +923,10 @@ namespace ModIOBrowser
             {
                 Instance.CloseContextMenu();
             }
-            else if(Instance.BrowserPanel.activeSelf)
+            else if(Instance.SearchResultsPanel.activeSelf)
             {
-                // if overlay browser inflated, subscribe/unsubscribe
-                // if featured item highlighted/selected subscribe/unsubscribe
-                if(!SelectionOverlayHandler.TryToOpenMoreOptionsForBrowserOverlayObject() && Instance.isFeaturedItemSelected)
-                {
-                    Instance.OpenMoreOptionsForFeaturedSlot();
-                }
+                // if search results list item selected subscribe/unsubscribe}
+                SelectionOverlayHandler.TryToOpenMoreOptionsForSearchResultsOverlayObject();
             }
             else if(Instance.CollectionPanel.activeSelf)
             {
@@ -928,17 +935,21 @@ namespace ModIOBrowser
                     Instance.currentSelectedCollectionListItem.ShowMoreOptions();
                 }
             }
-            else if(Instance.SearchResultsPanel.activeSelf)
-            {
-                // if search results list item selected subscribe/unsubscribe}
-                SelectionOverlayHandler.TryToOpenMoreOptionsForSearchResultsOverlayObject();
-            }
             else if(Instance.SearchPanel.activeSelf)
             {
                 // clear filter results
                 searchFilterTags.Clear();
                 Instance.SearchPanelField.text = "";
                 Instance.SetupSearchPanelTags();
+            }
+            else if(Instance.BrowserPanel.activeSelf)
+            {
+                // if overlay browser inflated, subscribe/unsubscribe
+                // if featured item highlighted/selected subscribe/unsubscribe
+                if(!SelectionOverlayHandler.TryToOpenMoreOptionsForBrowserOverlayObject() && Instance.isFeaturedItemSelected)
+                {
+                    Instance.OpenMoreOptionsForFeaturedSlot();
+                }
             }
         }
 
@@ -1109,8 +1120,7 @@ namespace ModIOBrowser
             }
         }
 
-        #endregion // Generic Navigation for panels
-
+#endregion // Generic Navigation for panels
 
 #region Browser Panel
         // These are all of the internal methods that pertain to managing the main home view panel
@@ -1330,6 +1340,8 @@ namespace ModIOBrowser
             browserFeaturedSlotBackplate.gameObject.SetActive(true);
             browserFeaturedSlotInfo.SetActive(true);
             RefreshSelectedFeaturedModDetails();
+            
+            SelectSelectable(browserFeaturedSlotSelection, true);
         }
 
         /// <summary>
@@ -1774,6 +1786,7 @@ namespace ModIOBrowser
 
             if(!mouseNavigation || selectEvenWhenUsingMouse)
             {
+                EventSystem.current.SetSelectedGameObject(null, null);
                 EventSystem.current.SetSelectedGameObject(s.gameObject, null);
                 // s.Select();
             }
@@ -1794,7 +1807,23 @@ namespace ModIOBrowser
         /// <param name="id">the mod id pertaining to this event</param>
         internal void ModManagementEvent(ModManagementEventType type, ModId id, Result eventResult)
         {
-            ProcessModManagementEventIntoNotification(type, id);
+            // invoke any external delegates provided to also listen for these events
+            OnModManagementEvent?.Invoke(type, id, eventResult);
+            
+            // cache not enough storage mods
+            if(eventResult.IsStorageSpaceInsufficient())
+            {
+                if (!notEnoughSpaceForTheseMods.Contains(id))
+                {
+                    notEnoughSpaceForTheseMods.Add(id);
+                }
+            }
+            
+            if(!BrowserCanvas.activeSelf)
+            {
+                return;
+            }
+            ProcessModManagementEventIntoNotification(type, id, eventResult);
             
             currentModManagementOperationHandle = ModIOUnity.GetCurrentModManagementOperation();
             if(currentModManagementOperationHandle.Completed)

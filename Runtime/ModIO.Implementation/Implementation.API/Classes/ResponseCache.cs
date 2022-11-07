@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.IO;
-using System.Runtime.CompilerServices;
 using System.Runtime.Serialization.Formatters.Binary;
-using System.Transactions;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace ModIO.Implementation.API
@@ -17,33 +14,36 @@ namespace ModIO.Implementation.API
     internal static class ResponseCache
     {
 #region Private class / wrappers for caching
-        [System.Serializable]
+        [Serializable]
         class CachedPageSearch
         {
             public Dictionary<int, long> mods = new Dictionary<int, long>();
             public long resultCount;
         }
 
-        [System.Serializable]
+        [Serializable]
         class CachedModProfile
         {
             public ModProfile profile;
             public bool extendLifetime;
         }
 #endregion // Private class/wrappers for caching
-
+        
+        // whether or not to display verbose logs from the cache
         public static bool
-            logCacheMessages; // whether or not to display verbose logs from the cache
+            logCacheMessages = true;
         public static long maxCacheSize = 0;
-        const int minCacheSize = 10485760; // 10 MiB is the minimum cache size estimate
-        const int absoluteCacheSizeLimit =
-            1073741924; // 1 GiB is the absolute maximum for the cache size
-        const int modLifetimeInCache = 60000; // milliseconds
+        // 10 MiB is the minimum cache size estimate
+        const int minCacheSize = 10485760; 
+        // 1 GiB is the absolute maximum for the cache size
+        const int absoluteCacheSizeLimit = 1073741924; 
+        // milliseconds (60,000 being 60 seconds)
+        const int modLifetimeInCache = 60000; 
 
         /// <summary>
         /// stores md5 hashes generated after retrieving Terms of Use from the RESTAPI
         /// </summary>
-        public static TermsHash termsHash = default;
+        public static TermsHash termsHash;
 
         // I'm currently using the Binary formatter as it's the cleanest implementation and remains
         // maintainable. There is definite room for optimisation but i'll wait until we settle on
@@ -210,7 +210,9 @@ namespace ModIO.Implementation.API
                         }
                     }
 
-                    goto Fail;
+                    // failed to get one of the mods for this cache request
+                    modPage = default;
+                    return false;
                 }
 
                 // SUCCEEDED
@@ -225,7 +227,7 @@ namespace ModIO.Implementation.API
                 return true;
             }
 
-        Fail:;
+            // Failed
             modPage = default;
             return false;
         }
