@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using ModIO;
+using ModIOBrowser.Implementation;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -54,20 +55,20 @@ namespace ModIOBrowser
 			    case ModManagementEventType.Installed:
 				    AddNotificationToQueue(new QueuedNotice
 				    {
-					    title = "Mod installed",
-					    description = $"{GetModNameFromId(modId)} has finished installing",
-					    positiveAccent = true
+					    title = TranslationManager.Instance.Get("Mod installed"),
+					    description = TranslationManager.Instance.Get("{modname} has finished installing", $"{GetModNameFromId(modId)}"),
+                        positiveAccent = true
 				    });
 				    break;
 			    case ModManagementEventType.InstallFailed:
 				    
 				    string description = result.IsStorageSpaceInsufficient() ?
-					    "Not enough space" :
-					    $"{GetModNameFromId(modId)} failed to install";
-				    
-				    AddNotificationToQueue(new QueuedNotice
+                        TranslationManager.Instance.Get("Not enough space") :
+                        TranslationManager.Instance.Get("{modname} failed to install", $"{GetModNameFromId(modId)}");
+
+                    AddNotificationToQueue(new QueuedNotice
 				    {
-					    title = "Mod installation failed",
+					    title = TranslationManager.Instance.Get("Mod installation failed"),
 					    description = description,
 					    positiveAccent = false
 				    });
@@ -75,12 +76,12 @@ namespace ModIOBrowser
 			    case ModManagementEventType.DownloadFailed:
 				    
 				    description = result.IsStorageSpaceInsufficient() ?
-					    "Not enough space" :
-					    $"{GetModNameFromId(modId)} failed to download";
-				    
-				    AddNotificationToQueue(new QueuedNotice
+                        TranslationManager.Instance.Get("Not enough space") :
+                        TranslationManager.Instance.Get("{modname} failed to download", $"{GetModNameFromId(modId)}");
+
+                    AddNotificationToQueue(new QueuedNotice
 				    {
-					    title = "Mod download failed",
+					    title = TranslationManager.Instance.Get("Mod download failed"),
 					    description = description,
 					    positiveAccent = false
 				    });
@@ -88,25 +89,28 @@ namespace ModIOBrowser
 			    case ModManagementEventType.UninstallFailed:
 				    AddNotificationToQueue(new QueuedNotice
 				    {
-					    title = "Mod delete failed",
-					    description = $"{GetModNameFromId(modId)} failed to delete",
-					    positiveAccent = false
+					    title = TranslationManager.Instance.Get("Mod delete failed"),
+					    description = TranslationManager.Instance.Get("{modname} failed to delete", $"{ GetModNameFromId(modId)}"),
+
+                        positiveAccent = false
 				    });
 				    break;
 			    case ModManagementEventType.Updated:
 				    AddNotificationToQueue(new QueuedNotice
 				    {
-					    title = "Mod updated",
-					    description = $"{GetModNameFromId(modId)} has finished updating",
-					    positiveAccent = true
+					    title = TranslationManager.Instance.Get("Mod updated"),
+					    description = TranslationManager.Instance.Get("{modname} has finished updating", $"{GetModNameFromId(modId)}"),
+
+                        positiveAccent = true
 				    });
 				    break;
 			    case ModManagementEventType.UpdateFailed:
 				    AddNotificationToQueue(new QueuedNotice
 				    {
-					    title = "Mod update failed",
-					    description = $"{GetModNameFromId(modId)} failed to update",
-					    positiveAccent = false
+					    title = TranslationManager.Instance.Get("Mod update failed"),
+					    description = TranslationManager.Instance.Get("{modname} failed to update", $"{GetModNameFromId(modId)}"),
+
+                        positiveAccent = false
 				    });
 				    break;
 			    default:

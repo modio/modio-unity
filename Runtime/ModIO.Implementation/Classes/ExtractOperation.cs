@@ -12,17 +12,13 @@ namespace ModIO.Implementation
     /// pausing, etc
     /// </summary>
     internal class ExtractOperation : IModIOZipOperation
-    {
-        Task<Result> operation;
-
-        public Task Operation => operation;
-
+    {                
         public bool cancel;
         public long modId;
         public long fileId;
         public ProgressHandle progressHandle;
 
-        float currentEntryProgress;
+        Task IModIOZipOperation.GetOperation() => null;
 
         public ExtractOperation(long modId, long fileId,
                                 [CanBeNull] ProgressHandle progressHandle = null)
@@ -181,15 +177,15 @@ namespace ModIO.Implementation
         }
 
         // Implemented from IModIOZipOperation interface
-        public void Cancel()
+        void IModIOZipOperation.Cancel()
         {
             cancel = true;
         }
 
-        // Implemented from IDisposable interface
         public void Dispose()
         {
-            operation?.Dispose();
+
         }
+
     }
 }

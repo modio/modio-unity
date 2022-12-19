@@ -34,6 +34,11 @@ namespace ModIO.Implementation.API.Requests
                 kvps.Add(new KeyValuePair<string, string>(
                     "maturity_option", ((int)details.contentWarning).ToString()));
             }
+            if(details.communityOptions != null)
+            {
+                kvps.Add(new KeyValuePair<string, string>("community_options", ((int)details.communityOptions).ToString()));
+            }
+
             kvps.Add(new KeyValuePair<string, string>("metadata_blob", details.metadata));
 
             form = new WWWForm();

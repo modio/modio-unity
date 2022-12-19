@@ -2,6 +2,8 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using ModIOBrowser.Implementation;
+
 namespace ModIOBrowser
 {
 	public class SubscribedProgressTab : MonoBehaviour
@@ -12,7 +14,11 @@ namespace ModIOBrowser
 		public GameObject progressBarQueuedOutline;
 		public ModProfile profile;
 
-		public void Setup(ModProfile profile)
+#pragma warning disable 0649 //it is allocated
+        Translation progressBarTextTranslation;
+#pragma warning restore 0649
+
+        public void Setup(ModProfile profile)
 		{
 			this.profile = profile;
 				
@@ -20,13 +26,13 @@ namespace ModIOBrowser
 			{
 				if(status == SubscribedModStatus.Installed)
 				{
-					progressBarText.text = "Subscribed";
+                    Translation.Get(progressBarTextTranslation, "Subscribed", progressBarText);
 					progressBarFill.fillAmount = 1f;
 					progressBarQueuedOutline.SetActive(false);
 				}
 				else
 				{
-					progressBarText.text = "Queued";
+                    Translation.Get(progressBarTextTranslation, "Queued", progressBarText);
 					progressBarFill.fillAmount = 0f;
 					progressBarQueuedOutline.SetActive(true);
 				}
@@ -41,8 +47,11 @@ namespace ModIOBrowser
 
 		public void MimicOtherProgressTab(SubscribedProgressTab other)
 		{
-			if (other == null) Debug.LogWarning("Other is null");
-			if (progressBar == null) Debug.LogWarning("progressBar is null");
+			if (other == null)
+                Debug.LogWarning("Other is null");
+			if (progressBar == null)
+                Debug.LogWarning("progressBar is null");
+
 			progressBar.SetActive(other.progressBar.activeSelf);
 			progressBarFill.fillAmount = other.progressBarFill.fillAmount;
 			progressBarText.text = other.progressBarText.text;
@@ -73,24 +82,24 @@ namespace ModIOBrowser
 			{
 				case ModManagementOperationType.None_AlreadyInstalled:
 					progressBar.SetActive(true);
-					progressBarText.text = "Subscribed";
-					break;
+                    Translation.Get(progressBarTextTranslation, "Subscribed", progressBarText);
+                    break;
 				case ModManagementOperationType.None_ErrorOcurred:
 					break;
 				case ModManagementOperationType.Install:
-					progressBar.SetActive(true);
-					progressBarText.text = $"Downloading";
-					break;
+					progressBar.SetActive(true);					
+                    Translation.Get(progressBarTextTranslation, "Installing", progressBarText);
+                    break;
 				case ModManagementOperationType.Download:
 					progressBar.SetActive(true);
-					progressBarText.text = "Downloading";
-					break;
+                    Translation.Get(progressBarTextTranslation, "Downloading", progressBarText);
+                    break;
 				case ModManagementOperationType.Uninstall:
 					break;
 				case ModManagementOperationType.Update:
 					progressBar.SetActive(true);
-					progressBarText.text = "Updating";
-					break;
+                    Translation.Get(progressBarTextTranslation, "Updating", progressBarText);
+                    break;
 			}
 		}
 		
@@ -113,34 +122,34 @@ namespace ModIOBrowser
 	            case ModManagementEventType.UninstallStarted:
 	            case ModManagementEventType.Uninstalled:
 	            case ModManagementEventType.UninstallFailed:
-		            progressBarText.text = "Error";
+                    Translation.Get(progressBarTextTranslation, "Error", progressBarText);
 		            progressBarFill.fillAmount = 0f;
 		            break;
                 case ModManagementEventType.InstallStarted:
-                    progressBarText.text = "Installing";
+                    Translation.Get(progressBarTextTranslation, "Installing", progressBarText);                    
                     progressBarFill.fillAmount = 1f;
                     progressBar.SetActive(true);
                     break;
                 case ModManagementEventType.Installed:
-                    progressBarText.text = "Subscribed";
+                    Translation.Get(progressBarTextTranslation, "Subscribed", progressBarText);
                     progressBarFill.fillAmount = 1f;
                     progressBar.SetActive(true);
                     break;
                 case ModManagementEventType.DownloadStarted:
-                    progressBarText.text = "Downloading";
+                    Translation.Get(progressBarTextTranslation, "Downloading", progressBarText);
                     progressBar.SetActive(true);
                     break;
                 case ModManagementEventType.Downloaded:
-                    progressBarText.text = "Subscribed";
+                    Translation.Get(progressBarTextTranslation, "Downloaded", progressBarText);
                     progressBarFill.fillAmount = 1f;
                     progressBar.SetActive(true);
                     break;
                 case ModManagementEventType.UpdateStarted:
-                    progressBarText.text = "Updating";
+                    Translation.Get(progressBarTextTranslation, "Updating", progressBarText);
                     progressBar.SetActive(true);
                     break;
                 case ModManagementEventType.Updated:
-                    progressBarText.text = "Subscribed";
+                    Translation.Get(progressBarTextTranslation, "Subscribed", progressBarText);
                     progressBarFill.fillAmount = 1f;
                     progressBar.SetActive(true);
                     break;

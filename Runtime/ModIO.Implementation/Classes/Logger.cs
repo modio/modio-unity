@@ -16,7 +16,8 @@ namespace ModIO.Implementation
         private static LogToPC _logToPC;
         internal static LogToPC LogToPC
         {
-            get {
+            get
+            {
                 return _logToPC = _logToPC ?? new LogToPC();
             }
         }

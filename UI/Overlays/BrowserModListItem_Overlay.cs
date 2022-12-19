@@ -101,7 +101,7 @@ namespace ModIOBrowser.Implementation
             // Add Vote up option to context menu
             options.Add(new ContextMenuOption
             {
-                name = "Vote up",
+                nameTranslationReference = "Vote up",
                 action = delegate
                 {
                     ModIOUnity.RateMod(listItemToReplicate.profile.id, ModRating.Positive, delegate { });
@@ -112,7 +112,7 @@ namespace ModIOBrowser.Implementation
             // Add Vote up option to context menu
             options.Add(new ContextMenuOption
             {
-                name = "Vote down",
+                nameTranslationReference = "Vote down",
                 action = delegate
                 {
                     ModIOUnity.RateMod(listItemToReplicate.profile.id, ModRating.Negative, delegate { });
@@ -123,7 +123,7 @@ namespace ModIOBrowser.Implementation
             // Add Report option to context menu
             options.Add(new ContextMenuOption
             {
-                name = "Report",
+                nameTranslationReference = "Report",
                 action = delegate
                 {
                     // TODO open report menu

@@ -11,7 +11,6 @@ namespace ModIO.Implementation.Platform
     internal static class SystemIOWrapper
     {
 #region Operations
-        
         //There is no native method for checking if a file is open or in use, so we need to keep
         // track of the files we are opening and using manually. For now this is the simplest solve.
         static HashSet<string> currentlyOpenFiles = new HashSet<string>();
@@ -97,7 +96,7 @@ namespace ModIO.Implementation.Platform
             {
                 await Task.Yield();
             }
-            
+
             // add this filepath to a table of all currently open files
             currentlyOpenFiles.Add(filePath);
 
@@ -130,7 +129,7 @@ namespace ModIO.Implementation.Platform
 
             // now that we are done with this file, remove it from the table of open files
             currentlyOpenFiles.Remove(filePath);
-            
+
             return ResultAnd.Create(result, data);
         }
 
@@ -138,7 +137,7 @@ namespace ModIO.Implementation.Platform
         public static async Task<Result> WriteFileAsync(string filePath, byte[] data)
         {
             Result result = ResultBuilder.Success;
-            
+
             if(data == null)
             {
                 Logger.Log(LogLevel.Verbose,
@@ -153,7 +152,7 @@ namespace ModIO.Implementation.Platform
             {
                 await Task.Yield();
             }
-            
+
             // add this filepath to a table of all currently open files
             currentlyOpenFiles.Add(filePath);
 
@@ -175,16 +174,16 @@ namespace ModIO.Implementation.Platform
                     Logger.Log(LogLevel.Error,
                                "Unhandled error when attempting to write the file."
                                    + $"\n.path={filePath}" + $"\n.Exception:{e.Message}");
-                
+
                     result = ResultBuilder.Create(ResultCode.IO_FileCouldNotBeWritten);
                 }
             }
 
             Logger.Log(LogLevel.Verbose, $"Write file: {filePath} - Result: [{result.code}]");
-            
+
             // now that we are done with this file, remove it from the table of open files
             currentlyOpenFiles.Remove(filePath);
-            
+
             return result;
         }
 
@@ -288,7 +287,7 @@ namespace ModIO.Implementation.Platform
         public static Result MoveDirectory(string directoryPath, string newDirectoryPath)
         {
             Result result = default;
-            
+
             try
             {
                 Directory.Move(directoryPath, newDirectoryPath);
@@ -336,33 +335,13 @@ namespace ModIO.Implementation.Platform
             return result;
         }
 
-#endregion // Operations
+        #endregion // Operations
 
-#region Utility
+        #region Utility
 
         /// <summary>Checks that a file path is valid.</summary>
         public static bool IsPathValid(string filePath, out Result result)
         {
-            // TODO(@jackson)
-            // --- FileInfo ---
-            // PathTooLongException
-            // The specified path, file name, or both exceed the system-defined maximum length.
-            // NotSupportedException
-            // fileName contains a colon (:) in the middle of the string.
-            // --- FileStream ---
-            // ArgumentException
-            // .NET Framework and .NET Core versions older than 2.1: path is a zero-length string,
-            // contains only white space, or contains one or more invalid characters. You can query
-            // for invalid characters by using the GetInvalidPathChars() method.
-            // ArgumentNullException
-            // path is null.
-            // DirectoryNotFoundException
-            // The specified path is invalid, (for example, it is on an unmapped drive).
-            // FileNotFoundException
-            // The file specified in path was not found.
-            // NotSupportedException
-            // path is in an invalid format.
-
             if(string.IsNullOrEmpty(filePath))
             {
                 result = ResultBuilder.Create(ResultCode.IO_FilePathInvalid);
@@ -604,12 +583,19 @@ namespace ModIO.Implementation.Platform
             }
         }
 
-#endregion // Utility
+        #endregion // Utility
 
-#region Legacy
+        #region Legacy
 
         // --- File Management ---
         /// <summary>Deletes a file.</summary>
+        public static Result DeleteFileGetResult(string path)
+        {
+            return DeleteFile(path)
+                ? ResultBuilder.Success
+                : new Result() { code = ResultCode.IO_FileCouldNotBeDeleted };
+        }
+
         public static bool DeleteFile(string path)
         {
             Debug.Assert(!string.IsNullOrEmpty(path));
@@ -627,8 +613,7 @@ namespace ModIO.Implementation.Platform
             {
                 string warningInfo = $"[mod.io] Failed to delete file.\nFile: {path}\n\n" +
                     $"Exception: {e}\n\n";
-                // Debug.LogWarning(warningInfo + Utility.GenerateExceptionDebugString(e));
-
+                
                 return false;
             }
         }

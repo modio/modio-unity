@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace ModIO
 {
@@ -30,6 +31,21 @@ namespace ModIO
         /// with the metadata located inside of ModProfile.cs)
         /// </summary>
         public string metadata;
+        
+        /// <summary>
+        /// the version of this installed mod
+        /// </summary>
+        public string version;
+        
+        /// <summary>
+        /// the change log for this version of the installed mod
+        /// </summary>
+        public string changeLog;
+
+        /// <summary>
+        /// The date that this version of the mod was submitted to mod.io
+        /// </summary>
+        public DateTime dateAdded;
         
         /// <summary>
         /// The profile of this mod, including the summary and name

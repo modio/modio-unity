@@ -173,7 +173,7 @@ namespace ModIO.Implementation
 
             // clean user profile identifier in case of filename usage
             userProfileIdentifier = IOUtil.CleanFileNameForInvalidCharacters(userProfileIdentifier);
-            
+
             Settings.server = serverSettings;
             Settings.build = buildSettings;
 
@@ -195,6 +195,13 @@ namespace ModIO.Implementation
             openCallbacks[callbackConfirmation] = null;
             DataStorage.user = createUDS.value;
 
+            // - load user data - user.json needs to be loaded before persistant data service
+            Task<Result> dataStorageTask = DataStorage.LoadUserData();
+
+            openCallbacks[callbackConfirmation] = dataStorageTask;
+            result = await dataStorageTask;
+            openCallbacks[callbackConfirmation] = null;
+
             Task<ResultAnd<IPersistentDataService>> persistentDataTask =
                 PlatformConfiguration.CreatePersistentDataService(serverSettings.gameId,
                     buildSettings);
@@ -210,13 +217,6 @@ namespace ModIO.Implementation
             ResultAnd<ITempDataService> createTDS = await tempDataTask;
             openCallbacks[callbackConfirmation] = null;
             DataStorage.temp = createTDS.value;
-
-            // - load user data -
-            Task<Result> dataStorageTask = DataStorage.LoadUserData();
-
-            openCallbacks[callbackConfirmation] = dataStorageTask;
-            result = await dataStorageTask;
-            openCallbacks[callbackConfirmation] = null;
 
             if(result.code == ResultCode.IO_FileDoesNotExist
                || result.code == ResultCode.IO_DirectoryDoesNotExist)
@@ -238,18 +238,19 @@ namespace ModIO.Implementation
             // - load registry -
             Task<Result> registryTask = ModCollectionManager.LoadRegistry();
 
-            Logger.Log(LogLevel.Verbose, "LOADING REGISTRY");
+            Logger.Log(LogLevel.Verbose, "Loading Registry");
             openCallbacks[callbackConfirmation] = registryTask;
             result = await registryTask;
-            Logger.Log(LogLevel.Verbose, "loaded REGISTRY");
+            Logger.Log(LogLevel.Verbose, "Finished Loading Registry");
             openCallbacks[callbackConfirmation] = null;
 
-            if(!result.Succeeded())
-            {
-                callbackConfirmation.SetResult(true);
-                openCallbacks.Remove(callbackConfirmation);
-                return result;
-            }
+            // If we fail to load the registry we simply create a new one. It may be corrupted
+            // if(!result.Succeeded())
+            // {
+            //     callbackConfirmation.SetResult(true);
+            //     openCallbacks.Remove(callbackConfirmation);
+            //     return result;
+            // }
 
             // - finalize -
             ModIOUnityImplementation.isInitialized = true;
@@ -326,7 +327,7 @@ namespace ModIO.Implementation
                 Logger.Log(LogLevel.Verbose, "ALREADY SHUTDOWN");
                 return;
             }
-            
+
             // This first block ensures we dont have conflicting shutdown operations
             // being called at the same time.
             if(shuttingDown && shutdownOperation != null)
@@ -336,11 +337,11 @@ namespace ModIO.Implementation
             else
             {
                 Logger.Log(LogLevel.Verbose, "SHUTTING DOWN");
-                
+
                 try
                 {
                     shuttingDown = true;
-                    
+
                     // This passthrough ensures we can properly check for ongoing shutdown
                     // operations (see the above block)
                     shutdownOperation = ShutdownTask();
@@ -348,7 +349,7 @@ namespace ModIO.Implementation
                     await shutdownOperation;
 
                     shutdownOperation = null;
-                    
+
                     shuttingDown = false;
                 }
                 catch(Exception e)
@@ -357,7 +358,7 @@ namespace ModIO.Implementation
                     Logger.Log(LogLevel.Error, $"Exception caught when shutting down plugin: {e.Message} - inner={e.InnerException?.Message}");
                 }
 
-                
+
                 Logger.Log(LogLevel.Verbose, "FINISHED SHUTDOWN");
             }
 
@@ -370,8 +371,8 @@ namespace ModIO.Implementation
         /// </summary>
         static async Task ShutdownTask()
         {
-            RESTAPI.Shutdown(); 
-            await ModManagement.ShutdownOperations(); 
+            RESTAPI.Shutdown();
+            await ModManagement.ShutdownOperations();
 
             isInitialized = false;
             UserData.instance = null;
@@ -732,7 +733,7 @@ namespace ModIO.Implementation
 
 #region Mod Browsing
 
-        
+
         public static async Task<ResultAnd<TagCategory[]>> GetGameTags()
         {
             TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
@@ -785,7 +786,7 @@ namespace ModIO.Implementation
 
 
         public static async Task<ResultAnd<ModPage>> GetMods(SearchFilter filter)
-        {           
+        {
             TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
             openCallbacks.Add(callbackConfirmation, null);
 
@@ -937,7 +938,7 @@ namespace ModIO.Implementation
             if(IsInitialized(out Result result) && AreCredentialsValid(true, out result))
             {
                 ModManagement.DisableModManagement();
-                
+
                 ModManagement.ShutdownOperations();
             }
 
@@ -1183,7 +1184,7 @@ namespace ModIO.Implementation
 
         private static bool ShouldAbortDueToDownloading(ModId modId)
         {
-            return ModManagement.currentJob != null 
+            return ModManagement.currentJob != null
                    && ModManagement.currentJob.mod.modObject.id == modId
                    && ModManagement.currentJob.type == ModManagementOperationType.Download;
         }
@@ -1380,7 +1381,7 @@ namespace ModIO.Implementation
             => mods.Select(x => x.AsInstalledModsUser(userId))
                    .Where(x => !x.Equals(default(UserInstalledMod)))
                    .ToArray();
-        
+
         public static Result RemoveUserData()
         {
             // We do not need to await this MM shutdown, it can happen silently
@@ -1392,10 +1393,10 @@ namespace ModIO.Implementation
 
             // remove the user from mod collection registry of subscribed mods
             ModCollectionManager.ClearUserData();
-            
+
             // remove the user's auth token and credentials, clear the session
             UserData.instance?.ClearUser();
-            
+
             // clear the UserProfile from the cache as it is no longer valid
             ResponseCache.ClearUserFromCache();
 
@@ -1650,7 +1651,7 @@ namespace ModIO.Implementation
             }
 
             var result = await CreateModProfile(token, modDetails);
-            callback?.Invoke(result);            
+            callback?.Invoke(result);
         }
 
         public static async Task<Result> EditModProfile(ModProfileDetails modDetails)
@@ -1758,7 +1759,7 @@ namespace ModIO.Implementation
             var result = await DeleteTags(modId, tags);
             callback?.Invoke(result);
         }
-        
+
         public static async Task<Result> DeleteTags(ModId modId, string[] tags)
         {
             // - Early Outs -
@@ -1842,7 +1843,7 @@ namespace ModIO.Implementation
             var result = await AddTags(modId, tags);
             callback?.Invoke(result);
         }
-        
+
         public static async Task<Result> AddTags(ModId modId, string[] tags)
         {
             // - Early Outs -
@@ -1968,7 +1969,7 @@ namespace ModIO.Implementation
                 ResultAnd<AddModMedia.AddModMediaUrlResult> urlResult = await urlResultTask;
                 openCallbacks[callbackConfirmation] = null;
 
-                if(urlResult.result.Succeeded()) 
+                if(urlResult.result.Succeeded())
                 {
                     Task<ResultAnd<ModMediaObject>> task = RESTAPI.Request<ModMediaObject>(
                         urlResult.value.url, AddModMedia.Template, urlResult.value.form, null, currentUploadHandle);
@@ -2270,12 +2271,55 @@ namespace ModIO.Implementation
             return true;
         }
 
-        public static Task<ResultAnd<ModProfile[]>> GetCurrentUserCreations()
+        public static async Task<ResultAnd<ModPage>> GetCurrentUserCreations(SearchFilter filter)
         {
-            throw new NotImplementedException();
+            TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
+            openCallbacks.Add(callbackConfirmation, null);
+
+            //------------------------------[ Setup callback params ]------------------------------
+            Result result;
+            ModPage page = new ModPage();
+            //-------------------------------------------------------------------------------------
+            var s = $"{Settings.server.serverURL}{@"/me/mods"}?{FilterUtil.ConvertToURL(filter)}{@"&game_id="}{Settings.server.gameId}";
+            string referenceURL = API.Requests.GetCurrentUserCreations.Url(filter);
+            int offset = filter.pageIndex * filter.pageSize;
+
+            if(IsInitialized(out result) && IsSearchFilterValid(filter, out result)
+                                         && AreCredentialsValid(true, out result)
+                                         && !ResponseCache.GetModsFromCache(referenceURL, offset, filter.pageSize, out page))
+            {
+                //      Synchronous checks SUCCEEDED
+
+                // MAKE RESTAPI REQUEST
+                Task<ResultAnd<GetCurrentUserCreations.ResponseSchema>> task = RESTAPI.Request<GetCurrentUserCreations.ResponseSchema>(referenceURL, API.Requests.GetCurrentUserCreations.Template);
+
+                openCallbacks[callbackConfirmation] = task;
+                ResultAnd<GetCurrentUserCreations.ResponseSchema> response = await task;
+                openCallbacks[callbackConfirmation] = null;
+
+                result = response.result;
+
+                if(response.result.Succeeded())
+                {
+                    // Convert the ModObject response into ModProfiles
+                    page = ResponseTranslator.ConvertResponseSchemaToModPage(response.value, filter);
+
+                    // Return the exact number of mods that were requested (not more)
+                    if(page.modProfiles.Length > filter.pageSize)
+                    {
+                        Array.Copy(page.modProfiles, page.modProfiles, filter.pageSize);
+                    }
+                }
+            }
+
+            // FINAL SUCCESS / FAILURE depending on callback params set previously
+            callbackConfirmation.SetResult(true);
+            openCallbacks.Remove(callbackConfirmation);
+
+            return ResultAnd.Create(result, page);
         }
 
-        public static async void GetCurrentUserCreations(Action<ResultAnd<ModProfile[]>> callback)
+        public static async void GetCurrentUserCreations(SearchFilter filter, Action<ResultAnd<ModPage>> callback)
         {
             // Check for callback
             if(callback == null)
@@ -2287,7 +2331,7 @@ namespace ModIO.Implementation
                     + "provide a valid callback.");
             }
 
-            ResultAnd<ModProfile[]> result = await GetCurrentUserCreations();
+            ResultAnd<ModPage> result = await GetCurrentUserCreations(filter);
             callback?.Invoke(result);
         }
 #endregion // Mod Uplaoding

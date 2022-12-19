@@ -12,7 +12,10 @@ namespace ModIO.Implementation
                     updatePending = mod.updatePending,
                     directory = mod.directory,
                     modProfile = mod.modProfile,
-                    metadata = mod.metadata
+                    metadata = mod.metadata,
+                    version = mod.version,
+                    changeLog = mod.changeLog,
+                    dateAdded = mod.dateAdded,
                 };
             }
 

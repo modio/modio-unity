@@ -21,10 +21,10 @@ namespace ModIOBrowser
         [SerializeField] GameObject ModDetailsGalleryLoadingAnimation;
         [SerializeField] Image ModDetailsGalleryFailedToLoadIcon;
         [SerializeField] Image[] ModDetailsGalleryImage;
-        [SerializeField] TMP_Text ModDetailsSubscribeButtonText;
-        [SerializeField] TMP_Text ModDetailsName;
-        [SerializeField] TMP_Text ModDetailsSummary;
-        [SerializeField] TMP_Text ModDetailsDescription;
+        [SerializeField] TMP_Text ModDetailsSubscribeButtonText; 
+        [SerializeField] TMP_Text ModDetailsName; 
+        [SerializeField] TMP_Text ModDetailsSummary; 
+        [SerializeField] TMP_Text ModDetailsDescription; 
         [SerializeField] TMP_Text ModDetailsFileSize;
         [SerializeField] TMP_Text ModDetailsLastUpdated;
         [SerializeField] TMP_Text ModDetailsReleaseDate;
@@ -101,8 +101,8 @@ namespace ModIOBrowser
             ModDetailsDescription.text = profile.description;
             ModDetailsSummary.text = profile.summary;
             ModDetailsFileSize.text = Utility.GenerateHumanReadableStringForBytes(profile.archiveFileSize);
-            ModDetailsLastUpdated.text = profile.dateUpdated.ToShortDateString();
-            ModDetailsReleaseDate.text = profile.dateLive.ToShortDateString();
+            ModDetailsLastUpdated.text = TranslationManager.Instance.SelectedLanguage.DateShort(profile.dateUpdated);
+            ModDetailsReleaseDate.text = TranslationManager.Instance.SelectedLanguage.DateShort(profile.dateLive);
             ModDetailsCreatedBy.text = profile.creatorUsername;
             ModDetailsUpVotes.text = Utility.GenerateHumanReadableNumber(profile.stats.ratingsPositive);
             ModDetailsDownVotes.text = Utility.GenerateHumanReadableNumber(profile.stats.ratingsNegative);
@@ -186,19 +186,18 @@ namespace ModIOBrowser
         {
             if(!isAuthenticated)
             {
-                ModDetailsSubscribeButtonText.text = "Log in to Subscribe";
+                Translation.Get(ModDetailsSubscribeButtonTextTranslation, "Log in to Subscribe", ModDetailsSubscribeButtonText);                
                 SubscribeToModEvent(currentModProfileBeingViewed, UpdateModDetailsSubscribeButtonText);
             }
             else if(IsSubscribed(currentModProfileBeingViewed.id))
             {
                 // This isnt actually subscribed to 'yet' but we make the UI toggle straight away
-                ModDetailsSubscribeButtonText.text = "Subscribe";
+                Translation.Get(ModDetailsSubscribeButtonTextTranslation, "Subscribe", ModDetailsSubscribeButtonText);
                 UnsubscribeFromModEvent(currentModProfileBeingViewed, UpdateModDetailsSubscribeButtonText);
             }
             else
             {
-                // This isnt actually unsubscribed 'yet' but we make the UI toggle straight away
-                ModDetailsSubscribeButtonText.text = "Unsubscribe";
+                Translation.Get(ModDetailsSubscribeButtonTextTranslation, "Unsubscribe", ModDetailsSubscribeButtonText);
                 SubscribeToModEvent(currentModProfileBeingViewed, UpdateModDetailsSubscribeButtonText);
             }
             
@@ -244,15 +243,15 @@ namespace ModIOBrowser
         {
             if(!isAuthenticated)
             {
-                ModDetailsSubscribeButtonText.text = "Log in to Subscribe";
+                Translation.Get(ModDetailsSubscribeButtonTextTranslation, "Log in to Subscribe", ModDetailsSubscribeButtonText);
             }
             else if(IsSubscribed(currentModProfileBeingViewed.id))
             {
-                ModDetailsSubscribeButtonText.text = "Unsubscribe";
+                Translation.Get(ModDetailsSubscribeButtonTextTranslation, "Unsubscribe", ModDetailsSubscribeButtonText);
             }
             else
             {
-                ModDetailsSubscribeButtonText.text = "Subscribe";  
+                Translation.Get(ModDetailsSubscribeButtonTextTranslation, "Subscribe", ModDetailsSubscribeButtonText);
             }
 
             ModIOUnity.IsAuthenticated((r) =>
@@ -260,7 +259,7 @@ namespace ModIOBrowser
                 if(!r.Succeeded())
                 {
                     isAuthenticated = false;
-                    ModDetailsSubscribeButtonText.text = "Log in to Subscribe";
+                    Translation.Get(ModDetailsSubscribeButtonTextTranslation, "Log in to Subscribe", ModDetailsSubscribeButtonText);
                 }
             });
         }
@@ -293,7 +292,7 @@ namespace ModIOBrowser
 
             if(handle.OperationType == ModManagementOperationType.Install)
             {
-                ModDetailsDownloadProgressRemaining.text = "Installing...";
+                ModDetailsDownloadProgressRemaining.text = TranslationManager.Instance.Get("Installing...");
                 ModDetailsDownloadProgressCompleted.text = "";
                 ModDetailsDownloadProgressSpeed.text = "";
                 return;
@@ -306,13 +305,15 @@ namespace ModIOBrowser
             {
                 float denominator = handle.Progress == 0 ? 0.01f : handle.Progress;
                 float timeRemainingInSeconds = (detailsProgressTimePassed / denominator) - detailsProgressTimePassed;
-                ModDetailsDownloadProgressRemaining.text = $"{Utility.GenerateHumanReadableTimeStringFromSeconds((int)timeRemainingInSeconds)} remaining";
-                
-                ModDetailsDownloadProgressSpeed.text = $"{Utility.GenerateHumanReadableStringForBytes(handle.BytesPerSecond)}/s";
+
+                ModDetailsDownloadProgressRemaining.text = TranslationManager.Instance.Get("{seconds} remaining", $"{ Utility.GenerateHumanReadableTimeStringFromSeconds((int)timeRemainingInSeconds)}");
+                ModDetailsDownloadProgressSpeed.text = TranslationManager.Instance.Get("{BytesPerSecond)}/s", Utility.GenerateHumanReadableStringForBytes(handle.BytesPerSecond));
 
                 if(GetSubscribedProfile(handle.modId, out ModProfile profile))
                 {
-                    ModDetailsDownloadProgressCompleted.text = $"{Utility.GenerateHumanReadableStringForBytes((long)(profile.archiveFileSize * handle.Progress))} of {Utility.GenerateHumanReadableStringForBytes(profile.archiveFileSize)}";
+                    TranslationManager.Instance.Get("{A} of {B}",
+                        $"{ Utility.GenerateHumanReadableStringForBytes((long)(profile.archiveFileSize * handle.Progress))}",
+                        $"{ Utility.GenerateHumanReadableStringForBytes(profile.archiveFileSize)}");
                 }
                 else
                 {

@@ -72,6 +72,10 @@ namespace ModIO.Implementation.API.Requests
                     provider = "googleauth";
                     tokenFieldName = "id_token";
                     break;
+                case AuthenticationServiceProvider.PlayStation:
+                    provider = "psnauth";
+                    tokenFieldName = "auth_code";
+                    break;
             }
 
             // Setup WWWForm

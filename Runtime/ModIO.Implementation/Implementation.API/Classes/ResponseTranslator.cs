@@ -172,6 +172,11 @@ namespace ModIO.Implementation
             profile.metadata = modObject.metadata_blob;
             profile.archiveFileSize = modObject.modfile.id == ModProfileNullId ? 
                 ModProfileUnsetFilesize : modObject.modfile.filesize;
+            
+            // mod file details
+            profile.latestChangelog = modObject.modfile.changelog;
+            profile.latestVersion = modObject.modfile.version;
+            profile.latestDateFileAdded = GetUTCDateTime(modObject.modfile.date_added);
 
             // set time dates
             profile.dateLive = GetUTCDateTime(modObject.date_live);

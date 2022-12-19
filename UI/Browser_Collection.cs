@@ -31,8 +31,8 @@ namespace ModIOBrowser
         [SerializeField] GameObject CollectionPanelNavButtonHighlights;
         [SerializeField] Image CollectionPanelHeaderBackground;
         internal CollectionModListItem currentSelectedCollectionListItem;
-        SubscribedMod[] subscribedMods;
-        InstalledMod[] installedMods;
+        SubscribedMod[] subscribedMods = Array.Empty<SubscribedMod>();
+        InstalledMod[] installedMods = Array.Empty<InstalledMod>();
         Dictionary<ModId, string> modStatus = new Dictionary<ModId, string>();
         bool checkingForUpdates = false;
         List<ModProfile> pendingSubscriptions = new List<ModProfile>();
@@ -95,8 +95,16 @@ namespace ModIOBrowser
             // TODO cull no longer required list items
             // TODO only hide/enable items we need to, dont do a complete refresh
             // TODO dynamically load collection on scroll so we dont try and populate more than a hundred items at a time
-            
-            CollectionPanelCheckForUpdatesText.text = checkingForUpdates ? "Checking..." : "Check for updates";
+
+            if(checkingForUpdates)
+            {
+                Translation.Get(CollectionPanelCheckForUpdatesTextTranslation, "Checking...", CollectionPanelCheckForUpdatesText);
+            }
+            else
+            {
+                Translation.Get(CollectionPanelCheckForUpdatesTextTranslation, "Check for updates", CollectionPanelCheckForUpdatesText);
+            }
+
             RefreshLocalModCollection();
             
             //--------------------------------------------------------------------------------//
@@ -113,8 +121,18 @@ namespace ModIOBrowser
             List<InstalledMod> installed = new List<InstalledMod>(installedMods);
 
             string accentHashColor = ColorUtility.ToHtmlStringRGBA(colorScheme.GetSchemeColor(ColorSetterType.Accent));
-            CollectionPanelTitle.text = subscribedMods == null ? "Collection" : $"Collection <size=20><color=#{accentHashColor}>({subscribedAndPending.Count})</color></size>";
-            
+
+            if(subscribedMods == null)
+            {
+                Translation.Get(CollectionPanelTitleTranslation, "Collection", CollectionPanelTitle);
+            }
+            else
+            {
+                Translation.Get(CollectionPanelTitleTranslation,
+                    "Collection <size=20><color=#{accentHashColor}>({subscribedAndPending.Count})</color></size>",
+                    CollectionPanelTitle, $"{accentHashColor}", $"{subscribedAndPending.Count}");
+            }
+
             //--------------------------------------------------------------------------------//
             //                              GET FILTER SETTINGS                               //
             //--------------------------------------------------------------------------------//
@@ -326,7 +344,7 @@ namespace ModIOBrowser
             {
                 return;
             }
-            CollectionPanelCheckForUpdatesText.text = "Checking...";
+            Translation.Get(CollectionPanelCheckForUpdatesTextTranslation, "Checking...", CollectionPanelCheckForUpdatesText);
             ModIOUnity.FetchUpdates(FinishedCheckingForUpdates);
             checkingForUpdates = true;
         }
@@ -365,7 +383,7 @@ namespace ModIOBrowser
             {
                 RefreshCollectionListItems();
             }
-            CollectionPanelCheckForUpdatesText.text = "Check for updates";
+            Translation.Get(CollectionPanelCheckForUpdatesTextTranslation, "Check for updates", CollectionPanelCheckForUpdatesText);
         }
 
 #endregion // Mod Collection

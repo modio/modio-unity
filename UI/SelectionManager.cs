@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using ModIO;
 using ModIOBrowser;
 using ModIOBrowser.Implementation;
 using UnityEngine;
@@ -9,7 +10,7 @@ using UnityEngine.UI;
 
 namespace ModIOBrowser
 {
-    class SelectionManager : SimpleMonoSingleton<SelectionManager>
+    class SelectionManager : ModIO.Utility.SimpleMonoSingleton<SelectionManager>
     {
         public UiViews currentView { get; private set; } = UiViews.Browse;
         private UiViews previousView { get; set; } = UiViews.Nothing;

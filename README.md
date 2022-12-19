@@ -2,7 +2,7 @@
 <a href="https://www.youtube.com/watch?v=pmECrkdzHzQ"><img src="https://img.youtube.com/vi/pmECrkdzHzQ/0.jpg" alt="mod.io" width="420"/></a>
 
 <a href="https://mod.io"><img src="https://beta.mod.io/images/branding/modio_logo_bluewhite.svg" alt="mod.io" width="360" align="right"/></a>
-# Mod.io Unity Plugin
+# Mod.io Unity Plugin v4.0.8
 [![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)](https://github.com/modio/modio-unity/blob/master/LICENSE)
 [![Discord](https://img.shields.io/discord/389039439487434752.svg?label=Discord&logo=discord&color=7289DA&labelColor=2C2F33)](https://discord.mod.io)
 [![Master docs](https://img.shields.io/badge/docs-master-green.svg)](https://github.com/modio/modio-unity-v2/wiki)
@@ -18,7 +18,7 @@ Alternatively, you can download an archive of the code using GitHub's download f
 
 ## Getting started
 
-1. Set up your [game profile on mod.io](https://mod.io/games/add) (or our [private test environment](https://test.mod.io/games/add)) to get your game ID and API key. 
+1. Set up your [game profile on mod.io](https://mod.io/games/add) (or our [private test environment](https://test.mod.io/games/add)) to get your game ID and API key.
 2. Add the plugin to your project using the installation instructions above.
 3. Ensure you dont have any conflicting libraries by going to Assets/Plugins/mod.io/ThirdParty to remove any libraries you may already have in your project (such as JsonNet).
 4. Restart unity to ensure it recognises the new assembly definitions.
@@ -32,12 +32,12 @@ If you do not wish to create your own UI implementation you can use our default 
 
 1. Follow the steps above to setup the config.
 2. Navigate to the ModIOBrowser prefab at Assets/Plugins/mod.io/UI/Examples and drag it into your scene.
-3. Use the ModIOBrowser.Browser.OpenBrowser() method to open the browser in your scene. 
-`ModIOBrowser.Browser.OpenBrowser(null)`
+3. Use the ModIOBrowser.Browser.OpenBrowser() method to open the browser in your scene.
+   `ModIOBrowser.Browser.OpenBrowser(null)`
 4. The Browser UI is now setup!
 
 ## Authentication
-In the current version of the plugin it is required that a user session is authenticated. Either via email or through another third party, such as Steam or Google. The process is fairly simply. Examples can be found below. 
+In the current version of the plugin it is required that a user session is authenticated. Either via email or through another third party, such as Steam or Google. The process is fairly simply. Examples can be found below.
 
 
 ## Usage
@@ -46,7 +46,7 @@ below are a couple examples for some of the common usages of the plugin. Such as
 All of the methods required to use the plugin can be found in ModIOUnity.cs. If you prefer using async methods over callbacks you can alternatively use ModIOUnityAsync.cs to use an async variation of the same methods.
 
 ### Initialise the plugin
-```javascript
+```csharp
 async void Example()
 {
     Result result = await ModIOUnityAsync.InitializeForUser("ExampleUser");
@@ -63,7 +63,7 @@ async void Example()
 ```
 
 ### Get the user's installed mods
-```javascript
+```csharp
 void Example()
 {
     SubscribedMod[] mods = ModIOUnity.GetSubscribedMods(out Result result);
@@ -81,7 +81,7 @@ void Example()
 ```
 
 ### Enable automatic mod downloads and installs
-```javascript
+```csharp
 void Example()
 {
     Result result = ModIOUnity.EnableModManagement(ModManagementDelegate);
@@ -105,7 +105,7 @@ void ModManagementDelegate(ModManagementEventType eventType, ModId modId, Result
 
 ### Authenticate a user
 In the current version of the plugin it is required that a user session is authenticated in order to subscribe and download mods. You can accomplish this with an email address or through another third party service, such as Steam or Google. Below is an example of how to do this from an email address provided by the user. A security code will be sent to their email account and can be used to authenticate (The plugin will cache the session token to avoid having to re-authenticate every time they run the application).
-```javascript
+```csharp
 async void RequestEmailCode()
 {
     Result result = await ModIOUnityAsync.RequestAuthenticationEmail("johndoe@gmail.com");
@@ -136,7 +136,7 @@ async void SubmitCode(string userSecurityCode)
 ```
 
 ### Get Mod profiles from the mod.io server
-```javascript
+```csharp
 async void Example()
 {
     // create a filter to retreive the first ten mods for your game
@@ -161,6 +161,46 @@ async void Example()
 You can also submit mods directly from the plugin. Refer to the documentation for methods such as ModIOUnity.CreateModProfile and ModIOUnity.UploadModfile.
 
 Users can also submit mods directly from the mod.io website by going to your game profile page. Simply create an account and upload mods directly.
+
+## Example Usages
+### Loading mods
+Here is an example that grabs all mods installed for the current user, finds the png files in the mod's directory and then loads them into a Texture2D asset.
+```csharp
+     public void LoadModExample()
+    {
+        UserInstalledMod[] mods = ModIOUnity.GetInstalledModsForUser(out Result result);
+        if (result.Succeeded())
+        {
+            foreach(var mod in mods)
+            {
+                //Tags are USER defined strings for a game and are setup in the web portal.
+                var textureTag = "Texture";
+
+                string directoryWithInstalledMod = mod.directory;
+
+                //Optionally, you may want to use tags to help you determine the files to look for in an installed mod folder
+                if(!mod.modProfile.tags.Contains(textureTag))
+                {
+                    //Get all files in a directory
+                    string[] filePaths = System.IO.Directory.GetFiles(directoryWithInstalledMod);
+                    foreach(var path in filePaths)
+                    {
+                        //Find .png files so that we can convert them into textures
+                        if(path.EndsWith(".png"))
+                        {
+                            Texture2D tex = new Texture2D(1024, 1024);
+                            
+                            //Load a texture from directory
+                            tex.LoadImage(File.ReadAllBytes(path));
+                            
+                            //Now you can replace the current texture in your game with the new one
+                        }
+                    }
+                }
+            }
+        }
+    }
+```
 
 ## Dependencies
 The [mod.io](https://mod.io) Unity Plugin requires the functionality of two other open-source Unity plugins to run. These are included as libraries in the UnityPackage in the `Assets/Plugins/mod.io/ThirdParty` directory:

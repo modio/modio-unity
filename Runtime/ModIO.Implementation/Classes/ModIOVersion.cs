@@ -5,15 +5,19 @@
     {
         // ---------[ Singleton ]---------
         /// <summary>Singleton instance for current version.</summary>
-        public static readonly ModIOVersion Current = new ModIOVersion(4, 0, "alpha");
+        public static readonly ModIOVersion Current = new ModIOVersion(4, 0, 8, "alpha");
 
+        // ---------[ Fields ]---------
+        /// <summary>Main Version number.</summary>
+        public int version;
+        
         // ---------[ Fields ]---------
         /// <summary>Major version number.</summary>
         /// <remarks>Represents the major version number. Increases when there is a breaking change
         /// to the interface.
         /// Changing between versions of the codebase with a different X value, will require changes
         /// to a consumer codebase in order to integrate.</remarks>
-        public int version;
+        public int major;
 
         /// <summary>Version build number.</summary>
         /// <remarks>Represents the build version number. Increases when a new release is created
@@ -21,7 +25,7 @@
         /// Changing between versions of the codebase with a different Y value, will never require
         /// changes to a consumer codebase in order to integrate, but may offer additional
         /// functionality if changes are made.</remarks>
-        public int build;
+        public int minor;
 
         /// <summary>Suffix for the current version.</summary>
         /// <remarks>Represents additional, non-incremental version information about a build.
@@ -33,10 +37,11 @@
 
         // ---------[ Initialization ]---------
         /// <summary>Constructs an object with the given version values.</summary>
-        public ModIOVersion(int version = 0, int build = 0, string suffix = null)
+        public ModIOVersion(int version, int major, int minor, string suffix = null)
         {
             this.version = version;
-            this.build = build;
+            this.major = major;
+            this.minor = minor;
 
             if(suffix == null)
             {
@@ -49,11 +54,15 @@
         /// <summary>Compares the current instance with another ModIOVersion.</summary>
         public int CompareTo(ModIOVersion other)
         {
-            int result = this.version.CompareTo(other.version);
-
+            int result = version.CompareTo(other.version);
+            
             if(result == 0)
             {
-                result = this.build.CompareTo(other.build);
+                result = major.CompareTo(other.major);
+            }
+            if(result == 0)
+            {
+                result = minor.CompareTo(other.minor);
             }
 
             return result;
@@ -90,7 +99,7 @@
         /// <summary>Creates the request header representation of the version.</summary>
         public string ToHeaderString()
         {
-            return $"modioUnityPlugin-{this.version.ToString()}.{this.build.ToString()}-{this.suffix}";
+            return $"modioUnityPlugin-{version.ToString()}.{major.ToString()}.{minor.ToString()}-{suffix}";
         }
 
 #endregion // Utility

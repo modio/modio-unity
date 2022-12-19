@@ -1,4 +1,5 @@
 ﻿using ModIO;
+using ModIOBrowser.Implementation;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -12,11 +13,11 @@ namespace ModIOBrowser
     {
 	    [Header("Report Panel")]
 	    [SerializeField] GameObject ReportPanel;
-	    [SerializeField] TMP_Text ReportPanelHeader;
-	    [SerializeField] TMP_Text ReportPanelSubHeader;
-	    [SerializeField] TMP_Text ReportPanelSubSubHeader;
-	    [SerializeField] TMP_Text ReportPanelText;
-	    [SerializeField] TMP_Text ReportPanelCaption;
+	    [SerializeField] TMP_Text ReportPanelHeader; 
+	    [SerializeField] TMP_Text ReportPanelSubHeader; 
+        [SerializeField] TMP_Text ReportPanelSubSubHeader; 
+        [SerializeField] TMP_Text ReportPanelText; 
+	    [SerializeField] TMP_Text ReportPanelCaption; 
 	    [SerializeField] GameObject ReportPanelReportOptions;
 	    [SerializeField] GameObject ReportPanelEmailSection;
 	    [SerializeField] TMP_InputField ReportPanelEmailField;
@@ -25,7 +26,7 @@ namespace ModIOBrowser
 	    [SerializeField] GameObject ReportPanelSummary;
 	    [SerializeField] TMP_Text ReportPanelSummaryReason;
 	    [SerializeField] TMP_Text ReportPanelSummaryEmail;
-	    [SerializeField] TMP_Text ReportPanelSummaryDetails;
+	    [SerializeField] TMP_Text ReportPanelSummaryDetails; 
 	    [SerializeField] GameObject ReportPanelButtons;
 	    [SerializeField] Button ReportPanelBackButton;
 	    [SerializeField] Button ReportPanelCancelButton;
@@ -57,13 +58,9 @@ namespace ModIOBrowser
 	        ReportPanelReportOptions.SetActive(true);
 	        ReportPanelText.gameObject.SetActive(true);
 
-	        ReportPanelHeader.text = "Report a problem";
+            Translation.Get(ReportPanelHeaderTranslation, "Report a problem", ReportPanelHeader);
 	        ReportPanelSubHeader.text = $"'{modBeingReported.name}'";
-	        ReportPanelText.text = "Report content violating the sites Terms of Use or submit a "
-	                               + "DMCA complaint using the form below. Make sure you include "
-	                               + "all relevant information and links. If you’d like to report "
-	                               + "Copyright Infringement and are the Copyright holder, select "
-	                               + "‘DMCA’ below.";
+            Translation.Get(ReportPanelTextTranslation, "Report content violating the sites Terms of Use or submit a DMCA complaint using the form below. Make sure you include all relevant information and links. If you’d like to report Copyright Infringement and are the Copyright holder, select ‘DMCA’ below.", ReportPanelText);
 
             SelectionManager.Instance.SelectView(UiViews.Report);
 	        
@@ -76,8 +73,7 @@ namespace ModIOBrowser
 	        HideReportPanelObjects();
 	        ReportPanel.SetActive(true);
 	        ReportPanelText.gameObject.SetActive(true);
-	        ReportPanelText.text = "Your email may be shared with moderators and the person that "
-	                               + "posted the allegedly infringing content you are reporting.";
+            Translation.Get(ReportPanelTextTranslation, "Your email may be shared with moderators and the person that posted the allegedly infringing content you are reporting.", ReportPanelText);
 	        
 	        ReportPanelEmailSection.SetActive(true);
 	        
@@ -100,11 +96,10 @@ namespace ModIOBrowser
 	        ReportPanel.SetActive(true);
 	        
 	        ReportPanelCaption.gameObject.SetActive(true);
-	        ReportPanelCaption.text = "Details of infringement";
+            Translation.Get(ReportPanelCaptionTranslation, "Details of infringement", ReportPanelCaption);
 	        
 	        ReportPanelText.gameObject.SetActive(true);
-	        ReportPanelText.text = "To help us process your report, please provide as much detail "
-	                               + "and evidence as possible.";
+            Translation.Get(ReportPanelTextTranslation, "To help us process your report, please provide as much detail and evidence as possible.", ReportPanelText);
 
 	        ReportPanelDetailsSection.SetActive(true);
 	        ReportPanelDetailsField.text = "";
@@ -162,9 +157,7 @@ namespace ModIOBrowser
 	        ReportPanel.SetActive(true);
 	        
 	        ReportPanelText.gameObject.SetActive(true);
-	        ReportPanelText.text = "The mod has been reported. A confirmation email will be sent "
-	                               + "to you shortly with the details and the moderators of the mod"
-	                               + " will be notified.";
+            Translation.Get(ReportPanelTextTranslation, "The mod has been reported. A confirmation email will be sent to you shortly with the details and the moderators of the mod will be notified.", ReportPanelText);
 	        
 	        ReportPanelButtons.SetActive(true);
 	        ReportPanelDoneButton.gameObject.SetActive(true);
@@ -191,8 +184,8 @@ namespace ModIOBrowser
 	        TextAlignmentOptions alignment = ReportPanelText.alignment;
 	        alignment = TextAlignmentOptions.Center;
 	        ReportPanelText.alignment = alignment;
-	        
-	        ReportPanelText.text = "Something went wrong when trying to send your report.";
+
+            Translation.Get(ReportPanelTextTranslation, "Something went wrong when trying to send your report.", ReportPanelText);
 	        
 	        ReportPanelButtons.SetActive(true);
 	        ReportPanelCancelButton.gameObject.SetActive(true);

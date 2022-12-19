@@ -7,5 +7,6 @@
         HttpError,
         Succeeded,
         AbortRequested,
+        TimedOut,
     }
 }

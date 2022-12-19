@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -25,11 +26,22 @@ namespace ModIOBrowser.Implementation
 			inputField = GetComponent<TMP_InputField>();
 		}
 
+		void OnEnable()
+		{
+			if(!Browser.Instance.uiConfig.ShouldWeUseVirtualKeyboardDelegate())
+			{
+				Destroy(this);
+			}
+		}
+
 		public void OnSelect(BaseEventData eventData)
 		{
-			StartCoroutine(UnFocusByDefault());
-			
-			InputReceiver.currentSelectedInputField = this;
+			if (Browser.Instance.uiConfig.ShouldWeUseVirtualKeyboardDelegate())
+			{
+				StartCoroutine(UnFocusByDefault());
+
+				InputReceiver.currentSelectedInputField = this;
+			}
 		}
 
 		IEnumerator UnFocusByDefault()
@@ -37,24 +49,32 @@ namespace ModIOBrowser.Implementation
 			yield return new WaitForEndOfFrame();
 			inputField.DeactivateInputField();
 		}
+		
 		public void OnDeselect(BaseEventData eventData)
 		{
-			if(InputReceiver.currentSelectedInputField == this)
+			if (Browser.Instance.uiConfig.ShouldWeUseVirtualKeyboardDelegate())
 			{
-				InputReceiver.currentSelectedInputField = null;
+				if(InputReceiver.currentSelectedInputField == this)
+				{
+					InputReceiver.currentSelectedInputField = null;
+				}
 			}
 		}
+		
 		public void OnSubmit(BaseEventData eventData)
 		{
-			// Check if the user has specified an OS virtual keyboard
-			Browser.OpenVirtualKeyboard?.Invoke(
-				inputFieldTitle,
-				inputField.text,
-				inputFieldPlaceholderText,
-				keyboardtype,
-				inputField.characterLimit,
-				inputField.multiLine,
-				OnCloseVirtualKeyboard);
+			if (Browser.Instance.uiConfig.ShouldWeUseVirtualKeyboardDelegate())
+			{
+				// Check if the user has specified an OS virtual keyboard
+				Browser.OpenVirtualKeyboard?.Invoke(
+					inputFieldTitle,
+					inputField.text,
+					inputFieldPlaceholderText,
+					keyboardtype,
+					inputField.characterLimit,
+					inputField.multiLine,
+					OnCloseVirtualKeyboard);
+			}
 		}
 
 		void OnCloseVirtualKeyboard(string text)

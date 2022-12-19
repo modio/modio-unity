@@ -104,5 +104,14 @@ namespace ModIO
         /// </summary>
         [CanBeNull]
         public string[] tags;
+
+        /// <summary>
+        ///	Select which interactions players can have with your mod.
+        /// 0 = None
+        /// 1 = Ability to comment (default)
+        /// ? = Add the options you want together, to enable multiple options
+        /// </summary>
+        [CanBeNull]
+        public CommunityOptions? communityOptions = CommunityOptions.AllowCommenting;
     }
 }

@@ -34,6 +34,15 @@ namespace ModIOBrowser.Implementation
         [SerializeField] Transform contextMenuPosition;
         public Action imageLoaded;
         RectTransform rectTransform;
+
+#pragma warning disable 0649 //they are allocated
+        private Translation subscriptionStatusTranslation = null;
+        private Translation installStatusTranslation = null;
+        private Translation progressBarTextTranslation = null;
+        private Translation otherSubscribersTextTranslation = null;
+        private Translation errorInstallingTextTranslation = null;
+#pragma warning restore 0649
+
         internal ModProfile profile;
 
         internal static Dictionary<ModId, CollectionModListItem> listItems = new Dictionary<ModId, CollectionModListItem>();
@@ -85,14 +94,18 @@ namespace ModIOBrowser.Implementation
             viewportRestraint.PercentPaddingVertical = 0.35f;
         }
 
+        
+
         public override void Setup(InstalledMod profile)
         {
             base.Setup();
             this.profile = profile.modProfile;
-            subscriptionStatus.text = "Installed";
+
+            Translation.Get(subscriptionStatusTranslation, "Installed", subscriptionStatus);
             subscriptionStatus.color = scheme.LightGrey1;
-            installStatus.text = "Installed";
-            otherSubscribersText.text = $"{profile.subscribedUsers.Count} other users";
+
+            Translation.Get(installStatusTranslation, "Installed", installStatus);
+            Translation.Get(otherSubscribersTextTranslation, "{subcount} other users", otherSubscribersText, $"{profile.subscribedUsers.Count}");
             otherSubscribersText.transform.parent.gameObject.SetActive(true);
             unsubscribeButton.gameObject.SetActive(false);
             progressBar.SetActive(false);
@@ -103,21 +116,36 @@ namespace ModIOBrowser.Implementation
         {
             base.Setup();
             this.profile = profile;
-            this.subscriptionStatus.text = subscriptionStatus ? "Subscribed" : "Unsubscribed";
+
+            if(subscriptionStatus)
+            {
+                Translation.Get(subscriptionStatusTranslation, "Subscribed", this.subscriptionStatus);
+            }
+            else
+            {
+                Translation.Get(subscriptionStatusTranslation, "Unsubscribed", this.subscriptionStatus);
+            }
+
             this.subscriptionStatus.color = subscriptionStatus ? scheme.Green : scheme.LightGrey1;
             if(installationStatus == "Problem occurred")
             {
                 installStatus.gameObject.SetActive(false);
                 errorInstalling.SetActive(true);
-                errorInstallingText.text = 
-                        Browser.Instance.notEnoughSpaceForTheseMods.Contains(profile.id)
-                            ? "Full storage" : "Error";
+
+                if(Browser.Instance.notEnoughSpaceForTheseMods.Contains(profile.id))
+                {
+                    Translation.Get(errorInstallingTextTranslation, "Full storage", errorInstallingText);
+                }
+                else
+                {
+                    Translation.Get(errorInstallingTextTranslation, "Error", errorInstallingText);
+                }                
             } 
             else
             {
                 installStatus.gameObject.SetActive(true);
                 errorInstalling.SetActive(false);
-                installStatus.text = installationStatus;
+                Translation.Get(installStatusTranslation, installationStatus, installStatus);
             }
             unsubscribeButton.gameObject.SetActive(true);
             progressBar.SetActive(false);
@@ -191,7 +219,7 @@ namespace ModIOBrowser.Implementation
             // Add Vote up option to context menu
             options.Add(new ContextMenuOption
             {
-                name = "Vote up",
+                nameTranslationReference = "Vote up",
                 action = delegate
                 {
                     ModIOUnity.RateMod(profile.id, ModRating.Positive, delegate { });
@@ -202,7 +230,7 @@ namespace ModIOBrowser.Implementation
             // Add Vote up option to context menu
             options.Add(new ContextMenuOption
             {
-                name = "Vote down",
+                nameTranslationReference = "Vote down",
                 action = delegate
                 {
                     ModIOUnity.RateMod(profile.id, ModRating.Negative, delegate { });
@@ -213,7 +241,7 @@ namespace ModIOBrowser.Implementation
             // Add Report option to context menu
             options.Add(new ContextMenuOption
             {
-                name = "Report",
+                nameTranslationReference = "Report",
                 action = delegate
                 {
                     Browser.Instance.CloseContextMenu();
@@ -241,40 +269,40 @@ namespace ModIOBrowser.Implementation
             switch(updatedStatus)
             {
                 case ModManagementEventType.InstallStarted:
-                    installStatus.text = "Installing";
+                    Translation.Get(installStatusTranslation, "Installing", installStatus);
                     break;
                 case ModManagementEventType.Installed:
-                    installStatus.text = "Installed";
+                    Translation.Get(installStatusTranslation, "Installed", installStatus);
                     break;
                 case ModManagementEventType.InstallFailed:
                     installStatus.gameObject.SetActive(false);
                     errorInstalling.SetActive(true);
                     break;
                 case ModManagementEventType.DownloadStarted:
-                    installStatus.text = "Downloading";
+                    Translation.Get(installStatusTranslation, "Downloading", installStatus);
                     break;
                 case ModManagementEventType.Downloaded:
-                    installStatus.text = "Ready to install";
+                    Translation.Get(installStatusTranslation, "Ready to install", installStatus);
                     break;
                 case ModManagementEventType.DownloadFailed:
                     installStatus.gameObject.SetActive(false);
                     errorInstalling.SetActive(true);
                     break;
                 case ModManagementEventType.UninstallStarted:
-                    installStatus.text = "Uninstalling";
+                    Translation.Get(installStatusTranslation, "Uninstalling", installStatus);
                     break;
                 case ModManagementEventType.Uninstalled:
-                    installStatus.text = "Uninstalled";
+                    Translation.Get(installStatusTranslation, "Uninstalled", installStatus);
                     break;
                 case ModManagementEventType.UninstallFailed:
                     installStatus.gameObject.SetActive(false);
                     errorInstalling.SetActive(true);
                     break;
                 case ModManagementEventType.UpdateStarted:
-                    installStatus.text = "Updating";
+                    Translation.Get(installStatusTranslation, "Updating", installStatus);
                     break;
                 case ModManagementEventType.Updated:
-                    installStatus.text = "Installed";
+                    Translation.Get(installStatusTranslation, "Updated", installStatus); 
                     break;
                 case ModManagementEventType.UpdateFailed:
                     installStatus.gameObject.SetActive(false);
@@ -298,7 +326,7 @@ namespace ModIOBrowser.Implementation
                 case ModManagementOperationType.None_AlreadyInstalled:
                     progressBar.SetActive(false);
                     installStatus.gameObject.SetActive(true);
-                    installStatus.text = "Installed";
+                    Translation.Get(installStatusTranslation, "Installed", installStatus);
                     break;
                 case ModManagementOperationType.None_ErrorOcurred:
                     progressBar.SetActive(false);
@@ -308,25 +336,26 @@ namespace ModIOBrowser.Implementation
                 case ModManagementOperationType.Install:
                     progressBar.SetActive(true);
                     installStatus.gameObject.SetActive(false);
+
                     progressBarPercentageText.text = $"{(int)(handle.Progress * 100)}%";
-                    progressBarText.text = $"Installing...";
+                    Translation.Get(progressBarTextTranslation, "Installing...", progressBarText);
                     break;
                 case ModManagementOperationType.Download:
                     progressBar.SetActive(true);
                     installStatus.gameObject.SetActive(false);
                     progressBarPercentageText.text = $"{(int)(handle.Progress * 100)}%";
-                    progressBarText.text = $"Downloading...";
+                    Translation.Get(progressBarTextTranslation, "Downloading...", progressBarText);
                     break;
                 case ModManagementOperationType.Uninstall:
                     progressBar.SetActive(false);
                     installStatus.gameObject.SetActive(true);
-                    installStatus.text = "Uninstalling";
+                    Translation.Get(progressBarTextTranslation, "Uninstalling", progressBarText);
                     break;
                 case ModManagementOperationType.Update:
                     progressBar.SetActive(true);
                     installStatus.gameObject.SetActive(false);
                     progressBarPercentageText.text = $"{(int)(handle.Progress * 100)}%";
-                    progressBarText.text = $"Updating...";
+                    Translation.Get(progressBarTextTranslation, "Updating...", progressBarText);
                     break;
             }
         }

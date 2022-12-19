@@ -8,14 +8,16 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using static ModIO.Utility;
 
 namespace ModIOBrowser
 {
+
     /*  Browser.cs is the main class for handling all of the mod.io UI
      *  It is broken up into the following partial classes for organisation:
-     * Browser.cs                   
-     * Browser_Authentication.cs    
-     * Browser_Collection.cs         
+     * Browser.cs
+     * Browser_Authentication.cs
+     * Browser_Collection.cs
      * Browser_DownloadQueue.cs
      * Browser_ModDetails.cs
      * Browser_Notifications.cs
@@ -30,13 +32,13 @@ namespace ModIOBrowser
     /// </summary>
     public partial class Browser : SimpleMonoSingleton<Browser>
     {
-        
         // All of the following fields with [SerializeField] attributes are assigned on the prefab
-        // from the unity editor inspector 
+        // from the unity editor inspector
         [Header("Settings")]
         [Tooltip("Setting this to false will stop the Browser from automatically initializing the plugin")]
         [SerializeField] bool autoInitialize = true;
-        
+        [SerializeField] public UiSettings uiConfig;
+
         [Header("Main")]
         public ColorScheme colorScheme;
         public GameObject BrowserCanvas;
@@ -66,6 +68,7 @@ namespace ModIOBrowser
         [SerializeField] GameObject browserFeaturedSlotSelectionHighlightBorder;
         [SerializeField] Image browserFeaturedSlotBackplate;
         [SerializeField] GameObject browserFeaturedSlotInfo;
+        [SerializeField] GameObject featuredOptionsButtons;
         internal bool isFeaturedItemSelected = false;
         ModProfile[] featuredProfiles;
         int featuredIndex;
@@ -73,6 +76,8 @@ namespace ModIOBrowser
         [Header("Settings")]
         static int waitingForCallbacks;
         static bool isAuthenticated = false;
+
+        [Header("Controller And Mouse Buttons")]
         [SerializeField] List<GameObject> ControllerButtonIcons = new List<GameObject>();
         [SerializeField] List<GameObject> MouseButtonIcons = new List<GameObject>();
 
@@ -95,11 +100,11 @@ namespace ModIOBrowser
 
         [Header("Other Selections")]
         [SerializeField] Selectable browserFeaturedSlotSelection;
-        
+
         // edge case solve for pressing rate mod repeatedly
         ModId lastRatedMod;
         ModRating lastRatingType;
-        
+
         // Set this when we detect mouse behaviour so we can disable certain controller behaviours
         internal static bool mouseNavigation = false;
 
@@ -114,7 +119,7 @@ namespace ModIOBrowser
         // run them in Browser.Update
         // We add actions to this list via the method AddActionToQueueForMainThread()
         internal static List<Action> ActionsQueuedForMainThread = new List<Action>();
-        
+
         /// <summary>
         /// This delegate will get invoked whenever an InputField is selected. You can specify what
         /// virtual keyboard you'd like to open by providing the Browser with a delegate.
@@ -122,16 +127,14 @@ namespace ModIOBrowser
         public static VirtualKeyboardDelegate OpenVirtualKeyboard;
         public static ModManagementEventDelegate OnModManagementEvent;
 
-        public delegate void VirtualKeyboardDelegate(string title, 
-                                                     string text, 
-                                                     string placeholder, 
+        public delegate void VirtualKeyboardDelegate(string title,
+                                                     string text,
+                                                     string placeholder,
                                                      VirtualKeyboardType virtualKeyboardType,
                                                      int characterLimit,
                                                      bool multiline,
                                                      Action<string> onClose);
 
-
-        
         /// <summary>
         /// Represents the type of keyboard layout appropriate for the type of InputField being selected
         /// </summary>
@@ -215,7 +218,7 @@ namespace ModIOBrowser
         public static void OpenBrowser([CanBeNull] Action onClose)
         {
             OnClose = onClose;
-            
+
             if(!ModIOUnity.IsInitialized())
             {
                 openOnInitialize = true;
@@ -283,6 +286,22 @@ namespace ModIOBrowser
         }
 
         /// <summary>
+        /// Using this method will enable an option in the Authentication modal for a user to
+        /// log in with their PlayStation credentials. Simply provide the auth code
+        /// and the user's email address and the authentication flow for PlayStation will be available.
+        /// </summary>
+        /// <param name="authCode">PlayStation auth code</param>
+        /// <param name="userEmail">(Optional) provide the users email address</param>
+        public static void SetupPlayStationAuthenticationOption(string authCode, string userEmail = null)
+        {
+            AddActionToQueueForMainThread(delegate
+            {
+                optionalPlayStationAuthCode = authCode;
+                optionalThirdPartyEmailAddressUsedForAuthentication = userEmail;
+            });
+        }
+
+        /// <summary>
         /// You can use this to convert your byte[] steam app ticket into a trimmed base64 encoded
         /// string to be used for the steam authentication.
         /// </summary>
@@ -290,6 +309,7 @@ namespace ModIOBrowser
         /// <param name="ticketSize">the desired length of the ticket to be trimmed to</param>
         /// <seealso cref="SetupSteamAuthenticationOption"/>
         /// <returns>base 64 encoded string from the provided steam app ticket</returns>
+        [Obsolete("Use EncodeEncryptedSteamAppTicket located in ModIO.Utility instead.")]
         public static string EncodeEncryptedSteamAppTicket(byte[] ticketData, uint ticketSize)
         {
             //--------------------------- Assert correct parameters ------------------------------//
@@ -297,7 +317,7 @@ namespace ModIOBrowser
             Debug.Assert(ticketData.Length > 0 && ticketData.Length <= 1024,
                 "[mod.io Browser] Invalid ticketData length. Make sure you have a valid "
                 + "steam app ticket");
-            Debug.Assert(ticketSize > 0 && ticketSize <= ticketData.Length, 
+            Debug.Assert(ticketSize > 0 && ticketSize <= ticketData.Length,
                 "[mod.io Browser] Invalid ticketSize. The ticketSize cannot be larger than"
                 + " the length of the app ticket and must be greater than zero.");
 
@@ -348,7 +368,7 @@ namespace ModIOBrowser
                 ActionsQueuedForMainThread.Add(action);
             }
         }
-        
+
         /// <summary>
         /// We use this to check initialization if the plugin hasn't been initialized we will first
         /// attempt to initialize it ourselves, based on the current config file.
@@ -415,7 +435,7 @@ namespace ModIOBrowser
 
             SelectionManager.Instance.gameObject.SetActive(true);
         }
-        
+
         string GetModNameFromId(ModId id)
         {
             // Get the name of this mod
@@ -437,7 +457,7 @@ namespace ModIOBrowser
             }
             return "A mod";
         }
-        
+
         /// <summary>
         /// This is used to get the installed and subscribed mods and cache them for use across the UI
         /// </summary>
@@ -568,7 +588,7 @@ namespace ModIOBrowser
                 Instance?.OpenAuthenticationPanel();
                 return;
             }
-            
+
             Instance.pendingSubscriptions.Add(profile);
 
             ModIOUnity.SubscribeToMod(profile.id,
@@ -580,11 +600,11 @@ namespace ModIOBrowser
                     {
                         Instance.AddNotificationToQueue(new QueuedNotice
                         {
-                            title = "Subscribed",
-                            description = $"{Instance.GetModNameFromId(profile.id)} has been added to the download queue",
+                            title = TranslationManager.Instance.Get("Subscribed"),
+                            description = TranslationManager.Instance.Get("{GetModNameFromId} has been added to the download queue", Instance.GetModNameFromId(profile.id)),
                             positiveAccent = true
                         });
-                        
+
                         Instance.CacheLocalSubscribedModStatuses();
 
                         // if collection open, make another list item for the new subscribed item
@@ -597,8 +617,8 @@ namespace ModIOBrowser
                     {
                         Instance.AddNotificationToQueue(new QueuedNotice
                         {
-                            title = "Failed to subscribe",
-                            description = $"Unable to subscribe to '{Instance.GetModNameFromId(profile.id)}'",
+                            title = TranslationManager.Instance.Get("Failed to subscribe"),
+                            description = TranslationManager.Instance.Get("Unable to subscribe to '{GetModNameFromId}'", Instance.GetModNameFromId(profile.id)),
                             positiveAccent = false
                         });
                     }
@@ -622,7 +642,7 @@ namespace ModIOBrowser
             {
                 return;
             }
-            
+
             Instance.pendingSubscriptions.Remove(profile);
             if(!Instance.pendingUnsubscribes.Contains(profile.id))
             {
@@ -630,21 +650,22 @@ namespace ModIOBrowser
             }
 
             ModIOUnity.UnsubscribeFromMod(profile.id,
-                delegate(Result result)
+                delegate (Result result)
                 {
-                    if(Instance.pendingUnsubscribes.Contains(profile.id))
-                    {
-                        Instance.pendingUnsubscribes.Remove(profile.id);
-                    }
-                    if(result.Succeeded())
-                    {
+                if(Instance.pendingUnsubscribes.Contains(profile.id))
+                {
+                    Instance.pendingUnsubscribes.Remove(profile.id);
+                }
+                if(result.Succeeded())
+                {
+
                         Instance.AddNotificationToQueue(new QueuedNotice
                         {
-                            title = "Unsubscribed",
-                            description = $"{Instance.GetModNameFromId(profile.id)} has been removed from your collection",
+                            title = TranslationManager.Instance.Get("Unsubscribed"),
+                            description = TranslationManager.Instance.Get("{GetNameFromModId} has been removed from your collection", Instance.GetModNameFromId(profile.id)),
                             positiveAccent = true
                         });
-                        
+
                         Instance.CacheLocalSubscribedModStatuses();
                     }
 
@@ -666,7 +687,7 @@ namespace ModIOBrowser
             {
                 return;
             }
-            
+
             ModIOUnity.RateMod(modId, rating, delegate(Result result)
             {
                 callback?.Invoke();
@@ -678,10 +699,11 @@ namespace ModIOBrowser
                     {
                         lastRatingType = rating;
                         lastRatedMod = modId;
+
                         AddNotificationToQueue(new QueuedNotice
                         {
-                            title = "Rating added",
-                            description = $"Your rating has been added for {GetModNameFromId(modId)}",
+                            title = TranslationManager.Instance.Get("Rating added"),
+                            description = TranslationManager.Instance.Get("Your rating has been added for {Mod}", GetModNameFromId(modId)),
                             positiveAccent = true
                         });
                     }
@@ -690,8 +712,8 @@ namespace ModIOBrowser
                 {
                     AddNotificationToQueue(new QueuedNotice
                     {
-                        title = "Failed to add rating",
-                        description = $"Failed to submit your rating for {GetModNameFromId(modId)}",
+                        title = TranslationManager.Instance.Get("Failed to add rating"),
+                        description = TranslationManager.Instance.Get("Failed to submit your rating for {Mod}", GetModNameFromId(modId)),
                         positiveAccent = false
                     });
                 }
@@ -730,7 +752,7 @@ namespace ModIOBrowser
                 BrowserPanelNavButtonHighlights.SetActive(true);
             }
         }
-        
+
         /// <summary>
         /// This is a generic method for transitioning the alpha of an image component. Currently
         /// being used to show/hide the headers that fade in/out as you scroll dup/down the page
@@ -746,7 +768,7 @@ namespace ModIOBrowser
             while(color.a != targetAlphaValue)
             {
                 color.a = color.a > targetAlphaValue ? color.a - incrementSize : color.a + incrementSize;
-                
+
                 // make sure we dont go outside the bounds
                 if(color.a < 0f || color.a > 1f)
                 {
@@ -754,7 +776,7 @@ namespace ModIOBrowser
                 }
 
                 image.color = color;
-                    
+
                 yield return new WaitForSecondsRealtime(0.025f);
             }
         }
@@ -765,7 +787,7 @@ namespace ModIOBrowser
             while(color.a != targetAlphaValue)
             {
                 color.a = color.a > targetAlphaValue ? color.a - incrementSize : color.a + incrementSize;
-                
+
                 // make sure we dont go outside the bounds
                 if(color.a < 0f || color.a > 1f)
                 {
@@ -773,7 +795,7 @@ namespace ModIOBrowser
                 }
 
                 image.color = color;
-                    
+
                 yield return new WaitForSecondsRealtime(0.01f);
             }
         }
@@ -1134,7 +1156,7 @@ namespace ModIOBrowser
         public void OpenBrowserPanel()
         {
             GoToPanel_deprecating(Instance.BrowserPanel);
-            SelectionManager.Instance.SelectView(UiViews.Browse); 
+            SelectionManager.Instance.SelectView(UiViews.Browse);
             UpdateNavbarSelection();
         }
 
@@ -1169,13 +1191,13 @@ namespace ModIOBrowser
             {
                 return;
             }
-            
+
             List<ContextMenuOption> options = new List<ContextMenuOption>();
 
             // Add Vote up option to context menu
             options.Add(new ContextMenuOption
-            { 
-                name = "Vote up",
+            {
+                nameTranslationReference = "Vote up",
                 action = delegate
                 {
                     if(Instance.featuredProfiles == null || Instance.featuredProfiles.Length <= Instance.featuredIndex)
@@ -1190,7 +1212,7 @@ namespace ModIOBrowser
             // Add Vote up option to context menu
             options.Add(new ContextMenuOption
             {
-                name = "Vote down",
+                nameTranslationReference = "Vote down",
                 action = delegate
                 {
                     if(Instance.featuredProfiles == null || Instance.featuredProfiles.Length <= Instance.featuredIndex)
@@ -1205,7 +1227,7 @@ namespace ModIOBrowser
             // Add Report option to context menu
             options.Add(new ContextMenuOption
             {
-                name = "Report",
+                nameTranslationReference = "Report",
                 action = delegate
                 {
                     Debug.Log("report");
@@ -1231,14 +1253,16 @@ namespace ModIOBrowser
             if(IsSubscribed(featuredProfiles[featuredIndex].id))
             {
                 // We are pre-emptively changing the text here to make the UI feel more responsive
-                featuredSelectedSubscribeButtonText.text = "Subscribe";
+                //TranslationUpdateable.Get("Subscribe", s => featuredSelectedSubscribeButtonText.text = s);
+
+                Translation.Get(BrowserFeaturedSubscribeTranslation, "Subscribe", featuredSelectedSubscribeButtonText);
                 UnsubscribeFromModEvent(featuredProfiles[featuredIndex],
                     delegate { UpdateFeaturedSubscribeButtonText(featuredProfiles[featuredIndex].id); });
             }
             else
             {
                 // We are pre-emptively changing the text here to make the UI feel more responsive
-                featuredSelectedSubscribeButtonText.text = "Unsubscribe";
+                Translation.Get(BrowserFeaturedSubscribeTranslation, "Unsubscribe", featuredSelectedSubscribeButtonText);
                 SubscribeToModEvent(featuredProfiles[featuredIndex],
                     delegate { UpdateFeaturedSubscribeButtonText(featuredProfiles[featuredIndex].id); });
             }
@@ -1252,11 +1276,12 @@ namespace ModIOBrowser
         /// </summary>
         public void PageFeaturedRowLeft()
         {
-            if(featuredProfiles == null)
+            if(featuredProfiles == null || featuredProfiles.Length == 0)
             {
-                // hasn't loaded yet
+                // hasn't loaded yet or has no mods
                 return;
             }
+
             featuredIndex = Utility.GetPreviousIndex(featuredIndex, featuredProfiles.Length);
 
             BrowserFeaturedModListItem.transitionCount = 0;
@@ -1289,9 +1314,9 @@ namespace ModIOBrowser
         /// </summary>
         public void PageFeaturedRowRight()
         {
-            if(featuredProfiles == null)
+            if(featuredProfiles == null || featuredProfiles.Length == 0)
             {
-                // hasn't loaded yet
+                // hasn't loaded yet or has no mods
                 return;
             }
             featuredIndex = Utility.GetNextIndex(featuredIndex, featuredProfiles.Length);
@@ -1340,7 +1365,7 @@ namespace ModIOBrowser
             browserFeaturedSlotBackplate.gameObject.SetActive(true);
             browserFeaturedSlotInfo.SetActive(true);
             RefreshSelectedFeaturedModDetails();
-            
+
             SelectSelectable(browserFeaturedSlotSelection, true);
         }
 
@@ -1350,6 +1375,12 @@ namespace ModIOBrowser
         /// </summary>
         internal void RefreshSelectedFeaturedModDetails()
         {
+            if(featuredProfiles == null || featuredProfiles.Length == 0)
+            {
+                // hasn't loaded yet or has no mods
+                return;
+            }
+
             featuredSelectedName.text = featuredProfiles[featuredIndex].name;
             UpdateFeaturedSubscribeButtonText(featuredProfiles[featuredIndex].id);
 
@@ -1379,11 +1410,11 @@ namespace ModIOBrowser
         {
             if(IsSubscribed(id))
             {
-                featuredSelectedSubscribeButtonText.text = "Unsubscribe";
+                Translation.Get(BrowserFeaturedSubscribeTranslation, "Unsubscribe", featuredSelectedSubscribeButtonText);
             }
             else
             {
-                featuredSelectedSubscribeButtonText.text = "Subscribe";
+                Translation.Get(BrowserFeaturedSubscribeTranslation, "Subscribe", featuredSelectedSubscribeButtonText);
             }
             LayoutRebuilder.ForceRebuildLayoutImmediate(featuredSelectedSubscribeButtonText.transform.parent as RectTransform);
             LayoutRebuilder.ForceRebuildLayoutImmediate(featuredSelectedSubscribeButtonText.transform.parent as RectTransform);
@@ -1468,7 +1499,7 @@ namespace ModIOBrowser
         }
 
         /// <summary>
-        /// Hides all of the list items used to display mods in the home view rows. 
+        /// Hides all of the list items used to display mods in the home view rows.
         /// </summary>
         void ClearRowListItems()
         {
@@ -1531,7 +1562,7 @@ namespace ModIOBrowser
             {
                 cachedModListItemsByRow.Add(row, new HashSet<ListItem>());
             }
-            
+
             // make sure this item doesnt already have an entry
             if (!cachedModListItemsByRow[row].Contains(item))
             {
@@ -1548,7 +1579,7 @@ namespace ModIOBrowser
         //                             Callbacks From ModIOUnity                                  //
         //     These are the callbacks we give to ModIOUnity.cs when making a GetMods request     //
         // ---------------------------------------------------------------------------------------//
-        
+
         /// <summary>
         /// This is used as the callback for GetMods for the featured row
         /// </summary>
@@ -1564,7 +1595,7 @@ namespace ModIOBrowser
             }
 
             featuredProfiles = modPage.modProfiles;
-            if(modPage.modProfiles.Length < 10)
+            if(modPage.modProfiles.Length < 10 && modPage.modProfiles.Length > 0)
             {
                 featuredProfiles = new ModProfile[10];
                 int next = 0;
@@ -1582,6 +1613,10 @@ namespace ModIOBrowser
             if(featuredProfiles.Length < 5)
             {
                 // TODO figure out what to do if we dont have enough mods to display
+                foreach(var li in featuredSlotListItems)
+                {
+                    li.PlaceholderSetup();
+                }
                 return;
             }
 
@@ -1627,11 +1662,11 @@ namespace ModIOBrowser
                 ClearPlaceholderListItems();
             }
         }
-        
+
         public void BrowserPanelOnScrollValueChange()
         {
             float targetAlpha = -1f;
-            
+
             // Get the target alpha based on what the scrollbar value is
             if(BrowserPanelContentScrollBar.value < 1f)
             {
@@ -1655,6 +1690,12 @@ namespace ModIOBrowser
             }
         }
 #endregion // Browser Panel
+
+        public void FeaturedItemSelect(bool state)
+        {
+            isFeaturedItemSelected = state;
+            featuredOptionsButtons.gameObject.SetActive(state);
+        }
 
 #region Context Menu
 
@@ -1703,7 +1744,7 @@ namespace ModIOBrowser
             foreach(var option in options)
             {
                 ListItem li = ListItem.GetListItem<ContextMenuListItem>(contextMenuListItemPrefab, contextMenuList, colorScheme);
-                li.Setup(option.name, option.action);
+                li.Setup(TranslationManager.Instance.Get(option.nameTranslationReference), option.action);
                 li.SetColorScheme(colorScheme);
 
                 // Setup custom navigation
@@ -1770,7 +1811,7 @@ namespace ModIOBrowser
             {
                 return;
             }
-            
+
             if(!mouseNavigation)
             {
                 EventSystem.current.SetSelectedGameObject(go);
@@ -1799,7 +1840,7 @@ namespace ModIOBrowser
          * This region contains the methods used for handling the ModManagementEventDelegate
          * as well as the ProgressHandle given from GetCurrentModManagementOperation()
          */
-        
+
         /// <summary>
         /// This is assigned when the browser is initialized and EnableModManagement is invoked
         /// </summary>
@@ -1809,7 +1850,7 @@ namespace ModIOBrowser
         {
             // invoke any external delegates provided to also listen for these events
             OnModManagementEvent?.Invoke(type, id, eventResult);
-            
+
             // cache not enough storage mods
             if(eventResult.IsStorageSpaceInsufficient())
             {
@@ -1818,13 +1859,13 @@ namespace ModIOBrowser
                     notEnoughSpaceForTheseMods.Add(id);
                 }
             }
-            
+
             if(!BrowserCanvas.activeSelf)
             {
                 return;
             }
             ProcessModManagementEventIntoNotification(type, id, eventResult);
-            
+
             currentModManagementOperationHandle = ModIOUnity.GetCurrentModManagementOperation();
             if(currentModManagementOperationHandle.Completed)
             {

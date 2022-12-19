@@ -14,7 +14,7 @@ namespace ModIO.Implementation
         public static Result TryLoad(out ServerSettings serverSettings,
                                      out BuildSettings buildSettings)
         {
-            SettingsAsset asset = Resources.Load<SettingsAsset>(SettingsAsset.FilePath);
+            SettingsAsset asset = Resources.Load<SettingsAsset>(FilePath);
 
             if(asset == null)
             {

@@ -32,6 +32,8 @@ namespace ModIO.Implementation
         /// </summary>
         public UserObject userObject;
 
+        public string rootLocalStoragePath;
+
 #endregion // Fields
 
         /// <summary>Convenience wrapper for determining if a valid token is in use.</summary>

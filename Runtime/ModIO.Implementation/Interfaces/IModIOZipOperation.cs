@@ -5,7 +5,7 @@ namespace ModIO.Implementation
 {
     internal interface IModIOZipOperation : IDisposable
     {
-        Task Operation { get; }
+        Task GetOperation();
         void Cancel();
     }
 }

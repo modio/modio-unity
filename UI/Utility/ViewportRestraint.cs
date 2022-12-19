@@ -19,9 +19,10 @@ namespace ModIOBrowser.Implementation
         public RectTransform DefaultViewportContainer;
         public RectTransform HorizontalViewportContainer;
 
-
+#pragma warning disable 0649
+        //This variable is infact allocated!
         static IEnumerator HorizontalTransitionCoroutine;
-        static IEnumerator VerticalTransitionCoroutine;
+#pragma warning restore 0649
 
         public void OnSelect(BaseEventData eventData)
         {

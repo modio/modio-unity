@@ -36,7 +36,9 @@ namespace ModIO.Implementation
             else
             {
                 // Log error, failed to load registry
-                Logger.Log(LogLevel.Error, $"Failed to load Registry [{response.result.code}]");
+                Logger.Log(LogLevel.Error, $"Failed to load Registry [{response.result.code}] - Creating a new one");
+                Registry = new ModCollectionRegistry();
+                
                 return response.result;
             }
 
@@ -659,6 +661,9 @@ namespace ModIO.Implementation
             mod.directory = directory;
             mod.subscribedUsers = new List<long>();
             mod.metadata = entry.modObject.modfile.metadata_blob;
+            mod.version = entry.currentModfile.version;
+            mod.changeLog = entry.currentModfile.changelog;
+            mod.dateAdded = ResponseTranslator.GetUTCDateTime(entry.currentModfile.date_added);
 
             foreach(long user in Registry.existingUsers.Keys)
             {

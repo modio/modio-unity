@@ -17,7 +17,7 @@ namespace ModIO
     public static class ModIOUnityAsync
     {
 #region Initialization and Maintenance
-        
+
         /// <summary>
         /// Initializes the Plugin using the provided settings for a specified user. Loads the
         /// local state of mods installed on the system as well as relevant mods to the user. Loads the
@@ -36,7 +36,7 @@ namespace ModIO
         /// <seealso cref="Result"/>
         /// <seealso cref="Shutdown"/>
         /// <code>
-        /// void async Example()
+        /// async void Example()
         /// {
         ///     // Setup a ServerSettings struct
         ///     ServerSettings serverSettings = new ServerSettings();
@@ -46,11 +46,11 @@ namespace ModIO
         ///
         ///     // Setup a BuildSettings struct
         ///     BuildSettings buildSettings = new BuildSettings();
-        ///     buildSettings.LogLevel = LogLevel.Verbose;
-        ///     buildSettings.UserPortal = UserPortal.None;
+        ///     buildSettings.logLevel = LogLevel.Verbose;
+        ///     buildSettings.userPortal = UserPortal.None;
         ///     buildSettings.requestCacheLimitKB = 0; // No limit
         /// 
-        ///     Result result = await ModIOUnityAsync.InitializeForUserAsync("ExampleUser", serverSettings, buildSettings);
+        ///     Result result = await ModIOUnityAsync.InitializeForUser("ExampleUser", serverSettings, buildSettings);
         /// 
         ///     if (result.Succeeded())
         ///     {
@@ -59,7 +59,7 @@ namespace ModIO
         ///     else
         ///     {
         ///         Debug.Log("Failed to initialize plugin");
-        ///     {
+        ///     }
         /// }
         /// </code>
         public static async Task<Result> InitializeForUser(string userProfileIdentifier,
@@ -81,9 +81,9 @@ namespace ModIO
         /// <seealso cref="Result"/>
         /// <seealso cref="Shutdown"/>
         /// <code>
-        /// void async Example()
+        /// async void Example()
         /// {
-        ///     Result result = await ModIOUnityAsync.InitializeForUserAsync("ExampleUser");
+        ///     Result result = await ModIOUnityAsync.InitializeForUser("ExampleUser");
         /// 
         ///     if (result.Succeeded())
         ///     {
@@ -110,7 +110,7 @@ namespace ModIO
         /// </remarks>
         /// <seealso cref="Result"/>
         /// <code>
-        /// void async Example()
+        /// async void Example()
         /// {
         ///     await ModIOUnityAsync.Shutdown();
         ///     Debug.Log("Finished shutting down the ModIO Plugin");
@@ -140,10 +140,10 @@ namespace ModIO
         /// <seealso cref="SubmitEmailSecurityCode"/>
         /// <seealso cref="Result"/>
         /// <code>
-        /// void async Example()
+        /// async void Example()
         /// {
         ///     Result result = await ModIOUnityAsync.RequestAuthenticationEmail("johndoe@gmail.com");
-        /// 
+        ///
         ///     if (result.Succeeded())
         ///     {
         ///         Debug.Log("Succeeded to send security code");
@@ -171,10 +171,10 @@ namespace ModIO
         /// <seealso cref="RequestAuthenticationEmail"/>
         /// <seealso cref="Result"/>
         /// <code>
-        /// void async Example(string userSecurityCode)
+        /// async void Example(string userSecurityCode)
         /// {
         ///     Result result = await ModIOUnityAsync.SubmitEmailSecurityCode(userSecurityCode);
-        /// 
+        ///
         ///     if (result.Succeeded())
         ///     {
         ///         Debug.Log("You have successfully authenticated the user");
@@ -210,11 +210,12 @@ namespace ModIO
         /// <seealso cref="AuthenticateUserViaSteam"/>
         /// <seealso cref="AuthenticateUserViaSwitch"/>
         /// <seealso cref="AuthenticateUserViaXbox"/>
+        /// <seealso cref="AuthenticateUserViaPlayStation"/>
         /// <code>
-        /// void async Example()
+        /// async void Example()
         /// {
         ///     ResultAnd&#60;TermsOfUser&#62; response = await ModIOUnityAsync.GetTermsOfUse();
-        /// 
+        ///
         ///     if (response.result.Succeeded())
         ///     {
         ///         Debug.Log("Successfully retrieved the terms of use: " + response.value.termsOfUse);
@@ -243,10 +244,10 @@ namespace ModIO
         /// <seealso cref="GetTermsOfUse"/>
         /// <code>
         /// // First we get the Terms of Use to display to the user and cache the hash
-        /// void async GetTermsOfUse_Example()
+        /// async void GetTermsOfUse_Example()
         /// {
         ///     ResultAnd&#60;TermsOfUser&#62; response = await ModIOUnityAsync.GetTermsOfUse();
-        /// 
+        ///
         ///     if (response.result.Succeeded())
         ///     {
         ///         Debug.Log("Successfully retrieved the terms of use: " + response.value.termsOfUse);
@@ -259,12 +260,12 @@ namespace ModIO
         ///         Debug.Log("Failed to retrieve the terms of use");
         ///     }
         /// }
-        /// 
+        ///
         /// // Once we have the Terms of Use and hash we can attempt to authenticate
-        /// void async Authenticate_Example()
+        /// async void Authenticate_Example()
         /// {
         ///     Result result = await ModIOUnityAsync.AuthenticateUserViaSteam(steamToken, "johndoe@gmail.com", modIOTermsOfUse.hash);
-        /// 
+        ///
         ///     if (result.Succeeded())
         ///     {
         ///         Debug.Log("Successfully authenticated user");
@@ -283,21 +284,21 @@ namespace ModIO
                 steamToken, AuthenticationServiceProvider.Steam, emailAddress, hash, null, null,
                 null);
         }
-        
+
         /// <summary>
-        /// Attempts to authenticate a user via the GOG API.
+        /// Attempts to authenticate a user via the steam API.
         /// </summary>
         /// <remarks>
         /// You will first need to get the terms of use and hash from the ModIOUnity.GetTermsOfUse()
         /// method.
         /// </remarks>
-        /// <param name="steamToken">the user's steam token</param>
+        /// <param name="authCode">the user's authcode token</param>
         /// <param name="emailAddress">the user's email address</param>
         /// <param name="hash">the TermsHash retrieved from ModIOUnity.GetTermsOfUse()</param>
         /// <seealso cref="GetTermsOfUse"/>
         /// <code>
         /// // First we get the Terms of Use to display to the user and cache the hash
-        /// void async GetTermsOfUse_Example()
+        /// async void GetTermsOfUse_Example()
         /// {
         ///     ResultAnd&#60;TermsOfUser&#62; response = await ModIOUnityAsync.GetTermsOfUse();
         /// 
@@ -315,10 +316,64 @@ namespace ModIO
         /// }
         /// 
         /// // Once we have the Terms of Use and hash we can attempt to authenticate
-        /// void async Authenticate_Example()
+        /// async void Authenticate_Example()
+        /// {
+        ///     Result result = await ModIOUnityAsync.AuthenticateUserViaPlayStation(authCode, "johndoe@gmail.com", modIOTermsOfUse.hash);
+        /// 
+        ///     if (result.Succeeded())
+        ///     {
+        ///         Debug.Log("Successfully authenticated user");
+        ///     }
+        ///     else
+        ///     {
+        ///         Debug.Log("Failed to authenticate");
+        ///     }
+        /// }
+        /// </code>
+        public static async Task<Result> AuthenticateUserViaPlayStation(string authCode,
+                                                                  [CanBeNull] string emailAddress,
+                                                                  [CanBeNull] TermsHash? hash)
+        {
+            return await ModIOUnityImplementation.AuthenticateUser(
+                authCode, AuthenticationServiceProvider.PlayStation, emailAddress, hash, null, null,
+                null);
+        }
+        
+        /// <summary>
+        /// Attempts to authenticate a user via the GOG API.
+        /// </summary>
+        /// <remarks>
+        /// You will first need to get the terms of use and hash from the ModIOUnity.GetTermsOfUse()
+        /// method.
+        /// </remarks>
+        /// <param name="gogToken">the user's steam token</param>
+        /// <param name="emailAddress">the user's email address</param>
+        /// <param name="hash">the TermsHash retrieved from ModIOUnity.GetTermsOfUse()</param>
+        /// <seealso cref="GetTermsOfUse"/>
+        /// <code>
+        /// // First we get the Terms of Use to display to the user and cache the hash
+        /// async void GetTermsOfUse_Example()
+        /// {
+        ///     ResultAnd&#60;TermsOfUser&#62; response = await ModIOUnityAsync.GetTermsOfUse();
+        ///
+        ///     if (response.result.Succeeded())
+        ///     {
+        ///         Debug.Log("Successfully retrieved the terms of use: " + response.value.termsOfUse);
+        ///
+        ///         //  Cache the terms of use (which has the hash for when we attempt to authenticate)
+        ///         modIOTermsOfUse = response.value;
+        ///     }
+        ///     else
+        ///     {
+        ///         Debug.Log("Failed to retrieve the terms of use");
+        ///     }
+        /// }
+        ///
+        /// // Once we have the Terms of Use and hash we can attempt to authenticate
+        /// async void Authenticate_Example()
         /// {
         ///     Result result = await ModIOUnityAsync.AuthenticateUserViaGOG(gogToken, "johndoe@gmail.com", modIOTermsOfUse.hash);
-        /// 
+        ///
         ///     if (result.Succeeded())
         ///     {
         ///         Debug.Log("Successfully authenticated user");
@@ -335,7 +390,7 @@ namespace ModIO
             return await ModIOUnityImplementation.AuthenticateUser(gogToken, AuthenticationServiceProvider.GOG,
                 emailAddress, hash, null, null, null);
         }
-        
+
         /// <summary>
         /// Attempts to authenticate a user via the Itch.io API.
         /// </summary>
@@ -343,16 +398,16 @@ namespace ModIO
         /// You will first need to get the terms of use and hash from the ModIOUnity.GetTermsOfUse()
         /// method.
         /// </remarks>
-        /// <param name="steamToken">the user's steam token</param>
+        /// <param name="itchioToken">the user's steam token</param>
         /// <param name="emailAddress">the user's email address</param>
         /// <param name="hash">the TermsHash retrieved from ModIOUnity.GetTermsOfUse()</param>
         /// <seealso cref="GetTermsOfUse"/>
         /// <code>
         /// // First we get the Terms of Use to display to the user and cache the hash
-        /// void async GetTermsOfUse_Example()
+        /// async void GetTermsOfUse_Example()
         /// {
         ///     ResultAnd&#60;TermsOfUser&#62; response = await ModIOUnityAsync.GetTermsOfUse();
-        /// 
+        ///
         ///     if (response.result.Succeeded())
         ///     {
         ///         Debug.Log("Successfully retrieved the terms of use: " + response.value.termsOfUse);
@@ -365,12 +420,12 @@ namespace ModIO
         ///         Debug.Log("Failed to retrieve the terms of use");
         ///     }
         /// }
-        /// 
+        ///
         /// // Once we have the Terms of Use and hash we can attempt to authenticate
-        /// void async Authenticate_Example()
+        /// async void Authenticate_Example()
         /// {
         ///     Result result = await ModIOUnityAsync.AuthenticateUserViaItch(itchioToken, "johndoe@gmail.com", modIOTermsOfUse.hash);
-        /// 
+        ///
         ///     if (result.Succeeded())
         ///     {
         ///         Debug.Log("Successfully authenticated user");
@@ -389,7 +444,7 @@ namespace ModIO
                 itchioToken, AuthenticationServiceProvider.Itchio, emailAddress, hash, null, null,
                 null);
         }
-        
+
         /// <summary>
         /// Attempts to authenticate a user via the Xbox API.
         /// </summary>
@@ -397,16 +452,16 @@ namespace ModIO
         /// You will first need to get the terms of use and hash from the ModIOUnity.GetTermsOfUse()
         /// method.
         /// </remarks>
-        /// <param name="steamToken">the user's steam token</param>
+        /// <param name="xboxToken">the user's steam token</param>
         /// <param name="emailAddress">the user's email address</param>
         /// <param name="hash">the TermsHash retrieved from ModIOUnity.GetTermsOfUse()</param>
         /// <seealso cref="GetTermsOfUse"/>
         /// <code>
         /// // First we get the Terms of Use to display to the user and cache the hash
-        /// void async GetTermsOfUse_Example()
+        /// async void GetTermsOfUse_Example()
         /// {
         ///     ResultAnd&#60;TermsOfUser&#62; response = await ModIOUnityAsync.GetTermsOfUse();
-        /// 
+        ///
         ///     if (response.result.Succeeded())
         ///     {
         ///         Debug.Log("Successfully retrieved the terms of use: " + response.value.termsOfUse);
@@ -419,12 +474,12 @@ namespace ModIO
         ///         Debug.Log("Failed to retrieve the terms of use");
         ///     }
         /// }
-        /// 
+        ///
         /// // Once we have the Terms of Use and hash we can attempt to authenticate
-        /// void async Authenticate_Example()
+        /// async void Authenticate_Example()
         /// {
         ///     Result result = await ModIOUnityAsync.AuthenticateUserViaItch(xboxToken, "johndoe@gmail.com", modIOTermsOfUse.hash);
-        /// 
+        ///
         ///     if (result.Succeeded())
         ///     {
         ///         Debug.Log("Successfully authenticated user");
@@ -442,7 +497,7 @@ namespace ModIO
             return await ModIOUnityImplementation.AuthenticateUser(xboxToken, AuthenticationServiceProvider.Xbox,
                 emailAddress, hash, null, null, null);
         }
-        
+
         /// <summary>
         /// Attempts to authenticate a user via the switch API.
         /// </summary>
@@ -450,16 +505,16 @@ namespace ModIO
         /// You will first need to get the terms of use and hash from the ModIOUnity.GetTermsOfUse()
         /// method.
         /// </remarks>
-        /// <param name="steamToken">the user's steam token</param>
+        /// <param name="switchToken">the user's steam token</param>
         /// <param name="emailAddress">the user's email address</param>
         /// <param name="hash">the TermsHash retrieved from ModIOUnity.GetTermsOfUse()</param>
         /// <seealso cref="GetTermsOfUse"/>
         /// <code>
         /// // First we get the Terms of Use to display to the user and cache the hash
-        /// void async GetTermsOfUse_Example()
+        /// async void GetTermsOfUse_Example()
         /// {
         ///     ResultAnd&#60;TermsOfUser&#62; response = await ModIOUnityAsync.GetTermsOfUse();
-        /// 
+        ///
         ///     if (response.result.Succeeded())
         ///     {
         ///         Debug.Log("Successfully retrieved the terms of use: " + response.value.termsOfUse);
@@ -472,12 +527,12 @@ namespace ModIO
         ///         Debug.Log("Failed to retrieve the terms of use");
         ///     }
         /// }
-        /// 
+        ///
         /// // Once we have the Terms of Use and hash we can attempt to authenticate
-        /// void async Authenticate_Example()
+        /// async void Authenticate_Example()
         /// {
         ///     Result result = await ModIOUnityAsync.AuthenticateUserViaItch(switchToken, "johndoe@gmail.com", modIOTermsOfUse.hash);
-        /// 
+        ///
         ///     if (result.Succeeded())
         ///     {
         ///         Debug.Log("Successfully authenticated user");
@@ -496,7 +551,7 @@ namespace ModIO
                 switchToken, AuthenticationServiceProvider.Switch, emailAddress, hash, null, null,
                 null);
         }
-        
+
         /// <summary>
         /// Attempts to authenticate a user via the discord API.
         /// </summary>
@@ -504,16 +559,16 @@ namespace ModIO
         /// You will first need to get the terms of use and hash from the ModIOUnity.GetTermsOfUse()
         /// method.
         /// </remarks>
-        /// <param name="steamToken">the user's steam token</param>
+        /// <param name="discordToken">the user's steam token</param>
         /// <param name="emailAddress">the user's email address</param>
         /// <param name="hash">the TermsHash retrieved from ModIOUnity.GetTermsOfUse()</param>
         /// <seealso cref="GetTermsOfUse"/>
         /// <code>
         /// // First we get the Terms of Use to display to the user and cache the hash
-        /// void async GetTermsOfUse_Example()
+        /// async void GetTermsOfUse_Example()
         /// {
         ///     ResultAnd&#60;TermsOfUser&#62; response = await ModIOUnityAsync.GetTermsOfUse();
-        /// 
+        ///
         ///     if (response.result.Succeeded())
         ///     {
         ///         Debug.Log("Successfully retrieved the terms of use: " + response.value.termsOfUse);
@@ -526,12 +581,12 @@ namespace ModIO
         ///         Debug.Log("Failed to retrieve the terms of use");
         ///     }
         /// }
-        /// 
+        ///
         /// // Once we have the Terms of Use and hash we can attempt to authenticate
-        /// void async Authenticate_Example()
+        /// async void Authenticate_Example()
         /// {
         ///     Result result = await ModIOUnityAsync.AuthenticateUserViaDiscord(discordToken, "johndoe@gmail.com", modIOTermsOfUse.hash);
-        /// 
+        ///
         ///     if (result.Succeeded())
         ///     {
         ///         Debug.Log("Successfully authenticated user");
@@ -550,7 +605,7 @@ namespace ModIO
                 discordToken, AuthenticationServiceProvider.Discord, emailAddress, hash, null, null,
                 null);
         }
-        
+
         /// <summary>
         /// Attempts to authenticate a user via the google API.
         /// </summary>
@@ -558,16 +613,16 @@ namespace ModIO
         /// You will first need to get the terms of use and hash from the ModIOUnity.GetTermsOfUse()
         /// method.
         /// </remarks>
-        /// <param name="steamToken">the user's steam token</param>
+        /// <param name="googleToken">the user's steam token</param>
         /// <param name="emailAddress">the user's email address</param>
         /// <param name="hash">the TermsHash retrieved from ModIOUnity.GetTermsOfUse()</param>
         /// <seealso cref="GetTermsOfUse"/>
         /// <code>
         /// // First we get the Terms of Use to display to the user and cache the hash
-        /// void async GetTermsOfUse_Example()
+        /// async void GetTermsOfUse_Example()
         /// {
         ///     ResultAnd&#60;TermsOfUser&#62; response = await ModIOUnityAsync.GetTermsOfUse();
-        /// 
+        ///
         ///     if (response.result.Succeeded())
         ///     {
         ///         Debug.Log("Successfully retrieved the terms of use: " + response.value.termsOfUse);
@@ -580,12 +635,12 @@ namespace ModIO
         ///         Debug.Log("Failed to retrieve the terms of use");
         ///     }
         /// }
-        /// 
+        ///
         /// // Once we have the Terms of Use and hash we can attempt to authenticate
-        /// void async Authenticate_Example()
+        /// async void Authenticate_Example()
         /// {
         ///     Result result = await ModIOUnityAsync.AuthenticateUserViaGoogle(googleToken, "johndoe@gmail.com", modIOTermsOfUse.hash);
-        /// 
+        ///
         ///     if (result.Succeeded())
         ///     {
         ///         Debug.Log("Successfully authenticated user");
@@ -604,7 +659,7 @@ namespace ModIO
                 googleToken, AuthenticationServiceProvider.Google, emailAddress, hash, null, null,
                 null);
         }
-        
+
         /// <summary>
         /// Attempts to authenticate a user via the oculus API.
         /// </summary>
@@ -612,20 +667,23 @@ namespace ModIO
         /// You will first need to get the terms of use and hash from the ModIOUnity.GetTermsOfUse()
         /// method.
         /// </remarks>
-        /// <param name="steamToken">the user's steam token</param>
+        /// <param name="oculusToken">the user's oculus token</param>
+        /// <param name="oculusDevice">the device you're authenticating on</param>
+        /// <param name="nonce">the nonce</param>
+        /// <param name="userId">the user id</param>
         /// <param name="emailAddress">the user's email address</param>
         /// <param name="hash">the TermsHash retrieved from ModIOUnity.GetTermsOfUse()</param>
         /// <seealso cref="GetTermsOfUse"/>
         /// <code>
         /// // First we get the Terms of Use to display to the user and cache the hash
-        /// void async GetTermsOfUse_Example()
+        /// async void GetTermsOfUse_Example()
         /// {
         ///     ResultAnd&#60;TermsOfUser&#62; response = await ModIOUnityAsync.GetTermsOfUse();
-        /// 
+        ///
         ///     if (response.result.Succeeded())
         ///     {
         ///         Debug.Log("Successfully retrieved the terms of use: " + response.value.termsOfUse);
-        ///
+        /// 
         ///         //  Cache the terms of use (which has the hash for when we attempt to authenticate)
         ///         modIOTermsOfUse = response.value;
         ///     }
@@ -634,9 +692,9 @@ namespace ModIO
         ///         Debug.Log("Failed to retrieve the terms of use");
         ///     }
         /// }
-        /// 
+        ///
         /// // Once we have the Terms of Use and hash we can attempt to authenticate
-        /// void async Authenticate_Example()
+        /// async void Authenticate_Example()
         /// {
         ///     Result result = await ModIOUnityAsync.AuthenticateUserViaOculus(OculusDevice.Quest,
         ///                                                                     nonce,
@@ -644,7 +702,7 @@ namespace ModIO
         ///                                                                     oculusToken,
         ///                                                                     "johndoe@gmail.com",
         ///                                                                     modIOTermsOfUse.hash);
-        /// 
+        ///
         ///     if (result.Succeeded())
         ///     {
         ///         Debug.Log("Successfully authenticated user");
@@ -670,10 +728,10 @@ namespace ModIO
         /// </summary>
         /// <seealso cref="Result"/>
         /// <code>
-        /// void async Example()
+        /// async void Example()
         /// {
         ///     Result result = await ModIOUnityAsync.IsAuthenticated();
-        /// 
+        ///
         ///     if (result.Succeeded())
         ///     {
         ///         Debug.Log("current session is authenticated");
@@ -705,10 +763,10 @@ namespace ModIO
         /// <seealso cref="TagCategory"/>
         /// <seealso cref="Result"/>
         /// <code>
-        /// void async Example()
+        /// async void Example()
         /// {
         ///     ResultAnd&#60;TagCategory[]&#62; response = await ModIOUnityAsync.GetTagCategories();
-        /// 
+        ///
         ///     if (response.result.Succeeded())
         ///     {
         ///         foreach(TagCategory category in response.value)
@@ -729,7 +787,7 @@ namespace ModIO
         {
             return await ModIOUnityImplementation.GetGameTags();
         }
-        
+
         /// <summary>
         /// Uses a SearchFilter to retrieve a specific Mod Page and returns the ModProfiles and
         /// total number of mods based on the Search Filter.
@@ -747,16 +805,16 @@ namespace ModIO
         /// <seealso cref="ModPage"/>
         /// <seealso cref="Result"/>
         /// <code>
-        /// void async Example()
+        /// async void Example()
         /// {
         ///     SearchFilter filter = new SearchFilter();
         ///     filter.SetPageIndex(0);
         ///     filter.SetPageSize(10);
         ///     ResultAnd&#60;ModPage&#62; response = await ModIOUnityAsync.GetMods(filter);
-        /// 
+        ///
         ///     if (response.result.Succeeded())
         ///     {
-        ///         Debug.Log("ModPage has " + response.value.mods.Length + " mods");
+        ///         Debug.Log("ModPage has " + response.value.modProfiles.Length + " mods");
         ///     }
         ///     else
         ///     {
@@ -781,11 +839,11 @@ namespace ModIO
         /// <seealso cref="ModProfile"/>
         /// <seealso cref="Result"/>
         /// <code>
-        /// void async Example()
+        /// async void Example()
         /// {
         ///     ModId modId = new ModId(1234);
         ///     ResultAnd&#60;ModProfile&#62; response = await ModIOUnityAsync.GetMod(modId);
-        /// 
+        ///
         ///     if (response.result.Succeeded())
         ///     {
         ///         Debug.Log("retrieved mod " + response.value.name);
@@ -816,13 +874,13 @@ namespace ModIO
         /// <seealso cref="Result"/>
         /// <seealso cref="ModId"/>
         /// <code>
-        /// 
+        ///
         /// ModProfile mod;
         /// 
-        /// void async Example()
+        /// async void Example()
         /// {
         ///     Result result = await ModIOUnityAsync.RateMod(mod.id, ModRating.Positive);
-        /// 
+        ///
         ///     if (result.Succeeded())
         ///     {
         ///         Debug.Log("Successfully rated mod");
@@ -830,14 +888,14 @@ namespace ModIO
         ///     else
         ///     {
         ///         Debug.Log("Failed to rate mod");
-        ///     {
+        ///     }
         /// }
         /// </code>
         public static async Task<Result> RateMod(ModId modId, ModRating rating)
         {
             return await ModIOUnityImplementation.AddModRating(modId, rating);
         }
-        
+
         /// <summary>
         /// Adds the specified mod to the current user's subscriptions.
         /// </summary>
@@ -854,10 +912,10 @@ namespace ModIO
         ///
         /// ModProfile mod;
         /// 
-        /// void async Example()
+        /// async void Example()
         /// {
         ///     Result result = await ModIOUnityAsync.SubscribeToMod(mod.id);
-        /// 
+        ///
         ///     if (result.Succeeded())
         ///     {
         ///         Debug.Log("Successfully subscribed to mod");
@@ -865,7 +923,7 @@ namespace ModIO
         ///     else
         ///     {
         ///         Debug.Log("Failed to subscribe to mod");
-        ///     {
+        ///     }
         /// }
         /// </code>
         public static async Task<Result> SubscribeToMod(ModId modId)
@@ -889,10 +947,10 @@ namespace ModIO
         ///
         /// ModProfile mod;
         /// 
-        /// void async Example()
+        /// async void Example()
         /// {
         ///     Result result = await ModIOUnityAsync.UnsubscribeFromMod(mod.id);
-        /// 
+        ///
         ///     if (result.Succeeded())
         ///     {
         ///         Debug.Log("Successfully unsubscribed from mod");
@@ -900,7 +958,7 @@ namespace ModIO
         ///     else
         ///     {
         ///         Debug.Log("Failed to unsubscribe from mod");
-        ///     {
+        ///     }
         /// }
         /// </code>
         public static async Task<Result> UnsubscribeFromMod(ModId modId)
@@ -920,10 +978,10 @@ namespace ModIO
         /// <seealso cref="UserProfile"/>
         /// <seealso cref="IsAuthenticated"/>
         /// <code>
-        /// void async Example()
+        /// async void Example()
         /// {
         ///     ResultAnd&#60;UserProfile&#62; response = await ModIOUnityAsync.GetCurrentUser();
-        /// 
+        ///
         ///     if (response.result.Succeeded())
         ///     {
         ///         Debug.Log("Got user: " + response.value.username);
@@ -966,10 +1024,10 @@ namespace ModIO
         /// <seealso cref="AuthenticateUserViaSwitch"/>
         /// <seealso cref="AuthenticateUserViaXbox"/>
         /// <code>
-        /// void async Example()
+        /// async void Example()
         /// {
         ///     Result result = await ModIOUnityAsync.FetchUpdates();
-        /// 
+        ///
         ///     if (result.Succeeded())
         ///     {
         ///         Debug.Log("updated user subscriptions");
@@ -1005,18 +1063,20 @@ namespace ModIO
         /// <seealso cref="ModId"/>
         /// <code>
         /// ModId newMod;
+        /// Texture2D logo;
         /// CreationToken token;
         /// 
-        /// void async Example()
+        /// async void Example()
         /// {
         ///     token = ModIOUnity.GenerateCreationToken();
         ///
         ///     ModProfileDetails profile = new ModProfileDetails();
         ///     profile.name = "mod name";
         ///     profile.summary = "a brief summary about this mod being submitted"
+        ///     profile.logo = logo;
         ///
         ///     ResultAnd&#60;ModId&#62; response = await ModIOUnityAsync.CreateModProfile(token, profile);
-        /// 
+        ///
         ///     if (response.result.Succeeded())
         ///     {
         ///         newMod = response.value;
@@ -1047,14 +1107,14 @@ namespace ModIO
         /// <code>
         /// ModId modId;
         /// 
-        /// void async Example()
+        /// async void Example()
         /// {
         ///     ModProfileDetails profile = new ModProfileDetails();
-        ///     profile.id = modId;
+        ///     profile.modId = modId;
         ///     profile.summary = "a new brief summary about this mod being edited"
-        /// 
+        ///
         ///     Result result = await ModIOUnityAsync.EditModProfile(profile);
-        /// 
+        ///
         ///     if (result.Succeeded())
         ///     {
         ///         Debug.Log("edited mod profile");
@@ -1081,17 +1141,17 @@ namespace ModIO
         /// <seealso cref="ArchiveModProfile"/>
         /// <seealso cref="GetCurrentUploadHandle"/>
         /// <code>
-        /// 
+        ///
         /// ModId modId;
         /// 
-        /// void async Example()
+        /// async void Example()
         /// {
         ///     ModfileDetails modfile = new ModfileDetails();
         ///     modfile.modId = modId;
         ///     modfile.directory = "files/mods/mod_123";
-        /// 
+        ///
         ///     Result result = await ModIOUnityAsync.UploadModfile(modfile);
-        /// 
+        ///
         ///     if (result.Succeeded())
         ///     {
         ///         Debug.Log("uploaded mod file");
@@ -1107,7 +1167,7 @@ namespace ModIO
             return await ModIOUnityImplementation.UploadModfile(modfile);
         }
 
-        
+
 
         /// <summary>
         /// This is used to update the logo of a mod or the gallery images. This works very similar
@@ -1120,15 +1180,15 @@ namespace ModIO
         /// <code>
         /// ModId modId;
         /// Texture2D newTexture;
-        /// 
+        ///
         /// async void Example()
         /// {
         ///     ModProfileDetails profile = new ModProfileDetails();
-        ///     profile.id = modId;
+        ///     profile.modId = modId;
         ///     profile.logo = newTexture;
-        /// 
+        ///
         ///     Result result = await ModIOUnityAsync.UploadModMedia(profile);
-        /// 
+        ///
         ///     if (result.Succeeded())
         ///     {
         ///         Debug.Log("uploaded new mod logo");
@@ -1143,7 +1203,7 @@ namespace ModIO
         {
             return await ModIOUnityImplementation.UploadModMedia(modProfileDetails);
         }
-        
+
         /// <summary>
         /// Removes a mod from being visible on the mod.io server.
         /// </summary>
@@ -1155,13 +1215,13 @@ namespace ModIO
         /// <seealso cref="CreateModProfile"/>
         /// <seealso cref="EditModProfile"/>
         /// <code>
-        /// 
+        ///
         /// ModId modId;
         /// 
-        /// void async Example()
+        /// async void Example()
         /// {
         ///     Result result = await ModIOUnityAsync.ArchiveModProfile(modId);
-        /// 
+        ///
         ///     if (result.Succeeded())
         ///     {
         ///         Debug.Log("archived mod profile");
@@ -1176,13 +1236,13 @@ namespace ModIO
         {
             return await ModIOUnityImplementation.ArchiveModProfile(modId);
         }
-        
+
         /// <summary>
         /// Not implemented yet
         /// </summary>
-        public static async Task<ResultAnd<ModProfile[]>> GetCurrentUserCreations()
+        public static async Task<ResultAnd<ModPage>> GetCurrentUserCreations(SearchFilter filter)
         {
-            return await ModIOUnityImplementation.GetCurrentUserCreations();
+            return await ModIOUnityImplementation.GetCurrentUserCreations(filter);
         }
 
         /// <summary>
@@ -1196,14 +1256,14 @@ namespace ModIO
         /// <seealso cref="DeleteTags"/>
         /// <seealso cref="ModIOUnityAsync.AddTags"/>
         /// <code>
-        /// 
+        ///
         /// ModId modId;
         /// string[] tags;
-        /// 
+        ///
         /// void Example()
         /// {
         ///     Result result = await ModIOUnity.AddTags(modId, tags);
-        /// 
+        ///
         ///     if (result.Succeeded())
         ///     {
         ///         Debug.Log("added tags");
@@ -1229,14 +1289,14 @@ namespace ModIO
         /// <seealso cref="AddTags"/>
         /// <seealso cref="ModIOUnityAsync.DeleteTags"/>
         /// <code>
-        /// 
+        ///
         /// ModId modId;
         /// string[] tags;
-        /// 
+        ///
         /// async void Example()
         /// {
         ///     Result result = await ModIOUnity.DeleteTags(modId, tags);
-        /// 
+        ///
         ///     if (result.Succeeded())
         ///     {
         ///         Debug.Log("deleted tags");
@@ -1269,10 +1329,10 @@ namespace ModIO
         ///
         /// ModProfile mod;
         /// 
-        /// void async Example()
+        /// async void Example()
         /// {
         ///     ResultAnd&#60;Texture2D&#62; response = await ModIOUnityAsync.DownloadTexture(mod.logoImage_320x180);
-        /// 
+        ///
         ///     if (response.result.Succeeded())
         ///     {
         ///         Debug.Log("downloaded the mod logo texture");
@@ -1299,16 +1359,16 @@ namespace ModIO
         /// <seealso cref="Report"/>
         /// <seealso cref="Result"/>
         /// <code>
-        /// void async Example()
+        /// async void Example()
         /// {
         ///     Report report = new Report(new ModId(123),
         ///                                 ReportType.Generic,
         ///                                 "reporting this mod for a generic reason",
         ///                                 "JohnDoe",
         ///                                 "johndoe@mod.io");
-        ///     
+        ///
         ///     Result result = await ModIOUnityAsync.Report(report);
-        /// 
+        ///
         ///     if (result.Succeeded())
         ///     {
         ///         Debug.Log("successfully sent a report");

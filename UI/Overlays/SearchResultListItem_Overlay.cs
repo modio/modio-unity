@@ -20,6 +20,10 @@ namespace ModIOBrowser.Implementation
         public SearchResultListItem listItemToReplicate;
         public SearchResultListItem lastListItemToReplicate;
 
+#pragma warning disable 0649 //it is allocated
+        private Translation subscribeButtonTextTranslation;
+#pragma warning restore 0649
+
         [SerializeField] SubscribedProgressTab progressTab;
 
         void LateUpdate()
@@ -74,13 +78,13 @@ namespace ModIOBrowser.Implementation
             if(Browser.IsSubscribed(listItemToReplicate.profile.id))
             {
                 // We are pre-emptively changing the text here to make the UI feel more responsive
-                subscribeButtonText.text = "Subscribe";
+                Translation.Get(subscribeButtonTextTranslation, "Subscribe", subscribeButtonText);
                 Browser.UnsubscribeFromModEvent(listItemToReplicate.profile, UpdateSubscribeButton);
             }
             else
             {
                 // We are pre-emptively changing the text here to make the UI feel more responsive
-                subscribeButtonText.text = "Unsubscribe";
+                Translation.Get(subscribeButtonTextTranslation, "Unsubscribe", subscribeButtonText);
                 Browser.SubscribeToModEvent(listItemToReplicate.profile, UpdateSubscribeButton);
             }
             
@@ -101,7 +105,7 @@ namespace ModIOBrowser.Implementation
             // Add Vote up option to context menu
             options.Add(new ContextMenuOption
             {
-                name = "Vote up",
+                nameTranslationReference = "Vote up",
                 action = delegate
                 {
                     ModIOUnity.RateMod(listItemToReplicate.profile.id, ModRating.Positive, delegate { });
@@ -112,7 +116,7 @@ namespace ModIOBrowser.Implementation
             // Add Vote up option to context menu
             options.Add(new ContextMenuOption
             {
-                name = "Vote down",
+                nameTranslationReference = "Vote down",
                 action = delegate
                 {
                     ModIOUnity.RateMod(listItemToReplicate.profile.id, ModRating.Negative, delegate { });
@@ -123,7 +127,7 @@ namespace ModIOBrowser.Implementation
             // Add Report option to context menu
             options.Add(new ContextMenuOption
             {
-                name = "Report",
+                nameTranslationReference = "Report",
                 action = delegate
                 {
                     // TODO open report menu
@@ -147,11 +151,11 @@ namespace ModIOBrowser.Implementation
             
             if(Browser.IsSubscribed(listItemToReplicate.profile.id))
             {
-                subscribeButtonText.text = "Unsubscribe";
+                Translation.Get(subscribeButtonTextTranslation, "Unsubscribe", subscribeButtonText);
             } 
             else 
             {
-                subscribeButtonText.text = "Subscribe";
+                Translation.Get(subscribeButtonTextTranslation, "Subscribe", subscribeButtonText);
             }
         }
 

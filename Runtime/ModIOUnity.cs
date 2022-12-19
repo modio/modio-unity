@@ -35,7 +35,7 @@ namespace ModIO
         {
             return ModIOUnityImplementation.isInitialized;
         }
-        
+
         /// <summary>
         /// Assigns the logging delegate the plugin uses to output log messages that otherwise go to
         /// UnityEngine.Debug.Log(string)
@@ -51,7 +51,7 @@ namespace ModIO
         /// void Example()
         /// {
         ///     // Send logs to MyLoggingDelegate instead of Debug.Log
-        ///     ModIO.SetLoggingDelegate(MyLoggingDelegate);
+        ///     ModIOUnity.SetLoggingDelegate(MyLoggingDelegate);
         /// }
         ///
         /// public void MyLoggingDelegate(LogLevel logLevel, string logMessage)
@@ -74,8 +74,8 @@ namespace ModIO
         /// state of mods installed on the system as well as the set of mods the
         /// specified user has installed on this device.
         /// </summary>
-        /// <param name="userProfileIdentifier">Name of the directory to store the user's data
-        /// in.</param>
+        /// <param name="userProfileIdentifier">Name of the directory to store the local profile's data
+        ///  (unrelated to the authenticated user)</param>
         /// <param name="serverSettings">Data used by the plugin to connect with the mod.io
         /// service.</param>
         /// <param name="buildSettings">Data used by the plugin to interact with the
@@ -97,11 +97,11 @@ namespace ModIO
         ///
         ///     // Setup a BuildSettings struct
         ///     BuildSettings buildSettings = new BuildSettings();
-        ///     buildSettings.LogLevel = LogLevel.Verbose;
-        ///     buildSettings.UserPortal = UserPortal.None;
+        ///     buildSettings.logLevel = LogLevel.Verbose;
+        ///     buildSettings.userPortal = UserPortal.None;
         ///     buildSettings.requestCacheLimitKB = 0; // No limit
-        /// 
-        ///     ModIOUnity.InitializeForUserAsync("ExampleUser", serverSettings, buildSettings, InitializationCallback);
+        ///
+        ///     ModIOUnity.InitializeForUser("ExampleUser", serverSettings, buildSettings, InitializationCallback);
         /// }
         ///
         /// void InitializationCallback(Result result)
@@ -113,7 +113,7 @@ namespace ModIO
         ///     else
         ///     {
         ///         Debug.Log("Failed to initialize plugin");
-        ///     {
+        ///     }
         /// }
         /// </code>
         public static void InitializeForUser(string userProfileIdentifier,
@@ -139,7 +139,7 @@ namespace ModIO
         /// <code>
         /// void Example()
         /// {
-        ///     ModIOUnity.InitializeForUserAsync("ExampleUser", InitializationCallback);
+        ///     ModIOUnity.InitializeForUser("ExampleUser", InitializationCallback);
         /// }
         ///
         /// void InitializationCallback(Result result)
@@ -287,6 +287,7 @@ namespace ModIO
         /// <seealso cref="AuthenticateUserViaSteam"/>
         /// <seealso cref="AuthenticateUserViaSwitch"/>
         /// <seealso cref="AuthenticateUserViaXbox"/>
+        /// <seealso cref="AuthenticateUserViaPlayStation"/>
         /// <seealso cref="ModIOUnityAsync.GetTermsOfUse"/>
         /// <code>
         /// void Example()
@@ -345,7 +346,7 @@ namespace ModIO
         ///         Debug.Log("Failed to retrieve the terms of use");
         ///     }
         /// }
-        /// 
+        ///
         /// // Once we have the Terms of Use and hash we can attempt to authenticate
         /// void Authenticate_Example()
         /// {
@@ -381,7 +382,7 @@ namespace ModIO
         /// You will first need to get the terms of use and hash from the ModIOUnity.GetTermsOfUse()
         /// method.
         /// </remarks>
-        /// <param name="steamToken">the user's steam token</param>
+        /// <param name="gogToken">the user's gog token</param>
         /// <param name="emailAddress">the user's email address</param>
         /// <param name="hash">the TermsHash retrieved from ModIOUnity.GetTermsOfUse()</param>
         /// <param name="callback">Callback to be invoked when the operation completes</param>
@@ -408,7 +409,7 @@ namespace ModIO
         ///         Debug.Log("Failed to retrieve the terms of use");
         ///     }
         /// }
-        /// 
+        ///
         /// // Once we have the Terms of Use and hash we can attempt to authenticate
         /// void Authenticate_Example()
         /// {
@@ -437,13 +438,75 @@ namespace ModIO
         }
 
         /// <summary>
+        /// Attempts to authenticate a user via the GOG API.
+        /// </summary>
+        /// <remarks>
+        /// You will first need to get the terms of use and hash from the ModIOUnity.GetTermsOfUse()
+        /// method.
+        /// </remarks>
+        /// <param name="authCode">the user's auth code</param>
+        /// <param name="emailAddress">the user's email address</param>
+        /// <param name="hash">the TermsHash retrieved from ModIOUnity.GetTermsOfUse()</param>
+        /// <param name="callback">Callback to be invoked when the operation completes</param>
+        /// <seealso cref="GetTermsOfUse"/>
+        /// <seealso cref="ModIOUnityAsync.AuthenticateUserViaGOG"/>
+        /// <code>
+        /// // First we get the Terms of Use to display to the user and cache the hash
+        /// void GetTermsOfUse_Example()
+        /// {
+        ///     ModIOUnity.GetTermsOfUse(GetTermsOfUseCallback);
+        /// }
+        ///
+        /// void GetTermsOfUseCallback(ResultAnd&#60;TermsOfUse&#62; response)
+        /// {
+        ///     if (response.result.Succeeded())
+        ///     {
+        ///         Debug.Log("Successfully retrieved the terms of use: " + response.value.termsOfUse);
+        ///
+        ///         //  Cache the terms of use (which has the hash for when we attempt to authenticate)
+        ///         modIOTermsOfUse = response.value;
+        ///     }
+        ///     else
+        ///     {
+        ///         Debug.Log("Failed to retrieve the terms of use");
+        ///     }
+        /// }
+        ///
+        /// // Once we have the Terms of Use and hash we can attempt to authenticate
+        /// void Authenticate_Example()
+        /// {
+        ///     ModIOUnity.AuthenticateUserViaPlaystation(authCode, "johndoe@gmail.com", modIOTermsOfUse.hash, AuthenticationCallback);
+        /// }
+        ///
+        /// void AuthenticationCallback(Result result)
+        /// {
+        ///     if (result.Succeeded())
+        ///     {
+        ///         Debug.Log("Successfully authenticated user");
+        ///     }
+        ///     else
+        ///     {
+        ///         Debug.Log("Failed to authenticate");
+        ///     }
+        /// }
+        /// </code>
+        public static void AuthenticateUserViaPlayStation(string authCode, [CanBeNull] string emailAddress,
+                                                  [CanBeNull] TermsHash? hash,
+                                                  Action<Result> callback)
+        {
+            ModIOUnityImplementation.AuthenticateUser(authCode, AuthenticationServiceProvider.PlayStation,
+                                                      emailAddress, hash, null, null, null,
+                                                      callback);
+        }
+
+        /// <summary>
         /// Attempts to authenticate a user via the Itch.io API.
         /// </summary>
         /// <remarks>
         /// You will first need to get the terms of use and hash from the ModIOUnity.GetTermsOfUse()
         /// method.
         /// </remarks>
-        /// <param name="steamToken">the user's steam token</param>
+        /// <param name="itchioToken">the user's itch token</param>
         /// <param name="emailAddress">the user's email address</param>
         /// <param name="hash">the TermsHash retrieved from ModIOUnity.GetTermsOfUse()</param>
         /// <param name="callback">Callback to be invoked when the operation completes</param>
@@ -470,7 +533,7 @@ namespace ModIO
         ///         Debug.Log("Failed to retrieve the terms of use");
         ///     }
         /// }
-        /// 
+        ///
         /// // Once we have the Terms of Use and hash we can attempt to authenticate
         /// void Authenticate_Example()
         /// {
@@ -506,7 +569,7 @@ namespace ModIO
         /// You will first need to get the terms of use and hash from the ModIOUnity.GetTermsOfUse()
         /// method.
         /// </remarks>
-        /// <param name="steamToken">the user's steam token</param>
+        /// <param name="xboxToken">the user's xbl token</param>
         /// <param name="emailAddress">the user's email address</param>
         /// <param name="hash">the TermsHash retrieved from ModIOUnity.GetTermsOfUse()</param>
         /// <param name="callback">Callback to be invoked when the operation completes</param>
@@ -533,7 +596,7 @@ namespace ModIO
         ///         Debug.Log("Failed to retrieve the terms of use");
         ///     }
         /// }
-        /// 
+        ///
         /// // Once we have the Terms of Use and hash we can attempt to authenticate
         /// void Authenticate_Example()
         /// {
@@ -569,7 +632,7 @@ namespace ModIO
         /// You will first need to get the terms of use and hash from the ModIOUnity.GetTermsOfUse()
         /// method.
         /// </remarks>
-        /// <param name="steamToken">the user's steam token</param>
+        /// <param name="SwitchNsaId">the user's switch NSA id token</param>
         /// <param name="emailAddress">the user's email address</param>
         /// <param name="hash">the TermsHash retrieved from ModIOUnity.GetTermsOfUse()</param>
         /// <param name="callback">Callback to be invoked when the operation completes</param>
@@ -596,7 +659,7 @@ namespace ModIO
         ///         Debug.Log("Failed to retrieve the terms of use");
         ///     }
         /// }
-        /// 
+        ///
         /// // Once we have the Terms of Use and hash we can attempt to authenticate
         /// void Authenticate_Example()
         /// {
@@ -632,7 +695,7 @@ namespace ModIO
         /// You will first need to get the terms of use and hash from the ModIOUnity.GetTermsOfUse()
         /// method.
         /// </remarks>
-        /// <param name="steamToken">the user's steam token</param>
+        /// <param name="discordToken">the user's discord token</param>
         /// <param name="emailAddress">the user's email address</param>
         /// <param name="hash">the TermsHash retrieved from ModIOUnity.GetTermsOfUse()</param>
         /// <param name="callback">Callback to be invoked when the operation completes</param>
@@ -659,7 +722,7 @@ namespace ModIO
         ///         Debug.Log("Failed to retrieve the terms of use");
         ///     }
         /// }
-        /// 
+        ///
         /// // Once we have the Terms of Use and hash we can attempt to authenticate
         /// void Authenticate_Example()
         /// {
@@ -695,7 +758,7 @@ namespace ModIO
         /// You will first need to get the terms of use and hash from the ModIOUnity.GetTermsOfUse()
         /// method.
         /// </remarks>
-        /// <param name="steamToken">the user's steam token</param>
+        /// <param name="googleToken">the user's google token</param>
         /// <param name="emailAddress">the user's email address</param>
         /// <param name="hash">the TermsHash retrieved from ModIOUnity.GetTermsOfUse()</param>
         /// <param name="callback">Callback to be invoked when the operation completes</param>
@@ -722,7 +785,7 @@ namespace ModIO
         ///         Debug.Log("Failed to retrieve the terms of use");
         ///     }
         /// }
-        /// 
+        ///
         /// // Once we have the Terms of Use and hash we can attempt to authenticate
         /// void Authenticate_Example()
         /// {
@@ -758,10 +821,13 @@ namespace ModIO
         /// You will first need to get the terms of use and hash from the ModIOUnity.GetTermsOfUse()
         /// method.
         /// </remarks>
-        /// <param name="steamToken">the user's steam token</param>
+        /// <param name="oculusDevice">the device your authenticating on</param>
+        /// <param name="nonce">the nonce</param>
+        /// <param name="oculusToken">the user's oculus token</param>
         /// <param name="emailAddress">the user's email address</param>
         /// <param name="hash">the TermsHash retrieved from ModIOUnity.GetTermsOfUse()</param>
         /// <param name="callback">Callback to be invoked when the operation completes</param>
+        /// <param name="userId"></param>
         /// <seealso cref="GetTermsOfUse"/>
         /// <seealso cref="ModIOUnityAsync.AuthenticateUserViaOculus"/>
         /// <code>
@@ -785,7 +851,7 @@ namespace ModIO
         ///         Debug.Log("Failed to retrieve the terms of use");
         ///     }
         /// }
-        /// 
+        ///
         /// // Once we have the Terms of Use and hash we can attempt to authenticate
         /// void Authenticate_Example()
         /// {
@@ -960,7 +1026,7 @@ namespace ModIO
         /// {
         ///     if (result.Succeeded())
         ///     {
-        ///         Debug.Log("ModPage has " + modPage.mods.Length + " mods");
+        ///         Debug.Log("ModPage has " + modPage.modProfiles.Length + " mods");
         ///     }
         ///     else
         ///     {
@@ -1028,9 +1094,9 @@ namespace ModIO
         /// <seealso cref="ModId"/>
         /// <seealso cref="ModIOUnityAsync.RateMod"/>
         /// <code>
-        /// 
+        ///
         /// ModProfile mod;
-        /// 
+        ///
         /// void Example()
         /// {
         ///     ModIOUnity.RateMod(mod.id, ModRating.Positive, RateModCallback);
@@ -1045,7 +1111,7 @@ namespace ModIO
         ///     else
         ///     {
         ///         Debug.Log("Failed to rate mod");
-        ///     {
+        ///     }
         /// }
         /// </code>
         public static void RateMod(ModId modId, ModRating rating, Action<Result> callback)
@@ -1070,7 +1136,7 @@ namespace ModIO
         /// <code>
         ///
         /// ModProfile mod;
-        /// 
+        ///
         /// void Example()
         /// {
         ///     ModIOUnity.SubscribeToMod(mod.id, SubscribeCallback);
@@ -1085,7 +1151,7 @@ namespace ModIO
         ///     else
         ///     {
         ///         Debug.Log("Failed to subscribe to mod");
-        ///     {
+        ///     }
         /// }
         /// </code>
         public static void SubscribeToMod(ModId modId, Action<Result> callback)
@@ -1110,7 +1176,7 @@ namespace ModIO
         /// <code>
         ///
         /// ModProfile mod;
-        /// 
+        ///
         /// void Example()
         /// {
         ///     ModIOUnity.UnsubscribeFromMod(mod.id, UnsubscribeCallback);
@@ -1125,7 +1191,7 @@ namespace ModIO
         ///     else
         ///     {
         ///         Debug.Log("Failed to unsubscribe from mod");
-        ///     {
+        ///     }
         /// }
         /// </code>
         public static void UnsubscribeFromMod(ModId modId, Action<Result> callback)
@@ -1150,7 +1216,7 @@ namespace ModIO
         /// void Example()
         /// {
         ///     SubscribedMod[] mods = ModIOUnity.GetSubscribedMods(out Result result);
-        /// 
+        ///
         ///     if (result.Succeeded())
         ///     {
         ///         Debug.Log("use has " + mods.Length + " subscribed mods");
@@ -1291,7 +1357,7 @@ namespace ModIO
         /// void Example()
         /// {
         ///     Result result = ModIOUnity.DisableModManagement();
-        /// 
+        ///
         ///     if (result.Succeeded())
         ///     {
         ///         Debug.Log("disabled mod management");
@@ -1320,7 +1386,7 @@ namespace ModIO
         /// void Example()
         /// {
         ///     ProgressHandle handle = ModIOUnity.GetCurrentModManagementOperation();
-        /// 
+        ///
         ///     if (handle != null)
         ///     {
         ///         Debug.Log("current mod management operation is " + handle.OperationType.ToString());
@@ -1352,7 +1418,7 @@ namespace ModIO
         /// void Example()
         /// {
         ///     InstalledMod[] mods = ModIOUnity.GetSystemInstalledMods(out Result result);
-        /// 
+        ///
         ///     if (result.Succeeded())
         ///     {
         ///         Debug.Log("found " + mods.Length.ToString() + " mods installed");
@@ -1379,7 +1445,7 @@ namespace ModIO
         /// void Example()
         /// {
         ///     InstalledModUser[] mods = ModIOUnity.GetSystemInstalledModsUser(out Result result);
-        /// 
+        ///
         ///     if (result.Succeeded())
         ///     {
         ///         Debug.Log("found " + mods.Length.ToString() + " mods installed");
@@ -1418,7 +1484,7 @@ namespace ModIO
         /// <code>
         ///
         /// ModProfile mod;
-        /// 
+        ///
         /// void Example()
         /// {
         ///     Result result = ModIOUnity.ForceUninstallMod(mod.id);
@@ -1509,8 +1575,9 @@ namespace ModIO
         /// <seealso cref="ModIOUnityAsync.CreateModProfile"/>
         /// <code>
         /// ModId newMod;
+        /// Texture2D logo;
         /// CreationToken token;
-        /// 
+        ///
         /// void Example()
         /// {
         ///     token = ModIOUnity.GenerateCreationToken();
@@ -1518,6 +1585,7 @@ namespace ModIO
         ///     ModProfileDetails profile = new ModProfileDetails();
         ///     profile.name = "mod name";
         ///     profile.summary = "a brief summary about this mod being submitted"
+        ///     profile.logo = logo;
         ///
         ///     ModIOUnity.CreateModProfile(token, profile, CreateProfileCallback);
         /// }
@@ -1557,13 +1625,13 @@ namespace ModIO
         /// <seealso cref="ModIOUnityAsync.EditModProfile"/>
         /// <code>
         /// ModId modId;
-        /// 
+        ///
         /// void Example()
         /// {
         ///     ModProfileDetails profile = new ModProfileDetails();
-        ///     profile.id = modId;
+        ///     profile.modId = modId;
         ///     profile.summary = "a new brief summary about this mod being edited";
-        /// 
+        ///
         ///     ModIOUnity.EditModProfile(profile, EditProfileCallback);
         /// }
         ///
@@ -1627,15 +1695,15 @@ namespace ModIO
         /// <seealso cref="ModIOUnityAsync.UploadModfile"/>
         /// <seealso cref="UploadModMedia"/>
         /// <code>
-        /// 
+        ///
         /// ModId modId;
-        /// 
+        ///
         /// void Example()
         /// {
         ///     ModfileDetails modfile = new ModfileDetails();
         ///     modfile.modId = modId;
         ///     modfile.directory = "files/mods/mod_123";
-        /// 
+        ///
         ///     ModIOUnity.UploadModfile(modfile, UploadModCallback);
         /// }
         ///
@@ -1669,13 +1737,13 @@ namespace ModIO
         /// <code>
         /// ModId modId;
         /// Texture2D newTexture;
-        /// 
+        ///
         /// void Example()
         /// {
         ///     ModProfileDetails profile = new ModProfileDetails();
-        ///     profile.id = modId;
+        ///     profile.modId = modId;
         ///     profile.logo = newTexture;
-        /// 
+        ///
         ///     ModIOUnity.UploadModMedia(profile, UploadProfileCallback);
         /// }
         ///
@@ -1709,9 +1777,9 @@ namespace ModIO
         /// <seealso cref="EditModProfile"/>
         /// <seealso cref="ModIOUnityAsync.ArchiveModProfile"/>
         /// <code>
-        /// 
+        ///
         /// ModId modId;
-        /// 
+        ///
         /// void Example()
         /// {
         ///     ModIOUnity.ArchiveModProfile(modId, ArchiveModCallback);
@@ -1735,11 +1803,14 @@ namespace ModIO
         }
 
         /// <summary>
-        /// Not implemented yet
+        /// Get all mods the authenticated user added or is a team member of.
+        /// Successful request will return an array of Mod Objects. We
+        /// recommended reading the filtering documentation to return only
+        /// the records you want.
         /// </summary>
-        public static void GetCurrentUserCreations(Action<ResultAnd<ModProfile[]>> callback)
+        public static void GetCurrentUserCreations(SearchFilter filter, Action<ResultAnd<ModPage>> callback)
         {
-            ModIOUnityImplementation.GetCurrentUserCreations(callback);
+            ModIOUnityImplementation.GetCurrentUserCreations(filter, callback);
         }
 
         /// <summary>
@@ -1754,10 +1825,10 @@ namespace ModIO
         /// <seealso cref="DeleteTags"/>
         /// <seealso cref="ModIOUnityAsync.AddTags"/>
         /// <code>
-        /// 
+        ///
         /// ModId modId;
         /// string[] tags;
-        /// 
+        ///
         /// void Example()
         /// {
         ///     ModIOUnity.AddTags(modId, tags, AddTagsCallback);
@@ -1791,10 +1862,10 @@ namespace ModIO
         /// <seealso cref="AddTags"/>
         /// <seealso cref="ModIOUnityAsync.DeleteTags"/>
         /// <code>
-        /// 
+        ///
         /// ModId modId;
         /// string[] tags;
-        /// 
+        ///
         /// void Example()
         /// {
         ///     ModIOUnity.DeleteTags(modId, tags, DeleteTagsCallback);
@@ -1835,7 +1906,7 @@ namespace ModIO
         /// <code>
         ///
         /// ModProfile mod;
-        /// 
+        ///
         /// void Example()
         /// {
         ///     ModIOUnity.DownloadTexture(mod.logoImage_320x180, DownloadTextureCallback);
@@ -1879,7 +1950,7 @@ namespace ModIO
         ///                                 "reporting this mod for a generic reason",
         ///                                 "JohnDoe",
         ///                                 "johndoe@mod.io");
-        ///     
+        ///
         ///     ModIOUnity.Report(report, ReportCallback);
         /// }
         ///

@@ -25,7 +25,7 @@ namespace ModIOBrowser
 
         internal static HashSet<Tag> searchFilterTags = new HashSet<Tag>();
         TagCategory[] tags;
-        
+
 #region Search Panel
 
         public void OpenSearchPanel()
@@ -50,10 +50,17 @@ namespace ModIOBrowser
             SearchPanelField.navigation = nav;
         }
 
-        void SearchPanelFieldNavigationUnlock()
+        void SearchPanelFieldNavigationUnlock(List<Selectable> listItems)
         {
             Navigation nav = SearchPanelField.navigation;
-            nav.mode = Navigation.Mode.Vertical;
+            nav.mode = Navigation.Mode.Explicit;
+            if(listItems.Count > 0)
+            {
+                nav.selectOnDown = listItems[0];
+            }
+            nav.selectOnUp = null;
+            nav.selectOnRight = null;
+            nav.selectOnLeft = null;
             SearchPanelField.navigation = nav;
         }
 
@@ -115,18 +122,17 @@ namespace ModIOBrowser
                 listItems.AddRange(v.Select(x => x.selectable));
             }
             UpdateSearchPanelBumperIcons();
-            ReorderAndSetNavigation(listItems);
-            LayoutRebuilder.ForceRebuildLayoutImmediate(SearchPanelTagParent as RectTransform);
 
-            SearchPanelFieldNavigationUnlock();
+            var orderedItems = listItems.OrderBy(x => x.transform.GetSiblingIndex()).ToList();
+            ReorderAndSetNavigation(orderedItems);
+            LayoutRebuilder.ForceRebuildLayoutImmediate(SearchPanelTagParent as RectTransform);
+            SearchPanelFieldNavigationUnlock(orderedItems);
         }
 
-        void ReorderAndSetNavigation(IEnumerable<Selectable> items)
+        void ReorderAndSetNavigation(List<Selectable> items)
         {
-            var orderedItems = items.OrderBy(x => x.transform.GetSiblingIndex()).ToList();
-
             //Clear any previous navigation properties
-            orderedItems.ForEach(x =>
+            items.ForEach(x =>
             {
                 var nav = x.navigation;
                 nav.mode = Navigation.Mode.Explicit;
@@ -138,17 +144,17 @@ namespace ModIOBrowser
             });
 
             //Link up next/prev navigation links (if possible)
-            for(int i = 0; i < orderedItems.Count(); i++)
+            for(int i = 0; i < items.Count(); i++)
             {
-                var currentNav = orderedItems[i].navigation;
+                var currentNav = items[i].navigation;
 
-                if(GetWithinBoundsOfList(orderedItems, i - 1, out var previous))
+                if(GetWithinBoundsOfList(items, i - 1, out var previous))
                 {
                     currentNav.selectOnUp = previous;
 
                     var previousNav = previous.navigation;
-                    previousNav.selectOnDown = orderedItems[i];
-                    previous.navigation = previousNav;                    
+                    previousNav.selectOnDown = items[i];
+                    previous.navigation = previousNav;
                 }
                 else
                 {
@@ -156,12 +162,12 @@ namespace ModIOBrowser
                     currentNav.selectOnUp = SearchPanelField;
                 }
 
-                if(GetWithinBoundsOfList(orderedItems, i + 1, out var next))
+                if(GetWithinBoundsOfList(items, i + 1, out var next))
                 {
                     currentNav.selectOnDown = next;
 
                     var nextNav = next.navigation;
-                    nextNav.selectOnDown = orderedItems[i];
+                    nextNav.selectOnDown = items[i];
                     next.navigation = nextNav;
                 }
                 else
@@ -170,9 +176,8 @@ namespace ModIOBrowser
                     //through controller buttons
                     currentNav.selectOnDown = null;
                 }
-                    
 
-                orderedItems[i].navigation = currentNav;
+                items[i].navigation = currentNav;
             }
         }
 
@@ -198,15 +203,15 @@ namespace ModIOBrowser
         /// </summary>
         /// <returns>Fetched items</returns>
         IEnumerable<ListItem> CreateTagListItems(TagCategory category)
-        {            
+        {
             bool setJumpTo = false;
-            
+
             foreach(ModIO.Tag tag in category.tags)
             {
                 ListItem tagListItem = ListItem.GetListItem<TagListItem>(SearchPanelTagPrefab, SearchPanelTagParent, colorScheme);
                 tagListItem.Setup(tag.name, category.name);
                 tagListItem.SetViewportRestraint(SearchPanelTagParent as RectTransform, SearchPanelTagViewport);
-                
+
                 if(!setJumpTo)
                 {
                     tagListItem.Setup();

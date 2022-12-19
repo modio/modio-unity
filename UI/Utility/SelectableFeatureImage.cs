@@ -20,13 +20,9 @@ namespace ModIOBrowser.Implementation
         }
 
         public void OnSelect(BaseEventData eventData)
-        {
-            //ScrollRectViewHandler.CheckSelectionVerticalVisibility(transform as RectTransform);
-            Browser.Instance.isFeaturedItemSelected = true;
-        }
+            => Browser.Instance.FeaturedItemSelect(true);
+
         public void OnDeselect(BaseEventData eventData)
-        {
-            Browser.Instance.isFeaturedItemSelected = false;
-        }
+            => Browser.Instance.FeaturedItemSelect(false);
     }
 }

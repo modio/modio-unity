@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using ModIO;
+using UnityEngine;
+using static ModIO.Utility;
 
 namespace ModIOBrowser.Implementation
 {

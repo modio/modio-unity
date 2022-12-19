@@ -31,9 +31,11 @@ namespace ModIO.Implementation.API.Requests
             kvps.Add(new KeyValuePair<string, string>("name_id", details.name_id));
             kvps.Add(new KeyValuePair<string, string>("homepage_url", details.homepage_url));
             kvps.Add(new KeyValuePair<string, string>("stock", details.maxSubscribers.ToString()));
-            kvps.Add(new KeyValuePair<string, string>("maturity_option",
-                                                      details.contentWarning.ToString()));
+            if(details.contentWarning != null)
+                kvps.Add(new KeyValuePair<string, string>("maturity_option", ((int)details.contentWarning).ToString()));
             kvps.Add(new KeyValuePair<string, string>("metadata_blob", details.metadata));
+            if(details.communityOptions != null)
+                kvps.Add(new KeyValuePair<string, string>("community_options", ((int)details.communityOptions).ToString()));
 
             if(details.tags != null)
             {

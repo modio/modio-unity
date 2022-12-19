@@ -10,6 +10,7 @@
         Xbox,
         Switch,
         Discord,
-        Google
+        Google,
+        PlayStation
     }
 }

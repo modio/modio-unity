@@ -4,9 +4,11 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
+using static ModIO.Utility;
 
 namespace ModIO.Implementation
 {
+
     internal class LogToPC
     {
         private class LogMessage
@@ -20,26 +22,17 @@ namespace ModIO.Implementation
         public const string dateTimeFormat = "yyyy'-'MM'-'dd'T'HH'-'mm'-'ss";
 
         private const int MaxLogs = 100;
-        private const int maxWritingDepth = 3;
 
         private string filenameHandle;        
         private List<LogMessage> messageCache = new List<LogMessage>();
-        private Task task;
-
+        
         public bool halt = false;
 
-        public LogToPC(DateTime time)
-        {
-            Setup(time);
-        }
-
-        public LogToPC()
-        {
-            Setup(DateTime.Now);
-        }
+        public LogToPC() => Dispatcher.Instance.Run(() => Setup(DateTime.Now));
+        public LogToPC(DateTime time) => Dispatcher.Instance.Run(() => Setup(time));
 
         private void Setup(DateTime date)
-        {
+        {            
             string folderPath = GetFolderPath();
             AttemptCreateDirectory(folderPath);
 
@@ -65,7 +58,12 @@ namespace ModIO.Implementation
         }
 
         private static void ClearFiles(IEnumerable<string> files)
-        {                
+        {
+            if(files == null || files.Count() == 0)
+            {
+                return;
+            }
+
             foreach(string item in files)
             {
                 try
@@ -79,22 +77,15 @@ namespace ModIO.Implementation
         }
 
         public static string ConstructFilePath(string folderPath, DateTime time)
-        {            
-            return folderPath
-                + @"/" + $"{SessionIdentifier}{time.ToString(dateTimeFormat)}{fileEnding}";
-        }
+            => folderPath + @"/" + $"{SessionIdentifier}{time.ToString(dateTimeFormat)}{fileEnding}";
 
         private static void AttemptCreateDirectory(string path)
-        {             
-            Directory.CreateDirectory(path);
-        }
+            => Directory.CreateDirectory(path);
 
         public static string GetFolderPath()
-        {
-            return Application.persistentDataPath + @"/ModIoLogs";
-        }
+            => Application.persistentDataPath + @"/ModIoLogs";
 
-        private async Task WriteMessagesToLog(int depth = 0)
+        private void WriteMessagesToLog()
         {
             try
             {
@@ -105,12 +96,10 @@ namespace ModIO.Implementation
                     while(index < messageCache.Count)
                     {
                         if(halt)
-                        {
                             return;
-                        }
-
+            
                         string log = $"{messageCache[index].level} - {DateTime.Now.ToString("HH:mm:ss")}: {messageCache[index].message}";
-                        await w.WriteLineAsync(log);
+                        w.WriteLine(log);
                         index++;
                     }
                     
@@ -119,22 +108,7 @@ namespace ModIO.Implementation
             }
             catch(Exception ex)
             {
-                if(depth >= maxWritingDepth)
-                {
-                    Logger.Log(LogLevel.Error, $"Exception writing log to PC. Halting log to pc functionality for this session. Exception: {ex}", false);
-                    halt = true;
-                }
-                else
-                {
-                    messageCache.Add(new LogMessage()
-                    {
-                        level = LogLevel.Warning,
-                        message = $"Failed writing to disc, trying again in 1 second. Attempt {depth + 1} out of {maxWritingDepth}."
-                    });
-
-                    await Task.Delay(1000);
-                    await WriteMessagesToLog(depth++);
-                }
+                Debug.LogError("Unable to write message: " + ex);
             }
         }
 
@@ -142,16 +116,13 @@ namespace ModIO.Implementation
         public void Log(LogLevel level, string logMessage)
         {
             if(halt)
-            {
                 return;
-            }
 
+            if(logMessage == null || logMessage == string.Empty)
+                return;
+            
             messageCache.Add(new LogMessage() { level = level, message = logMessage });
-
-            if(task == null || task.Status == TaskStatus.RanToCompletion)
-            {
-                task = WriteMessagesToLog();
-            }
+            Dispatcher.Instance.Run(WriteMessagesToLog);
         }
     }
 }

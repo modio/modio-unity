@@ -19,10 +19,10 @@ namespace ModIOBrowser
         [SerializeField] GameObject DownloadQueueCurrentProgressBar;
         [SerializeField] TMP_Text DownloadQueueCurrentJobText;
         [SerializeField] Image DownloadQueueCurrentProgressBarFill;
-        [SerializeField] TMP_Text DownloadQueueUsernameText;
-        [SerializeField] TMP_Text DownloadQueueCurrentModName;
+        [SerializeField] TMP_Text DownloadQueueUsernameText; 
+        [SerializeField] TMP_Text DownloadQueueCurrentModName; 
         [SerializeField] TMP_Text DownloadQueueCurrentDownloadedAmount;
-        [SerializeField] TMP_Text DownloadQueueCurrentDownloadSpeed;
+        [SerializeField] TMP_Text DownloadQueueCurrentDownloadSpeed; 
         [SerializeField] Button DownloadQueueCurrentUnsubscribeButton;
         [SerializeField] Button DownloadQueueCurrentLogoutButton;
         [SerializeField] Transform DownloadQueueList;
@@ -186,7 +186,15 @@ namespace ModIOBrowser
                 return;
             }
 
-            DownloadQueueCurrentJobText.text = handle.OperationType == ModManagementOperationType.Download ? "Downloading" : "Installing";
+            if(handle.OperationType == ModManagementOperationType.Download)
+            {
+                Translation.Get(DownloadQueueCurrentJobTextTranslation, "Downloading", DownloadQueueCurrentJobText);
+            }
+            else
+            {
+                Translation.Get(DownloadQueueCurrentJobTextTranslation, "Installing", DownloadQueueCurrentJobText);
+            }
+
             DownloadQueueCurrentModName.text = downloadQueueCurrentModProfileOfOperationInProgress.name;
             DownloadQueueCurrentDownloadSpeed.text = handle.OperationType == ModManagementOperationType.Download ? Utility.GenerateHumanReadableStringForBytes(handle.BytesPerSecond) : "";
             DownloadQueueCurrentDownloadedAmount.text = ""; // TODO filesize * progress

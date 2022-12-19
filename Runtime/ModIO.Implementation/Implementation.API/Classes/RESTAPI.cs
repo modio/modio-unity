@@ -13,7 +13,7 @@ namespace ModIO.Implementation.API
 {
     internal static class RESTAPI
     {
-        private const int WebRequestTimeoutSeconds = 20;
+        private const int WebRequestTimeoutSeconds = 30;
 
         static HashSet<ProgressHandle> liveProgressHandles = new HashSet<ProgressHandle>();
 
@@ -72,8 +72,8 @@ namespace ModIO.Implementation.API
                 Logger.Log(
                     LogLevel.Error,
                     $"Failed to deserialize a response from the mod.io server. The data"
-                        + $" may have been corrupted or isnt a valid Json format.\n\n[JsonUtility:"
-                        + $" {e.Message}] - {e.InnerException} - Raw Response: {response}");
+                    + $" may have been corrupted or isnt a valid Json format.\n\n[JsonUtility:"
+                    + $" {e.Message}] - {e.InnerException} - Raw Response: {response}");
                 return default;
             }
         }
@@ -81,9 +81,19 @@ namespace ModIO.Implementation.API
 #endregion // Deserializing
 
 #region Generating UnityWebRequest
-
-        public static ResponseCodeType GetResponseType(UnityWebRequest webRequest, Result result)
+        static ResponseCodeType GetResponseType(UnityWebRequest webRequest, Result result)
         {
+
+            if(webRequest.error == "Request aborted")
+            {
+                return ResponseCodeType.AbortRequested;
+            }
+
+            if(webRequest.error == "Request timeout")
+            {
+                return ResponseCodeType.TimedOut;
+            }
+
 #if UNITY_2020_2_OR_NEWER
             switch(webRequest.result)
             {
@@ -102,11 +112,6 @@ namespace ModIO.Implementation.API
 
             }
 #else
-            if(webRequest.error == "Request aborted")
-            {
-                return ResponseCodeType.AbortRequested;
-            }
-
             if(webRequest.isNetworkError)
             {
                 return ResponseCodeType.NetworkError;
@@ -125,7 +130,7 @@ namespace ModIO.Implementation.API
             if(webRequest.responseCode >= 200 && webRequest.responseCode < 300)
             {
                 return result.Succeeded() ? ResponseCodeType.Succeeded
-                                          : ResponseCodeType.ProcessingError;
+                    : ResponseCodeType.ProcessingError;
             }
 
             return ResponseCodeType.ProcessingError;
@@ -139,7 +144,7 @@ namespace ModIO.Implementation.API
         {
             // Trim trailing slashes
             url = url.Trim('/');
-            
+
             UnityWebRequest webRequest;
 
             // NOTE: On GDK all POST requests require a form body to be valid.
@@ -191,7 +196,7 @@ namespace ModIO.Implementation.API
                 }
             }
 
-            if (downloadHandler == null)
+            if(downloadHandler == null)
             {
                 webRequest.timeout = WebRequestTimeoutSeconds;
             }
@@ -225,13 +230,13 @@ namespace ModIO.Implementation.API
 
             // LANGUAGE
             webRequest.SetRequestHeader(ServerConstants.HeaderKeys.LANGUAGE,
-                                        Settings.server.languageCode ?? "en");
+                Settings.server.languageCode ?? "en");
             headerLog +=
                 $"{ServerConstants.HeaderKeys.LANGUAGE}: {Settings.server.languageCode ?? "en"}\n";
 
             // PLUGIN VERSION
             webRequest.SetRequestHeader(ServerConstants.HeaderKeys.PLUGIN_VERSION,
-                                        ModIOVersion.Current.ToHeaderString());
+                ModIOVersion.Current.ToHeaderString());
             headerLog +=
                 $"{ServerConstants.HeaderKeys.PLUGIN_VERSION}: {ModIOVersion.Current.ToHeaderString()}\n";
 
@@ -256,15 +261,18 @@ namespace ModIO.Implementation.API
                 webRequest.url += $"&api_key={Settings.server.gameKey}";
             }
 
+            headerLog += $"Content-Type: {webRequest.GetRequestHeader("Content-Type")}\n";
+
             if(!string.IsNullOrWhiteSpace(UserData.instance?.oAuthToken))
             {
                 // AUTHENTICATED - ADD OAUTHTOKEN
                 webRequest.SetRequestHeader("Authorization",
-                                            $"Bearer {UserData.instance.oAuthToken}");
+                    $"Bearer {UserData.instance.oAuthToken}");
 
                 // Append to log
                 headerLog += "USER: [OAUTHTOKEN]\n";
             }
+
         }
 
 #endregion // Generating UnityWebRequest
@@ -588,6 +596,19 @@ namespace ModIO.Implementation.API
                         internalResponse.value = default;
                         break;
                     //--------------------------------------------------------------------------------//
+                    //                               TIMED OUT //
+                    //--------------------------------------------------------------------------------//
+                    case ResponseCodeType.TimedOut:
+                        logTitle =
+                            $"REQUEST TIMED OUT\nDid not receive a request within {WebRequestTimeoutSeconds*1000} milliseconds. Check your Internet "
+                            + $"connection and/or Firewall settings.\n URL: {webRequest.url}\n "
+                            + $"ERROR: {webRequest.error}";
+
+                        internalResponse.result =
+                            ResultBuilder.Create(ResultCode.API_FailedToConnect);
+                        internalResponse.value = default;
+                        break;
+                    //--------------------------------------------------------------------------------//
                     //                                HTTP ERROR //
                     //--------------------------------------------------------------------------------//
                     case ResponseCodeType.HttpError:
@@ -687,7 +708,7 @@ namespace ModIO.Implementation.API
                 }
 
                 string responseHeaders =
-                    $"------------------------------------------------------\nRESPONSE HEADERS:\n";
+                    $"\n------------------------------------------------------\nRESPONSE HEADERS:\n";
                 
                 var webRequestResponseHeaders = webRequest.GetResponseHeaders();
                 
@@ -802,7 +823,7 @@ namespace ModIO.Implementation.API
 
         #region Progress Handle Tracking
 
-        static async void DecoupledProgressHandleToWebRequestRunner(IModIoWebRequest webRequest,
+        static void DecoupledProgressHandleToWebRequestRunner(IModIoWebRequest webRequest,
                                                          ProgressHandle progressHandle)
         {
             // Early out

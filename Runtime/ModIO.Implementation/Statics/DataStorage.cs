@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using ModIO.Implementation.API.Objects;
 using ModIO.Implementation.Platform;
 using UnityEngine;
+using static ModIO.Utility;
 
 namespace ModIO.Implementation
 {
@@ -197,6 +198,14 @@ namespace ModIO.Implementation
         public static bool TryDeleteModfileArchive(long modId, long modfileId, out Result result)
         {
             result = ResultBuilder.Success;
+            //path is a path to a file
+            var filePath = GenerateModfileArchiveFilePath(modId, modfileId);
+            if(temp.FileExists(filePath))
+            {
+                result = temp.DeleteFile(filePath);
+                return result.Succeeded();
+            }
+
             return true;
         }
 

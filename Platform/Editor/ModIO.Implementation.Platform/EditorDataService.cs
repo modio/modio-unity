@@ -76,41 +76,36 @@ namespace ModIO.Implementation.Platform
         /// <summary>Opens a file stream for reading.</summary>
         public ModIOFileStream OpenReadStream(string filePath, out Result result)
         {
-            // DebugUtil.AssertPathValid(filePath, rootDir);
             return SystemIOWrapper.OpenReadStream(filePath, out result);
         }
 
         /// <summary>Opens a file stream for writing.</summary>
         public ModIOFileStream OpenWriteStream(string filePath, out Result result)
         {
-            // DebugUtil.AssertPathValid(filePath, rootDir);
             return SystemIOWrapper.OpenWriteStream(filePath, out result);
         }
 
         /// <summary>Reads an entire file asynchronously.</summary>
         public async Task<ResultAnd<byte[]>> ReadFileAsync(string filePath)
         {
-            // DebugUtil.AssertPathValid(filePath, rootDir);
             return await SystemIOWrapper.ReadFileAsync(filePath);
         }
 
         /// <summary>Writes an entire file asynchronously.</summary>
         public async Task<Result> WriteFileAsync(string filePath, byte[] data)
         {
-            // DebugUtil.AssertPathValid(filePath, rootDir);
             return await SystemIOWrapper.WriteFileAsync(filePath, data);
         }
 
         /// <summary>Deletes a file.</summary>
-        public async Task<Result> DeleteFileAsync(string filePath)
+        public Result DeleteFile(string filePath)
         {
-            throw new NotImplementedException();
+            return SystemIOWrapper.DeleteFileGetResult(filePath);
         }
 
         /// <summary>Deletes a directory and its contents recursively.</summary>
         public Result DeleteDirectory(string directoryPath)
         {
-            // DebugUtil.AssertPathValid(directoryPath, rootDir);
             return SystemIOWrapper.DeleteDirectory(directoryPath);
         }
 
@@ -118,13 +113,13 @@ namespace ModIO.Implementation.Platform
         {
             return SystemIOWrapper.MoveDirectory(directoryPath, newDirectoryPath);
         }
-        
+
         public bool TryCreateParentDirectory(string path)
         {
             return SystemIOWrapper.TryCreateParentDirectory(path, out Result _);
         }
 
-        public bool IsThereEnoughDiskSpaceFor(long bytes)
+        public async Task<bool> IsThereEnoughDiskSpaceFor(long bytes)
         {
             // Not implemented for this platform
             return true;
@@ -137,7 +132,6 @@ namespace ModIO.Implementation.Platform
         /// <summary>Determines whether a file exists.</summary>
         public bool FileExists(string filePath)
         {
-            // DebugUtil.AssertPathValid(filePath, rootDir);
             return SystemIOWrapper.FileExists(filePath, out Result r);
         }
 
@@ -151,14 +145,12 @@ namespace ModIO.Implementation.Platform
         public async Task<ResultAnd<(long fileSize, string fileHash)>> GetFileSizeAndHash(
             string filePath)
         {
-            // DebugUtil.AssertPathValid(filePath, rootDir);
             return await SystemIOWrapper.GetFileSizeAndHash(filePath);
         }
 
         /// <summary>Determines whether a directory exists.</summary>
         public bool DirectoryExists(string directoryPath)
         {
-            // DebugUtil.AssertPathValid(directoryPath, rootDir);
             return SystemIOWrapper.DirectoryExists(directoryPath);
         }
 

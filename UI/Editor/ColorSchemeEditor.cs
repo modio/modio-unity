@@ -5,7 +5,9 @@ using UnityEngine;
 
 namespace ModIOBrowser
 {
-	[CustomEditor(typeof(ColorScheme))]
+
+
+    [CustomEditor(typeof(ColorScheme))]
 	internal class ColorSchemeEditor : Editor
 	{
 		public override void OnInspectorGUI()

@@ -19,12 +19,7 @@ namespace ModIO.Implementation
             this.progressHandle = progressHandle;
         }
 
-        public Task Operation
-        {
-            get {
-                return _operation;
-            }
-        }
+        public Task GetOperation() => _operation;
 
         public virtual void Cancel() { }
 

@@ -2,6 +2,7 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
+using static ModIO.Utility;
 
 namespace ModIOBrowser.Implementation
 {
@@ -15,41 +16,29 @@ namespace ModIOBrowser.Implementation
         private void Awake()
         {
             gameObject.SetActive(false);
-            CoroutineRunner.Instance.Run(SetupWhenReady());
+            UpdateGlyphs();
+            SimpleMessageHub.Instance.Subscribe<MessageGlyphUpdate>(x => UpdateGlyphs());
         }
 
-        IEnumerator SetupWhenReady()
+        public void UpdateGlyphs()
         {
-            while(true)
-            {
-                if(Glyphs.Instance.ready)
-                {
-                    gameObject.SetActive(true);
-                    image.sprite = GetGlyphFromDisplayType();
-                    image.color = Glyphs.Instance.GetColor(config.color);
-                    break;
-                }
-                yield return new WaitForEndOfFrame();
-            }
+            gameObject.SetActive(true);
+            image.sprite = GetGlyphFromDisplayType();
+            image.color = Glyphs.Instance.GetColor(config.color);
         }
 
         private Sprite GetGlyphFromDisplayType()
         {
-            switch(Glyphs.Instance.platformType)
+            switch(Glyphs.Instance.PlatformType)
             {
-                case Glyphs.GlyphPlatforms.PC:
-                    return config.PC;
-                case Glyphs.GlyphPlatforms.XBOX:
-                    return config.Xbox;
-                case Glyphs.GlyphPlatforms.PLAYSTATION_4:
-                    return config.Playstation4;
-                case Glyphs.GlyphPlatforms.PLAYSTATION_5:
-                    return config.Playstation5;
-                case Glyphs.GlyphPlatforms.NINTENDO_SWITCH:
-                    return config.NintendoSwitch;
+                case GlyphPlatforms.PC: return config.PC;
+                case GlyphPlatforms.XBOX: return config.Xbox;
+                case GlyphPlatforms.PLAYSTATION_4: return config.Playstation4;
+                case GlyphPlatforms.PLAYSTATION_5: return config.Playstation5;
+                case GlyphPlatforms.NINTENDO_SWITCH: return config.NintendoSwitch;
             }
 
-            Debug.LogWarning($"{gameObject.name} is missing configuration for {Glyphs.Instance.platformType}");
+            Debug.LogWarning($"{gameObject.name} is missing configuration for {Glyphs.Instance.PlatformType}");
             return Glyphs.Instance.fallbackSprite;
         }
     }

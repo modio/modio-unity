@@ -17,7 +17,6 @@ namespace ModIO.Implementation
             public TaskPriority priority;
         }
 
-        const int AutoRunIntervalMs = 15;
         List<TaskQueueItem> tasks = new List<TaskQueueItem>();
         int upperTasksBoundary;
         bool runsAutomatically;
@@ -34,8 +33,10 @@ namespace ModIO.Implementation
         /// /// </param>
         /// <param name="runsAutomatically">if true, the TaskPriorityQueueRunner will attempt to run itself
         /// when you add a task, if it isn't already running.
+        /// </param>
         /// <param name="synchronizedJobs">if true, all jobs will be run in order. If false, all jobs
-        /// will ge started at the same time and be awaited on together until finish.</param>
+        /// will ge started at the same time and be awaited on together until finish.
+        /// Warning: Setting this to true will mean that all other tasks wait until finished. 
         /// </param>
         public TaskQueueRunner(int upperTasksBoundary, bool runsAutomatically = false, bool synchronizedJobs = false)
         {
@@ -182,6 +183,7 @@ namespace ModIO.Implementation
                     try
                     {
                         item.task.Start();
+                        item.task.Wait();
                         await item.task;
                     }
                     catch(Exception e)

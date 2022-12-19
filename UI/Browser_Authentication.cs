@@ -25,6 +25,7 @@ namespace ModIOBrowser
         [SerializeField] Button AuthenticationPanelConnectViaSteamButton;
         [SerializeField] Button AuthenticationPanelConnectViaXboxButton;
         [SerializeField] Button AuthenticationPanelConnectViaSwitchButton;
+        [SerializeField] Button AuthenticationPanelConnectViaPlayStationButton;
         [SerializeField] Button AuthenticationPanelConnectViaEmailButton;
         [SerializeField] Button AuthenticationPanelBackButton;
         [SerializeField] TMP_Text AuthenticationPanelBackButtonText;
@@ -46,6 +47,7 @@ namespace ModIOBrowser
         [SerializeField] Image PlatformIcon_DownloadQueue;
         [SerializeField] Sprite SteamAvatar;
         [SerializeField] Sprite XboxAvatar;
+        [SerializeField] Sprite PlayStationAvatar;
 
         // Authentication Delegates
         Action authenticationMethodAfterAgreeingToTheTOS;
@@ -53,6 +55,7 @@ namespace ModIOBrowser
         static string optionalSteamAppTicket;
         static string optionalXboxToken;
         static string optionalSwitchToken;
+        static string optionalPlayStationAuthCode;
         
         UserProfile currentUserProfile;
         TermsOfUse LastReceivedTermsOfUse;
@@ -113,15 +116,18 @@ namespace ModIOBrowser
             HideAuthenticationPanelObjects();
             AuthenticationPanel.SetActive(true);
             AuthenticationMainPanel.SetActive(true);
-            
+
 
             AuthenticationPanelTitleText.gameObject.SetActive(true);
-            AuthenticationPanelTitleText.text = "Authentication";
-            
+
+
             AuthenticationPanelLogo.SetActive(true);
+            Translation.Get(BrowserAuthenticationPanelTitle, "Authentication", AuthenticationPanelTitleText);
 
             AuthenticationPanelInfoText.gameObject.SetActive(true);
-            AuthenticationPanelInfoText.text = "mod.io is a 3rd party utility that provides access to a mod workshop. Choose how you wish to be authenticated.";
+            Translation.Get(BrowserAuthenticationPanelInfo,
+                "mod.io is a 3rd party utility that provides access to a mod workshop. Choose how you wish to be authenticated.",
+                AuthenticationPanelInfoText);
 
             AuthenticationPanelBackButton.gameObject.SetActive(true);
             AuthenticationPanelBackButton.onClick.RemoveAllListeners();
@@ -134,7 +140,7 @@ namespace ModIOBrowser
                 GetTermsOfUse();
                 authenticationMethodAfterAgreeingToTheTOS = OpenAuthenticationPanel_Email;
             });
-            
+
             //-----------------------------------------------------------------------------------//
             //                            THIRD PARTY AUTHENTICATION                             //
             //-----------------------------------------------------------------------------------//
@@ -172,6 +178,17 @@ namespace ModIOBrowser
                 });
                 thirdPartyOptionSelectable = AuthenticationPanelConnectViaSwitchButton;
             }
+            else if(optionalPlayStationAuthCode != null)
+            {
+                AuthenticationPanelConnectViaPlayStationButton.gameObject.SetActive(true);
+                AuthenticationPanelConnectViaPlayStationButton.onClick.RemoveAllListeners();
+                AuthenticationPanelConnectViaPlayStationButton.onClick.AddListener(() =>
+                {
+                    GetTermsOfUse();
+                    authenticationMethodAfterAgreeingToTheTOS = SubmitPlayStationAuthenticationRequest;
+                });
+                thirdPartyOptionSelectable = AuthenticationPanelConnectViaPlayStationButton;
+            }
             
             //-----------------------------------------------------------------------------------//
             //                            EXPLICIT BUTTON NAVIGATION                             //
@@ -180,10 +197,10 @@ namespace ModIOBrowser
             // Back button
             AuthenticationPanelBackButton.navigation = new Navigation{
                 mode = Navigation.Mode.Explicit,
-                selectOnRight = thirdPartyOptionSelectable == null 
+                selectOnRight = thirdPartyOptionSelectable == null
                     ? AuthenticationPanelConnectViaEmailButton : thirdPartyOptionSelectable
             };
-            
+
             // Third party Auth button (This button may or may not be present)
             if(thirdPartyOptionSelectable != null)
             {
@@ -193,11 +210,11 @@ namespace ModIOBrowser
                     selectOnRight = AuthenticationPanelConnectViaEmailButton
                 };
             }
-            
+
             // email auth button
             AuthenticationPanelConnectViaEmailButton.navigation = new Navigation{
                 mode = Navigation.Mode.Explicit,
-                selectOnLeft = thirdPartyOptionSelectable == null 
+                selectOnLeft = thirdPartyOptionSelectable == null
                     ? AuthenticationPanelBackButton : thirdPartyOptionSelectable
             };
 
@@ -211,7 +228,7 @@ namespace ModIOBrowser
             TextAlignmentOptions alignment = AuthenticationPanelInfoText.alignment;
             alignment = TextAlignmentOptions.Left;
             AuthenticationPanelInfoText.alignment = alignment;
-            AuthenticationPanelBackButtonText.text = "Back";
+            Translation.Get(AuthenticationPanelBackButtonTextTranslation, "Back", AuthenticationPanelBackButtonText);
             AuthenticationPanelEnterCode.SetActive(false);
             AuthenticationPanelEnterEmail.SetActive(false);
             AuthenticationPanelTermsOfUseLinks.SetActive(false);
@@ -224,6 +241,7 @@ namespace ModIOBrowser
             AuthenticationPanelConnectViaSteamButton.gameObject.SetActive(false);
             AuthenticationPanelConnectViaXboxButton.gameObject.SetActive(false);
             AuthenticationPanelConnectViaSwitchButton.gameObject.SetActive(false);
+            AuthenticationPanelConnectViaPlayStationButton.gameObject.SetActive(false);
             AuthenticationPanelCompletedButton.gameObject.SetActive(false);
             AuthenticationPanelLogoutButton.gameObject.SetActive(false);
             AuthenticationPanelWaitingForResponseAnimation.SetActive(false);
@@ -262,14 +280,15 @@ namespace ModIOBrowser
             AuthenticationPanelWaitingForResponseAnimation.SetActive(true);
 
             AuthenticationPanelInfoText.gameObject.SetActive(true);
-            AuthenticationPanelInfoText.text = "Waiting for response...";
+
+            Translation.Get(AuthenticationPanelInfoTextTranslation, "Waiting for response...", AuthenticationPanelInfoText);
             TextAlignmentOptions alignment = AuthenticationPanelInfoText.alignment;
             alignment = TextAlignmentOptions.Center;
             AuthenticationPanelInfoText.alignment = alignment;
-            
+
             //AuthenticationWaitingPanelBackButton.Select();
         }
-        
+
         public void OpenAuthenticationPanel_Logout(Action onBack = null)
         {
             HideAuthenticationPanelObjects();
@@ -277,26 +296,23 @@ namespace ModIOBrowser
             AuthenticationMainPanel.SetActive(true);
 
             AuthenticationPanelTitleText.gameObject.SetActive(true);
-            AuthenticationPanelTitleText.text = "Are you sure you'd like to log out?";
-            
+
+            Translation.Get(AuthenticationPanelTitleTextTranslation, "Are you sure you'd like to log out?", AuthenticationPanelTitleText);
             AuthenticationPanelLogo.SetActive(true);
 
             AuthenticationPanelInfoText.gameObject.SetActive(true);
-            AuthenticationPanelInfoText.text = "This will log you out of your mod.io account."
-                                               + " You can still browse the mods but you will "
-                                               + "need to log back in to subscribe to a mod. Any"
-                                               + " ongoing downloads/installations will also be"
-                                               + " stopped.\n\nDo you wish to continue?";
+            Translation.Get(AuthenticationPanelInfoTextTranslation, "This will log you out of your mod.io account. You can still browse the mods but you will need to log back in to subscribe to a mod. Any ongoing downloads/installations will also be stopped.\n\nDo you wish to continue?", AuthenticationPanelInfoText);
 
-            AuthenticationPanelBackButtonText.text = "Cancel";
             AuthenticationPanelBackButton.gameObject.SetActive(true);
+            Translation.Get(AuthenticationPanelBackButtonTextTranslation, "Cancel", AuthenticationPanelBackButtonText);
+
             AuthenticationPanelBackButton.onClick.RemoveAllListeners();
             AuthenticationPanelBackButton.onClick.AddListener(delegate
             {
                 CloseAuthenticationPanel();
                 onBack?.Invoke();
             });
-            
+
             AuthenticationPanelBackButton.navigation = new Navigation{
                 mode = Navigation.Mode.Explicit,
                 selectOnRight = AuthenticationPanelLogoutButton
@@ -305,33 +321,34 @@ namespace ModIOBrowser
             AuthenticationPanelLogoutButton.gameObject.SetActive(true);
             AuthenticationPanelLogoutButton.onClick.RemoveAllListeners();
             AuthenticationPanelLogoutButton.onClick.AddListener(Logout);
-            
+
             AuthenticationPanelLogoutButton.navigation = new Navigation{
                 mode = Navigation.Mode.Explicit,
                 selectOnLeft = AuthenticationPanelBackButton
             };
 
             SelectionManager.Instance.SelectView(UiViews.AuthPanel_LogOut);
-            
+
             LayoutRebuilder.ForceRebuildLayoutImmediate(AuthenticationPanelInfoText.transform as RectTransform);
             LayoutRebuilder.ForceRebuildLayoutImmediate(AuthenticationPanel.transform as RectTransform);
         }
 
-        internal void OpenAuthenticationPanel_Problem(string problem = null, string title = null, Action onBack = null)
+        //These are now instead translation references
+        internal void OpenAuthenticationPanel_Problem(string problemTranslationKey = null, string titleTranslationKey = null, Action onBack = null)
         {
-            title = title ?? "Something went wrong!";
-            problem = problem ?? "We were unable to connect to the mod.io server. Check you have a stable internet connection and try again.";
-            
+            titleTranslationKey = titleTranslationKey ?? "Something went wrong!";
+            problemTranslationKey = problemTranslationKey ?? "We were unable to connect to the mod.io server. Check you have a stable internet connection and try again.";
+
             HideAuthenticationPanelObjects();
             AuthenticationPanel.SetActive(true);
             AuthenticationMainPanel.SetActive(true);
-            
+
             AuthenticationPanelTitleText.gameObject.SetActive(true);
-            AuthenticationPanelTitleText.text = title;
+            Translation.Get(AuthenticationPanelTitleTextTranslation, titleTranslationKey, AuthenticationPanelTitleText);
 
             AuthenticationPanelInfoText.gameObject.SetActive(true);
-            AuthenticationPanelInfoText.text = problem;
-            
+            Translation.Get(AuthenticationPanelInfoTextTranslation, problemTranslationKey, AuthenticationPanelInfoText);
+
             AuthenticationPanelBackButton.gameObject.SetActive(true);
             AuthenticationPanelBackButton.onClick.RemoveAllListeners();
             if(onBack == null)
@@ -339,31 +356,32 @@ namespace ModIOBrowser
                 onBack = CloseAuthenticationPanel;
             }
             AuthenticationPanelBackButton.onClick.AddListener(delegate { onBack();});
-            
+
             AuthenticationPanelBackButton.navigation = new Navigation{
                 mode = Navigation.Mode.Explicit,
             };
 
             SelectSelectable(AuthenticationPanelBackButton);
         }
-        
+
         internal void OpenAuthenticationPanel_TermsOfUse(string TOS)
         {
             HideAuthenticationPanelObjects();
             AuthenticationPanel.SetActive(true);
             AuthenticationMainPanel.SetActive(true);
             AuthenticationPanelTermsOfUseLinks.SetActive(true);
-            
+
             AuthenticationPanelTitleText.gameObject.SetActive(true);
-            AuthenticationPanelTitleText.text = "Terms of use";
+
+            Translation.Get(AuthenticationPanelTitleTextTranslation, "Terms of use", AuthenticationPanelTitleText);
 
             AuthenticationPanelInfoText.gameObject.SetActive(true);
             AuthenticationPanelInfoText.text = TOS;
-            
+
             AuthenticationPanelBackButton.gameObject.SetActive(true);
             AuthenticationPanelBackButton.onClick.RemoveAllListeners();
             AuthenticationPanelBackButton.onClick.AddListener(CloseAuthenticationPanel);
-            
+
             AuthenticationPanelBackButton.navigation = new Navigation{
                 mode = Navigation.Mode.Explicit,
                 selectOnRight = AuthenticationPanelAgreeButton,
@@ -374,7 +392,7 @@ namespace ModIOBrowser
             AuthenticationPanelAgreeButton.onClick.RemoveAllListeners();
             // TODO go to either steam or email auth next
             AuthenticationPanelAgreeButton.onClick.AddListener(delegate { authenticationMethodAfterAgreeingToTheTOS(); });
-            
+
             AuthenticationPanelAgreeButton.navigation = new Navigation{
                 mode = Navigation.Mode.Explicit,
                 selectOnLeft = AuthenticationPanelBackButton,
@@ -383,31 +401,30 @@ namespace ModIOBrowser
 
             SelectSelectable(AuthenticationPanelAgreeButton);
         }
-        
+
         internal void OpenAuthenticationPanel_Email()
         {
             HideAuthenticationPanelObjects();
             AuthenticationPanel.SetActive(true);
             AuthenticationMainPanel.SetActive(true);
-            
+
             AuthenticationPanelEnterEmail.SetActive(true);
             AuthenticationPanelEmailField.text = "";
-            
+
             AuthenticationPanelEmailField.navigation = new Navigation{
                 mode = Navigation.Mode.Explicit,
                 selectOnDown = AuthenticationPanelSendCodeButton
             };
-            
-            AuthenticationPanelTitleText.gameObject.SetActive(true);
-            AuthenticationPanelTitleText.text = "Email authentication";
 
-            AuthenticationPanelInfoText.gameObject.SetActive(true);
-            AuthenticationPanelInfoText.text = LastReceivedTermsOfUse.termsOfUse;
+            AuthenticationPanelTitleText.gameObject.SetActive(true);
+            Translation.Get(AuthenticationPanelTitleTextTranslation, "Email authentication", AuthenticationPanelTitleText);
+
+            AuthenticationPanelInfoText.gameObject.SetActive(false);
 
             AuthenticationPanelBackButton.gameObject.SetActive(true);
             AuthenticationPanelBackButton.onClick.RemoveAllListeners();
             AuthenticationPanelBackButton.onClick.AddListener(CloseAuthenticationPanel);
-            
+
             AuthenticationPanelBackButton.navigation = new Navigation{
                 mode = Navigation.Mode.Explicit,
                 selectOnRight = AuthenticationPanelSendCodeButton,
@@ -417,7 +434,7 @@ namespace ModIOBrowser
             AuthenticationPanelSendCodeButton.gameObject.SetActive(true);
             AuthenticationPanelSendCodeButton.onClick.RemoveAllListeners();
             AuthenticationPanelSendCodeButton.onClick.AddListener(SendEmail);
-            
+
             AuthenticationPanelSendCodeButton.navigation = new Navigation{
                 mode = Navigation.Mode.Explicit,
                 selectOnLeft = AuthenticationPanelBackButton,
@@ -457,15 +474,15 @@ namespace ModIOBrowser
             }
 
             AuthenticationPanelTitleText.gameObject.SetActive(true);
-            AuthenticationPanelTitleText.text = "Email authentication";
+            Translation.Get(AuthenticationPanelTitleTextTranslation, "Email authentication", AuthenticationPanelTitleText);
 
             AuthenticationPanelInfoText.gameObject.SetActive(true);
-            AuthenticationPanelInfoText.text = "Once the email is received, enter the provided confidential code. It should be 5 characters long.";
-            
+            Translation.Get(AuthenticationPanelInfoTextTranslation, "Once the email is received, enter the provided confidential code. It should be 5 characters long.", AuthenticationPanelInfoText);
+
             AuthenticationPanelBackButton.gameObject.SetActive(true);
             AuthenticationPanelBackButton.onClick.RemoveAllListeners();
             AuthenticationPanelBackButton.onClick.AddListener(OpenAuthenticationPanel_Email);
-            
+
             AuthenticationPanelBackButton.navigation = new Navigation{
                 mode = Navigation.Mode.Explicit,
                 selectOnRight = AuthenticationPanelSubmitButton
@@ -474,7 +491,7 @@ namespace ModIOBrowser
             AuthenticationPanelSubmitButton.gameObject.SetActive(true);
             AuthenticationPanelSubmitButton.onClick.RemoveAllListeners();
             AuthenticationPanelSubmitButton.onClick.AddListener(SubmitAuthenticationCode);
-            
+
             AuthenticationPanelSubmitButton.navigation = new Navigation{
                 mode = Navigation.Mode.Explicit,
                 selectOnLeft = AuthenticationPanelBackButton
@@ -493,7 +510,7 @@ namespace ModIOBrowser
                 }
                 // Set the final selection change on the next frame
                 StartCoroutine(NextFrameSelectionChange(AuthenticationPanelSubmitButton));
-            } 
+            }
             // This is the block used for a regular single digit input into the field
             else if (field.Length < 2)
             {
@@ -519,27 +536,27 @@ namespace ModIOBrowser
             yield return null;
             SelectSelectable(selectable);
         }
-        
+
         internal void OpenAuthenticationPanel_Complete()
         {
             isAuthenticated = true;
-            
+
             HideAuthenticationPanelObjects();
             AuthenticationPanel.SetActive(true);
             AuthenticationMainPanel.SetActive(true);
-            
+
             AuthenticationPanelTitleText.gameObject.SetActive(true);
-            AuthenticationPanelTitleText.text = "Authentication completed";
+            Translation.Get(AuthenticationPanelTitleTextTranslation, "Authentication completed", AuthenticationPanelTitleText);
 
             AuthenticationPanelInfoText.gameObject.SetActive(true);
-            AuthenticationPanelInfoText.text = "You are now connected to the mod.io browser. You can now subscribe to mods to use in your game and track them in your Collection.";
-            
+            Translation.Get(AuthenticationPanelInfoTextTranslation, "You are now connected to the mod.io browser. You can now subscribe to mods to use in your game and track them in your Collection.", AuthenticationPanelInfoText);
+
             AuthenticationPanelCompletedButton.gameObject.SetActive(true);
-            
+
             AuthenticationPanelCompletedButton.navigation = new Navigation{
                 mode = Navigation.Mode.Explicit,
             };
-            
+
             // Update the user avatar display
             SetupUserAvatar();
 
@@ -572,13 +589,13 @@ namespace ModIOBrowser
             ModIOUnity.SubmitEmailSecurityCode(code, CodeSubmitted);
         }
 #endregion
-        
+
 #region Third party authentication submissions
         internal void SubmitSteamAuthenticationRequest()
         {
             OpenAuthenticationPanel_Waiting();
 
-            ModIOUnity.AuthenticateUserViaSteam(optionalSteamAppTicket, 
+            ModIOUnity.AuthenticateUserViaSteam(optionalSteamAppTicket,
                 optionalThirdPartyEmailAddressUsedForAuthentication,
                 LastReceivedTermsOfUse.hash,
                 delegate (Result result)
@@ -591,7 +608,7 @@ namespace ModIOBrowser
         {
             OpenAuthenticationPanel_Waiting();
 
-            ModIOUnity.AuthenticateUserViaXbox(optionalXboxToken, 
+            ModIOUnity.AuthenticateUserViaXbox(optionalXboxToken,
                 optionalThirdPartyEmailAddressUsedForAuthentication,
                 LastReceivedTermsOfUse.hash,
                 delegate (Result result)
@@ -604,7 +621,7 @@ namespace ModIOBrowser
         {
             OpenAuthenticationPanel_Waiting();
 
-            ModIOUnity.AuthenticateUserViaSwitch(optionalSwitchToken, 
+            ModIOUnity.AuthenticateUserViaSwitch(optionalSwitchToken,
                 optionalThirdPartyEmailAddressUsedForAuthentication,
                 LastReceivedTermsOfUse.hash,
                 delegate (Result result)
@@ -612,8 +629,21 @@ namespace ModIOBrowser
                     ThirdPartyAuthenticationSubmitted(result, UserPortal.Nintendo);
                 });
         }
+
+        internal void SubmitPlayStationAuthenticationRequest()
+        {
+            OpenAuthenticationPanel_Waiting();
+
+            ModIOUnity.AuthenticateUserViaPlayStation(optionalPlayStationAuthCode, 
+                optionalThirdPartyEmailAddressUsedForAuthentication,
+                LastReceivedTermsOfUse.hash,
+                delegate (Result result)
+                {
+                    ThirdPartyAuthenticationSubmitted(result, UserPortal.PlayStationNetwork);
+                });
+        }
 #endregion // Third party authentication submissions
-        
+
 #region Receive Response
         internal void EmailSent(Result result)
         {
@@ -625,16 +655,18 @@ namespace ModIOBrowser
             {
                 if(result.IsInvalidEmailAddress())
                 {
-                    OpenAuthenticationPanel_Problem("That does not appear to be a valid email. Please check your email and try again."
-                                                    + " address.", "Invalid email address",
+
+                    OpenAuthenticationPanel_Problem(
+                        "That does not appear to be a valid email. Please check your email address and try again.",
+                        "Invalid email address",
                         OpenAuthenticationPanel_Email);
-                } 
+                }
                 else
                 {
                     Debug.LogError("something else wrong email");
-                    OpenAuthenticationPanel_Problem("Make sure you entered a valid email address and"
-                                                    + " that you are still connected to the internet"
-                                                    + " before trying again.", "Something went wrong",
+                    OpenAuthenticationPanel_Problem(
+                        "Make sure you entered a valid email address and that you are still connected to the internet before trying again.",
+                        "Something went wrong",
                         OpenAuthenticationPanel_Email);
                 }
             }
@@ -649,10 +681,10 @@ namespace ModIOBrowser
             }
             else
             {
-                OpenAuthenticationPanel_Problem("Unable to connect to the mod.io server. Please"
-                                                + " check your internet connection before retrying.",
-                                                "Something went wrong",
-                                                CloseAuthenticationPanel);
+                OpenAuthenticationPanel_Problem(
+                    "Unable to connect to the mod.io server. Please check your internet connection before retrying.",
+                    "Something went wrong",
+                    CloseAuthenticationPanel);
             }
         }
 
@@ -672,11 +704,10 @@ namespace ModIOBrowser
             {
                 if (result.IsInvalidSecurityCode())
                 {
-                    OpenAuthenticationPanel_Problem("The code that you entered did not match the "
-                                                    + "one sent to the email address you provided. "
-                                                    + "Please check you entered the code correctly.",
-                                                    "Invalid code",
-                                                    OpenAuthenticationPanel_Code);
+                    OpenAuthenticationPanel_Problem(
+                        "The code that you entered did not match the one sent to the email address you provided. Please check you entered the code correctly.",
+                        "Invalid code",
+                        OpenAuthenticationPanel_Code);
                 }
                 else
                 {
@@ -693,7 +724,7 @@ namespace ModIOBrowser
                 if(link.name == "Terms of Use")
                 {
                     termsOfUseURL = link.url;
-                } 
+                }
                 else if(link.name == "Privacy Policy")
                 {
                     privacyPolicyURL = link.url;
@@ -717,12 +748,11 @@ namespace ModIOBrowser
             else
             {
                 currentAuthenticationPortal = UserPortal.None;
-                OpenAuthenticationPanel_Problem("We were unable to validate your credentials with"
-                                                + " the mod.io server.");
+                OpenAuthenticationPanel_Problem("We were unable to validate your credentials with the mod.io server.");
             }
         }
 #endregion
-        
+
 #region Avatar
         internal async void SetupUserAvatar()
         {
@@ -734,6 +764,9 @@ namespace ModIOBrowser
                 case UserPortal.XboxLive:
                     SetAvatarSprite(XboxAvatar);
                     break;
+                case UserPortal.PlayStationNetwork:
+                    SetAvatarSprite(PlayStationAvatar);
+                    break;
                 default:
                     await GetCurrentUser();
                     DownloadAvatar();
@@ -744,7 +777,7 @@ namespace ModIOBrowser
         internal async Task GetCurrentUser()
         {
             ResultAnd<UserProfile> resultAnd = await ModIOUnityAsync.GetCurrentUser();
-            
+
             if (resultAnd.result.Succeeded())
             {
                 currentUserProfile = resultAnd.value;
@@ -754,11 +787,11 @@ namespace ModIOBrowser
         internal async void DownloadAvatar()
         {
             ResultAnd<Texture2D> resultTexture = await ModIOUnityAsync.DownloadTexture(currentUserProfile.avatar_50x50);
-            
+
             if(resultTexture.result.Succeeded())
             {
                 // convert texture 2D into sprite for the Image component
-                Sprite sprite = Sprite.Create(resultTexture.value, 
+                Sprite sprite = Sprite.Create(resultTexture.value,
                     new Rect(0, 0, resultTexture.value.width, resultTexture.value.height), Vector2.zero);
                 SetAvatarSprite(sprite);
             }
@@ -777,11 +810,11 @@ namespace ModIOBrowser
                 // turn on main avatar image
                 Avatar_Main.gameObject.SetActive(true);
                 Avatar_DownloadQueue.gameObject.SetActive(true);
-                
+
                 // turn off platform icon
                 PlatformIcon_Main.transform.parent.gameObject.SetActive(false);
                 PlatformIcon_DownloadQueue.transform.parent.gameObject.SetActive(false);
-                
+
                 // change sprites
                 Avatar_Main.sprite = sprite;
                 Avatar_DownloadQueue.sprite = sprite;
@@ -791,11 +824,11 @@ namespace ModIOBrowser
                 // turn off main avatar icons
                 Avatar_Main.gameObject.SetActive(false);
                 Avatar_DownloadQueue.gameObject.SetActive(false);
-                
+
                 // turn on platform icon
                 PlatformIcon_Main.transform.parent.gameObject.SetActive(true);
                 PlatformIcon_DownloadQueue.transform.parent.gameObject.SetActive(true);
-                
+
                 // change sprites
                 PlatformIcon_Main.sprite = sprite;
                 PlatformIcon_DownloadQueue.sprite = sprite;

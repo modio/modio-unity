@@ -436,7 +436,7 @@ namespace ModIO.Implementation
             long fileId = job.mod.modObject.modfile.id;
             
             // Check for enough storage space
-            if(!DataStorage.temp.IsThereEnoughDiskSpaceFor(job.mod.modObject.modfile.filesize))
+            if(!await DataStorage.temp.IsThereEnoughDiskSpaceFor(job.mod.modObject.modfile.filesize))
             {
                 Logger.Log(LogLevel.Error, $"INSUFFICIENT STORAGE FOR DOWNLOAD [{modId}_{fileId}]");
                 notEnoughStorageMods.Add((ModId)modId);
@@ -555,7 +555,7 @@ namespace ModIO.Implementation
             // Check for enough storage space
             // TODO update this later when we can confirm actual extracted file size
             // For now we are just making sure we have double the available space of the archive size as the estimate for the extracted file
-            if(!DataStorage.persistent.IsThereEnoughDiskSpaceFor(job.mod.modObject.modfile.filesize * 2L))
+            if(!await DataStorage.persistent.IsThereEnoughDiskSpaceFor(job.mod.modObject.modfile.filesize * 2L))
             {
                 Logger.Log(LogLevel.Error, $"INSUFFICIENT STORAGE FOR INSTALLATION [{modId}_{fileId}]");
                 notEnoughStorageMods.Add((ModId)modId);
@@ -638,9 +638,9 @@ namespace ModIO.Implementation
                 if(currentJob.zipOperation != null)
                 {
                     currentJob.zipOperation.Cancel();
-                    if(currentJob.zipOperation.Operation != null)
+                    if(currentJob.zipOperation.GetOperation() != null)
                     {
-                        await currentJob.zipOperation.Operation;
+                        await currentJob.zipOperation.GetOperation();
                     }
                 }
                 // shutdown download request if one exists
@@ -727,7 +727,6 @@ namespace ModIO.Implementation
 
         static async Task<ModManagementJob> GetNextModManagementJob()
         {
-
             // Early out
             if(!ShouldModManagementBeRunning())
             {
@@ -739,7 +738,14 @@ namespace ModIO.Implementation
             // enumerate over UserData subscribedMods
             // check if mod is still subscribed
             ModManagementJob job = null;
-            uninstalledModsWithNoUserSubscriptions.Clear();
+            if(uninstalledModsWithNoUserSubscriptions == null)
+            {
+                uninstalledModsWithNoUserSubscriptions = new List<ModId>();
+            } 
+            else
+            {
+                uninstalledModsWithNoUserSubscriptions.Clear();
+            }
 
             // TODO I'm going to try and benchmark this later to see if it causes blocking issues
             // (what are the limits in mod count?)
@@ -761,7 +767,7 @@ namespace ModIO.Implementation
                         await GetNextJobTypeForModCollectionEntry(mod);
 
                     if(jobType != ModManagementOperationType.None_AlreadyInstalled
-                        && jobType != ModManagementOperationType.None_ErrorOcurred)
+                       && jobType != ModManagementOperationType.None_ErrorOcurred)
                     {
                         if(jobType == ModManagementOperationType.Install)
                         {

@@ -22,18 +22,18 @@ namespace ModIOBrowser
         [SerializeField] GameObject SearchResultsListItemPrefab;
         [SerializeField] Transform SearchResultsListItemParent;
         [SerializeField] Scrollbar SearchResultsScrollBar;
-        [SerializeField] TMP_Text SearchResultsFoundText;
-        [SerializeField] TMP_Text SearchResultsMainTagName;
+        [SerializeField] TMP_Text SearchResultsFoundText; 
+        [SerializeField] TMP_Text SearchResultsMainTagName; 
         [SerializeField] TMP_Text SearchResultsMainTagCategoryName;
         [SerializeField] GameObject SearchResultsMainTag;
         [SerializeField] TMP_Text SearchResultsNumberOfOtherTags;
         [SerializeField] GameObject SearchResultsSearchPhrase;
-        [SerializeField] TMP_Text SearchResultsSearchPhraseText;
+        [SerializeField] TMP_Text SearchResultsSearchPhraseText; 
         [SerializeField] TMP_Dropdown SearchResultsSortByDropdown;
         [SerializeField] GameObject SearchResultsEndOfResults;
         [SerializeField] GameObject SearchResultsNoResultsText;
-        [SerializeField] TMP_Text SearchResultsEndOfResultsHeader;
-        [SerializeField] TMP_Text SearchResultsEndOfResultsText;
+        [SerializeField] TMP_Text SearchResultsEndOfResultsHeader; 
+        [SerializeField] TMP_Text SearchResultsEndOfResultsText; 
         [SerializeField] Selectable SearchResultsRefineFilter;
         [SerializeField] Selectable SearchResultsFilterBy;
         [SerializeField] GameObject ProcessingAnimation;
@@ -115,9 +115,9 @@ namespace ModIOBrowser
             // Reset results while waiting
             SearchResultsMainTag.SetActive(false);
             SearchResultsSearchPhrase.SetActive(false);
-            SearchResultsFoundText.text = "";
-            SearchResultsEndOfResultsHeader.text = "";
-            SearchResultsEndOfResultsText.text = "";
+            Translation.Get(SearchResultsFoundTextTranslation, "", SearchResultsFoundText);
+            Translation.Get(SearchResultsEndOfResultsHeaderTranslation, "", SearchResultsEndOfResultsHeader);
+            Translation.Get(SearchResultsEndOfResultsTextTranslation, "", SearchResultsEndOfResultsText);
             
             searchResultsStatus = SearchResultsStatus.GettingFirstResults;
             ListItem.HideListItems<SearchResultListItem>();
@@ -252,7 +252,7 @@ namespace ModIOBrowser
                     
                     SearchResultsMainTag.SetActive(true);
 
-                    SearchResultsNumberOfOtherTags.text = $"and {searchFilterTags.Count - 1} other tags";
+                    Translation.Get(SearchResultsNumberOfOtherTagsTranslation, "and {number} other tags", SearchResultsNumberOfOtherTags, $"{searchFilterTags.Count - 1}");
                     
                     LayoutRebuilder.ForceRebuildLayoutImmediate(SearchResultsMainTag.transform.parent as RectTransform);
                 }
@@ -285,23 +285,28 @@ namespace ModIOBrowser
                 else
                 {
                     long numberOfDisplayedMods = modPage.totalSearchResultsFound > 200 ? 200 : modPage.totalSearchResultsFound;
-                    SearchResultsEndOfResultsHeader.text = $"You've gone through {numberOfDisplayedMods} mods";
-                    SearchResultsEndOfResultsText.text = "Let's refine your search if you haven't"
-                                                         + " found what you were looking for.";
+                    Translation.Get(SearchResultsEndOfResultsHeaderTranslation, "You've gone through {number} mods", SearchResultsEndOfResultsHeader, $"{numberOfDisplayedMods}");
+                    Translation.Get(SearchResultsEndOfResultsTextTranslation, "Let's refine your search if you haven't found what you were looking for.", SearchResultsEndOfResultsText);
                     SearchResultsNoResultsText.SetActive(false);
                     SearchResultsEndOfResults.SetActive(true);
                 }
 
-                SearchResultsFoundText.text = string.IsNullOrWhiteSpace(lastUsedSearchPhrase)
-                    ? $"{numberOfResults} Mods found"
-                    : $"{numberOfResults} Mods found for \"{lastUsedSearchPhrase}\"";
+                //Translation.Get(SearchResultsFoundTextTranslation, "", SearchResultsFoundText);
+                if(string.IsNullOrWhiteSpace(lastUsedSearchPhrase))
+                {
+                    Translation.Get(SearchResultsFoundTextTranslation, "{num} Mods found", SearchResultsFoundText, $"{numberOfResults}");
+                }
+                else
+                {
+                    Translation.Get(SearchResultsFoundTextTranslation, "{num} Mods found for {lastUsedSearchPhrase}", SearchResultsFoundText, $"{numberOfResults}", $"\"{lastUsedSearchPhrase}\""); 
+                }
 
                 // Create list items for the mod profiles we now have
                 PopulateSearchResults(modPage.modProfiles);                
             }
             else
             {
-                SearchResultsFoundText.text = $"A problem occurred";
+                Translation.Get(SearchResultsFoundTextTranslation, "A problem occurred", SearchResultsFoundText);
             }
 
             ProcessingAnimation.gameObject.SetActive(false);

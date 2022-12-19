@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using UnityEngine;
 
@@ -12,14 +13,43 @@ namespace ModIO.Implementation.Platform
     /// <summary>SystemIO implementation of the various data services.</summary>
     internal class SystemIODataService : IUserDataService, IPersistentDataService, ITempDataService
     {
-        /// <summary>Root directory for all data services.</summary>
-        public readonly static string GlobalRootDirectory =
-            $@"{Application.persistentDataPath}/mod.io";
-        
-        public readonly static string TempRootDirectory =
-            $@"{Application.temporaryCachePath}/mod.io";
-        
+#region Directories
+#if UNITY_STANDALONE_WIN
+
+        /// <summary>Root directory for persistent data.</summary>
+        public static readonly string PersistentDataRootDirectory =
+            Environment.GetEnvironmentVariable("public") + @"/mod.io";
+
+        /// <summary>Root directory for User Specific data.</summary>
+        public readonly static string UserRootDirectory =
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"/mod.io";
+
+#else
+    /// <summary>Root directory for persistent data.</summary>
+        public static readonly string PersistentDataRootDirectory =
+        $"{Application.persistentDataPath}/mod.io";
+
+        /// <summary>Root directory for User Specific data.</summary>
+        public readonly static string UserRootDirectory =
+            $"{Application.persistentDataPath}/UserData/mod.io";
+#endif
+
+        /// <summary>Root directory for Temporary data.</summary>
+        public readonly static string TempRootDirectory = Application.temporaryCachePath;
+
+        /// <summary>File path for the global settings file.</summary>
+        public static readonly string GlobalSettingsFilePath =
+            $"{UserRootDirectory}/globalsettings.json";
+
+#endregion
+
 #region Data
+        /// <summary>Global Settings data structure.</summary>
+        [Serializable]
+        internal struct GlobalSettingsFile
+        {
+            public string RootLocalStoragePath;
+        }
 
         /// <summary>Root directory for the data service.</summary>
         string rootDir;
@@ -42,8 +72,7 @@ namespace ModIO.Implementation.Platform
         {
             // TODO(@jackson): Make valid userProfileIdentifier
 
-            rootDir = $"{GlobalRootDirectory}/{gameId.ToString("00000")}/{userProfileIdentifier}";
-
+            rootDir = $"{UserRootDirectory}/{gameId.ToString("00000")}/{userProfileIdentifier}";
             Result result = SystemIOWrapper.CreateDirectory(rootDir);
 
             if(result.Succeeded())
@@ -63,56 +92,72 @@ namespace ModIO.Implementation.Platform
             return result;
         }
 
+
         /// <summary>Init as IPersistentDataService.</summary>
         async Task<Result> IPersistentDataService.InitializeAsync(long gameId,
                                                                   BuildSettings settings)
         {
-            // TODO Revisit this. Currently disabled custom root directory provided by the user
-            // string desiredRootDir = null;
-            // Result result;
-            //
-            // ResultAnd<byte[]> settingsRead =
-            //     await SystemIOWrapper.ReadFileAsync(SystemIODataLayout.GlobalSettingsFilePath);
-            // result = settingsRead.result;
-            //
-            // SystemIODataLayout.GlobalSettingsFile gsData;
-            // if(result.Succeeded()
-            //    && IOUtil.TryParseUTF8JSONData(settingsRead.value, out gsData, out result))
-            // {
-            //     Logger.Log(
-            //         LogLevel.Verbose,
-            //         "Persistent Root Directory loaded from existing globalsettings.json");
-            //     desiredRootDir = gsData.RootLocalStoragePath;
-            // }
-            // else if(result.code == ResultCode.IO_FileDoesNotExist
-            //         || result.code == ResultCode.IO_DirectoryDoesNotExist)
-            // {
-            //     desiredRootDir = GlobalRootDirectory;
-            //
-            //     gsData = new SystemIODataLayout.GlobalSettingsFile
-            //     {
-            //         RootLocalStoragePath = desiredRootDir,
-            //     };
-            //
-            //     byte[] fileData = IOUtil.GenerateUTF8JSONData(gsData);
-            //
-            //     // ignore the result
-            //     await SystemIOWrapper.WriteFileAsync(SystemIODataLayout.GlobalSettingsFilePath,
-            //         fileData);
-            //     Logger.Log(LogLevel.Verbose,
-            //         "Persistent Root Directory written to new globalsettings.json");
-            // }
-            // else // something else happened...
-            // {
-            //     string message =
-            //         $"Unable to initialize the persistent data service. globalsettings.json could not be parsed to load in the root data directory. FilePath: {SystemIODataLayout.GlobalSettingsFilePath} - Result: [{result.code.ToString()}]";
-            //     Logger.Log(LogLevel.Error, message);
-            //
-            //     return result;
-            // }
+            // Default root directory
+            rootDir = $"{PersistentDataRootDirectory}/{gameId.ToString()}";
+            // If standalone PC look for a user override root directory
+#if UNITY_STANDALONE
+            string desiredRootDir = rootDir;
+            Result result;
 
-            // TODO(@jackson): Test dir for validity and access
-            rootDir = $"{GlobalRootDirectory}/{gameId.ToString()}";
+            ResultAnd<byte[]> settingsRead =
+                await SystemIOWrapper.ReadFileAsync(GlobalSettingsFilePath);
+            result = settingsRead.result;
+
+            GlobalSettingsFile gsData;
+
+            var userDataPath = UserData.instance?.rootLocalStoragePath;
+            if(!string.IsNullOrEmpty(userDataPath))
+            {
+                Logger.Log(
+                    LogLevel.Verbose,
+                    "RootLocalStoragePath loaded from existing user.json"
+                    + $"\ndirectory={userDataPath}");
+                desiredRootDir = userDataPath;
+            }
+            else if(result.Succeeded()
+               && IOUtil.TryParseUTF8JSONData(settingsRead.value, out gsData, out result))
+            {
+                Logger.Log(
+                    LogLevel.Verbose,
+                    "RootLocalStoragePath loaded from existing globalsettings.json"
+                    + $"\ndirectory={gsData.RootLocalStoragePath}");
+                desiredRootDir = $"{gsData.RootLocalStoragePath}/{gameId.ToString()}";
+            }
+            else if(result.code == ResultCode.IO_FileDoesNotExist
+                    || result.code == ResultCode.IO_DirectoryDoesNotExist)
+            {
+                gsData = new GlobalSettingsFile
+                {
+                    RootLocalStoragePath = PersistentDataRootDirectory,
+                };
+
+                byte[] fileData = IOUtil.GenerateUTF8JSONData(gsData);
+
+                // ignore the result
+                await SystemIOWrapper.WriteFileAsync(GlobalSettingsFilePath,
+                    fileData);
+
+                Logger.Log(LogLevel.Verbose,
+                    "RootLocalStoragePath written to new globalsettings.json");
+            }
+            else // something else happened...
+            {
+                string message =
+                    $"Unable to initialize the persistent data service. globalsettings.json could"
+                    + $" not be parsed to load in the root data directory. FilePath: "
+                    + $"{GlobalSettingsFilePath} - Result: [{result.code.ToString()}]";
+                Logger.Log(LogLevel.Error, message);
+
+                return result;
+            }
+
+            rootDir = desiredRootDir;
+#endif
 
             Logger.Log(LogLevel.Verbose,
                 "Initialized SystemIODataService for Persistent Data: " + rootDir);
@@ -124,7 +169,7 @@ namespace ModIO.Implementation.Platform
         async Task<Result> ITempDataService.InitializeAsync(long gameId, BuildSettings settings)
         {
             // TODO(@jackson): Test dir creation
-            rootDir = $@"{TempRootDirectory}/mod.io/{gameId.ToString()}";
+            rootDir = $@"{TempRootDirectory}/{gameId.ToString()}";
 
             Logger.Log(LogLevel.Verbose,
                        "Initialized SystemIODataService for Temp Data: " + rootDir);
@@ -139,41 +184,36 @@ namespace ModIO.Implementation.Platform
         /// <summary>Opens a file stream for reading.</summary>
         public ModIOFileStream OpenReadStream(string filePath, out Result result)
         {
-            // DebugUtil.AssertPathValid(filePath, rootDir);
             return SystemIOWrapper.OpenReadStream(filePath, out result);
         }
 
         /// <summary>Opens a file stream for writing.</summary>
         public ModIOFileStream OpenWriteStream(string filePath, out Result result)
         {
-            // DebugUtil.AssertPathValid(filePath, rootDir);
             return SystemIOWrapper.OpenWriteStream(filePath, out result);
         }
 
         /// <summary>Reads an entire file asynchronously.</summary>
         public async Task<ResultAnd<byte[]>> ReadFileAsync(string filePath)
         {
-            // DebugUtil.AssertPathValid(filePath, rootDir);
             return await SystemIOWrapper.ReadFileAsync(filePath);
         }
 
         /// <summary>Writes an entire file asynchronously.</summary>
         public async Task<Result> WriteFileAsync(string filePath, byte[] data)
         {
-            // DebugUtil.AssertPathValid(filePath, rootDir);
             return await SystemIOWrapper.WriteFileAsync(filePath, data);
         }
 
-        /// <summary>Deletes a file.</summary>
-        public async Task<Result> DeleteFileAsync(string filePath)
+        /// <summary> Deletes a file </summary>
+        public Result DeleteFile(string filePath)
         {
-            throw new NotImplementedException();
+            return SystemIOWrapper.DeleteFileGetResult(filePath);
         }
 
         /// <summary>Deletes a directory and its contents recursively.</summary>
         public Result DeleteDirectory(string directoryPath)
         {
-            // DebugUtil.AssertPathValid(directoryPath, rootDir);
             return SystemIOWrapper.DeleteDirectory(directoryPath);
         }
 
@@ -181,13 +221,13 @@ namespace ModIO.Implementation.Platform
         {
             return SystemIOWrapper.MoveDirectory(directoryPath, newDirectoryPath);
         }
-        
+
         public bool TryCreateParentDirectory(string path)
         {
             return SystemIOWrapper.TryCreateParentDirectory(path, out Result _);
         }
 
-        public bool IsThereEnoughDiskSpaceFor(long bytes)
+        public async Task<bool> IsThereEnoughDiskSpaceFor(long bytes)
         {
             // Not implemented for this platform
             return true;
@@ -200,7 +240,6 @@ namespace ModIO.Implementation.Platform
         /// <summary>Determines whether a file exists.</summary>
         public bool FileExists(string filePath)
         {
-            // DebugUtil.AssertPathValid(filePath, rootDir);
             return SystemIOWrapper.FileExists(filePath, out Result r);
         }
 
@@ -208,14 +247,12 @@ namespace ModIO.Implementation.Platform
         public async Task<ResultAnd<(long fileSize, string fileHash)>> GetFileSizeAndHash(
             string filePath)
         {
-            // DebugUtil.AssertPathValid(filePath, rootDir);
             return await SystemIOWrapper.GetFileSizeAndHash(filePath);
         }
 
         /// <summary>Determines whether a directory exists.</summary>
         public bool DirectoryExists(string directoryPath)
         {
-            // DebugUtil.AssertPathValid(directoryPath, rootDir);
             return SystemIOWrapper.DirectoryExists(directoryPath);
         }
 
