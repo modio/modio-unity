@@ -5,13 +5,15 @@ using System.IO;
 using TMPro;
 using System.Linq;
 using System;
-using static ModIO.Utility;
+using ModIO.Util;
+using JetBrains.Annotations;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
 namespace ModIOBrowser.Implementation
 {
+
     /// <summary>
     /// How to use:
     ///      
@@ -57,23 +59,20 @@ namespace ModIOBrowser.Implementation
 
         public bool markUntranslatedStringsWithRed = true;
         
-        public List<TextMeshProUGUI> translated;
 
         private TranslatedLanguages Language;
         private List<string> originalTranslationKeyCache = new List<string>();
         private Dictionary<string, string> translations = new Dictionary<string, string>();
         public string attemptToTranslate;
         public List<TextAsset> translationsTextAssets;
-        
-        protected void Start()
+
+        protected override void Awake()
         {
+            base.Awake();
+
             Language = Browser.Instance.uiConfig.Language;
-            Debug.Log($"Language: {Language}");
 
-            CacheTranslatedKeys();
             ForceChangeLanguage(Language);
-
-            Translation t = null;
         }
 
         /// <summary>
@@ -112,12 +111,19 @@ namespace ModIOBrowser.Implementation
         /// 
         /// </summary>
         /// <returns>The translation, or the key of the translation on fail.</returns>
-        public string Get(string key, params string[] values) => Get(translations, key, values);
+        public string Get(string key, params string[] values) =>
+            Get(translations, key, values);
 
-        private void CacheTranslatedKeys() => translated.ForEach(x => originalTranslationKeyCache.Add(x.text));
 
         public TextAsset GetTranslationResource(TranslatedLanguages language) =>
             translationsTextAssets.FirstOrDefault(x => x.name == language.ToString());
+
+        private static string GetQuotedString(string input)
+        {
+            int startIndex = input.IndexOf('"');
+            int endIndex = input.LastIndexOf('"');
+            return input.Substring(startIndex + 1, endIndex - startIndex - 1);
+        }
 
         /// <summary>
         /// Returns a dictionary with the <keys, translations> using the specified language
@@ -132,25 +138,37 @@ namespace ModIOBrowser.Implementation
                 StringReader reader = new StringReader(textAsset.text);
                 string key = null;
                 string line;
+                string text = "";
                 while((line = reader.ReadLine()) != null)
                 {
-                    if(line.StartsWith("msgid \""))
+                    if(line.StartsWith("msgid"))
                     {
-                        key = line.Substring(7, line.Length - 8);
+                        key = null;
+                        key = GetQuotedString(line);
+                        text = "";
                     }
-                    else if(line.StartsWith("msgstr \"") && key != null)
+                    else if(line.StartsWith("msgstr") && key != null)
                     {
-                        string val = line.Substring(8, line.Length - 9).Trim();
+                        text = GetQuotedString(line);
 
                         if(translations.ContainsKey(key))
                         {
                             Debug.LogWarning($"Warning: value for {key} - {translations[key]} already exists");
-                            translations[key] = val;
+                            translations[key] = text;
                         }
                         else
-                            translations.Add(key, val);
+                            translations.Add(key, text);
 
-                        key = null;
+                    }
+                    else if(line.StartsWith("\"")) 
+                    {
+                        //Multi-line input, just add to translation
+                        text += "\n" + GetQuotedString(line);
+                        translations[key] = text;
+                    }
+                    else if(line.StartsWith("#"))
+                    {
+                        //comment, ignore
                     }
                 }
 
@@ -168,11 +186,6 @@ namespace ModIOBrowser.Implementation
         /// </summary>
         private void ApplyTranslations()
         {
-            for(int i = 0; i < translated.Count; i++)
-            {
-                translated[i].text = Get(originalTranslationKeyCache[i]);
-            }
-
             SimpleMessageHub.Instance.Publish(new MessageUpdateTranslations());
         }
 
@@ -188,13 +201,13 @@ namespace ModIOBrowser.Implementation
                 translatable.SetTranslation(translation);
                 return;
             }
-
+#if UNITY_EDITOR
             if(markUntranslatedStringsWithRed)
             {
                 translatable.MarkAsUntranslated();
             }
-
-            Debug.LogWarning($"The translation for {translatable.GetReference()} on gameobject identifier {translatable.Identifier} is missing.");
+#endif
+            Debug.LogWarning($"The translation for {translatable.GetReference()} on gameobject identifier {translatable.Identifier} path: {translatable.TransformPath}");
         }
 
         /// <summary>
@@ -264,6 +277,7 @@ namespace ModIOBrowser.Implementation
         public static string AppendTranslation(TranslatedLanguages language, string keyAndContent)
         {
             TextAsset textAsset = Instance.GetTranslationResource(language);
+            keyAndContent = keyAndContent.Trim();
             string addition = $"\nmsgid \"{keyAndContent}\"\nmsgstr \"{keyAndContent}\" \n";
 
             File.WriteAllText(AssetDatabase.GetAssetPath(textAsset), textAsset.text + addition);
@@ -279,7 +293,7 @@ namespace ModIOBrowser.Implementation
         public void TestChangeLanguageToSwedishRuntimeOnly()
         {
             Language = TranslatedLanguages.Swedish;
-            ChangeLanguage(Language);
+            ForceChangeLanguage(Language);
         }
 
         /// <summary>
@@ -289,34 +303,51 @@ namespace ModIOBrowser.Implementation
         public void TestChangeLanguageToEnglishRuntimeOnly()
         {
             Language = TranslatedLanguages.English;
-            ChangeLanguage(Language);
+            ForceChangeLanguage(Language);
         }
-
-
-        /// <summary>
-        /// Track down any errors in the translations list, and compile and show a list of them.
-        /// This includes getting a handy transform path to the erroneous object.
-        /// </summary>
+        
         [ExposeMethodInEditor]
-        public void TrackDownErrors()
+        public void AttemptToTranslateInput()
         {
-
-            Dictionary<string, string> translations = BuildLanguageDictionary(TranslatedLanguages.English);
-            int errorCount = 0;
-            var s = "Translation Errors Report\n";
-            foreach(TextMeshProUGUI item in translated)
-            {
-                string translation = Get(translations, item.text);
-                if(translation.Contains("<color"))
-                {
-                    s += $"\n\nExpected error with translation \"{item.text}\"\nPath: {UtilityBrowser.FullPath(item.transform)}";
-                    errorCount++;
-                }
-            }
-
-            Debug.LogError($"{s}\n\nErrors: {errorCount}");
+            Debug.Log("Attempting to translate input");
+            var output = Get(attemptToTranslate);
+            Debug.Log(output);
         }
 
+        [Header("Debug")]
+        public List<DebugUntranslatedStrings> untranslatedStringsRuntime;
+
+        [Serializable]
+        public class DebugUntranslatedStrings
+        {
+            public string name;
+            public TextMeshProUGUI item;
+
+            public override string ToString() => $"[{item.name}] {item.text}\n{item.transform.FullPath()}";
+        }
+
+        [ExposeMethodInEditor]
+        public void TrackDownUntranslatedStringsRuntime()
+        {
+            untranslatedStringsRuntime = Utility.FindEverythingInScene<TextMeshProUGUI>().Select(x =>
+            {
+                if(x.GetComponent<Translatable>() == null)
+                {
+                    var v = new DebugUntranslatedStrings
+                    {
+                        name = $"[{x.name}] {x.text}",
+                        item = x
+                    };
+                    return v;
+                }
+
+                return null;
+            })
+            .Where(x => x != null)
+            .ToList();
+
+            Debug.Log($"There are {untranslatedStringsRuntime.Count} TextMeshProUGUIs that are untranslated. You can see them in the list untranslatedStringsRuntime.\nSome of them are likely translated directly via code.");
+        }
 #endif
 
     }

@@ -13,6 +13,14 @@ namespace ModIO
     [System.Serializable]
     public class BuildSettings
     {
+        public BuildSettings() { }
+        public BuildSettings(BuildSettings buildSettings)
+        {
+            this.logLevel = buildSettings.logLevel;
+            this.userPortal = buildSettings.userPortal;
+            this.requestCacheLimitKB = buildSettings.requestCacheLimitKB;
+        }
+        
         /// <summary>Level to log at.</summary>
         public LogLevel logLevel;
 

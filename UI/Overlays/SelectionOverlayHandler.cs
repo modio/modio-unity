@@ -1,27 +1,27 @@
 ﻿using ModIO;
+using ModIO.Util;
 using UnityEngine;
-using static ModIO.Utility;
 
 namespace ModIOBrowser.Implementation
 {
     internal class SelectionOverlayHandler : SimpleMonoSingleton<SelectionOverlayHandler>
     {
         [Header("Selection Overlay Objects")]
-        [SerializeField] BrowserModListItem_Overlay BrowserModListItemOverlay;
+        [SerializeField] HomeModListItem_Overlay homeModListItemOverlay;
         public SearchResultListItem_Overlay SearchResultListItemOverlay;
         [SerializeField] GameObject CollectionListItemOverlay;
         [SerializeField] GameObject SearchModListItemOverlay;
 
         public void SetBrowserModListItemOverlayActive(bool state)
         {
-            BrowserModListItemOverlay?.gameObject.SetActive(state);
+            homeModListItemOverlay?.gameObject.SetActive(state);
         }
 
         public static bool TryToOpenMoreOptionsForBrowserOverlayObject()
         {
-            if(Instance.BrowserModListItemOverlay.gameObject.activeSelf)
+            if(Instance.homeModListItemOverlay.gameObject.activeSelf)
             {
-                Instance.BrowserModListItemOverlay.ShowMoreOptions();
+                Instance.homeModListItemOverlay.ShowMoreOptions();
                 return true;
             }
             return false;
@@ -39,9 +39,9 @@ namespace ModIOBrowser.Implementation
 
         public static bool TryAlternateForBrowserOverlayObject()
         {
-            if(Instance.BrowserModListItemOverlay.gameObject.activeSelf)
+            if(Instance.homeModListItemOverlay.gameObject.activeSelf)
             {
-                Instance.BrowserModListItemOverlay.SubscribeButton();
+                Instance.homeModListItemOverlay.SubscribeButton();
                 return true;
             }
             return false;
@@ -57,9 +57,9 @@ namespace ModIOBrowser.Implementation
             return false;
         }
 
-        public void MoveSelection(BrowserModListItem listItem)
+        public void MoveSelection(HomeModListItem listItem)
         {
-            BrowserModListItemOverlay.Setup(listItem);
+            homeModListItemOverlay.Setup(listItem);
         }
 
         public void MoveSelection(SearchResultListItem listItem)
@@ -67,31 +67,31 @@ namespace ModIOBrowser.Implementation
             SearchResultListItemOverlay.Setup(listItem);
         }
 
-        public void Deselect(BrowserModListItem listItem)
+        public void Deselect(HomeModListItem listItem)
         {
             // If the context menu is open, dont hide the overlay
-            if(Browser.Instance.contextMenu.activeSelf)
+            if(ModioContextMenu.Instance.ContextMenu.activeSelf)
             {
                 return;
             }
-            if(BrowserModListItemOverlay != null
-               && BrowserModListItemOverlay.listItemToReplicate == listItem
-               && !Browser.mouseNavigation)
+            if(homeModListItemOverlay != null
+               && homeModListItemOverlay.listItemToReplicate == listItem
+               && !InputNavigation.Instance.mouseNavigation)
             {
-                BrowserModListItemOverlay?.gameObject.SetActive(false);
+                homeModListItemOverlay?.gameObject.SetActive(false);
             }
         }
 
         public void Deselect(SearchResultListItem listItem)
         {
             // If the context menu is open, dont hide the overlay
-            if(Browser.Instance.contextMenu.activeSelf)
+            if(ModioContextMenu.Instance.ContextMenu.activeSelf)
             {
                 return;
             }
             if(SearchResultListItemOverlay != null
                && SearchResultListItemOverlay.listItemToReplicate == listItem
-               && !Browser.mouseNavigation)
+               && !InputNavigation.Instance.mouseNavigation)
             {
                 SearchResultListItemOverlay?.gameObject.SetActive(false);
             }

@@ -35,7 +35,7 @@ namespace ModIOBrowser.Implementation
             {
                 return;
             }
-            Browser.Instance.OpenModDetailsPanel(profile, Browser.Instance.OpenSearchResultsWithoutRefreshing);
+            Details.Instance.Open(profile, SearchResults.Instance.OpenWithoutRefreshing);
         }
 
         void AddToStaticDictionaryCache()
@@ -77,10 +77,10 @@ namespace ModIOBrowser.Implementation
         public void OnPointerEnter(PointerEventData eventData)
         {
             // When using mouse we want to disable the viewport restraint from moving the screen
-            Browser.mouseNavigation = true;
+            InputNavigation.Instance.mouseNavigation = true;
             
             EventSystem.current.SetSelectedGameObject(null);
-            Browser.SelectSelectable(selectable, true);
+            InputNavigation.Instance.Select(selectable, true);
         }
 #endregion // MonoBehaviour
 
@@ -131,10 +131,12 @@ namespace ModIOBrowser.Implementation
         {
             if(textureAnd.result.Succeeded() && textureAnd.value != null)
             {
-                image.sprite = Sprite.Create(textureAnd.value, 
-                    new Rect(Vector2.zero, new Vector2(textureAnd.value.width, textureAnd.value.height)), Vector2.zero);
-                image.color = Color.white;
-                loadingIcon.SetActive(false);
+                QueueRunner.Instance.AddSpriteCreation(textureAnd.value, sprite =>
+                {
+                    image.sprite = sprite;
+                    image.color = Color.white;
+                    loadingIcon.SetActive(false);
+                });
             }
             else
             {

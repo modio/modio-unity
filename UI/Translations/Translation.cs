@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using ModIO.Util;
 using TMPro;
-using static ModIO.Utility;
-#if UNITY_EDITOR
-#endif
 
 namespace ModIOBrowser.Implementation
 {
@@ -84,6 +82,7 @@ namespace ModIOBrowser.Implementation
         }
 
         public string Identifier => $"TranslationUpdateable for: { reference}";
+        public string TransformPath => "N/A memory object";
         public string GetReference() => reference;
         public void MarkAsUntranslated() { set($"<color=\"red\">{reference}</color>"); }
         public void SetTranslation(string s) { set(s); }

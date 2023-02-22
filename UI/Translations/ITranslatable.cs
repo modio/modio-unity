@@ -24,5 +24,6 @@ namespace ModIOBrowser.Implementation
         /// this can be a gameobject name or path, a guid, or whatever is suitable for the task
         /// </summary>
         string Identifier { get; }
+        string TransformPath { get; }
     }
 }

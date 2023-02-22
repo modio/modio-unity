@@ -1,9 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
-namespace ModIO
+namespace ModIO.Util
 {
-    public partial class Utility
+    public static class Utility
     {
         /// <summary>
         /// changes an int64 number into something more human readable such as "12.6K"
@@ -59,58 +60,7 @@ namespace ModIO
                 return (bytes / 1024).ToString("0.0") + "KB";
             }
         }
-
-        public static int GetPreviousIndex(int current, int length)
-        {
-            if(length == 0)
-            {
-                return 0;
-            }
-
-            current -= 1;
-            if(current < 0)
-            {
-                current = length - 1;
-            }
-            return current;
-        }
-
-        public static int GetNextIndex(int current, int length)
-        {
-            if(length == 0)
-            {
-                return 0;
-            }
-
-            current += 1;
-            if(current >= length)
-            {
-                current = 0;
-            }
-            return current;
-        }
-
-        public static int GetIndex(int current, int length, int change)
-        {
-            if(length == 0)
-            {
-                return 0;
-            }
-
-            current += change;
-
-            while(current >= length)
-            {
-                current -= length;
-            }
-            while(current < 0)
-            {
-                current += length;
-            }
-
-            return current;
-        }
-
+        
         #region Comparer<T> delegates for sorting a List<ModProfile> via List<T>.Sort()
         public static int CompareModProfilesAlphabetically(SubscribedMod A, SubscribedMod B)
         {
@@ -162,11 +112,6 @@ namespace ModIO
                 return -1;
             }
             return 0;
-        }
-
-        public static int CompareModProfilesByFileSize(SubscribedMod A, SubscribedMod B)
-        {
-            return CompareModProfilesByFileSize(A.modProfile, B.modProfile);
         }
 
         public static int CompareModProfilesByFileSize(InstalledMod A, InstalledMod B)
@@ -248,15 +193,6 @@ namespace ModIO
         /// <returns>base 64 encoded string from the provided steam app ticket</returns>
         public static string EncodeEncryptedSteamAppTicket(byte[] ticketData, uint ticketSize)
         {
-            //--------------------------- Assert correct parameters ------------------------------//
-            Debug.Assert(ticketData != null);
-            Debug.Assert(ticketData.Length > 0 && ticketData.Length <= 1024,
-                "[mod.io Browser] Invalid ticketData length. Make sure you have a valid "
-                + "steam app ticket");
-            Debug.Assert(ticketSize > 0 && ticketSize <= ticketData.Length,
-                "[mod.io Browser] Invalid ticketSize. The ticketSize cannot be larger than"
-                + " the length of the app ticket and must be greater than zero.");
-
             //------------------------------- Trim the app ticket --------------------------------//
             byte[] trimmedTicket = new byte[ticketSize];
             Array.Copy(ticketData, trimmedTicket, ticketSize);
@@ -274,6 +210,24 @@ namespace ModIO
             }
 
             return base64Ticket;
+        }
+
+
+        /// <summary>
+        /// Finds everything in a loaded scene. Slow.
+        /// </summary>
+        public static List<T> FindEverythingInScene<T>() where T : Component
+        {
+            List<T> results = new List<T>();
+            T[] components = Resources.FindObjectsOfTypeAll<T>();
+            foreach(T component in components)
+            {
+                if(component.gameObject.scene.isLoaded)
+                {
+                    results.Add(component);
+                }
+            }
+            return results;
         }
     }
 }

@@ -29,7 +29,7 @@ namespace ModIO
         public DownloadReference logoImage_640x360;
         public DownloadReference logoImage_1280x720;
         public DownloadReference logoImage_Original;
-        public string creatorUsername;
+        public UserProfile creator;
         public DownloadReference creatorAvatar_50x50;
         public DownloadReference creatorAvatar_100x100;
         public DownloadReference creatorAvatar_Original;

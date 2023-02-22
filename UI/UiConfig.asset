@@ -12,5 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 064fc74cdbf63b94d96be3341706d869, type: 3}
   m_Name: UiConfig
   m_EditorClassIdentifier: 
+  GameCoreUsesVKDelegate: 1
+  PlayStationUsesVKDelegate: 1
+  SwitchUsesVKDelegate: 0
+  StandaloneUsesVKDelegate: 1
   Language: 0
   GlyphPlatform: 0
+  volume: 1

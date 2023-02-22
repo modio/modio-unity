@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
+using ModIO.Util;
 
 namespace ModIOBrowser.Implementation
 {
@@ -60,14 +61,14 @@ namespace ModIOBrowser.Implementation
 
         public void OnSelect(BaseEventData eventData)
         {
-            Browser.Instance.currentSelectedCollectionListItem = this;
+            Collection.Instance.currentSelectedCollectionListItem = this;
         }
 
         public void OnDeselect(BaseEventData eventData)
         {
-            if(Browser.Instance.currentSelectedCollectionListItem == this)
+            if(Collection.Instance.currentSelectedCollectionListItem == this)
             {
-                Browser.Instance.currentSelectedCollectionListItem = null;
+                Collection.Instance.currentSelectedCollectionListItem = null;
             }
         }
 #endregion
@@ -84,7 +85,7 @@ namespace ModIOBrowser.Implementation
         
         public override void Select()
         {
-            Browser.SelectSelectable(listItemButton);
+            InputNavigation.Instance.Select(listItemButton);
         }
 
         public override void SetViewportRestraint(RectTransform content, RectTransform viewport)
@@ -102,7 +103,7 @@ namespace ModIOBrowser.Implementation
             this.profile = profile.modProfile;
 
             Translation.Get(subscriptionStatusTranslation, "Installed", subscriptionStatus);
-            subscriptionStatus.color = scheme.LightGrey1;
+            subscriptionStatus.color = scheme.Inactive1;
 
             Translation.Get(installStatusTranslation, "Installed", installStatus);
             Translation.Get(otherSubscribersTextTranslation, "{subcount} other users", otherSubscribersText, $"{profile.subscribedUsers.Count}");
@@ -126,13 +127,13 @@ namespace ModIOBrowser.Implementation
                 Translation.Get(subscriptionStatusTranslation, "Unsubscribed", this.subscriptionStatus);
             }
 
-            this.subscriptionStatus.color = subscriptionStatus ? scheme.Green : scheme.LightGrey1;
+            this.subscriptionStatus.color = subscriptionStatus ? scheme.PositiveAccent : scheme.Inactive1;
             if(installationStatus == "Problem occurred")
             {
                 installStatus.gameObject.SetActive(false);
                 errorInstalling.SetActive(true);
 
-                if(Browser.Instance.notEnoughSpaceForTheseMods.Contains(profile.id))
+                if(Collection.Instance.notEnoughSpaceForTheseMods.Contains(profile.id))
                 {
                     Translation.Get(errorInstallingTextTranslation, "Full storage", errorInstallingText);
                 }
@@ -185,7 +186,7 @@ namespace ModIOBrowser.Implementation
             {
                 return;
             }
-            Browser.Instance.OpenModDetailsPanel(profile, Browser.Instance.OpenModCollection);
+            Details.Instance.Open(profile, Collection.Instance.Open);
         }
 
         void RemoveFromStaticDictionaryCache()
@@ -200,8 +201,11 @@ namespace ModIOBrowser.Implementation
         {
             if(textureAnd.result.Succeeded() && textureAnd.value != null)
             {
-                imageBackground.gameObject.SetActive(true);
-                image.sprite = Sprite.Create(textureAnd.value, new Rect(Vector2.zero, new Vector2(textureAnd.value.width, textureAnd.value.height)), Vector2.zero);
+                QueueRunner.Instance.AddSpriteCreation(textureAnd.value, sprite =>
+                {
+                    imageBackground.gameObject.SetActive(true);
+                    image.sprite = sprite;
+                });
             }
             else
             {
@@ -223,7 +227,7 @@ namespace ModIOBrowser.Implementation
                 action = delegate
                 {
                     ModIOUnity.RateMod(profile.id, ModRating.Positive, delegate { });
-                    Browser.Instance.CloseContextMenu();
+                    ModioContextMenu.Instance.Close();
                 }
             });
 
@@ -234,7 +238,7 @@ namespace ModIOBrowser.Implementation
                 action = delegate
                 {
                     ModIOUnity.RateMod(profile.id, ModRating.Negative, delegate { });
-                    Browser.Instance.CloseContextMenu();
+                    ModioContextMenu.Instance.Close();
                 }
             });
 
@@ -244,19 +248,19 @@ namespace ModIOBrowser.Implementation
                 nameTranslationReference = "Report",
                 action = delegate
                 {
-                    Browser.Instance.CloseContextMenu();
-                    Browser.Instance.OpenReportPanel(profile, selectable);
+                    ModioContextMenu.Instance.Close();
+                    Reporting.Instance.Open(profile, selectable);
                 }
             });
 
             // Open context menu
-            Browser.Instance.OpenContextMenu(contextMenuPosition, options, listItemButton);
+            ModioContextMenu.Instance.Open(contextMenuPosition, options, listItemButton);
         }
 
         public void UnsubscribeButton()
         {
             // TODO add 'subscribe' alternate for installed mods
-            Browser.Instance.OpenUninstallConfirmation(profile);
+            Collection.Instance.OpenUninstallConfirmation(profile);
         }
 
         internal void UpdateStatus(ModManagementEventType updatedStatus)

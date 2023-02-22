@@ -48,53 +48,87 @@ namespace ModIO.Implementation
         /// </summary>
         public static bool shuttingDown;
 
+        //Whether we auto initialize after the first call to the plugin
+        private static bool autoInitializePlugin = false;
+
+        //has the autoInitializePlugin been set using SettingsAsset
+        private static bool autoInitializePluginSet = false;
+
+        public static bool AutoInitializePlugin
+        {
+            get
+            {
+                if(!autoInitializePluginSet)
+                {
+                    var result = SettingsAsset.TryLoad(out autoInitializePlugin);
+                    if(!result.Succeeded())
+                        Logger.Log(LogLevel.Error, result.message);
+                    autoInitializePluginSet = true;
+                }
+
+                return autoInitializePlugin;
+            }
+            //Ignore the value in config
+            set
+            {
+                autoInitializePluginSet = true;
+                autoInitializePlugin = value;
+            }
+        }
+
         /// <summary>Has the plugin been initialized.</summary>
         public static bool IsInitialized(out Result result)
         {
-            if(ModIOUnityImplementation.isInitialized)
+            if(isInitialized)
             {
                 result = ResultBuilder.Success;
                 return true;
             }
-            else
+
+            if(AutoInitializePlugin)
             {
-                result = ResultBuilder.Create(ResultCode.Init_NotYetInitialized);
-                Logger.Log(
-                    LogLevel.Error,
-                    "You attempted to use a method but the plugin hasn't been initialized yet."
-                    + " Be sure to use ModIOUnity.InitializeForUser to initialize the plugin "
-                    + "before attempting this method again (Or ModIOUnityAsync.InitializeForUser).");
-                return false;
+                result = InitializeForUser("Default");
+                if(result.Succeeded())
+                {
+                    result = ResultBuilder.Success;
+                    return true;
+                }
             }
+
+            result = ResultBuilder.Create(ResultCode.Init_NotYetInitialized);
+            Logger.Log(
+                LogLevel.Error,
+                "You attempted to use a method but the plugin hasn't been initialized yet."
+                + " Be sure to use ModIOUnity.InitializeForUser to initialize the plugin "
+                + "before attempting this method again (Or ModIOUnityAsync.InitializeForUser).");
+            return false;
         }
 
         /// <summary>Checks the state of the credentials used to authenticate.</summary>
-        public static bool AreCredentialsValid(bool requireUserToken, out Result result)
+        public static bool IsAuthenticatedSessionValid(out Result result)
         {
-            if(!requireUserToken && string.IsNullOrEmpty(UserData.instance.oAuthToken))
+            // Check if we have an Auth token saved to the current UserData
+            if(UserData.instance == null || string.IsNullOrEmpty(UserData.instance.oAuthToken))
             {
-                // TODO(@jackson): Check the Game Key state here
-            }
-            else if(UserData.instance != null) // Token required or exists
-            {
-                if(string.IsNullOrEmpty(UserData.instance.oAuthToken))
-                {
-                    result = ResultBuilder.Create(ResultCode.User_NotAuthenticated);
-                    return false;
-                }
-                else if(UserData.instance.oAuthTokenWasRejected)
-                {
-                    result = ResultBuilder.Create(ResultCode.User_InvalidToken);
-                    return false;
-                }
-                // TODO(@jackson): Check expiry
-            }
-            else
-            {
-                result = ResultBuilder.Create(ResultCode.Init_NotYetInitialized);
+                Logger.Log(
+                    LogLevel.Warning,
+                    "The current session is not authenticated.");
+                result = ResultBuilder.Create(ResultCode.User_NotAuthenticated);
                 return false;
             }
 
+            // Check if a previous WebRequest was rejected due to an old token
+            if(UserData.instance.oAuthTokenWasRejected)
+            {
+                Logger.Log(
+                    LogLevel.Warning,
+                    "The auth token was rejected. This could be because it's old and may"
+                    + " need to be re-authenticated.");
+                result = ResultBuilder.Create(ResultCode.User_InvalidToken);
+                return false;
+            }
+
+            // No problems found, so therefore, it's probably still a valid session
             result = ResultBuilder.Success;
             return true;
         }
@@ -164,7 +198,7 @@ namespace ModIO.Implementation
         /// <summary>Initializes the Plugin for the given settings. Loads the
         /// state of mods installed on the system as well as the set of mods the
         /// specified user has installed on this device.</summary>
-        public static async Task<Result> InitializeForUserAsync(string userProfileIdentifier,
+        public static Result InitializeForUser(string userProfileIdentifier,
                                                                 ServerSettings serverSettings,
                                                                 BuildSettings buildSettings)
         {
@@ -177,8 +211,6 @@ namespace ModIO.Implementation
             Settings.server = serverSettings;
             Settings.build = buildSettings;
 
-            Result result = ResultBuilder.Success;
-
             // - load data services -
             // NOTE(@jackson):
             //  The order of the data module loading is important on standalone platforms.
@@ -187,42 +219,38 @@ namespace ModIO.Implementation
             //  directory override will be loaded in to the BuildSettings.extData field.
 
             // TODO(@jackson): Handle errors
-            Task<ResultAnd<IUserDataService>> userDataTask =
-                PlatformConfiguration.CreateUserDataService(userProfileIdentifier,
-                    serverSettings.gameId, buildSettings);
-            openCallbacks[callbackConfirmation] = userDataTask;
-            ResultAnd<IUserDataService> createUDS = await userDataTask;
-            openCallbacks[callbackConfirmation] = null;
+            var createUserDataServiceTask = PlatformConfiguration.CreateUserDataService(userProfileIdentifier,
+                serverSettings.gameId, buildSettings);
+            createUserDataServiceTask.ConfigureAwait(false);
+            ResultAnd<IUserDataService> createUDS = createUserDataServiceTask.Result;
+
             DataStorage.user = createUDS.value;
 
             // - load user data - user.json needs to be loaded before persistant data service
-            Task<Result> dataStorageTask = DataStorage.LoadUserData();
+            var loadUserDataTask = DataStorage.LoadUserData();
+            loadUserDataTask.ConfigureAwait(false);
+            Result result = loadUserDataTask.Result;
 
-            openCallbacks[callbackConfirmation] = dataStorageTask;
-            result = await dataStorageTask;
-            openCallbacks[callbackConfirmation] = null;
-
-            Task<ResultAnd<IPersistentDataService>> persistentDataTask =
-                PlatformConfiguration.CreatePersistentDataService(serverSettings.gameId,
-                    buildSettings);
-            openCallbacks[callbackConfirmation] = persistentDataTask;
-            ResultAnd<IPersistentDataService> createPDS = await persistentDataTask;
-            openCallbacks[callbackConfirmation] = null;
+            var createPersistentDataServiceTask = PlatformConfiguration.CreatePersistentDataService(serverSettings.gameId,
+                buildSettings);
+            createPersistentDataServiceTask.ConfigureAwait(false);
+            ResultAnd<IPersistentDataService> createPDS = createPersistentDataServiceTask.Result;
 
             DataStorage.persistent = createPDS.value;
+            var createTempDataServiceTask = PlatformConfiguration.CreateTempDataService(serverSettings.gameId,
+                buildSettings);
+            createTempDataServiceTask.ConfigureAwait(false);
+            ResultAnd<ITempDataService> createTDS = createTempDataServiceTask.Result;
 
-            Task<ResultAnd<ITempDataService>> tempDataTask =
-                PlatformConfiguration.CreateTempDataService(serverSettings.gameId, buildSettings);
-            openCallbacks[callbackConfirmation] = tempDataTask;
-            ResultAnd<ITempDataService> createTDS = await tempDataTask;
-            openCallbacks[callbackConfirmation] = null;
             DataStorage.temp = createTDS.value;
 
             if(result.code == ResultCode.IO_FileDoesNotExist
                || result.code == ResultCode.IO_DirectoryDoesNotExist)
             {
                 UserData.instance = new UserData();
-                result = await DataStorage.SaveUserData();
+                var saveUserDataTask = DataStorage.SaveUserData();
+                saveUserDataTask.ConfigureAwait(false);
+                result = saveUserDataTask.Result;
             }
 
             // TODO We need to have one line that invokes
@@ -235,14 +263,17 @@ namespace ModIO.Implementation
                 return result;
             }
 
-            // - load registry -
-            Task<Result> registryTask = ModCollectionManager.LoadRegistry();
-
             Logger.Log(LogLevel.Verbose, "Loading Registry");
-            openCallbacks[callbackConfirmation] = registryTask;
-            result = await registryTask;
+            // - load registry -
+            var loadRegistryTask = ModCollectionManager.LoadRegistry();
+            loadRegistryTask.ConfigureAwait(false);
+            result = loadRegistryTask.Result;
+
             Logger.Log(LogLevel.Verbose, "Finished Loading Registry");
             openCallbacks[callbackConfirmation] = null;
+
+            // Set response cache size limit
+            ResponseCache.maxCacheSize = buildSettings.requestCacheLimitKB * 1024;
 
             // If we fail to load the registry we simply create a new one. It may be corrupted
             // if(!result.Succeeded())
@@ -253,7 +284,7 @@ namespace ModIO.Implementation
             // }
 
             // - finalize -
-            ModIOUnityImplementation.isInitialized = true;
+            isInitialized = true;
 
             result = ResultBuilder.Success;
             callbackConfirmation.SetResult(true);
@@ -267,21 +298,7 @@ namespace ModIO.Implementation
         /// <summary>Initializes the Plugin for the given settings. Loads the
         /// state of mods installed on the system as well as the set of mods the
         /// specified user has installed on this device.</summary>
-        public static async void InitializeForUserAsync(string userProfileIdentifier,
-                                                        ServerSettings serverSettings,
-                                                        BuildSettings buildSettings,
-                                                        Action<Result> callback)
-        {
-            Result result = await InitializeForUserAsync(userProfileIdentifier,
-                serverSettings, buildSettings);
-
-            callback(result);
-        }
-
-        /// <summary>Initializes the Plugin for the given settings. Loads the
-        /// state of mods installed on the system as well as the set of mods the
-        /// specified user has installed on this device.</summary>
-        public static async Task<Result> InitializeForUserAsync(string userProfileIdentifier)
+        public static Result InitializeForUser(string userProfileIdentifier)
         {
             TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
             openCallbacks.Add(callbackConfirmation, null);
@@ -289,31 +306,16 @@ namespace ModIO.Implementation
             ServerSettings serverSettings;
             BuildSettings buildSettings;
 
-            Result r = SettingsAsset.TryLoad(out serverSettings, out buildSettings);
+            Result result = SettingsAsset.TryLoad(out serverSettings, out buildSettings);
 
-            if(r.Succeeded())
+            if(result.Succeeded())
             {
-                Task<Result> initTask = ModIOUnityImplementation.InitializeForUserAsync(
-                    userProfileIdentifier, serverSettings, buildSettings);
-
-                openCallbacks[callbackConfirmation] = initTask;
-                r = await initTask;
-                openCallbacks[callbackConfirmation] = null;
+                result = InitializeForUser(userProfileIdentifier, serverSettings, buildSettings);
             }
 
             callbackConfirmation.SetResult(true);
             openCallbacks.Remove(callbackConfirmation);
-            return r;
-        }
-
-        /// <summary>Initializes the Plugin for the given settings. Loads the
-        /// state of mods installed on the system as well as the set of mods the
-        /// specified user has installed on this device.</summary>
-        public static async void InitializeForUserAsync(string userProfileIdentifier,
-                                                        Action<Result> callback)
-        {
-            var result = await InitializeForUserAsync(userProfileIdentifier);
-            callback(result);
+            return result;
         }
 
         /// <summary>
@@ -420,7 +422,7 @@ namespace ModIO.Implementation
 
             Result result = ResultBuilder.Unknown;
 
-            if(IsInitialized(out result) && AreCredentialsValid(true, out result))
+            if(IsInitialized(out result) && IsAuthenticatedSessionValid(out result))
             {
                 string url = GetAuthenticatedUser.URL();
 
@@ -661,7 +663,7 @@ namespace ModIO.Implementation
         public static async Task<Result> AuthenticateUser(
             string data, AuthenticationServiceProvider serviceProvider,
             [CanBeNull] string emailAddress, [CanBeNull] TermsHash? hash, [CanBeNull] string nonce,
-            [CanBeNull] OculusDevice? device, [CanBeNull] string userId)
+            [CanBeNull] OculusDevice? device, [CanBeNull] string userId, PlayStationEnvironment environment)
         {
             TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
             openCallbacks.Add(callbackConfirmation, null);
@@ -678,7 +680,7 @@ namespace ModIO.Implementation
                 string url = API.Requests.AuthenticateUser.ExternalURL(
                     serviceProvider, data, hash, emailAddress,
                     // Oculus nonce, device, user_id
-                    nonce, device, userId,
+                    nonce, device, userId, environment,
                     // -----------------------------
                     out WWWForm form);
 
@@ -713,7 +715,8 @@ namespace ModIO.Implementation
         public static async void AuthenticateUser(
             string data, AuthenticationServiceProvider serviceProvider,
             [CanBeNull] string emailAddress, [CanBeNull] TermsHash? hash, [CanBeNull] string nonce,
-            [CanBeNull] OculusDevice? device, [CanBeNull] string userId, Action<Result> callback)
+            [CanBeNull] OculusDevice? device, [CanBeNull] string userId,
+            PlayStationEnvironment environment, Action<Result> callback)
         {
             if(callback == null)
             {
@@ -724,7 +727,7 @@ namespace ModIO.Implementation
                     + "checked with a proper callback.");
             }
 
-            Result result = await AuthenticateUser(data, serviceProvider, emailAddress, hash, nonce, device, userId);
+            Result result = await AuthenticateUser(data, serviceProvider, emailAddress, hash, nonce, device, userId, environment);
             callback?.Invoke(result);
         }
 
@@ -798,7 +801,6 @@ namespace ModIO.Implementation
             int offset = filter.pageIndex * filter.pageSize;
 
             if(IsInitialized(out result) && IsSearchFilterValid(filter, out result)
-                                         && AreCredentialsValid(false, out result)
                                          && !ResponseCache.GetModsFromCache(referenceURL, offset, filter.pageSize, out page))
             {
                 //      Synchronous checks SUCCEEDED
@@ -868,7 +870,6 @@ namespace ModIO.Implementation
             // generate endpoint here because it's synchronous and we can check validity early on
 
             if(ModIOUnityImplementation.IsInitialized(out result)
-               && AreCredentialsValid(false, out result)
                && !ResponseCache.GetModFromCache((ModId)id, out profile))
             {
                 //      Synchronous checks SUCCEEDED
@@ -916,7 +917,115 @@ namespace ModIO.Implementation
             ResultAnd<ModProfile> result = await GetMod(id);
             callback?.Invoke(result);
         }
+        public static async Task<ResultAnd<ModDependencies[]>> GetModDependencies(ModId modId)
+        {
+            TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
+            openCallbacks.Add(callbackConfirmation, null);
 
+            //------------------------------[ Setup callback params ]------------------------------
+            Result result;
+            ModDependencies[] modDependencies = default;
+            //-------------------------------------------------------------------------------------
+
+            string referenceURL = API.Requests.GetModDependencies.Url(modId);
+
+            if(IsInitialized(out result) && IsAuthenticatedSessionValid(out result)
+                                         && !ResponseCache.GetModDependenciesCache(modId, out modDependencies))
+            {
+                //Synchronous checks SUCCEEDED
+
+                // MAKE RESTAPI REQUEST
+                Task<ResultAnd<GetModDependencies.ResponseSchema>> task = RESTAPI.Request<GetModDependencies.ResponseSchema>(referenceURL, API.Requests.GetModDependencies.Template);
+
+                openCallbacks[callbackConfirmation] = task;
+                ResultAnd<GetModDependencies.ResponseSchema> response = await task;
+                openCallbacks[callbackConfirmation] = null;
+
+                result = response.result;
+
+                if(response.result.Succeeded())
+                {
+                    modDependencies = ResponseTranslator.ConvertModDependenciesObjectToModDependencies(response.value.data);
+                    ResponseCache.AddModDependenciesToCache(modId, modDependencies);
+                }
+            }
+
+            // FINAL SUCCESS / FAILURE depending on callback params set previously
+            callbackConfirmation.SetResult(true);
+            openCallbacks.Remove(callbackConfirmation);
+
+            return ResultAnd.Create(result, modDependencies);
+        }
+
+        public static async void GetModDependencies(ModId modId, Action<ResultAnd<ModDependencies[]>> callback)
+        {
+            // Check for callback
+            if(callback == null)
+            {
+                Logger.Log(
+                    LogLevel.Warning,
+                    "No callback was given to the GetModDependencies method. You will not "
+                    + "be informed of the result for this action. It is highly recommended to "
+                    + "provide a valid callback.");
+            }
+
+            var result = await GetModDependencies(modId);
+            callback?.Invoke(result);
+        }
+        public static async Task<ResultAnd<Rating[]>> GetCurrentUserRatings()
+        {
+            TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
+            openCallbacks.Add(callbackConfirmation, null);
+
+            //------------------------------[ Setup callback params ]------------------------------
+            Result result;
+            Rating[] ratings = default;
+            //-------------------------------------------------------------------------------------
+
+            string referenceURL = API.Requests.GetCurrentUserRatings.Url();
+
+            if(IsInitialized(out result) && IsAuthenticatedSessionValid(out result)
+                                         && !ResponseCache.GetCurrentUserRatingsCache(out ratings))
+            {
+                //Synchronous checks SUCCEEDED
+
+                // MAKE RESTAPI REQUEST
+                Task<ResultAnd<GetCurrentUserRatings.ResponseSchema>> task = RESTAPI.Request<GetCurrentUserRatings.ResponseSchema>(referenceURL, API.Requests.GetCurrentUserRatings.Template);
+
+                openCallbacks[callbackConfirmation] = task;
+                ResultAnd<GetCurrentUserRatings.ResponseSchema> response = await task;
+                openCallbacks[callbackConfirmation] = null;
+
+                result = response.result;
+
+                if(response.result.Succeeded())
+                {
+                    ratings = ResponseTranslator.ConvertModRatingsObjectToRatings(response.value.data);
+                    ResponseCache.ReplaceCurrentUserRatings(ratings);
+                }
+            }
+
+            // FINAL SUCCESS / FAILURE depending on callback params set previously
+            callbackConfirmation.SetResult(true);
+            openCallbacks.Remove(callbackConfirmation);
+
+            return ResultAnd.Create(result, ratings);
+        }
+        public static async void GetCurrentUserRatings(Action<ResultAnd<Rating[]>> callback)
+        {
+            // Check for callback
+            if(callback == null)
+            {
+                Logger.Log(
+                    LogLevel.Warning,
+                    "No callback was given to the GetCurrentUserRatings method. You will not "
+                    + "be informed of the result for this action. It is highly recommended to "
+                    + "provide a valid callback.");
+            }
+
+            var result = await GetCurrentUserRatings();
+            callback?.Invoke(result);
+        }
 #endregion // Mod Browsing
 
 #region Mod Management
@@ -924,7 +1033,7 @@ namespace ModIO.Implementation
         public static Result EnableModManagement(
             [CanBeNull] ModManagementEventDelegate modManagementEventDelegate)
         {
-            if(IsInitialized(out Result result) && AreCredentialsValid(true, out result))
+            if(IsInitialized(out Result result) && IsAuthenticatedSessionValid(out result))
             {
                 ModManagement.modManagementEventDelegate = modManagementEventDelegate;
                 ModManagement.EnableModManagement();
@@ -935,7 +1044,7 @@ namespace ModIO.Implementation
 #pragma warning disable 4014
         public static Result DisableModManagement()
         {
-            if(IsInitialized(out Result result) && AreCredentialsValid(true, out result))
+            if(IsInitialized(out Result result) && IsAuthenticatedSessionValid(out result))
             {
                 ModManagement.DisableModManagement();
 
@@ -951,7 +1060,7 @@ namespace ModIO.Implementation
             TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
             openCallbacks.Add(callbackConfirmation, null);
 
-            if(IsInitialized(out Result result) && AreCredentialsValid(true, out result))
+            if(IsInitialized(out Result result) && IsAuthenticatedSessionValid(out result))
             {
                 // This syncs the user's subscribed mods and also looks for modfile changes to
                 // update
@@ -996,7 +1105,7 @@ namespace ModIO.Implementation
 
         public static Result ForceUninstallMod(ModId modId)
         {
-            if(IsInitialized(out Result result) && AreCredentialsValid(true, out result))
+            if(IsInitialized(out Result result) && IsAuthenticatedSessionValid(out result))
             {
                 result =
                     ModCollectionManager.MarkModForUninstallIfNotSubscribedToCurrentSession(modId);
@@ -1010,11 +1119,31 @@ namespace ModIO.Implementation
         {
             return ModManagement.GetCurrentOperationProgress();
         }
+
+        public static bool EnableMod(ModId modId)
+        {
+            if(!IsInitialized(out Result _))
+            {
+                return false;
+            }
+
+            return ModCollectionManager.EnableModForCurrentUser(modId);
+        }
+
+        public static bool DisableMod(ModId modId)
+        {
+            if(!IsInitialized(out Result _))
+            {
+                return false;
+            }
+
+            return ModCollectionManager.DisableModForCurrentUser(modId);
+        }
 #endregion // Mod Management
 
 #region User Management
 
-        public static async Task<Result> AddModRating(ModId modId, ModRating rating)
+        public static async Task<Result> AddModRating(ModId modId, ModRating modRating)
         {
             TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
             openCallbacks.Add(callbackConfirmation, null);
@@ -1023,12 +1152,12 @@ namespace ModIO.Implementation
             Result result;
             //-------------------------------------------------------------------------------------
 
-            if(IsInitialized(out result) && AreCredentialsValid(true, out result))
+            if(IsInitialized(out result) && IsAuthenticatedSessionValid(out result))
             {
                 //      Synchronous checks SUCCEEDED
 
                 // Get endpoint and form data
-                string url = API.Requests.AddModRating.URL(modId, rating, out WWWForm form);
+                string url = API.Requests.AddModRating.URL(modId, modRating, out WWWForm form);
 
                 // MAKE RESTAPI REQUEST
                 Task<ResultAnd<MessageObject>> task =
@@ -1039,6 +1168,14 @@ namespace ModIO.Implementation
                 openCallbacks[callbackConfirmation] = null;
 
                 result = response.result;
+
+                var rating = new Rating {
+                    dateAdded = DateTime.Now,
+                    gameId = Settings.server.gameId,
+                    rating = modRating,
+                    modId = modId
+                };
+                ResponseCache.AddCurrentUserRating(modId, rating);
 
                 if(result.code_api == ResultCode.RESTAPI_ModRatingAlreadyExists
                    || result.code_api == ResultCode.RESTAPI_ModRatingNotFound)
@@ -1083,7 +1220,7 @@ namespace ModIO.Implementation
 
             string url = GetAuthenticatedUser.URL();
 
-            if(IsInitialized(out result) && AreCredentialsValid(true, out result)
+            if(IsInitialized(out result) && IsAuthenticatedSessionValid(out result)
                                          && !ResponseCache.GetUserProfileFromCache(out userProfile))
             {
                 //      Synchronous checks SUCCEEDED
@@ -1142,7 +1279,7 @@ namespace ModIO.Implementation
             Result result;
             //-------------------------------------------------------------------------------------
 
-            if(IsInitialized(out result) && AreCredentialsValid(true, out result))
+            if(IsInitialized(out result) && IsAuthenticatedSessionValid(out result))
             {
                 //      Synchronous checks SUCCEEDED
 
@@ -1221,7 +1358,7 @@ namespace ModIO.Implementation
             Result result;
             //-------------------------------------------------------------------------------------
 
-            if(IsInitialized(out result) && AreCredentialsValid(true, out result))
+            if(IsInitialized(out result) && IsAuthenticatedSessionValid(out result))
             {
                 //      Synchronous checks SUCCEEDED
 
@@ -1315,7 +1452,7 @@ namespace ModIO.Implementation
             //-------------------------------------------------------------------------------------
 
             if(IsInitialized(out result) && IsSearchFilterValid(filter, out result)
-                                         && AreCredentialsValid(true, out result))
+                                         && IsAuthenticatedSessionValid(out result))
             {
                 //      Synchronous checks SUCCEEDED
 
@@ -1345,7 +1482,7 @@ namespace ModIO.Implementation
 
         public static SubscribedMod[] GetSubscribedMods(out Result result)
         {
-            if(IsInitialized(out result) && AreCredentialsValid(true, out result))
+            if(IsInitialized(out result) && IsAuthenticatedSessionValid(out result))
             {
                 SubscribedMod[] mods = ModCollectionManager.GetSubscribedModsForUser(out result);
                 return mods;
@@ -1356,30 +1493,31 @@ namespace ModIO.Implementation
 
         public static InstalledMod[] GetInstalledMods(out Result result)
         {
-            if(IsInitialized(out result) && AreCredentialsValid(false, out result))
+            if(IsInitialized(out result)/* && AreCredentialsValid(false, out result)*/)
             {
-                InstalledMod[] mods = ModCollectionManager.GetInstalledMods(out result);
+                InstalledMod[] mods = ModCollectionManager.GetInstalledMods(out result, true);
                 return mods;
             }
 
             return null;
         }
 
-        public static UserInstalledMod[] GetInstalledModsForUser(out Result result)
+        public static UserInstalledMod[] GetInstalledModsForUser(out Result result, bool includeDisabledMods)
         {
             //Filter for user
-            if(IsInitialized(out result) && AreCredentialsValid(false, out result))
+            if(IsInitialized(out result) && IsAuthenticatedSessionValid(out result))
             {
-                var mods = ModCollectionManager.GetInstalledMods(out result);
-                return FilterInstalledModsIntoUserInstalledMods(UserData.instance.userObject.id, mods);
+                var mods = ModCollectionManager.GetInstalledMods(out result, false);
+                return FilterInstalledModsIntoUserInstalledMods(UserData.instance.userObject.id, includeDisabledMods, mods);
             }
 
             return null;
         }
 
-        public static UserInstalledMod[] FilterInstalledModsIntoUserInstalledMods(long userId, params InstalledMod[] mods)
+        internal static UserInstalledMod[] FilterInstalledModsIntoUserInstalledMods(long userId, bool includeDisabledMods, params InstalledMod[] mods)
             => mods.Select(x => x.AsInstalledModsUser(userId))
                    .Where(x => !x.Equals(default(UserInstalledMod)))
+                   .Where(x => x.enabled || includeDisabledMods)
                    .ToArray();
 
         public static Result RemoveUserData()
@@ -1409,6 +1547,102 @@ namespace ModIO.Implementation
             return result;
         }
 
+        public static async void MuteUser(long userId, Action<Result> callback)
+        {
+            if(callback == null)
+            {
+                Logger.Log(
+                    LogLevel.Warning,
+                    "No callback was given to the MuteUser method. It is "
+                    + "possible that this operation will not resolve successfully and should be "
+                    + "checked with a proper callback.");
+            }
+
+            Result result = await MuteUser(userId);
+            callback?.Invoke(result);
+        }
+
+        public static async void UnmuteUser(long userId, Action<Result> callback)
+        {
+            if(callback == null)
+            {
+                Logger.Log(
+                    LogLevel.Warning,
+                    "No callback was given to the UnmuteUser method. It is "
+                    + "possible that this operation will not resolve successfully and should be "
+                    + "checked with a proper callback.");
+            }
+
+            Result result = await UnmuteUser(userId);
+            callback?.Invoke(result);
+        }
+
+        public static async Task<Result> MuteUser(long userId)
+        {
+
+            TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
+            openCallbacks.Add(callbackConfirmation, null);
+
+            //------------------------------[ Setup callback param ]-------------------------------
+            Result result;
+            //-------------------------------------------------------------------------------------
+
+            if(IsInitialized(out result) && IsAuthenticatedSessionValid(out result))
+            {
+                //      Synchronous checks SUCCEEDED
+
+                string url = UserMute.URL(userId);
+
+                // MAKE RESTAPI REQUEST
+                Task<Result> task =
+                    RESTAPI.Request(url, UserMute.Template);
+
+                openCallbacks[callbackConfirmation] = task;
+                Result response = await task;
+                openCallbacks[callbackConfirmation] = null;
+
+                result = response;
+            }
+
+            callbackConfirmation.SetResult(true);
+            openCallbacks.Remove(callbackConfirmation);
+
+            return result;
+        }
+
+        public static async Task<Result> UnmuteUser(long userId)
+        {
+
+            TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
+            openCallbacks.Add(callbackConfirmation, null);
+
+            //------------------------------[ Setup callback param ]-------------------------------
+            Result result;
+            //-------------------------------------------------------------------------------------
+
+            if(IsInitialized(out result) && IsAuthenticatedSessionValid(out result))
+            {
+                //      Synchronous checks SUCCEEDED
+
+                string url = UserUnmute.URL(userId);
+
+                // MAKE RESTAPI REQUEST
+                Task<Result> task =
+                    RESTAPI.Request(url, UserUnmute.Template);
+
+                openCallbacks[callbackConfirmation] = task;
+                Result response = await task;
+                openCallbacks[callbackConfirmation] = null;
+
+                result = response;
+            }
+
+            callbackConfirmation.SetResult(true);
+            openCallbacks.Remove(callbackConfirmation);
+
+            return result;
+        }
+
 #endregion // User Management
 
 #region Mod Media
@@ -1427,7 +1661,7 @@ namespace ModIO.Implementation
 
             if(downloadReference.IsValid())
             {
-                if(IsInitialized(out result) && AreCredentialsValid(false, out result))
+                if(IsInitialized(out result))
                 {
                     // Check cache asynchronously for texture in temp folder
                     Task<ResultAnd<Texture2D>> cacheTask =
@@ -1603,7 +1837,7 @@ namespace ModIO.Implementation
             }
             else
             {
-                if(IsInitialized(out result) && AreCredentialsValid(true, out result)
+                if(IsInitialized(out result) && IsAuthenticatedSessionValid(out result)
                                              && IsModProfileDetailsValid(modDetails, out result))
                 {
                     //      Synchronous checks SUCCEEDED
@@ -1692,16 +1926,20 @@ namespace ModIO.Implementation
                 result = ResultBuilder.Create(
                     ResultCode.InvalidParameter_ModProfileRequiredFieldsNotSet);
             }
-            else if(IsInitialized(out result) && AreCredentialsValid(true, out result)
+            else if(IsInitialized(out result) && IsAuthenticatedSessionValid(out result)
                                               && IsModProfileDetailsValidForEdit(modDetails, out result))
             {
                 //      Synchronous checks SUCCEEDED
 
                 string url = EditMod.URL(modDetails, out WWWForm form);
-
+                
+                // This needs to be POST if we are adding a logo, or PUT if we are not adding a logo
+                RequestConfig templateSchema = modDetails.logo != null ? 
+                        EditMod.TemplateForAddingLogo : EditMod.Template;
+                
                 // MAKE RESTAPI REQUEST
                 Task<ResultAnd<ModObject>> task =
-                    RESTAPI.Request<ModObject>(url, EditMod.Template, form);
+                    RESTAPI.Request<ModObject>(url, templateSchema, form);
 
                 openCallbacks[callbackConfirmation] = task;
                 ResultAnd<ModObject> response = await task;
@@ -1795,7 +2033,7 @@ namespace ModIO.Implementation
                 result = ResultBuilder.Create(
                     ResultCode.InvalidParameter_CantBeNull);
             }
-            else if(IsInitialized(out result) && AreCredentialsValid(true, out result))
+            else if(IsInitialized(out result) && IsAuthenticatedSessionValid(out result))
             {
                 //      Synchronous checks SUCCEEDED
 
@@ -1879,7 +2117,7 @@ namespace ModIO.Implementation
                 result = ResultBuilder.Create(
                     ResultCode.InvalidParameter_CantBeNull);
             }
-            else if(IsInitialized(out result) && AreCredentialsValid(true, out result))
+            else if(IsInitialized(out result) && IsAuthenticatedSessionValid(out result))
             {
                 //      Synchronous checks SUCCEEDED
 
@@ -1959,7 +2197,7 @@ namespace ModIO.Implementation
             Result result;
             //-------------------------------------------------------------------------------------
 
-            if (IsInitialized(out result) && AreCredentialsValid(true, out result)
+            if (IsInitialized(out result) && IsAuthenticatedSessionValid(out result)
                && IsModProfileDetailsValidForEdit(modProfileDetails, out result))
             {
                 Task<ResultAnd<AddModMedia.AddModMediaUrlResult>> urlResultTask =
@@ -2040,7 +2278,7 @@ namespace ModIO.Implementation
             Result result;
             //-------------------------------------------------------------------------------------
 
-            if(IsInitialized(out result) && AreCredentialsValid(true, out result)
+            if(IsInitialized(out result) && IsAuthenticatedSessionValid(out result)
                                          && IsModfileDetailsValid(modfile, out result))
             {
                 CompressOperationDirectory compressOperation = new CompressOperationDirectory(modfile.directory);
@@ -2136,7 +2374,7 @@ namespace ModIO.Implementation
             Result result;
             //-------------------------------------------------------------------------------------
 
-            if(IsInitialized(out result) && AreCredentialsValid(true, out result))
+            if(IsInitialized(out result) && IsAuthenticatedSessionValid(out result))
             {
                 //      Synchronous checks SUCCEEDED
 
@@ -2280,12 +2518,12 @@ namespace ModIO.Implementation
             Result result;
             ModPage page = new ModPage();
             //-------------------------------------------------------------------------------------
-            var s = $"{Settings.server.serverURL}{@"/me/mods"}?{FilterUtil.ConvertToURL(filter)}{@"&game_id="}{Settings.server.gameId}";
+
             string referenceURL = API.Requests.GetCurrentUserCreations.Url(filter);
             int offset = filter.pageIndex * filter.pageSize;
 
             if(IsInitialized(out result) && IsSearchFilterValid(filter, out result)
-                                         && AreCredentialsValid(true, out result)
+                                         && IsAuthenticatedSessionValid(out result)
                                          && !ResponseCache.GetModsFromCache(referenceURL, offset, filter.pageSize, out page))
             {
                 //      Synchronous checks SUCCEEDED
@@ -2334,6 +2572,6 @@ namespace ModIO.Implementation
             ResultAnd<ModPage> result = await GetCurrentUserCreations(filter);
             callback?.Invoke(result);
         }
-#endregion // Mod Uplaoding
+#endregion // Mod Uploading
     }
 }

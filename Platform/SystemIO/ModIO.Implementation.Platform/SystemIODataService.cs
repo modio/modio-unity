@@ -105,7 +105,7 @@ namespace ModIO.Implementation.Platform
             Result result;
 
             ResultAnd<byte[]> settingsRead =
-                await SystemIOWrapper.ReadFileAsync(GlobalSettingsFilePath);
+                await SystemIOWrapper.ReadFileAsync(GlobalSettingsFilePath).ConfigureAwait(false);
             result = settingsRead.result;
 
             GlobalSettingsFile gsData;
@@ -140,7 +140,7 @@ namespace ModIO.Implementation.Platform
 
                 // ignore the result
                 await SystemIOWrapper.WriteFileAsync(GlobalSettingsFilePath,
-                    fileData);
+                    fileData).ConfigureAwait(false);
 
                 Logger.Log(LogLevel.Verbose,
                     "RootLocalStoragePath written to new globalsettings.json");
@@ -196,13 +196,13 @@ namespace ModIO.Implementation.Platform
         /// <summary>Reads an entire file asynchronously.</summary>
         public async Task<ResultAnd<byte[]>> ReadFileAsync(string filePath)
         {
-            return await SystemIOWrapper.ReadFileAsync(filePath);
+            return await SystemIOWrapper.ReadFileAsync(filePath).ConfigureAwait(false);
         }
 
         /// <summary>Writes an entire file asynchronously.</summary>
         public async Task<Result> WriteFileAsync(string filePath, byte[] data)
         {
-            return await SystemIOWrapper.WriteFileAsync(filePath, data);
+            return await SystemIOWrapper.WriteFileAsync(filePath, data).ConfigureAwait(false);
         }
 
         /// <summary> Deletes a file </summary>

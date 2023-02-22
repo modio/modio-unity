@@ -75,7 +75,7 @@ namespace ModIOBrowser.Implementation
                 }
                 else
                 {
-                    Browser.SelectSelectable(closestItem.selectable);
+                    InputNavigation.Instance.Select(closestItem.selectable);
                 }
             }
         }
@@ -124,7 +124,7 @@ namespace ModIOBrowser.Implementation
             }
 
             listItemToSnapTo?.viewportRestraint?.CheckSelectionHorizontalVisibility();            
-            Browser.SelectSelectable(listItemToSnapTo?.selectable);
+            InputNavigation.Instance.Select(listItemToSnapTo?.selectable);
         }
 
         /// <summary>
@@ -176,10 +176,10 @@ namespace ModIOBrowser.Implementation
             
             foreach(ModProfile mod in page.modProfiles)
             {
-                ListItem li = ListItem.GetListItem<BrowserModListItem>(ModListItemPrefab, ModListItemContainer, Browser.Instance.colorScheme);
+                ListItem li = ListItem.GetListItem<HomeModListItem>(ModListItemPrefab, ModListItemContainer, Browser.Instance.colorScheme);
                 li.Setup(mod);
                 li.SetViewportRestraint(ModListItemContainer as RectTransform, null);
-                Browser.Instance.AddModListItemToRowDictionaryCache(li, ModListItemContainer.gameObject);
+                Home.Instance.AddModListItemToRowDictionaryCache(li, ModListItemContainer.gameObject);
 
                 // get left nav
                 Selectable leftSelectable = null;

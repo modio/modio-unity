@@ -8,9 +8,9 @@ namespace ModIOBrowser
     {
         public static ColorSchemeBlock DefaultColorSchemeBlock = new ColorSchemeBlock()
         {
-            Normal = ColorSetterType.LightGrey2,
-            Highlighted = ColorSetterType.Accent,
-            Pressed = ColorSetterType.Accent,
+            Normal = ColorSetterType.Inactive2,
+            Highlighted = ColorSetterType.Highlight,
+            Pressed = ColorSetterType.Highlight,
             Disabled = ColorSetterType.Dark3,
             NormalColorAlpha = 1f,
             HighlightedColorAlpha = 1f,

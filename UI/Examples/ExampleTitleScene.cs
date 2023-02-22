@@ -9,7 +9,6 @@ using ModIO.Implementation;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
-using static ModIO.Utility;
 
 namespace Plugins.mod.io.UI.Examples
 {
@@ -22,9 +21,9 @@ namespace Plugins.mod.io.UI.Examples
         public List<string> mouseInput = new List<string>();
         public MultiTargetDropdown languageSelectionDropdown;
 
-    void Start()
-    {
-        OpenTitle();
+        void Start()
+        {
+            OpenTitle();
 
             languageSelectionDropdown.gameObject.SetActive(false);
             StartCoroutine(SetupTranslationDropDown());
@@ -55,7 +54,7 @@ namespace Plugins.mod.io.UI.Examples
             // Assign the 'GoBackToTitleScene' method as the onClose method so we can maintain a focused
             // selectable highlight if we're on controller
             Browser.Instance.gameObject.SetActive(true);
-            Browser.OpenBrowser(OpenTitle);
+            Browser.Open(OpenTitle);
             gameObject.transform.parent.gameObject.SetActive(false);
         }
 
@@ -64,13 +63,13 @@ namespace Plugins.mod.io.UI.Examples
             exampleSettingsPanel.ActivatePanel(true);
         }
 
-    public void OpenTitle()
-    {
-        //Browser.Instance.gameObject needs to stay on so that translations, glyphsettings etc
-        //can initialize
-        gameObject.transform.parent.gameObject.SetActive(true);
-        DefaultSelection.Select();
-    }
+        public void OpenTitle()
+        {
+            //Browser.Instance.gameObject needs to stay on so that translations, glyphsettings etc
+            //can initialize
+            gameObject.transform.parent.gameObject.SetActive(true);
+            DefaultSelection.Select();
+        }
 
         public void Quit()
         {

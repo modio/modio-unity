@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using TMPro;
 using System.Collections.Generic;
-using static ModIO.Utility;
+using ModIO.Util;
 
 namespace ModIOBrowser.Implementation
 {
@@ -25,10 +25,11 @@ namespace ModIOBrowser.Implementation
 
         public string reference;
 
-        //TODO: Replace with TMP_Text?
         public TextMeshProUGUI text; 
 
         public string Identifier => gameObject.name;
+
+        public string TransformPath => transform.FullPath();
 
 #if UNITY_EDITOR
         /// <summary>
@@ -86,5 +87,6 @@ namespace ModIOBrowser.Implementation
         }
 
         public void Start() => TranslationManager.Instance.Translate(this);
+
     }
 }

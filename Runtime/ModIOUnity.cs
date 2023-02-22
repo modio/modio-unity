@@ -3,6 +3,7 @@ using System;
 using JetBrains.Annotations;
 using UnityEngine;
 using System.Threading.Tasks;
+using ModIO.Implementation.API.Objects;
 
 #pragma warning disable 4014 // Ignore warnings about calling async functions from non-async code
 
@@ -116,13 +117,11 @@ namespace ModIO
         ///     }
         /// }
         /// </code>
-        public static void InitializeForUser(string userProfileIdentifier,
+        public static Result InitializeForUser(string userProfileIdentifier,
                                                   ServerSettings serverSettings,
-                                                  BuildSettings buildSettings,
-                                                  Action<Result> callback)
+                                                  BuildSettings buildSettings)
         {
-            ModIOUnityImplementation.InitializeForUserAsync(userProfileIdentifier, serverSettings,
-                                                            buildSettings, callback);
+            return ModIOUnityImplementation.InitializeForUser(userProfileIdentifier, serverSettings, buildSettings);
         }
 
         /// <summary>
@@ -154,10 +153,9 @@ namespace ModIO
         ///     {
         /// }
         /// </code>
-        public static void InitializeForUser(string userProfileIdentifier,
-                                                  Action<Result> callback)
+        public static Result InitializeForUser(string userProfileIdentifier)
         {
-            ModIOUnityImplementation.InitializeForUserAsync(userProfileIdentifier, callback);
+            return ModIOUnityImplementation.InitializeForUser(userProfileIdentifier);
         }
 
         /// <summary>
@@ -372,7 +370,7 @@ namespace ModIO
         {
             ModIOUnityImplementation.AuthenticateUser(
                 steamToken, AuthenticationServiceProvider.Steam, emailAddress, hash, null, null,
-                null, callback);
+                null, 0, callback);
         }
 
         /// <summary>
@@ -434,7 +432,7 @@ namespace ModIO
         {
             ModIOUnityImplementation.AuthenticateUser(gogToken, AuthenticationServiceProvider.GOG,
                                                       emailAddress, hash, null, null, null,
-                                                      callback);
+                                                      0, callback);
         }
 
         /// <summary>
@@ -491,11 +489,11 @@ namespace ModIO
         /// }
         /// </code>
         public static void AuthenticateUserViaPlayStation(string authCode, [CanBeNull] string emailAddress,
-                                                  [CanBeNull] TermsHash? hash,
+                                                  [CanBeNull] TermsHash? hash, PlayStationEnvironment environment,
                                                   Action<Result> callback)
         {
             ModIOUnityImplementation.AuthenticateUser(authCode, AuthenticationServiceProvider.PlayStation,
-                                                      emailAddress, hash, null, null, null,
+                                                      emailAddress, hash, null, null, null, environment,
                                                       callback);
         }
 
@@ -559,7 +557,7 @@ namespace ModIO
         {
             ModIOUnityImplementation.AuthenticateUser(
                 itchioToken, AuthenticationServiceProvider.Itchio, emailAddress, hash, null, null,
-                null, callback);
+                null, 0, callback);
         }
 
         /// <summary>
@@ -622,7 +620,7 @@ namespace ModIO
         {
             ModIOUnityImplementation.AuthenticateUser(xboxToken, AuthenticationServiceProvider.Xbox,
                                                       emailAddress, hash, null, null, null,
-                                                      callback);
+                                                      0, callback);
         }
 
         /// <summary>
@@ -685,7 +683,7 @@ namespace ModIO
         {
             ModIOUnityImplementation.AuthenticateUser(
                 SwitchNsaId, AuthenticationServiceProvider.Switch, emailAddress, hash, null, null,
-                null, callback);
+                null, 0, callback);
         }
 
         /// <summary>
@@ -748,7 +746,7 @@ namespace ModIO
         {
             ModIOUnityImplementation.AuthenticateUser(
                 discordToken, AuthenticationServiceProvider.Discord, emailAddress, hash, null, null,
-                null, callback);
+                null, 0, callback);
         }
 
         /// <summary>
@@ -811,7 +809,7 @@ namespace ModIO
         {
             ModIOUnityImplementation.AuthenticateUser(
                 googleToken, AuthenticationServiceProvider.Google, emailAddress, hash, null, null,
-                null, callback);
+                null, 0, callback);
         }
 
         /// <summary>
@@ -883,7 +881,7 @@ namespace ModIO
         {
             ModIOUnityImplementation.AuthenticateUser(
                 oculusToken, AuthenticationServiceProvider.Oculus, emailAddress, hash, nonce,
-                oculusDevice, userId.ToString(), callback);
+                oculusDevice, userId.ToString(), 0, callback);
         }
 
         // TODO @Steve and @Jackson: Discuss whether to make this synchronous or not
@@ -1074,6 +1072,80 @@ namespace ModIO
         public static void GetMod(ModId modId, Action<ResultAnd<ModProfile>> callback)
         {
             ModIOUnityImplementation.GetMod(modId.id, callback);
+        }
+
+        /// <summary>
+        /// Retrieves a list of ModDependenciesObjects that represent mods that depend on a mod.
+        /// </summary>
+        /// <remarks>
+        /// This function returns only immediate mod dependencies, meaning that if you need the dependencies for the dependent
+        /// mods, you will have to make multiple calls and watch for circular dependencies.
+        /// </remarks>
+        /// <param name="modId">the ModId of the mod to get dependencies</param>
+        /// <param name="callback">callback with the Result and an array of ModDependenciesObjects</param>
+        /// <seealso cref="ModId"/>
+        /// <seealso cref="ModDependenciesObject"/>
+        /// <code>
+        /// void Example()
+        /// {
+        ///     ModId modId = new ModId(1234);
+        ///     ModIOUnity.GetModDependencies(modId, GetModCallback);
+        /// }
+        ///
+        /// void GetModCallback(ResultAnd&lt;ModDependenciesObject[]&gt; response)
+        /// {
+        ///     if (response.result.Succeeded())
+        ///     {
+        ///         ModDependenciesObject[] modDependenciesObjects = response.value;
+        ///         Debug.Log("retrieved mods dependencies");
+        ///     }
+        ///     else
+        ///     {
+        ///         Debug.Log("failed to get mod dependencies");
+        ///     }
+        /// }
+        /// </code>
+        public static void GetModDependencies(ModId modId, Action<ResultAnd<ModDependencies[]>> callback)
+        {
+            ModIOUnityImplementation.GetModDependencies(modId, callback);
+        }
+
+        /// <summary>
+        /// Get all mod rating's submitted by the authenticated user. Successful request will return an array of Rating Objects.
+        /// </summary>
+        /// <remarks>
+        /// FetchUpdates() must be called before the current user's ratings are known
+        /// </remarks>
+        /// <param name="callback">callback with the Result and an array of RatingObject</param>
+        /// <seealso cref="ModId"/>
+        /// <seealso cref="RatingObject"/>
+        /// <seealso cref="ResultAnd"/>
+        /// <seealso cref="FetchUpdates"/>
+        /// <code>
+        /// void Example()
+        /// {
+        ///    ModId modId = new ModId(1234);
+        ///    ModIOUnity.GetCurrentUserRatings(modId, GetCurrentUserRatingsCallback);
+        /// }
+        ///
+        /// void GetCurrentUserRatingsCallback(ResultAnd&lt;RatingObject[]&gt; response)
+        /// {
+        ///    if (response.result.Succeeded())
+        ///    {
+        ///        foreach(var ratingObject in response.value)
+        ///        {
+        ///            Debug.Log($"retrieved rating {response.rating} for {response.mod_id}");
+        ///        }
+        ///    }
+        ///    else
+        ///    {
+        ///        Debug.Log("failed to get ratings");
+        ///    }
+        /// }
+        /// </code>
+        public static void GetCurrentUserRatings(Action<ResultAnd<Rating[]>> callback)
+        {
+            ModIOUnityImplementation.GetCurrentUserRatings(callback);
         }
 
 #endregion // Mod Browsing
@@ -1268,6 +1340,30 @@ namespace ModIO
             ModIOUnityImplementation.GetCurrentUser(callback);
         }
 
+        /// <summary>
+        /// Mutes a user which effectively hides any content from that specified user
+        /// </summary>
+        /// <remarks>The userId can be found from the UserProfile. Such as ModProfile.creator.userId</remarks>
+        /// <param name="userId">The id of the user to be muted</param>
+        /// <param name="callback">callback with the Result of the request</param>
+        /// <seealso cref="UserProfile"/>
+        public static void MuteUser(long userId, Action<Result> callback)
+        {
+            ModIOUnityImplementation.MuteUser(userId, callback);
+        }
+
+        /// <summary>
+        /// Un-mutes a user which effectively reveals previously hidden content from that user
+        /// </summary>
+        /// <remarks>The userId can be found from the UserProfile. Such as ModProfile.creator.userId</remarks>
+        /// <param name="userId">The id of the user to be muted</param>
+        /// <param name="callback">callback with the Result of the request</param>
+        /// <seealso cref="UserProfile"/>
+        public static void UnmuteUser(long userId, Action<Result> callback)
+        {
+            ModIOUnityImplementation.UnmuteUser(userId, callback);
+        }
+
 #endregion
 
 #region Mod Management
@@ -1456,9 +1552,9 @@ namespace ModIO
         ///     }
         /// }
         /// </code>
-        public static UserInstalledMod[] GetInstalledModsForUser(out Result result)
+        public static UserInstalledMod[] GetInstalledModsForUser(out Result result, bool includeDisabledMods = false)
         {
-            return ModIOUnityImplementation.GetInstalledModsForUser(out result);
+            return ModIOUnityImplementation.GetInstalledModsForUser(out result, includeDisabledMods);
         }
 
         /// <summary>
@@ -1530,6 +1626,16 @@ namespace ModIO
             return ModIOUnityImplementation.IsModManagementBusy();
         }
 
+        public static bool EnableMod(ModId modId)
+        {
+            return ModIOUnityImplementation.EnableMod(modId);
+        }
+
+        public static bool DisableMod(ModId modId)
+        {
+            return ModIOUnityImplementation.DisableMod(modId);
+        }
+
 
 #endregion // Mod Management
 
@@ -1558,7 +1664,8 @@ namespace ModIO
 
         /// <summary>
         /// Creates a new mod profile on the mod.io server based on the details provided from the
-        /// ModProfileDetails object provided.
+        /// ModProfileDetails object provided. Note that you must have a logo, name and summary
+        /// assigned in ModProfileDetails in order for this to work.
         /// </summary>
         /// <remarks>
         /// Note that this will create a new profile on the server and can be viewed online through

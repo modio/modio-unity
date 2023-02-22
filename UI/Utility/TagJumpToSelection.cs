@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using ModIOBrowser.Implementation;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -29,12 +30,12 @@ namespace ModIOBrowser
 
         public static void GoToPreviousSelection()
         {
-            Browser.SelectSelectable(selections[PreviousIndex()].selection);
+            InputNavigation.Instance.Select(selections[PreviousIndex()].selection);
         }
 
         public static void GoToNextSelection()
         {
-            Browser.SelectSelectable(selections[NextIndex()].selection);
+            InputNavigation.Instance.Select(selections[NextIndex()].selection);
         }
 
         static int CurrentIndex()
@@ -85,7 +86,7 @@ namespace ModIOBrowser
         public void OnSelect(BaseEventData eventData)
         {
             currentCategory = this;
-            Browser.Instance.UpdateSearchPanelBumperIcons();
+            SearchPanel.Instance.UpdateBumperIcons();
         }
     }
 }

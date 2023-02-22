@@ -33,12 +33,12 @@ namespace ModIOBrowser
 #endregion // Internal values
 
         // Editable colors
-        public Color Accent;
-        public Color LightGrey1;
-        public Color LightGrey2;
-        public Color LightGrey3;
-        public Color Green;
-        public Color Red;
+        public Color Highlight;
+        public Color Inactive1;
+        public Color Inactive2;
+        public Color Inactive3;
+        public Color PositiveAccent;
+        public Color NegativeAccent;
         
         // For setting the light or dark mode of the UI
         public bool LightMode;
@@ -56,12 +56,12 @@ namespace ModIOBrowser
             ColorUtility.TryParseHtmlString("#0E101B", out Dark3);
             ColorUtility.TryParseHtmlString("#FFFFFF", out White);
             
-            ColorUtility.TryParseHtmlString("#07C1D8", out Accent);
-            ColorUtility.TryParseHtmlString("#C1C4D7", out LightGrey1);
-            ColorUtility.TryParseHtmlString("#AEB1C2", out LightGrey2);
-            ColorUtility.TryParseHtmlString("#737684", out LightGrey3);
-            ColorUtility.TryParseHtmlString("#7EEF8C", out Green);
-            ColorUtility.TryParseHtmlString("#DB5355", out Red);
+            ColorUtility.TryParseHtmlString("#07C1D8", out Highlight);
+            ColorUtility.TryParseHtmlString("#C1C4D7", out Inactive1);
+            ColorUtility.TryParseHtmlString("#AEB1C2", out Inactive2);
+            ColorUtility.TryParseHtmlString("#737684", out Inactive3);
+            ColorUtility.TryParseHtmlString("#7EEF8C", out PositiveAccent);
+            ColorUtility.TryParseHtmlString("#DB5355", out NegativeAccent);
         }
         
         public void RefreshUI()
@@ -77,9 +77,9 @@ namespace ModIOBrowser
         {
             ColorBlock colors = new ColorBlock();
             colors.fadeDuration = 0.1f;
-            colors.normalColor = LightGrey2;
-            colors.highlightedColor = Accent;
-            colors.pressedColor = LightGrey2;
+            colors.normalColor = Inactive2;
+            colors.highlightedColor = Highlight;
+            colors.pressedColor = Inactive2;
             colors.disabledColor = Dark3;
             colors.colorMultiplier = 1;
             return colors;
@@ -88,9 +88,9 @@ namespace ModIOBrowser
         public ColorBlock GetColorBlock_Dropdown()
         {
             ColorBlock colors = new ColorBlock();
-            colors.normalColor = LightGrey2;
-            colors.highlightedColor = Accent;
-            colors.pressedColor = LightGrey2;
+            colors.normalColor = Inactive2;
+            colors.highlightedColor = Highlight;
+            colors.pressedColor = Inactive2;
             colors.disabledColor = Dark3;
             return colors;
         }
@@ -107,18 +107,18 @@ namespace ModIOBrowser
                     return Dark3;
                 case ColorSetterType.White:
                     return White;
-                case ColorSetterType.Accent:
-                    return Accent;
-                case ColorSetterType.LightGrey1:
-                    return LightGrey1;
-                case ColorSetterType.LightGrey2:
-                    return LightGrey2;
-                case ColorSetterType.LightGrey3:
-                    return LightGrey3;
-                case ColorSetterType.Green:
-                    return Green;
-                case ColorSetterType.Red:
-                    return Red;
+                case ColorSetterType.Highlight:
+                    return Highlight;
+                case ColorSetterType.Inactive1:
+                    return Inactive1;
+                case ColorSetterType.Inactive2:
+                    return Inactive2;
+                case ColorSetterType.Inactive3:
+                    return Inactive3;
+                case ColorSetterType.PositiveAccent:
+                    return PositiveAccent;
+                case ColorSetterType.NegativeAccent:
+                    return NegativeAccent;
             }
             return default;
         }

@@ -25,12 +25,12 @@ namespace ModIOBrowser
 			myTarget.Dark3 = EditorGUILayout.ColorField("Dark3", myTarget.Dark3);
 			myTarget.White = EditorGUILayout.ColorField("White", myTarget.White);
 
-			myTarget.Accent = EditorGUILayout.ColorField("Highlight", myTarget.Accent);
-			myTarget.LightGrey1 = EditorGUILayout.ColorField("Inactive1", myTarget.LightGrey1);
-			myTarget.LightGrey2 = EditorGUILayout.ColorField("Inactive2", myTarget.LightGrey2);
-			myTarget.LightGrey3 = EditorGUILayout.ColorField("Inactive3", myTarget.LightGrey3);
-			myTarget.Green = EditorGUILayout.ColorField("Positive Accent", myTarget.Green);
-			myTarget.Red = EditorGUILayout.ColorField("Negative Accent", myTarget.Red);
+			myTarget.Highlight = EditorGUILayout.ColorField("Highlight", myTarget.Highlight);
+			myTarget.Inactive1 = EditorGUILayout.ColorField("Inactive1", myTarget.Inactive1);
+			myTarget.Inactive2 = EditorGUILayout.ColorField("Inactive2", myTarget.Inactive2);
+			myTarget.Inactive3 = EditorGUILayout.ColorField("Inactive3", myTarget.Inactive3);
+			myTarget.PositiveAccent = EditorGUILayout.ColorField("Positive Accent", myTarget.PositiveAccent);
+			myTarget.NegativeAccent = EditorGUILayout.ColorField("Negative Accent", myTarget.NegativeAccent);
 			
 			myTarget.LightMode = EditorGUILayout.Toggle("Light Mode", myTarget.LightMode);
 			

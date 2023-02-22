@@ -1,0 +1,360 @@
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Reflection;
+using JetBrains.Annotations;
+using ModIO;
+using ModIO.Util;
+using ModIOBrowser.Implementation;
+using TMPro;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
+
+namespace ModIOBrowser
+{
+
+    /// <summary>
+    /// The main handler for opening and closing the mod IO Browser.
+    /// Use Browser.OpenBrowser() to open and Browser.CloseBrowser() to close.
+    /// </summary>
+    public class Browser : SimpleMonoSingleton<Browser>
+    {
+        // All of the following fields with [SerializeField] attributes are assigned on the prefab
+        // from the unity editor inspector
+        [Header("Settings")]
+        [Tooltip("Setting this to false will stop the Browser from automatically initializing the plugin")]
+        [SerializeField] bool autoInitialize = true;
+        [SerializeField] public UiSettings uiConfig;
+
+        [Header("Main")]
+        public ColorScheme colorScheme;
+        public GameObject BrowserCanvas;
+
+        /// <summary>
+        /// This is set whenever GotoPanel is invoked, the current opened panel is cached so that
+        /// when the user uses 'back' it knows which panel to close and go back to
+        /// </summary>
+        public static GameObject currentFocusedPanel;
+
+        [Header("Default Selections")]
+        [SerializeField] Selectable defaultCollectionSelection;
+
+        // This is assigned on OpenBrowser() and will get invoked each time the Browser is closed.
+        internal static Action OnClose;
+        
+        /// <summary>
+        /// This delegate will get invoked whenever an InputField is selected. You can specify what
+        /// virtual keyboard you'd like to open by providing the Browser with a delegate.
+        /// </summary>
+        public static VirtualKeyboardDelegate OpenVirtualKeyboard;
+
+        public delegate void VirtualKeyboardDelegate(string title,
+                                                     string text,
+                                                     string placeholder,
+                                                     VirtualKeyboardType virtualKeyboardType,
+                                                     int characterLimit,
+                                                     bool multiline,
+                                                     Action<string> onClose);
+        
+        public delegate void RetrieveAuthenticationCodeDelegate(Action<string> callbackOnReceiveCode);
+        
+        /// <summary>
+        /// Represents the type of keyboard layout appropriate for the type of InputField being selected
+        /// </summary>
+        public enum VirtualKeyboardType
+        {
+            Default,
+            Search,
+            EmailAddress
+        }
+        
+        // if the ModIO plugin hasn't been initialized yet but the user wishes to open the UI we set
+        // this to true and open the browser the moment we have been initialized
+        static bool openOnInitialize = false;
+
+        // Use Awake() to setup the Singleton for Browser.cs and initialize the plugin
+        void Start()
+        {
+            if (autoInitialize)
+            {
+                Result result = ModIOUnity.InitializeForUser("User");
+                OnInitialize(result);
+            }
+        }
+
+        void Update()
+        {
+            // If the user has indicated that they wish to open the Browser but we haven't been
+            // initialized yet, keep checking until we have been initialized
+            if(openOnInitialize)
+            {
+                if(ModIOUnity.IsInitialized())
+                {
+                    openOnInitialize = false;
+                    IsInitialized();
+                }
+            }
+        }
+
+        // Runs at the end of every frame so long as the browser is active, and gets the most recent
+        // mod management operation to be run via the UpdateProgressState() method
+        void LateUpdate()
+        {
+            if(BrowserCanvas.activeSelf)
+            {
+                Mods.UpdateProgressState();
+            }
+        }
+
+#region Frontend methods
+
+        /// <summary>
+        /// We need this to be able to hook up a 'back' button in the UI to close the browser.
+        /// The CloseBrowser method for the frontend use is static.
+        /// </summary>
+        public void CloseBrowserPanel()
+        {
+            Close();
+        }
+
+
+        /// <summary>
+        /// Use this method to open the Mod Browser UI for a user to begin browsing.
+        /// </summary>
+        /// <param name="onClose">Assign an action to be invoked when the browser is closed</param>
+        /// <remarks>
+        /// Keep in mind that a user may close the browser from an internal method, such as using
+        /// the UI 'back' button or pressing ESC.
+        /// </remarks>
+        public static void Open([CanBeNull] Action onClose)
+        {
+            OnClose = onClose;
+
+            if(!ModIOUnity.IsInitialized())
+            {
+                openOnInitialize = true;
+            }
+            else
+            {
+                IsInitialized();
+                //Turn on selection manager and exampleinpute capture?
+            }
+        }
+
+        /// <summary>
+        /// Use this method to properly close and hide the Mod Browser UI.
+        /// </summary>
+        /// <remarks>
+        /// You may not need to use this method since the browser has the ability to close itself,
+        /// however if you need to close it for any reason you can do so via this method. Keep in
+        /// that the OnClose delegate provided from OpenBrowser will get invoked from this method.
+        /// </remarks>
+        public static void Close()
+        {
+            openOnInitialize = false;
+
+            // Deactivate the Canvas
+            Instance?.BrowserCanvas?.SetActive(false);
+            OnClose?.Invoke();
+
+            SelectionManager.Instance.gameObject.SetActive(false);
+        }
+
+
+        /// <summary>
+        /// You can use this to convert your byte[] steam app ticket into a trimmed base64 encoded
+        /// string to be used for the steam authentication.
+        /// </summary>
+        /// <param name="ticketData">the byte[] steam app ticket data</param>
+        /// <param name="ticketSize">the desired length of the ticket to be trimmed to</param>
+        /// <seealso cref="SetupSteamAuthenticationOption"/>
+        /// <returns>base 64 encoded string from the provided steam app ticket</returns>
+        [Obsolete("Use EncodeEncryptedSteamAppTicket located in ModIO.Utility instead.")]
+        public static string EncodeEncryptedSteamAppTicket(byte[] ticketData, uint ticketSize)
+        {
+            //------------------------------- Trim the app ticket --------------------------------//
+            byte[] trimmedTicket = new byte[ticketSize];
+            Array.Copy(ticketData, trimmedTicket, ticketSize);
+
+            string base64Ticket = null;
+            try
+            {
+                base64Ticket = Convert.ToBase64String(trimmedTicket);
+            }
+            catch(Exception exception)
+            {
+                Debug.LogError($"[mod.io Browser] Unable to convert the app ticket to a "
+                               + $"base64 string, caught exception: {exception.Message} - "
+                               + $"{exception.InnerException?.Message}");
+            }
+
+            return base64Ticket;
+        }
+
+        /// <summary>
+        /// Using this method will enable an option in the Authentication modal for a user to
+        /// log in with their Xbox credentials. Simply provide the xbox token and the user's email
+        /// address and the authentication flow for Xbox will be available.
+        /// </summary>
+        /// <param name="getXboxTokenDelegate">delegate for retrieving the Xbox token</param>
+        /// <param name="userEmail">(Optional) provide the users email address</param>
+        public static void SetupXboxAuthenticationOption(RetrieveAuthenticationCodeDelegate getXboxTokenDelegate, string userEmail = null)
+        {
+            Dispatcher.Instance.Run(() =>
+            {
+                Authentication.getXboxToken = getXboxTokenDelegate;
+                Authentication.optionalThirdPartyEmailAddressUsedForAuthentication = userEmail;
+            });
+        }
+
+        /// <summary>
+        /// Using this method will enable an option in the Authentication modal for a user to
+        /// log in with their Switch account. Simply provide the NSA ID of the user and their email
+        /// address and the authentication flow for Switch will be available.
+        /// </summary>
+        /// <param name="getSwitchNsaIdDelegate">delegate Switch NSA ID of the user</param>
+        /// <param name="userEmail">(Optional) provide the users email address</param>
+        public static void SetupSwitchAuthenticationOption(RetrieveAuthenticationCodeDelegate getSwitchNsaIdDelegate, string userEmail = null)
+        {
+            Dispatcher.Instance.Run(() =>
+            {
+                Authentication.getSwitchToken = getSwitchNsaIdDelegate;
+                Authentication.optionalThirdPartyEmailAddressUsedForAuthentication = userEmail;
+            });
+        }
+
+        /// <summary>
+        /// Using this method will enable an option in the Authentication modal for a user to
+        /// log in with their steam credentials. Simply provide the steam ticket (base 64 encoded)
+        /// and the user's email address and the authentication flow for steam will be available.
+        /// </summary>
+        /// <remarks>
+        /// You can use our utility method to encode the ticket if you're unsure:
+        /// Browser.EncodeEncryptedSteamAppTicket(byte[] ticketData, uint ticketSize).
+        /// If you're using the Facepunch library the app ticket you receive is already pre-trimmed
+        /// so you can simply use ticketData.Length for the ticketSize parameter.
+        /// </remarks>
+        /// <param name="getSteamTicketDelegate">delegate used to get the base64 encoded app ticket</param>
+        /// <param name="userEmail">(Optional) provide the users email address</param>
+        /// <seealso cref="EncodeEncryptedSteamAppTicket"/>
+        public static void SetupSteamAuthenticationOption(RetrieveAuthenticationCodeDelegate getSteamTicketDelegate, string userEmail = null)
+        {
+            Dispatcher.Instance.Run(() =>
+            {
+                Authentication.getSteamAppTicket = getSteamTicketDelegate;
+                Authentication.optionalThirdPartyEmailAddressUsedForAuthentication = userEmail;
+            });
+        }
+
+        /// <summary>
+        /// Using this method will enable an option in the Authentication modal for a user to
+        /// log in with their PlayStation credentials. Simply provide the auth code
+        /// and the user's email address and the authentication flow for PlayStation will be available.
+        /// </summary>
+        /// <param name="getPlayStationAuthCodeDelegate">Delegate to get the PlayStation auth code</param>
+        /// <param name="userEmail">(Optional) provide the users email address</param>
+        public static void SetupPlayStationAuthenticationOption(RetrieveAuthenticationCodeDelegate getPlayStationAuthCodeDelegate, PlayStationEnvironment environment, string userEmail = null)
+        {
+            Dispatcher.Instance.Run(() =>
+            {
+                Authentication.getPlayStationAuthCode = getPlayStationAuthCodeDelegate;
+                Authentication.optionalThirdPartyEmailAddressUsedForAuthentication = userEmail;
+                Authentication.PSEnvironment = environment;
+            });
+        }
+    
+#endregion // Frontend methods
+
+#region Initialization
+        /// <summary>
+        /// We use this to check initialization if the plugin hasn't been initialized we will first
+        /// attempt to initialize it ourselves, based on the current config file.
+        /// </summary>
+        /// <param name="result"></param>
+        static void OnInitialize(Result result)
+        {
+            if(result.Succeeded())
+            {
+                if(openOnInitialize)
+                {
+                    IsInitialized();
+                }
+                Debug.Log("[mod.io Browser] Initialized ModIO Plugin");
+            }
+            else
+            {
+                Close();
+                Debug.LogWarning("[mod.io Browser] Failed to Initialize ModIO Plugin. "
+                                 + "Make sure your config file is setup, located in "
+                                 + "Assets/Resources/mod.io\nAlso check you are using the correct "
+                                 + "server address ('https://api.mod.io/v1' for production or "
+                                 + "'https://api.test.mod.io/v1' for the test server) and that "
+                                 + "you've supplied the API Key and game Id for your game.");
+            }
+        }
+
+        static void IsInitialized()
+        {
+            openOnInitialize = false;
+            ModIOUnity.IsAuthenticated((r) =>
+            {
+                if(r.Succeeded())
+                {
+                    Authentication.Instance.IsAuthenticated = true;
+                    ModIOUnity.FetchUpdates(delegate { });
+                }
+                else
+                {
+                    Authentication.Instance.IsAuthenticated = false;
+                }
+            });
+
+            if(Instance == null)
+            {
+                Debug.LogWarning("[mod.io Browser] Could not open because the Browser.cs"
+                                 + " singleton hasn't been set yet. (Check the gameObject holding"
+                                 + " the Browser.cs component isn't set to inactive)");
+                return;
+            }
+
+            // Activate the Canvas
+            if(!Instance.BrowserCanvas.activeSelf)
+            {
+                Instance.BrowserCanvas.SetActive(true);
+            }
+
+            Collection.Instance.CacheLocalSubscribedModStatuses();
+            Implementation.Avatar.Instance.SetupUser();
+            Home.Instance.Open();
+            Home.Instance.RefreshHomePanel();
+
+            Result result = ModIOUnity.EnableModManagement(Mods.ModManagementEvent);
+
+            SelectionManager.Instance.gameObject.SetActive(true);
+        }
+
+        public void OpenMenuProfile() => Navigating.OpenMenuProfile();
+        
+        #endregion
+
+#region Editor helpers
+        [ExposeMethodInEditor]
+        public void CheckForMissingReferencesInScene()
+        {
+            MonoBehaviour[] components = Resources.FindObjectsOfTypeAll<MonoBehaviour>();
+            foreach(MonoBehaviour component in components)
+            {
+                var fields = component.GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                foreach(var field in fields)
+                {
+                    if(field.FieldType == typeof(GameObject) && field.GetValue(component) == null)
+                    {
+                        Debug.LogError("Missing reference on " + component.name + " of object: " + component.gameObject.name);
+                    }
+                }
+            }
+        }
+#endregion
+    }
+}

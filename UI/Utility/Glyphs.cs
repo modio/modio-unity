@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using ModIO.Util;
 using UnityEngine;
 using UnityEngine.UI;
-using static ModIO.Utility;
 
 namespace ModIOBrowser.Implementation
 {

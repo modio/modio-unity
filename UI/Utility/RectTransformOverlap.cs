@@ -89,5 +89,3 @@ namespace ModIOBrowser.Implementation
         }
     }
 }
-
-

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using ModIO.Util;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -16,6 +17,7 @@ namespace ModIOBrowser.Implementation
 	/// </summary>
 	internal class InputFieldCoadjutant : MonoBehaviour, ISelectHandler, IDeselectHandler, ISubmitHandler
 	{
+		[SerializeField] bool editOnFocus;
 		[SerializeField] string inputFieldTitle;
 		[SerializeField] string inputFieldPlaceholderText;
 		[SerializeField] Browser.VirtualKeyboardType keyboardtype = Browser.VirtualKeyboardType.Default;
@@ -38,9 +40,16 @@ namespace ModIOBrowser.Implementation
 		{
 			if (Browser.Instance.uiConfig.ShouldWeUseVirtualKeyboardDelegate())
 			{
-				StartCoroutine(UnFocusByDefault());
+				if(editOnFocus)
+				{
+					OpenKeyboard();
+				}
+				else
+				{
+					StartCoroutine(UnFocusByDefault());
 
-				InputReceiver.currentSelectedInputField = this;
+					InputReceiver.currentSelectedInputField = this;
+				}
 			}
 		}
 
@@ -66,23 +75,29 @@ namespace ModIOBrowser.Implementation
 			if (Browser.Instance.uiConfig.ShouldWeUseVirtualKeyboardDelegate())
 			{
 				// Check if the user has specified an OS virtual keyboard
-				Browser.OpenVirtualKeyboard?.Invoke(
-					inputFieldTitle,
-					inputField.text,
-					inputFieldPlaceholderText,
-					keyboardtype,
-					inputField.characterLimit,
-					inputField.multiLine,
-					OnCloseVirtualKeyboard);
+				OpenKeyboard();
 			}
+		}
+
+		void OpenKeyboard()
+		{
+			// Check if the user has specified an OS virtual keyboard
+			Browser.OpenVirtualKeyboard?.Invoke(
+				inputFieldTitle,
+				inputField.text,
+				inputFieldPlaceholderText,
+				keyboardtype,
+				inputField.characterLimit,
+				inputField.multiLine,
+				OnCloseVirtualKeyboard);
 		}
 
 		void OnCloseVirtualKeyboard(string text)
 		{
-			// We need to add this action to a queue to be run on the main thread because this
-			// callback may have come from a different thread when dealing with cross platform SDKs
-			Browser.AddActionToQueueForMainThread(delegate
-			{
+            // We need to add this action to a queue to be run on the main thread because this
+            // callback may have come from a different thread when dealing with cross platform SDKs
+            Dispatcher.Instance.Run(() =>
+            {
 				// Change the text of the input field
 				inputField.text = text;
 					

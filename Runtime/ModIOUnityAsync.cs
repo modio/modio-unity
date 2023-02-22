@@ -3,6 +3,7 @@ using System;
 using JetBrains.Annotations;
 using UnityEngine;
 using System.Threading.Tasks;
+using ModIO.Implementation.API.Objects;
 
 #pragma warning disable 4014 // Ignore warnings about calling async functions from non-async code
 
@@ -17,88 +18,6 @@ namespace ModIO
     public static class ModIOUnityAsync
     {
 #region Initialization and Maintenance
-
-        /// <summary>
-        /// Initializes the Plugin using the provided settings for a specified user. Loads the
-        /// local state of mods installed on the system as well as relevant mods to the user. Loads the
-        /// state of mods installed on the system as well as the set of mods the
-        /// specified user has installed on this device.
-        /// </summary>
-        /// <param name="userProfileIdentifier">Name of the directory to store the user's data
-        /// in.</param>
-        /// <param name="serverSettings">Data used by the plugin to connect with the mod.io
-        /// service.</param>
-        /// <param name="buildSettings">Data used by the plugin to interact with the
-        /// platform.</param>
-        /// <seealso cref="FetchUpdates"/>
-        /// <seealso cref="ServerSettings"/>
-        /// <seealso cref="BuildSettings"/>
-        /// <seealso cref="Result"/>
-        /// <seealso cref="Shutdown"/>
-        /// <code>
-        /// async void Example()
-        /// {
-        ///     // Setup a ServerSettings struct
-        ///     ServerSettings serverSettings = new ServerSettings();
-        ///     serverSettings.serverURL = "https://api.test.mod.io/v1";
-        ///     serverSettings.gameId = 1234;
-        ///     serverSettings.gameKey = "1234567890abcdefghijklmnop";
-        ///
-        ///     // Setup a BuildSettings struct
-        ///     BuildSettings buildSettings = new BuildSettings();
-        ///     buildSettings.logLevel = LogLevel.Verbose;
-        ///     buildSettings.userPortal = UserPortal.None;
-        ///     buildSettings.requestCacheLimitKB = 0; // No limit
-        /// 
-        ///     Result result = await ModIOUnityAsync.InitializeForUser("ExampleUser", serverSettings, buildSettings);
-        /// 
-        ///     if (result.Succeeded())
-        ///     {
-        ///         Debug.Log("Initialized plugin");
-        ///     }
-        ///     else
-        ///     {
-        ///         Debug.Log("Failed to initialize plugin");
-        ///     }
-        /// }
-        /// </code>
-        public static async Task<Result> InitializeForUser(string userProfileIdentifier,
-                                                                ServerSettings serverSettings,
-                                                                BuildSettings buildSettings)
-        {
-            return await ModIOUnityImplementation.InitializeForUserAsync(userProfileIdentifier,
-                serverSettings, buildSettings);
-        }
-
-        /// <summary>
-        /// Initializes the Plugin using the provided settings for a specified user. Loads the
-        /// local state of mods installed on the system as well as relevant mods to the user. Loads the
-        /// state of mods installed on the system as well as the set of mods the
-        /// specified user has installed on this device.
-        /// </summary>
-        /// <param name="userProfileIdentifier">Name of the directory to store the user's data
-        /// in.</param>
-        /// <seealso cref="Result"/>
-        /// <seealso cref="Shutdown"/>
-        /// <code>
-        /// async void Example()
-        /// {
-        ///     Result result = await ModIOUnityAsync.InitializeForUser("ExampleUser");
-        /// 
-        ///     if (result.Succeeded())
-        ///     {
-        ///         Debug.Log("Initialized plugin");
-        ///     }
-        ///     else
-        ///     {
-        ///         Debug.Log("Failed to initialize plugin");
-        ///     {
-        /// }
-        /// </code>
-        public static async Task<Result> InitializeForUser(string userProfileIdentifier)
-        {
-            return await ModIOUnityImplementation.InitializeForUserAsync(userProfileIdentifier);
-        }
 
         /// <summary>
         /// Cancels any running public operations, frees plugin resources, and invokes
@@ -282,7 +201,7 @@ namespace ModIO
         {
             return await ModIOUnityImplementation.AuthenticateUser(
                 steamToken, AuthenticationServiceProvider.Steam, emailAddress, hash, null, null,
-                null);
+                null, 0);
         }
 
         /// <summary>
@@ -301,7 +220,7 @@ namespace ModIO
         /// async void GetTermsOfUse_Example()
         /// {
         ///     ResultAnd&#60;TermsOfUser&#62; response = await ModIOUnityAsync.GetTermsOfUse();
-        /// 
+        ///
         ///     if (response.result.Succeeded())
         ///     {
         ///         Debug.Log("Successfully retrieved the terms of use: " + response.value.termsOfUse);
@@ -314,12 +233,12 @@ namespace ModIO
         ///         Debug.Log("Failed to retrieve the terms of use");
         ///     }
         /// }
-        /// 
+        ///
         /// // Once we have the Terms of Use and hash we can attempt to authenticate
         /// async void Authenticate_Example()
         /// {
         ///     Result result = await ModIOUnityAsync.AuthenticateUserViaPlayStation(authCode, "johndoe@gmail.com", modIOTermsOfUse.hash);
-        /// 
+        ///
         ///     if (result.Succeeded())
         ///     {
         ///         Debug.Log("Successfully authenticated user");
@@ -336,9 +255,9 @@ namespace ModIO
         {
             return await ModIOUnityImplementation.AuthenticateUser(
                 authCode, AuthenticationServiceProvider.PlayStation, emailAddress, hash, null, null,
-                null);
+                null, 0);
         }
-        
+
         /// <summary>
         /// Attempts to authenticate a user via the GOG API.
         /// </summary>
@@ -388,7 +307,7 @@ namespace ModIO
                                                                 [CanBeNull] TermsHash? hash)
         {
             return await ModIOUnityImplementation.AuthenticateUser(gogToken, AuthenticationServiceProvider.GOG,
-                emailAddress, hash, null, null, null);
+                emailAddress, hash, null, null, null, 0);
         }
 
         /// <summary>
@@ -442,7 +361,7 @@ namespace ModIO
         {
             return await ModIOUnityImplementation.AuthenticateUser(
                 itchioToken, AuthenticationServiceProvider.Itchio, emailAddress, hash, null, null,
-                null);
+                null, 0);
         }
 
         /// <summary>
@@ -495,7 +414,7 @@ namespace ModIO
                                                                  [CanBeNull] TermsHash? hash)
         {
             return await ModIOUnityImplementation.AuthenticateUser(xboxToken, AuthenticationServiceProvider.Xbox,
-                emailAddress, hash, null, null, null);
+                emailAddress, hash, null, null, null, 0);
         }
 
         /// <summary>
@@ -549,7 +468,7 @@ namespace ModIO
         {
             return await ModIOUnityImplementation.AuthenticateUser(
                 switchToken, AuthenticationServiceProvider.Switch, emailAddress, hash, null, null,
-                null);
+                null, 0);
         }
 
         /// <summary>
@@ -603,7 +522,7 @@ namespace ModIO
         {
             return await ModIOUnityImplementation.AuthenticateUser(
                 discordToken, AuthenticationServiceProvider.Discord, emailAddress, hash, null, null,
-                null);
+                null, 0);
         }
 
         /// <summary>
@@ -657,7 +576,7 @@ namespace ModIO
         {
             return await ModIOUnityImplementation.AuthenticateUser(
                 googleToken, AuthenticationServiceProvider.Google, emailAddress, hash, null, null,
-                null);
+                null, 0);
         }
 
         /// <summary>
@@ -683,7 +602,7 @@ namespace ModIO
         ///     if (response.result.Succeeded())
         ///     {
         ///         Debug.Log("Successfully retrieved the terms of use: " + response.value.termsOfUse);
-        /// 
+        ///
         ///         //  Cache the terms of use (which has the hash for when we attempt to authenticate)
         ///         modIOTermsOfUse = response.value;
         ///     }
@@ -720,7 +639,7 @@ namespace ModIO
         {
             return await ModIOUnityImplementation.AuthenticateUser(
                 oculusToken, AuthenticationServiceProvider.Oculus, emailAddress, hash, nonce,
-                oculusDevice, userId.ToString());
+                oculusDevice, userId.ToString(), 0);
         }
 
         /// <summary>
@@ -859,6 +778,49 @@ namespace ModIO
             return await ModIOUnityImplementation.GetMod(modId.id);
         }
 
+        /// <summary>
+        ///
+        /// </summary>
+        public static async Task<ResultAnd<ModDependencies[]>> GetModDependencies(ModId modId)
+        {
+            return await ModIOUnityImplementation.GetModDependencies(modId);
+        }
+
+        /// <summary>
+        /// Get all mod rating's submitted by the authenticated user. Successful request will return an array of Rating Objects.
+        /// </summary>
+        /// <param name="modId">the ModId of the ModProfile to get</param>
+        /// <param name="callback">callback with the Result and an array of RatingObject</param>
+        /// <seealso cref="ModId"/>
+        /// <seealso cref="RatingObject"/>
+        /// <seealso cref="ResultAnd"/>
+        /// <code>
+        /// void Example()
+        /// {
+        ///    ModId modId = new ModId(1234);
+        ///    ModIOUnity.GetCurrentUserRatings(modId, GetCurrentUserRatingsCallback);
+        /// }
+        ///
+        /// void GetCurrentUserRatingsCallback(ResultAnd&lt;RatingObject[]&gt; response)
+        /// {
+        ///    if (response.result.Succeeded())
+        ///    {
+        ///        foreach(var ratingObject in response.value)
+        ///        {
+        ///            Debug.Log($"retrieved rating {ratingObject.rating} for {ratingObject.mod_id}");
+        ///        }
+        ///    }
+        ///    else
+        ///    {
+        ///        Debug.Log("failed to get ratings");
+        ///    }
+        /// }
+        /// </code>
+        public static void GetCurrentUserRatings(Action<ResultAnd<Rating[]>> callback)
+        {
+            ModIOUnityImplementation.GetCurrentUserRatings(callback);
+        }
+
 #endregion // Mod Browsing
 
 #region User Management
@@ -876,7 +838,7 @@ namespace ModIO
         /// <code>
         ///
         /// ModProfile mod;
-        /// 
+        ///
         /// async void Example()
         /// {
         ///     Result result = await ModIOUnityAsync.RateMod(mod.id, ModRating.Positive);
@@ -911,7 +873,7 @@ namespace ModIO
         /// <code>
         ///
         /// ModProfile mod;
-        /// 
+        ///
         /// async void Example()
         /// {
         ///     Result result = await ModIOUnityAsync.SubscribeToMod(mod.id);
@@ -946,7 +908,7 @@ namespace ModIO
         /// <code>
         ///
         /// ModProfile mod;
-        /// 
+        ///
         /// async void Example()
         /// {
         ///     Result result = await ModIOUnityAsync.UnsubscribeFromMod(mod.id);
@@ -997,6 +959,27 @@ namespace ModIO
             return await ModIOUnityImplementation.GetCurrentUser();
         }
 
+        /// <summary>
+        /// Mutes a user which effectively hides any content from that specified user
+        /// </summary>
+        /// <remarks>The userId can be found from the UserProfile. Such as ModProfile.creator.userId</remarks>
+        /// <param name="userId">The id of the user to be muted</param>
+        /// <seealso cref="UserProfile"/>
+        public static void MuteUser(long userId)
+        {
+            ModIOUnityImplementation.MuteUser(userId);
+        }
+
+        /// <summary>
+        /// Un-mutes a user which effectively reveals previously hidden content from that user
+        /// </summary>
+        /// <remarks>The userId can be found from the UserProfile. Such as ModProfile.creator.userId</remarks>
+        /// <param name="userId">The id of the user to be muted</param>
+        /// <seealso cref="UserProfile"/>
+        public static void UnmuteUser(long userId)
+        {
+            ModIOUnityImplementation.UnmuteUser(userId);
+        }
 #endregion
 
 #region Mod Management
@@ -1048,7 +1031,8 @@ namespace ModIO
 #region Mod Uploading
         /// <summary>
         /// Creates a new mod profile on the mod.io server based on the details provided from the
-        /// ModProfileDetails object provided.
+        /// ModProfileDetails object provided. Note that you must have a logo, name and summary
+        /// assigned in ModProfileDetails in order for this to work.
         /// </summary>
         /// <remarks>
         /// Note that this will create a new profile on the server and can be viewed online through
@@ -1065,7 +1049,7 @@ namespace ModIO
         /// ModId newMod;
         /// Texture2D logo;
         /// CreationToken token;
-        /// 
+        ///
         /// async void Example()
         /// {
         ///     token = ModIOUnity.GenerateCreationToken();
@@ -1106,7 +1090,7 @@ namespace ModIO
         /// <seealso cref="Result"/>
         /// <code>
         /// ModId modId;
-        /// 
+        ///
         /// async void Example()
         /// {
         ///     ModProfileDetails profile = new ModProfileDetails();
@@ -1143,7 +1127,7 @@ namespace ModIO
         /// <code>
         ///
         /// ModId modId;
-        /// 
+        ///
         /// async void Example()
         /// {
         ///     ModfileDetails modfile = new ModfileDetails();
@@ -1217,7 +1201,7 @@ namespace ModIO
         /// <code>
         ///
         /// ModId modId;
-        /// 
+        ///
         /// async void Example()
         /// {
         ///     Result result = await ModIOUnityAsync.ArchiveModProfile(modId);
@@ -1238,7 +1222,10 @@ namespace ModIO
         }
 
         /// <summary>
-        /// Not implemented yet
+        /// Get all mods the authenticated user added or is a team member of.
+        /// Successful request will return an array of Mod Objects. We
+        /// recommended reading the filtering documentation to return only
+        /// the records you want.
         /// </summary>
         public static async Task<ResultAnd<ModPage>> GetCurrentUserCreations(SearchFilter filter)
         {
@@ -1328,7 +1315,7 @@ namespace ModIO
         /// <code>
         ///
         /// ModProfile mod;
-        /// 
+        ///
         /// async void Example()
         /// {
         ///     ResultAnd&#60;Texture2D&#62; response = await ModIOUnityAsync.DownloadTexture(mod.logoImage_320x180);

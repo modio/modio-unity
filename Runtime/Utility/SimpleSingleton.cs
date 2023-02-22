@@ -1,32 +1,29 @@
 ﻿using System;
 
-namespace ModIO
+namespace ModIO.Util
 {
-    partial class Utility
+    public class Singleton<T> where T : new()
     {
-        public class Singleton<T> where T : new()
+        private static T _instance;
+
+        public static T Instance
         {
-            private static T _instance;
-
-            public static T Instance
-            {
-                get {
-                    if(_instance == null)
-                    {
-                        _instance = new T();
-                    }
-
-                    return _instance;
+            get {
+                if(_instance == null)
+                {
+                    _instance = new T();
                 }
 
-                set {
-                    if(_instance != null)
-                    {
-                        throw new NotImplementedException();
-                    }
+                return _instance;
+            }
 
-                    _instance = value;
+            set {
+                if(_instance != null)
+                {
+                    throw new NotImplementedException();
                 }
+
+                _instance = value;
             }
         }
     }

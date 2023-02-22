@@ -43,24 +43,34 @@ namespace ModIO.Implementation.API.Requests
 
             if(details.images != null)
             {
-                CompressOperationMultiple zipOperation = new CompressOperationMultiple(
-                    details.images.Select(x => x.EncodeToPNG()),
-                    null);
-
-                ResultAnd<MemoryStream> resultAnd = await zipOperation.Compress();
-
-                if(resultAnd.result.Succeeded())
+                int count = 0;
+                foreach(var image in details.images)
                 {
-                    form.AddBinaryData("images", resultAnd.value.ToArray(), "images.zip");
+                    form.AddBinaryData("image", image.EncodeToPNG(), $"image_{count}.png", null);
+                    count++;
                 }
-                else
-                {
-                    return ResultAnd.Create(ResultBuilder.Unknown, new AddModMediaUrlResult()
-                    {
-                        url = url,
-                        form = null
-                    });
-                }                    
+                
+                // The following code is currently (as of 9/2/2023) not working on the backend
+                // TODO: Re-implement it when it does work
+                
+                // CompressOperationMultiple zipOperation = new CompressOperationMultiple(
+                //     details.images.Select(x => x.EncodeToPNG()),
+                //     null);
+                //
+                // ResultAnd<MemoryStream> resultAnd = await zipOperation.Compress();
+                //
+                // if(resultAnd.result.Succeeded())
+                // {
+                //     form.AddBinaryData("images", resultAnd.value.ToArray(), "images.zip", null);
+                // }
+                // else
+                // {
+                //     return ResultAnd.Create(ResultBuilder.Unknown, new AddModMediaUrlResult()
+                //     {
+                //         url = url,
+                //         form = null
+                //     });
+                // }                    
             }
 
             return ResultAnd.Create(ResultBuilder.Success, new AddModMediaUrlResult

@@ -20,21 +20,34 @@ namespace ModIO.Implementation
             {
                 serverSettings = new ServerSettings();
                 buildSettings = new BuildSettings();
-
                 return ResultBuilder.Create(ResultCode.Init_FailedToLoadConfig);
             }
             else
             {
                 serverSettings = asset.serverSettings;
                 buildSettings = asset.GetBuildSettings();
-
                 Resources.UnloadAsset(asset);
 
                 return ResultBuilder.Success;
             }
         }
 
-#endregion // Asset Management
+        public static Result TryLoad(out bool autoInitializePlugin)
+        {
+            SettingsAsset asset = Resources.Load<SettingsAsset>(FilePath);
+
+            if(asset == null)
+            {
+                autoInitializePlugin = false;
+                return ResultBuilder.Create(ResultCode.Init_FailedToLoadConfig);
+            }
+
+            autoInitializePlugin = asset.autoInitializePlugin;
+            Resources.UnloadAsset(asset);
+            return ResultBuilder.Success;
+        }
+
+        #endregion // Asset Management
 
 #region Data
 
@@ -51,6 +64,9 @@ namespace ModIO.Implementation
         /// <summary>Configuration for the editor.</summary>
         public BuildSettings editorConfiguration;
 
+        //Initializes the ModIO plugin, with default settings, the first time it is used
+        public bool autoInitializePlugin = true;
+        
 #if UNITY_EDITOR
 
         /// <summary>Gets the configuration for the editor.</summary>

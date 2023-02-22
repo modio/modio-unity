@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using ModIOBrowser.Implementation;
+using System.Collections.Specialized;
 
 namespace ModIOBrowser
 {
@@ -22,7 +23,7 @@ namespace ModIOBrowser
 		{
 			this.profile = profile;
 				
-			if(Browser.IsSubscribed(profile.id, out SubscribedModStatus status))
+			if(Collection.Instance.IsSubscribed(profile.id, out SubscribedModStatus status))
 			{
 				if(status == SubscribedModStatus.Installed)
 				{
@@ -67,7 +68,7 @@ namespace ModIOBrowser
 			
 			progressBarQueuedOutline.SetActive(false);
 
-			if(Browser.IsSubscribed(handle.modId))
+			if(Collection.Instance.IsSubscribed(handle.modId))
 			{
 				progressBar.SetActive(true);
 			}

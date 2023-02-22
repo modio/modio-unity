@@ -51,5 +51,12 @@ namespace ModIO
         /// The profile of this mod, including the summary and name
         /// </summary>
         public ModProfile modProfile;
+
+        /// <summary>
+        /// Whether the mod has been marked as enabled or disabled by the user
+        /// </summary>
+        /// <seealso cref="ModIOUnity.EnableMod"/>
+        /// <seealso cref="ModIOUnity.DisableMod"/>
+        public bool enabled;
     }
 }

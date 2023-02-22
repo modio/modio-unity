@@ -27,7 +27,7 @@ namespace ModIOBrowser.Implementation
         public void OnSelect(BaseEventData eventData)
         {
             // This may be true when using mouse and keyboard
-            if(Browser.mouseNavigation)
+            if(InputNavigation.Instance.mouseNavigation)
             {
                 return;
             }
@@ -59,7 +59,7 @@ namespace ModIOBrowser.Implementation
             RectTransform rt = transform as RectTransform;
             RectTransformOverlap rto = new RectTransformOverlap(rt);
 
-            RectTransformOverlap viewport = new RectTransformOverlap(Viewport ?? Browser.Instance.BrowserPanel.transform as RectTransform);
+            RectTransformOverlap viewport = new RectTransformOverlap(Viewport ?? Home.Instance.BrowserPanel.transform as RectTransform);
 
             if(rto.IsOutsideOfRectX(viewport, PercentPaddingHorizontal))
             {
@@ -84,7 +84,7 @@ namespace ModIOBrowser.Implementation
             RectTransform rt = transform as RectTransform;
             RectTransformOverlap rto = new RectTransformOverlap(rt);
 
-            RectTransformOverlap viewport = new RectTransformOverlap(Viewport ?? Browser.Instance.BrowserPanel.transform as RectTransform);
+            RectTransformOverlap viewport = new RectTransformOverlap(Viewport ?? Home.Instance.BrowserPanel.transform as RectTransform);
 
             if(rto.IsOutsideOfRectY(viewport, PercentPaddingVertical))
             {

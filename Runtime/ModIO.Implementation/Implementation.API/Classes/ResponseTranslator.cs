@@ -87,31 +87,30 @@ namespace ModIO.Implementation
             {
                 return page;
             }
-            
+
             page.totalSearchResultsFound = schema.result_total;
 
             List<ModProfile> mods = new List<ModProfile>();
             int offset = filter.pageSize * filter.pageIndex;
-            int highestModIndex = offset + filter.pageSize;
             // Only return the range of mods the user asked for (because we always take a minimum
             // of 100 mods per request, but they may have only asked for 10. We cache the other 90)
-            for(int i = offset; i < highestModIndex && i < schema.data.Length; i++)
+            for(int i = 0; i < filter.pageSize && i < schema.data.Length; i++)
             {
                 mods.Add(ConvertModObjectToModProfile(schema.data[i]));
             }
-            
+
             ModProfile[] profiles = schema.data == null
                                         ? Array.Empty<ModProfile>()
                                         : ConvertModObjectsToModProfile(schema.data);
 
             page.modProfiles = mods.ToArray();
-            
+
             // Add this response into the cache
             ModPage pageForCache = new ModPage();
             pageForCache.totalSearchResultsFound = schema.result_total;
             pageForCache.modProfiles = profiles;
             ResponseCache.AddModsToCache(GetMods.URL_Unpaginated(filter), offset, pageForCache);
-            
+
             return page;
         }
 
@@ -124,7 +123,7 @@ namespace ModIO.Implementation
                 return page;
             }
             page.totalSearchResultsFound = schema.result_total;
-            
+
             List<ModProfile> mods = new List<ModProfile>();
             int offset = filter.pageSize * filter.pageIndex;
             int highestModIndex = offset + filter.pageSize;
@@ -134,7 +133,7 @@ namespace ModIO.Implementation
             {
                 mods.Add(ConvertModObjectToModProfile(schema.data[i]));
             }
-            
+
             // LEGACY (Response Cache makes this no longer needed)
             // ModProfile[] profiles = schema.data == null
             //                             ? Array.Empty<ModProfile>()
@@ -143,6 +142,40 @@ namespace ModIO.Implementation
             page.modProfiles = mods.ToArray();
 
             return page;
+        }
+
+        public static Rating[] ConvertModRatingsObjectToRatings(RatingObject[] ratingObjects)
+        {
+            Rating[] ratings = new Rating[ratingObjects.Length];
+            int index = 0;
+            foreach(var ratingObj in ratingObjects)
+            {
+                ratings[index] =  new Rating
+                {
+                    modId = new ModId(ratingObj.mod_id),
+                    rating = (ModRating)ratingObj.rating,
+                    dateAdded = GetUTCDateTime(ratingObj.date_added),
+                    gameId = ratingObj.game_id
+                };
+            }
+
+            return ratings;
+        }
+
+        public static ModDependencies[] ConvertModDependenciesObjectToModDependencies(ModDependenciesObject[] modDependenciesObjects)
+        {
+            ModDependencies[] modDependencies = new ModDependencies[modDependenciesObjects.Length];
+            int index = 0;
+            foreach(var modDepObj in modDependenciesObjects)
+            {
+                modDependencies[index] = new ModDependencies {
+                    modId = new ModId(modDepObj.mod_id),
+                    modName = modDepObj.mod_name,
+                    dateAdded = GetUTCDateTime(modDepObj.date_added)
+                };
+                index++;
+            }
+            return modDependencies;
         }
 
         public static ModProfile[] ConvertModObjectsToModProfile(ModObject[] modObjects)
@@ -168,11 +201,11 @@ namespace ModIO.Implementation
             profile.visible = modObject.visible == 1;
             profile.contentWarnings = (ContentWarnings)modObject.maturity_option;
             profile.description = modObject.description_plaintext ?? "";
-            profile.creatorUsername = modObject.submitted_by.username ?? "";
+            profile.creator = ConvertUserObjectToUserProfile(modObject.submitted_by);
             profile.metadata = modObject.metadata_blob;
-            profile.archiveFileSize = modObject.modfile.id == ModProfileNullId ? 
+            profile.archiveFileSize = modObject.modfile.id == ModProfileNullId ?
                 ModProfileUnsetFilesize : modObject.modfile.filesize;
-            
+
             // mod file details
             profile.latestChangelog = modObject.modfile.changelog;
             profile.latestVersion = modObject.modfile.version;
@@ -202,7 +235,7 @@ namespace ModIO.Implementation
                         modObject.metadata_kvp[i].metavalue);
                 }
             }
-            
+
             // Create DownloadReferences
             // Gallery
             if(modObject.media.images != null)
@@ -226,7 +259,7 @@ namespace ModIO.Implementation
                                                 modObject.media.images[i].original, profile.id);
                 }
             }
-            
+
             // Logo
             profile.logoImage_320x180 = CreateDownloadReference(
                 modObject.logo.filename, modObject.logo.thumb_320x180, profile.id);
@@ -236,7 +269,7 @@ namespace ModIO.Implementation
                 modObject.logo.filename, modObject.logo.thumb_1280x720, profile.id);
             profile.logoImage_Original = CreateDownloadReference(
                 modObject.logo.filename, modObject.logo.original, profile.id);
-            
+
             // Avatar
             profile.creatorAvatar_100x100 =
                 CreateDownloadReference(modObject.submitted_by.avatar.filename,
@@ -286,12 +319,13 @@ namespace ModIO.Implementation
             user.avatar_100x100 = CreateDownloadReference(
                 userObject.avatar.filename, userObject.avatar.thumb_100x100, (ModId)0);
             user.username = userObject.username;
+            user.userId = userObject.id;
             user.portal_username = userObject.display_name_portal;
             user.language = userObject.language;
             user.timezone = userObject.timezone;
             return user;
         }
-        
+
 #region Utility
         public static DateTime GetUTCDateTime(long serverTimeStamp)
         {

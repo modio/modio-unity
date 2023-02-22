@@ -24,7 +24,7 @@ namespace ModIO.Implementation.Platform
             string userProfileIdentifier, long gameId, BuildSettings settings)
         {
             IUserDataService service = new EditorDataService();
-            Result result = await service.InitializeAsync(userProfileIdentifier, gameId, settings);
+            Result result = await service.InitializeAsync(userProfileIdentifier, gameId, settings).ConfigureAwait(false);
             return ResultAnd.Create(result, service);
         }
 
@@ -33,7 +33,7 @@ namespace ModIO.Implementation.Platform
             long gameId, BuildSettings settings)
         {
             IPersistentDataService service = new EditorDataService();
-            Result result = await service.InitializeAsync(gameId, settings);
+            Result result = await service.InitializeAsync(gameId, settings).ConfigureAwait(false);
             return ResultAnd.Create(result, service);
         }
 
@@ -42,7 +42,7 @@ namespace ModIO.Implementation.Platform
             long gameId, BuildSettings settings)
         {
             ITempDataService service = new EditorDataService();
-            Result result = await service.InitializeAsync(gameId, settings);
+            Result result = await service.InitializeAsync(gameId, settings).ConfigureAwait(false);
             return ResultAnd.Create(result, service);
         }
     }

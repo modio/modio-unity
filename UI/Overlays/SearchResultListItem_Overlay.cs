@@ -75,17 +75,17 @@ namespace ModIOBrowser.Implementation
 
         public void SubscribeButton()
         {
-            if(Browser.IsSubscribed(listItemToReplicate.profile.id))
+            if(Collection.Instance.IsSubscribed(listItemToReplicate.profile.id))
             {
                 // We are pre-emptively changing the text here to make the UI feel more responsive
                 Translation.Get(subscribeButtonTextTranslation, "Subscribe", subscribeButtonText);
-                Browser.UnsubscribeFromModEvent(listItemToReplicate.profile, UpdateSubscribeButton);
+                Mods.UnsubscribeFromEvent(listItemToReplicate.profile, UpdateSubscribeButton);
             }
             else
             {
                 // We are pre-emptively changing the text here to make the UI feel more responsive
                 Translation.Get(subscribeButtonTextTranslation, "Unsubscribe", subscribeButtonText);
-                Browser.SubscribeToModEvent(listItemToReplicate.profile, UpdateSubscribeButton);
+                Mods.SubscribeToEvent(listItemToReplicate.profile, UpdateSubscribeButton);
             }
             
             LayoutRebuilder.ForceRebuildLayoutImmediate(subscribeButtonText.transform.parent as RectTransform);
@@ -109,7 +109,7 @@ namespace ModIOBrowser.Implementation
                 action = delegate
                 {
                     ModIOUnity.RateMod(listItemToReplicate.profile.id, ModRating.Positive, delegate { });
-                    Browser.Instance.CloseContextMenu();
+                    ModioContextMenu.Instance.Close();
                 }
             });
 
@@ -120,7 +120,7 @@ namespace ModIOBrowser.Implementation
                 action = delegate
                 {
                     ModIOUnity.RateMod(listItemToReplicate.profile.id, ModRating.Negative, delegate { });
-                    Browser.Instance.CloseContextMenu();
+                    ModioContextMenu.Instance.Close();
                 }
             });
 
@@ -131,13 +131,13 @@ namespace ModIOBrowser.Implementation
                 action = delegate
                 {
                     // TODO open report menu
-                    Browser.Instance.CloseContextMenu();
-                    Browser.Instance.OpenReportPanel(listItemToReplicate.profile, listItemToReplicate.selectable);
+                    ModioContextMenu.Instance.Close();
+                    Reporting.Instance.Open(listItemToReplicate.profile, listItemToReplicate.selectable);
                 }
             });
 
             // Open context menu
-            Browser.Instance.OpenContextMenu(contextMenuPosition, options, listItemToReplicate.selectable);
+            ModioContextMenu.Instance.Open(contextMenuPosition, options, listItemToReplicate.selectable);
         }
 
         public void UpdateSubscribeButton()
@@ -149,7 +149,7 @@ namespace ModIOBrowser.Implementation
         {
             listItemToReplicate?.progressTab?.Setup(listItemToReplicate.profile);
             
-            if(Browser.IsSubscribed(listItemToReplicate.profile.id))
+            if(Collection.Instance.IsSubscribed(listItemToReplicate.profile.id))
             {
                 Translation.Get(subscribeButtonTextTranslation, "Unsubscribe", subscribeButtonText);
             } 
@@ -168,9 +168,9 @@ namespace ModIOBrowser.Implementation
         
         public void OnPointerExit(PointerEventData eventData)
         {
-            if (!Browser.Instance.contextMenu.activeSelf)
+            if (!ModioContextMenu.Instance.ContextMenu.activeSelf)
             {
-                Browser.DeselectUiGameObject();
+                InputNavigation.Instance.DeselectUiGameObject();
                 gameObject.SetActive(false);
             }
         }

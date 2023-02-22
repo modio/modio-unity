@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using ModIO.Implementation.API;
 using ModIO.Implementation.API.Objects;
 using ModIO.Implementation.API.Requests;
+using UnityEngine;
 
 namespace ModIO.Implementation
 {
@@ -27,7 +28,7 @@ namespace ModIO.Implementation
             // Reset syncing in case of re-init
             hasSyncedBefore = false;
 
-            ResultAnd<ModCollectionRegistry> response = await DataStorage.LoadSystemRegistry();
+            ResultAnd<ModCollectionRegistry> response = await DataStorage.LoadSystemRegistry().ConfigureAwait(false);
 
             if(response.result.Succeeded())
             {
@@ -38,7 +39,7 @@ namespace ModIO.Implementation
                 // Log error, failed to load registry
                 Logger.Log(LogLevel.Error, $"Failed to load Registry [{response.result.code}] - Creating a new one");
                 Registry = new ModCollectionRegistry();
-                
+
                 return response.result;
             }
 
@@ -99,12 +100,12 @@ namespace ModIO.Implementation
 
             UserModCollectionData newUser = new UserModCollectionData();
             newUser.userId = user.id;
-            
+
             if(!Registry.existingUsers.ContainsKey(user.id))
             {
                 Registry.existingUsers.Add(user.id, newUser);
             }
-            
+
             SaveRegistry();
         }
 
@@ -121,7 +122,7 @@ namespace ModIO.Implementation
             // I've made a partial solution that checks if we have the most recent modfile of a
             // subscribed mod installed, but if a mod is outdated we will get artefacts.
 
-            // Early out - make sure if user != null that we have a valid 
+            // Early out - make sure if user != null that we have a valid
             if(!IsRegistryLoaded())
             {
                 return ResultBuilder.Create(ResultCode.Internal_RegistryNotInitialized);
@@ -146,10 +147,10 @@ namespace ModIO.Implementation
             {
                 return response.result;
             }
-            
+
             // get the username we have in the registry
             long user = GetUserKey();
-            
+
             //--------------------------------------------------------------------------------//
             //                               GET GAME TAGS                                    //
             //--------------------------------------------------------------------------------//
@@ -187,6 +188,27 @@ namespace ModIO.Implementation
                 {
                     return result;
                 }
+            }
+
+            //--------------------------------------------------------------------------------//
+            //                            UPDATE CURRENT USER RATINGS                         //
+            //--------------------------------------------------------------------------------//
+
+            url = GetCurrentUserRatings.Url();
+
+            // Wait for request
+            ResultAnd<GetCurrentUserRatings.ResponseSchema> ratingsResultAnd =
+                await RESTAPI.Request<GetCurrentUserRatings.ResponseSchema>(url, GetCurrentUserRatings.Template);
+            var ratings = ResponseTranslator.ConvertModRatingsObjectToRatings(ratingsResultAnd.value.data);
+
+            // If failed, cancel the entire update operation
+            if(ratingsResultAnd.result.Succeeded())
+            {
+                ResponseCache.ReplaceCurrentUserRatings(ratings);
+            }
+            else
+            {
+                return ratingsResultAnd.result;
             }
 
             //--------------------------------------------------------------------------------//
@@ -458,7 +480,7 @@ namespace ModIO.Implementation
         {
 
             long user = GetUserKey();
-            
+
             // Early out
             if(!IsRegistryLoaded() || !DoesUserExist(user))
             {
@@ -485,7 +507,7 @@ namespace ModIO.Implementation
                                                           bool saveRegistry = true)
         {
             long user = GetUserKey();
-            
+
             // Early out
             if(!IsRegistryLoaded() || !DoesUserExist(user))
             {
@@ -543,12 +565,52 @@ namespace ModIO.Implementation
             }
         }
 
+        public static bool EnableModForCurrentUser(ModId modId)
+        {
+            // early out
+            if(!IsRegistryLoaded())
+            {
+                Logger.Log(LogLevel.Error, "Cannot enable mod for user. No registry has been loaded.");
+                return false;
+            }
+
+            long currentUser = GetUserKey();
+
+            if (Registry.existingUsers[currentUser].disabledMods.Contains(modId))
+            {
+                Registry.existingUsers[currentUser].disabledMods.Remove(modId);
+            }
+
+            Logger.Log(LogLevel.Verbose, $"Enabled Mod {((long)modId).ToString()}");
+            return true;
+        }
+
+        public static bool DisableModForCurrentUser(ModId modId)
+        {
+            // early out
+            if(!IsRegistryLoaded())
+            {
+                Logger.Log(LogLevel.Error, "Cannot enable mod for user. No registry has been loaded.");
+                return false;
+            }
+
+            long currentUser = GetUserKey();
+
+            if (!Registry.existingUsers[currentUser].disabledMods.Contains(modId))
+            {
+                Registry.existingUsers[currentUser].disabledMods.Add(modId);
+            }
+
+            Logger.Log(LogLevel.Verbose, $"Disabled Mod {((long)modId).ToString()}");
+            return true;
+        }
+
         /// <summary>
         /// Gets all mods that are installed regardless of whether or not the user is subscribed to
         /// them or not
         /// </summary>
         /// <returns></returns>
-        public static InstalledMod[] GetInstalledMods(out Result result)
+        public static InstalledMod[] GetInstalledMods(out Result result, bool excludeSubscribedModsForCurrentUser)
         {
             // early out
             if(!IsRegistryLoaded())
@@ -560,26 +622,38 @@ namespace ModIO.Implementation
             List<InstalledMod> mods = new List<InstalledMod>();
 
             long currentUser = GetUserKey();
-            
+
             using(var enumerator = Registry.mods.GetEnumerator())
             {
                 while(enumerator.MoveNext())
                 {
-                    if(currentUser != 0 
-                       && Registry.existingUsers.ContainsKey(currentUser)
-                       && Registry.existingUsers[currentUser].subscribedMods.Contains(enumerator.Current.Key))
+                    // Check if we are excluding the current authenticated user subscriptions or not
+                    // If the current user is not authenticated we will obtain all installed mods
+                    if(Registry.existingUsers.ContainsKey(currentUser)) // this checks if we're authenticated
                     {
-                        // dont include subscribed mods for the current user
-                        continue;
+                        if(excludeSubscribedModsForCurrentUser 
+                           && Registry.existingUsers[currentUser].subscribedMods.Contains(enumerator.Current.Key))
+                        {
+                            // dont include subscribed mods for the current user
+                            continue;
+                        }
+                        if (!excludeSubscribedModsForCurrentUser 
+                                 && !Registry.existingUsers[currentUser].subscribedMods.Contains(enumerator.Current.Key))
+                        {
+                            // dont include non-subscribed mods for the current user
+                            continue;
+                        }
                     }
-                    
+
                     // check if current modfile is correct
                     if(DataStorage.TryGetInstallationDirectory(
                            enumerator.Current.Key.id, enumerator.Current.Value.currentModfile.id,
                            out string directory))
                     {
-                        mods.Add(ConvertModCollectionEntryToInstalledMod(enumerator.Current.Value,
-                                                                         directory));
+                        InstalledMod mod = ConvertModCollectionEntryToInstalledMod(enumerator.Current.Value, directory);
+                        mod.enabled = Registry.existingUsers.ContainsKey(currentUser)
+                                      && !Registry.existingUsers[currentUser].disabledMods.Contains(mod.modProfile.id);
+                        mods.Add(mod);
                     }
                 }
             }
@@ -598,7 +672,7 @@ namespace ModIO.Implementation
         public static SubscribedMod[] GetSubscribedModsForUser(out Result result)
         {
             long user = GetUserKey();
-            
+
             // Early out
             if(!IsRegistryLoaded() || !DoesUserExist())
             {
@@ -627,7 +701,9 @@ namespace ModIO.Implementation
 
             foreach(ModCollectionEntry entry in mods)
             {
-                subscribedMods.Add(ConvertModCollectionEntryToSubscribedMod(entry));
+                SubscribedMod mod = ConvertModCollectionEntryToSubscribedMod(entry);
+                mod.enabled = !Registry.existingUsers[user].disabledMods.Contains(mod.modProfile.id);
+                subscribedMods.Add(mod);
             }
 
             result = ResultBuilder.Success;

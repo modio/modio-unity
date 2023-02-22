@@ -11,6 +11,15 @@
     [System.Serializable]
     public struct ServerSettings
     {
+        public ServerSettings(ServerSettings serverSettings)
+        {
+            this.serverURL = serverSettings.serverURL;
+            this.gameId = serverSettings.gameId;
+            this.gameKey = serverSettings.gameKey;
+            this.disableUploads = serverSettings.disableUploads;
+            this.languageCode = serverSettings.languageCode;
+        }
+
         /// <summary>URL for the mod.io server to connect to.</summary>
         public string serverURL;
 

@@ -934,7 +934,7 @@ namespace ModIO.Implementation
         {
             // Early out
             if(!isModManagementEnabled
-               || !ModIOUnityImplementation.AreCredentialsValid(true, out Result credentialsResult))
+               || !ModIOUnityImplementation.IsAuthenticatedSessionValid(out Result credentialsResult))
             {
                 return false;
             }

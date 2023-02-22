@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using ModIO.Util;
 using UnityEngine;
-using static ModIO.Utility;
 
 namespace ModIO.Implementation
 {

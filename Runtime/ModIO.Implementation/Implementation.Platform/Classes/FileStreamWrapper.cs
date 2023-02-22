@@ -363,7 +363,7 @@ namespace ModIO.Implementation.Platform
                 try
                 {
                     data = new byte[this.fileStream.Length];
-                    await this.fileStream.ReadAsync(data, 0, (int)this.fileStream.Length);
+                    await this.fileStream.ReadAsync(data, 0, (int)this.fileStream.Length).ConfigureAwait(false);
 
                     result = ResultBuilder.Success;
                 }

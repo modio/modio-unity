@@ -91,10 +91,10 @@ namespace ModIO.Implementation.Platform
             byte[] data = null;
             Result result;
 
-            // If the file we wish to open is already open we yield the thread
-            while(currentlyOpenFiles.Contains(filePath))
+            // If the file we wish to open is already open we return
+            if(currentlyOpenFiles.Contains(filePath))
             {
-                await Task.Yield();
+                return ResultAnd.Create(ResultBuilder.Create(ResultCode.IO_AccessDenied), data);
             }
 
             // add this filepath to a table of all currently open files
@@ -108,7 +108,7 @@ namespace ModIO.Implementation.Platform
                     using(var sourceStream = File.Open(filePath, FileMode.Open))
                     {
                         data = new byte[sourceStream.Length];
-                        await sourceStream.ReadAsync(data, 0, (int)sourceStream.Length);
+                        await sourceStream.ReadAsync(data, 0, (int)sourceStream.Length).ConfigureAwait(false);
                     }
 
                     result = ResultBuilder.Success;
@@ -147,10 +147,10 @@ namespace ModIO.Implementation.Platform
             }
 
             // NOTE @Jackson I'm not a huge fan of this but would like to hear ideas for a better solution
-            // If the file we wish to open is already open we yield the thread
-            while(currentlyOpenFiles.Contains(filePath))
+            // If the file we wish to open is already open we return
+            if(currentlyOpenFiles.Contains(filePath))
             {
-                await Task.Yield();
+                return ResultBuilder.Create(ResultCode.IO_AccessDenied);
             }
 
             // add this filepath to a table of all currently open files
@@ -164,7 +164,7 @@ namespace ModIO.Implementation.Platform
                     using(var fileStream = File.Open(filePath, FileMode.Create))
                     {
                         fileStream.Seek(0, SeekOrigin.End);
-                        await fileStream.WriteAsync(data, 0, data.Length);
+                        await fileStream.WriteAsync(data, 0, data.Length).ConfigureAwait(false);
                     }
 
                     result = ResultBuilder.Success;
@@ -598,8 +598,6 @@ namespace ModIO.Implementation.Platform
 
         public static bool DeleteFile(string path)
         {
-            Debug.Assert(!string.IsNullOrEmpty(path));
-
             try
             {
                 if(File.Exists(path))
@@ -613,7 +611,7 @@ namespace ModIO.Implementation.Platform
             {
                 string warningInfo = $"[mod.io] Failed to delete file.\nFile: {path}\n\n" +
                     $"Exception: {e}\n\n";
-                
+
                 return false;
             }
         }
@@ -658,8 +656,6 @@ namespace ModIO.Implementation.Platform
         /// <summary>Gets the size of a file.</summary>
         public static Int64 GetFileSize(string path)
         {
-            Debug.Assert(!String.IsNullOrEmpty(path));
-
             if(!File.Exists(path))
             {
                 return -1;
@@ -684,8 +680,6 @@ namespace ModIO.Implementation.Platform
         public static IList<string> GetFiles(string path, string nameFilter,
                                              bool recurseSubdirectories)
         {
-            Debug.Assert(!string.IsNullOrEmpty(path));
-
             if(!Directory.Exists(path))
             {
                 return null;
@@ -706,9 +700,6 @@ namespace ModIO.Implementation.Platform
         /// <summary>Moves a directory.</summary>
         // public static bool MoveDirectory(string source, string destination)
         // {
-        //     Debug.Assert(!string.IsNullOrEmpty(source));
-        //     Debug.Assert(!string.IsNullOrEmpty(destination));
-        //
         //     try
         //     {
         //         Directory.Move(source, destination);
@@ -730,8 +721,6 @@ namespace ModIO.Implementation.Platform
         /// <summary>Gets the sub-directories at a location.</summary>
         public static IList<string> GetDirectories(string path)
         {
-            Debug.Assert(!string.IsNullOrEmpty(path));
-
             if(!Directory.Exists(path))
             {
                 return null;

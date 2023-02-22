@@ -27,9 +27,12 @@ namespace ModIO.Implementation.API.Requests
 
         public static string ExternalURL(AuthenticationServiceProvider serviceProvider, string data,
                                          [CanBeNull] TermsHash? hash,
-                                         [CanBeNull] string emailAddress, [CanBeNull] string nonce,
+                                         [CanBeNull] string emailAddress,
+                                         [CanBeNull] string nonce,
                                          [CanBeNull] OculusDevice? device,
-                                         [CanBeNull] string userId, out WWWForm form)
+                                         [CanBeNull] string userId,
+                                         PlayStationEnvironment environment,
+                                         out WWWForm form)
         {
             string tokenFieldName = "appdata";
 
@@ -96,6 +99,10 @@ namespace ModIO.Implementation.API.Requests
                 form.AddField("nonce", nonce);
                 form.AddField("user_id", userId);
                 form.AddField("device", device == OculusDevice.Quest ? "quest" : "rift");
+            }
+            if(serviceProvider == AuthenticationServiceProvider.PlayStation)
+            {
+                form.AddField("env", ((int)environment).ToString());
             }
 
             // Return URL endpoint

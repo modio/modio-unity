@@ -71,23 +71,23 @@ namespace ModIOBrowser.Implementation
             
             if(isOn)
             {
-                if (!Browser.searchFilterTags.Contains(tag))
+                if (!SearchPanel.searchFilterTags.Contains(tag))
                 {
-                    Browser.searchFilterTags.Add(tag);
+                    SearchPanel.searchFilterTags.Add(tag);
                 }
             }
             else
             {
-                if (Browser.searchFilterTags.Contains(tag))
+                if (SearchPanel.searchFilterTags.Contains(tag))
                 {
-                    Browser.searchFilterTags.Remove(tag);
+                    SearchPanel.searchFilterTags.Remove(tag);
                 }
             }
         }
 
         bool IsTagSelected(string tagName)
         {
-            foreach(Tag tag in Browser.searchFilterTags)
+            foreach(Tag tag in SearchPanel.searchFilterTags)
             {
                 if(tag.name == tagName)
                 {

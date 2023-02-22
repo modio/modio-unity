@@ -16,6 +16,11 @@ namespace ModIO.Implementation.API.Requests
             new RequestConfig { requireAuthToken = true, canCacheResponse = false,
                                   requestResponseType = WebRequestResponseType.Text,
                                   requestMethodType = WebRequestMethodType.PUT };
+        
+        public static readonly RequestConfig TemplateForAddingLogo =
+            new RequestConfig { requireAuthToken = true, canCacheResponse = false,
+                requestResponseType = WebRequestResponseType.Text,
+                requestMethodType = WebRequestMethodType.POST };
 
         public static string URL(ModProfileDetails details, out WWWForm form)
         {
@@ -39,9 +44,25 @@ namespace ModIO.Implementation.API.Requests
                 kvps.Add(new KeyValuePair<string, string>("community_options", ((int)details.communityOptions).ToString()));
             }
 
+            if(details.tags != null)
+            {
+                int count = 0;
+                foreach(string tag in details.tags)
+                {
+                    kvps.Add(new KeyValuePair<string, string>($"tags[{count}]", tag));
+                    count++;
+                }
+            }
+
             kvps.Add(new KeyValuePair<string, string>("metadata_blob", details.metadata));
 
             form = new WWWForm();
+
+            // Add logo
+            if(details.logo != null)
+            {
+                form.AddBinaryData("logo", details.logo.EncodeToPNG(), "logo.png", null);
+            }
 
             foreach(var kvp in kvps)
             {

@@ -34,5 +34,6 @@ namespace ModIOBrowser.Implementation
         public static string Number<T>(this TranslatedLanguages language, T number) where T : IFormattable
             => number.ToString("n", language.Culture());
 
+        
     }
 }

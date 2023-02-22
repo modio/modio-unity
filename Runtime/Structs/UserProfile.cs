@@ -11,6 +11,11 @@
         /// The display name of the user's mod.io account
         /// </summary>
         public string username;
+
+        /// <summary>
+        ///  This is the unique Id of the user.
+        /// </summary>
+        public long userId;
         
         /// <summary>
         /// The display name of the user's account they authenticated with. Eg if they authenticated

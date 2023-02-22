@@ -30,7 +30,7 @@ namespace ModIOBrowser.Implementation
 
 		public ColorScheme scheme;
 
-		void Awake()
+		protected virtual void Awake()
 		{
 			LastCreatedListItem = this;
 		}
@@ -88,6 +88,7 @@ namespace ModIOBrowser.Implementation
 		}
 
 		public virtual void Select() { }
+        public virtual void DeSelect() { }
 		public virtual void PlaceholderSetup() { isPlaceholder = true; }
 		public virtual void Setup() { isPlaceholder = false; }
 		public virtual void Setup(string title) { isPlaceholder = false; }
@@ -186,7 +187,7 @@ namespace ModIOBrowser.Implementation
 		public static void CleanupMissingReferencesInListItemGroup<T>()
 		{
 			List<ListItem> validItems = new List<ListItem>();
-			
+
 			Type type = typeof(T);
 
 			if(ListItems.ContainsKey(type))

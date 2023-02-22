@@ -16,6 +16,7 @@ namespace ModIO.Implementation
                     version = mod.version,
                     changeLog = mod.changeLog,
                     dateAdded = mod.dateAdded,
+                    enabled = mod.enabled,
                 };
             }
 

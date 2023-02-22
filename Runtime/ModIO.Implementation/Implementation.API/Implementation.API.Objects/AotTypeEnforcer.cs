@@ -45,6 +45,8 @@ namespace ModIO.Implementation.API
 			AotHelper.EnsureList<KeyValuePair<string, string>>();
 			AotHelper.EnsureList<ModStats>();
 			AotHelper.EnsureList<DateTime>();
+			AotHelper.EnsureList<RatingObject>();
+			AotHelper.EnsureList<ModDependenciesObject>();
 		}
 	}
 }

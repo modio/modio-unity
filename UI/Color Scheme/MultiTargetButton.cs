@@ -4,11 +4,32 @@ using UnityEngine.UI;
 
 namespace ModIOBrowser
 {
+    /// <summary>
+    /// This component essentially inherits and mirrors the Unity Button component and adds a few
+    /// additional features. It has a reference to a ColorScheme that it uses to properly apply
+    /// colors to transitions.
+    /// The most important feature is that this component can manage transition behaviours for
+    /// multiple targets instead of just one. A typical Unity Button can only target one element.
+    /// For example, a button might change the color of a text component, but it can't also change
+    /// the color of the background. This component adds additional targets that have their own
+    /// unique transition behaviour so you can target multiple texts, images, objects etc.
+    /// It also has 'childButtons' which is essentially a list of other
+    /// interactable components that it will force to highlight as well. Eg, the featured carousel,
+    /// when the entire carousel panel is highlighted, the 'subscribe' button also highlights to
+    /// indicate that it can be 'subscribed' with the keybinding 'X' (or other binding depending on
+    /// controller setup).
+    /// </summary>
+    /// <remarks>Note that the MultiTargetToggle and MultiTargetDropdown are essentially the same
+    /// as this component but inherit the Dropdown and Toggle component instead</remarks>
     public class MultiTargetButton : Button
     {
+        // The color scheme we want to abide by
         public ColorScheme scheme;
 
+        // The extra targets that we control with transition behaviour
         public List<Target> extraTargets = new List<Target>();
+        
+        // Other buttons that are parented to us that we can tell to invoke transitions of their own
         public List<MultiTargetButton> childButtons = new List<MultiTargetButton>();
 
 #if UNITY_EDITOR
@@ -22,10 +43,17 @@ namespace ModIOBrowser
         }
 #endif // UNITY_EDITOR
 
+        /// <summary>
+        /// This is the inherited method that all Unity Buttons use when they need to change their
+        /// current transition state. Eg, become highlighted, selected or pressed.
+        /// </summary>
         protected override void DoStateTransition(SelectionState state, bool instant)
         {
+            // First we do the state transition for the main target like we would for a normal button
             base.DoStateTransition(state, instant);
 
+            // This iterates over each extra target and executes the transition just the same as it
+            // does for the main target of this button, but with some additional types (like color scheme)
             foreach(var target in extraTargets)
             {
                 Color color;
@@ -42,6 +70,8 @@ namespace ModIOBrowser
                         color = target.colors.highlightedColor;
                         newSprite = target.spriteState.highlightedSprite;
                         triggername = target.animationTriggers.highlightedTrigger;
+                        SoundPlayer.PlayHover();
+
                         break;
 #if UNITY_2019_4_OR_NEWER
                     case Selectable.SelectionState.Selected:
@@ -54,6 +84,8 @@ namespace ModIOBrowser
                         color = target.colors.pressedColor;
                         newSprite = target.spriteState.pressedSprite;
                         triggername = target.animationTriggers.pressedTrigger;
+                        SoundPlayer.PlayClick();
+
                         break;
                     case Selectable.SelectionState.Disabled:
                         color = target.colors.disabledColor;
@@ -81,7 +113,7 @@ namespace ModIOBrowser
                         TriggerAnimation(target.animator, target.animationTriggers, triggername);
                         break;
                     case MultiTargetTransition.DisableEnable:
-                        if(target.isControllerButtonIcon && Browser.mouseNavigation)
+                        if(target.isControllerButtonIcon && InputNavigation.Instance.mouseNavigation)
                         {
                             // if we arent using a controller always hide this target
                             target?.target?.gameObject.SetActive(false);
@@ -95,11 +127,15 @@ namespace ModIOBrowser
                 }
             }
 
+            // This tells all of the child buttons to also do a state transition
             foreach(var child in childButtons) { child.DoStateTransition(state, instant); }
 
             LayoutRebuilder.ForceRebuildLayoutImmediate(transform as RectTransform);
         }
 
+        // the following methods in this region are mostly replicated from the Unity Button with
+        // a few additional changes to accomodate the extra targets and colour scheme feature
+#region Transition type methods
         void UseSchemeColorTint(Target target, Selectable.SelectionState state, ColorScheme scheme,
                                 bool instant)
         {
@@ -187,5 +223,6 @@ namespace ModIOBrowser
             this.animator.ResetTrigger(trigger.disabledTrigger);
             this.animator.SetTrigger(triggerName);
         }
+#endregion
     }
 }

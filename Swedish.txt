@@ -1,4 +1,4 @@
-# Modio English translation.
+# Modio Swedish translation.
 # 
 msgid ""
 msgstr ""
@@ -75,14 +75,11 @@ msgstr "Inga resultat funna"
 msgid "Unfortunately we couldn't find any mods matching your search. Let's try different keywords or tags."
 msgstr "Tyvärr så kan vi inte hitta några moddar som matchade din sökning. Försök med andra nyckelord eller taggar."
 
-msgid "You've gone through XX mods."
-msgstr "Du har gått igenom XX moddar."
-
 msgid "Let's refine your search if you haven't found what you were looking for."
 msgstr "Förfina din sökning om du inte har funnit vad du letat efter."
 
 msgid "Mod support by"
-msgstr "Mod stödd av"
+msgstr "Mod stöd via"
 
 msgid "Search results"
 msgstr "Sökresultat"
@@ -225,7 +222,7 @@ msgstr "Mod.io är ett tredjeparts verktyg som ger tillgång till en modverkstad
 msgid "Are you sure you'd like to log out?"
 msgstr "Är du säker på att du vill logga ut?"
 
-msgid "This will log you out of your mod.io account. You can still browse the mods but you will need to log back in to subscribe to a mod. Any ongoing downloads/installations will also be stopped.\n\nDo you wish to continue?"
+msgid "LogOutMessage"
 msgstr "Det här kommer logga ut dig från ditt mod.io konto. Du kan fortfarande se dig omkring men du behöver logga tillbaka för att prenumerera på moddar. Allt som laddas ned eller just nu installeras kommer också avstannas.\n\nÄr du säker på att du vill fortsätta?"
 
 msgid "Something went wrong!"
@@ -493,10 +490,67 @@ msgid "Updated"
 msgstr "Uppdaterad"
 
 msgid "Obviously explicit mod"
-msgstr "Obviously explicit mod"
+msgstr "Uppenbarligen en lurig mod"
 
 msgid "Authentication completed"
 msgstr "Autentisering klar"
 
 msgid "Settings"
 msgstr "Inställningar"
+
+msgid "Audio"
+msgstr "Ljud"
+
+msgid "Game Id:"
+msgstr "Spel Id:"
+
+msgid "Api Key:"
+msgstr "Api Nyckel:"
+
+msgid "Production Server Url"
+msgstr "Produktionsserver Url"
+
+msgid "Test Server Url"
+msgstr "Testserver Url"
+
+msgid "Save"
+msgstr "Spara"
+
+msgid "Language"
+msgstr "Språk"
+
+msgid "Please check your email {email} for your 5 digit code to verify it below."
+msgstr "Kolla din mail på {email} för att se din 5-siffriga kod. Verifiera den nedan."
+
+msgid "Code sent"
+msgstr "Kod skickad"
+
+msgid "Enter code"
+msgstr "Ange kod"
+
+msgid "Sort by:"
+msgstr "Sortera via:"
+
+msgid "Downloaded"
+msgstr "Nerladdad"
+
+msgid "Connect with PlayStation"
+msgstr "Connect with PlayStation" 
+
+msgid "Game Id"
+msgstr "Game Id" 
+
+msgid "Api Key"
+msgstr "Api Key" 
+
+msgid "Game id: {text}"
+msgstr "Game id: {text}"
+
+msgid "Server Url: {text}"
+msgstr "Server Url: {text}"
+
+msgid "Failed to fetch mods"
+msgstr "Misslyckades med att hämta mods" 
+
+msgid "Retry all failed fetches"
+msgstr "Försök att hämta igen." 

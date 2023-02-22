@@ -1,21 +1,18 @@
 ﻿using System;
 
-namespace ModIO
+namespace ModIO.Util
 {
-    partial class Utility
+    public class SimpleMessageUnsubscribeToken
     {
-        public class SimpleMessageUnsubscribeToken
+        public SimpleMessageUnsubscribeToken(Action unsub)
         {
-            public SimpleMessageUnsubscribeToken(Action unsub)
-            {
-                unsubAction = unsub;
-            }
+            unsubAction = unsub;
+        }
 
-            private Action unsubAction;
-            public void Unsubscribe()
-            {
-                unsubAction();
-            }
+        private Action unsubAction;
+        public void Unsubscribe()
+        {
+            unsubAction();
         }
     }
 }

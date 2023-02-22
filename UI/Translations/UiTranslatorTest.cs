@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 using TMPro;
-using static ModIO.Utility;
+using ModIO.Util;
 #if UNITY_EDITOR
 #endif
 

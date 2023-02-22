@@ -14,7 +14,7 @@ namespace ModIOBrowser.Implementation
 
         public override void Select()
         {
-            Browser.SelectSelectable(optionButton);
+            InputNavigation.Instance.Select(optionButton);
         }
 
         public override void Setup(string title, Action onClick)

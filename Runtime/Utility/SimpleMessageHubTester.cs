@@ -1,48 +1,45 @@
 ﻿using System.Collections;
 using UnityEngine;
 
-namespace ModIO
+namespace ModIO.Util
 {
-    partial class Utility
+    internal class MessagePoke : ISimpleMessage
     {
-        class MessagePoke : ISimpleMessage
+        public int number;
+    }
+
+    internal class SimpleMessageHubTester : SimpleMonoSingleton<SimpleMessageHubTester>
+    {
+        SimpleMessageUnsubscribeToken subToken;
+
+        public void RunTest()
         {
-            public int number;
+            subToken = SimpleMessageHub.Instance.Subscribe<MessagePoke>(x =>
+            {
+                Debug.Log($"I got a message! {x.number}");
+            });
+
+            StartCoroutine(PokeMessages());
         }
 
-        class SimpleMessageHubTester : SimpleMonoSingleton<SimpleMessageHubTester>
+        IEnumerator PokeMessages()
         {
-            SimpleMessageUnsubscribeToken subToken;
-
-            public void RunTest()
+            for(int i = 0; i < 10; i++)
             {
-                subToken = SimpleMessageHub.Instance.Subscribe<MessagePoke>(x =>
-                {
-                    Debug.Log($"I got a message! {x.number}");
-                });
-
-                StartCoroutine(PokeMessages());
-            }
-
-            IEnumerator PokeMessages()
-            {
-                for(int i = 0; i < 10; i++)
-                {
-                    SimpleMessageHub.Instance.Publish(new MessagePoke()
-                    {
-                        number = i
-                    });
-                    yield return new WaitForSeconds(0.5f);
-                }
-
-                Debug.Log("Unsubscribing!");
-                subToken.Unsubscribe();
-
                 SimpleMessageHub.Instance.Publish(new MessagePoke()
                 {
-                    number = 99
+                    number = i
                 });
+                yield return new WaitForSeconds(0.5f);
             }
+
+            Debug.Log("Unsubscribing!");
+            subToken.Unsubscribe();
+
+            SimpleMessageHub.Instance.Publish(new MessagePoke()
+            {
+                number = 99
+            });
         }
     }
 }

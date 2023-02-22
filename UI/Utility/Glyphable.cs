@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections;
+using ModIO.Util;
 using UnityEngine;
 using UnityEngine.UI;
-using static ModIO.Utility;
 
 namespace ModIOBrowser.Implementation
 {
+
     class Glyphable : MonoBehaviour
     {
         public Image image;
@@ -13,9 +14,8 @@ namespace ModIOBrowser.Implementation
 
         public void OnValidate() => image = image == null ? GetComponent<Image>() : image;
 
-        private void Awake()
+        void Awake()
         {
-            gameObject.SetActive(false);
             UpdateGlyphs();
             SimpleMessageHub.Instance.Subscribe<MessageGlyphUpdate>(x => UpdateGlyphs());
         }

@@ -12,6 +12,8 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+#this is how you comment. Just remember to make it sharp!
+
 msgid "Play"
 msgstr "Play"
 
@@ -74,9 +76,6 @@ msgstr "No results found"
 
 msgid "Unfortunately we couldn't find any mods matching your search. Let's try different keywords or tags."
 msgstr "Unfortunately we couldn't find any mods matching your search. Let's try different keywords or tags."
-
-msgid "You've gone through XX mods."
-msgstr "You've gone through XX mods."
 
 msgid "Let's refine your search if you haven't found what you were looking for."
 msgstr "Let's refine your search if you haven't found what you were looking for."
@@ -225,7 +224,7 @@ msgstr "mod.io is a 3rd party utility that provides access to a mod workshop. Ch
 msgid "Are you sure you'd like to log out?"
 msgstr "Are you sure you'd like to log out?"
 
-msgid "This will log you out of your mod.io account. You can still browse the mods but you will need to log back in to subscribe to a mod. Any ongoing downloads/installations will also be stopped.\n\nDo you wish to continue?"
+msgid "LogOutMessage"
 msgstr "This will log you out of your mod.io account. You can still browse the mods but you will need to log back in to subscribe to a mod. Any ongoing downloads/installations will also be stopped.\n\nDo you wish to continue?"
 
 msgid "Something went wrong!"
@@ -490,10 +489,67 @@ msgid "Updated"
 msgstr "Updated"
 
 msgid "Obviously explicit mod"
-msgstr "Uppenbarligen en lurig mod"
+msgstr "Obviously explicit mod"
 
 msgid "Authentication completed"
 msgstr "Authentication completed"
 
 msgid "Settings"
 msgstr "Settings"
+
+msgid "Audio"
+msgstr "Audio"
+
+msgid "Game Id:"
+msgstr "Game Id:"
+
+msgid "Api Key:"
+msgstr "Api Key:"
+
+msgid "Production Server Url"
+msgstr "Production Server Url" 
+
+msgid "Test Server Url"
+msgstr "Test Server Url" 
+
+msgid "Save"
+msgstr "Save"
+
+msgid "Language"
+msgstr "Language"
+
+msgid "Please check your email {email} for your 5 digit code to verify it below."
+msgstr "Please check your email {email} for your 5 digit code to verify it below."
+
+msgid "Code sent"
+msgstr "Code sent"
+
+msgid "Enter code"
+msgstr "Enter code"
+
+msgid "Sort by:"
+msgstr "Sort by:"
+
+msgid "Downloaded"
+msgstr "Downloaded"
+
+msgid "Connect with PlayStation"
+msgstr "Connect with PlayStation" 
+
+msgid "Game Id"
+msgstr "Game Id" 
+
+msgid "Api Key"
+msgstr "Api Key" 
+
+msgid "Game id: {text}"
+msgstr "Game id: {text}"
+
+msgid "Server Url: {text}"
+msgstr "Server Url: {text}"
+
+msgid "Failed to fetch mods"
+msgstr "Failed to fetch mods" 
+
+msgid "Retry all failed fetches"
+msgstr "Retry all failed fetches" 

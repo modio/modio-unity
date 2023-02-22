@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using ModIO.Implementation.API.Objects;
 using ModIO.Implementation.Platform;
+using ModIO.Util;
 using UnityEngine;
-using static ModIO.Utility;
 
 namespace ModIO.Implementation
 {
@@ -13,11 +13,11 @@ namespace ModIO.Implementation
     {
         // TODO Revisit this later, as most of it's benefits are now met with the mutex. Maybe expand this to more generic tasks or for ModManagement
         internal static TaskQueueRunner taskRunner = new TaskQueueRunner(1, true, PlatformConfiguration.SynchronizedDataJobs);
-        
+
         static Mutex FileWriteMutex = new Mutex();
-        
+
         public static Mutex GetFileWriteMutex() => FileWriteMutex;
-        
+
 #region Data Services
 
         /// <summary>Persistent data storage service.</summary>
@@ -40,15 +40,14 @@ namespace ModIO.Implementation
         {
             byte[] userDataJSON = IOUtil.GenerateUTF8JSONData(UserData.instance);
 
-            return await taskRunner.AddTask(TaskPriority.HIGH, 1, 
-                async () => await user.WriteFileAsync($@"{user.RootDirectory}/{UserDataFilePath}", userDataJSON));
+            return await user.WriteFileAsync($@"{user.RootDirectory}/{UserDataFilePath}", userDataJSON).ConfigureAwait(false);
         }
 
         /// <summary>Reads the user data from disk.</summary>
         public static async Task<Result> LoadUserData()
-        {            
-            var userDataReadTask = await taskRunner.AddTask(TaskPriority.HIGH, 1,
-                async () => await user.ReadFileAsync($@"{user.RootDirectory}/{UserDataFilePath}"));
+        {
+            var userDataReadTask =
+                await user.ReadFileAsync($@"{user.RootDirectory}/{UserDataFilePath}").ConfigureAwait(false);
             Result result = userDataReadTask.result;
 
             if(result.Succeeded()
@@ -100,11 +99,11 @@ namespace ModIO.Implementation
             {
                 return ResultBuilder.Create(ResultCode.Internal_InvalidParameter);
             }
-            
-            // - store -            
-            Result result = await taskRunner.AddTask(TaskPriority.HIGH, 1, 
+
+            // - store -
+            Result result = await taskRunner.AddTask(TaskPriority.HIGH, 1,
                 async () => await temp.WriteFileAsync(filePath, pngData));
-            
+
             return result;
         }
 
@@ -119,9 +118,9 @@ namespace ModIO.Implementation
             }
 
             // - read -
-            ResultAnd<byte[]> readResult = await taskRunner.AddTask(TaskPriority.HIGH, 1, 
+            ResultAnd<byte[]> readResult = await taskRunner.AddTask(TaskPriority.HIGH, 1,
                 async () => await temp.ReadFileAsync(filePath));
-            
+
             if(!readResult.result.Succeeded())
             {
                 return ResultAnd.Create<Texture2D>(readResult.result, null);
@@ -236,7 +235,7 @@ namespace ModIO.Implementation
             try
             {
                 result = persistent.DeleteDirectory(installDirPath);
-                
+
                 if(result.Succeeded()
                    && persistent.TryCreateParentDirectory(installDirPath))
                 {
@@ -276,7 +275,7 @@ namespace ModIO.Implementation
             string filePath = GenerateModfileArchiveFilePath(modId, modfileId);
 
             ResultAnd<(long fileSize, string fileHash)> sizeAndHashResult =
-                await taskRunner.AddTask(TaskPriority.HIGH, 1, 
+                await taskRunner.AddTask(TaskPriority.HIGH, 1,
                     async () => await temp.GetFileSizeAndHash(filePath));
 
             if(!sizeAndHashResult.result.Succeeded())
@@ -310,7 +309,7 @@ namespace ModIO.Implementation
             string filePath = GenerateSystemRegistryFilePath();
             byte[] data = IOUtil.GenerateUTF8JSONData(registry);
 
-            return await taskRunner.AddTask(TaskPriority.HIGH, 1, 
+            return await taskRunner.AddTask(TaskPriority.HIGH, 1,
                 async () => await persistent.WriteFileAsync(filePath, data));
         }
 
@@ -325,8 +324,7 @@ namespace ModIO.Implementation
                 return ResultAnd.Create(ResultBuilder.Success, new ModCollectionRegistry());
             }
 
-            ResultAnd<byte[]> readResult = await taskRunner.AddTask(TaskPriority.HIGH, 1, 
-                async () => await persistent.ReadFileAsync(filePath));
+            ResultAnd<byte[]> readResult = await persistent.ReadFileAsync(filePath).ConfigureAwait(false);
 
             Result result = readResult.result;
             ModCollectionRegistry registry = null;
@@ -347,7 +345,7 @@ namespace ModIO.Implementation
             Debug.LogWarning("Not Implemented Yet");
             return ResultBuilder.Success;
         }
-        
+
         public static ModIOFileStream OpenArchiveReadStream(string filePath,
                                                             out Result result)
         {

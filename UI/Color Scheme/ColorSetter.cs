@@ -4,7 +4,8 @@ using UnityEngine.UI;
 
 namespace ModIOBrowser
 {
-	internal class ColorSetter : MonoBehaviour
+
+    internal class ColorSetter : MonoBehaviour
 	{
 		public ColorSetterType type;
 		MultiTargetButton button;

@@ -1,6 +1,6 @@
 ﻿using System.Collections;
+using ModIO.Util;
 using UnityEngine;
-using static ModIO.Utility;
 
 namespace ModIOBrowser.Implementation
 {

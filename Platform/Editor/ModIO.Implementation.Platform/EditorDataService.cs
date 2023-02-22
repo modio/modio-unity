@@ -88,13 +88,13 @@ namespace ModIO.Implementation.Platform
         /// <summary>Reads an entire file asynchronously.</summary>
         public async Task<ResultAnd<byte[]>> ReadFileAsync(string filePath)
         {
-            return await SystemIOWrapper.ReadFileAsync(filePath);
+            return await SystemIOWrapper.ReadFileAsync(filePath).ConfigureAwait(false);
         }
 
         /// <summary>Writes an entire file asynchronously.</summary>
         public async Task<Result> WriteFileAsync(string filePath, byte[] data)
         {
-            return await SystemIOWrapper.WriteFileAsync(filePath, data);
+            return await SystemIOWrapper.WriteFileAsync(filePath, data).ConfigureAwait(false);
         }
 
         /// <summary>Deletes a file.</summary>

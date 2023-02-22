@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading.Tasks;
+using ModIO.Implementation.API.Objects;
 using UnityEngine;
 
 namespace ModIO.Implementation.API
@@ -28,17 +30,17 @@ namespace ModIO.Implementation.API
             public bool extendLifetime;
         }
 #endregion // Private class/wrappers for caching
-        
+
         // whether or not to display verbose logs from the cache
         public static bool
             logCacheMessages = true;
         public static long maxCacheSize = 0;
         // 10 MiB is the minimum cache size estimate
-        const int minCacheSize = 10485760; 
+        const int minCacheSize = 10485760;
         // 1 GiB is the absolute maximum for the cache size
-        const int absoluteCacheSizeLimit = 1073741924; 
+        const int absoluteCacheSizeLimit = 1073741924;
         // milliseconds (60,000 being 60 seconds)
-        const int modLifetimeInCache = 60000; 
+        const int modLifetimeInCache = 60000;
 
         /// <summary>
         /// stores md5 hashes generated after retrieving Terms of Use from the RESTAPI
@@ -63,6 +65,8 @@ namespace ModIO.Implementation.API
             new Dictionary<string, CachedPageSearch>();
 
         static Dictionary<long, CachedModProfile> mods = new Dictionary<long, CachedModProfile>();
+        static Dictionary<long, ModDependencies[]> modsDependencies = new Dictionary<long, ModDependencies[]>();
+        static Dictionary<long, Rating> currentUserRatings = new Dictionary<long, Rating>();
 
         /// <summary>
         /// the terms of use, cached for the entire session.
@@ -174,7 +178,35 @@ namespace ModIO.Implementation.API
             termsHash = terms.hash;
             termsOfUse = new KeyValuePair<string, TermsOfUse>(url, terms);
         }
-#endregion // Adding entries to Cache
+
+        public static void AddModDependenciesToCache(ModId modId, ModDependencies[] modDependencies)
+        {
+            if(modsDependencies.ContainsKey(modId))
+                modsDependencies[modId] = modDependencies;
+            else
+                modsDependencies.Add(modId, modDependencies);
+        }
+
+        public static void AddCurrentUserRating(long modId, Rating rating)
+        {
+            if(rating.rating == 0)
+                currentUserRatings.Remove(modId);
+            else if(currentUserRatings.ContainsKey(modId))
+                currentUserRatings[modId] = rating;
+            else
+                currentUserRatings.Add(modId, rating);
+        }
+
+        public static void ReplaceCurrentUserRatings(Rating[] ratings)
+        {
+            currentUserRatings.Clear();
+            foreach(var rating in ratings)
+            {
+                AddCurrentUserRating(rating.modId, rating);
+            }
+        }
+
+        #endregion // Adding entries to Cache
 
 #region Getting entries from Cache
         /// <summary>
@@ -187,12 +219,12 @@ namespace ModIO.Implementation.API
             // do we contain this URL in the cache
             if(modPages.ContainsKey(url))
             {
-                List<ModProfile> modsRetrievedfromCache = new List<ModProfile>();
+                List<ModProfile> modsRetrievedFromCache = new List<ModProfile>();
 
                 for(int i = 0; i < limit; i++)
                 {
                     int index = i + offset;
-                    if(index > modPages[url].resultCount)
+                    if(index >= modPages[url].resultCount)
                     {
                         // We've reached the limit of mods available for this url
                         // This is not a fail
@@ -203,7 +235,7 @@ namespace ModIO.Implementation.API
                     {
                         if(mods.TryGetValue(modId, out CachedModProfile mod))
                         {
-                            modsRetrievedfromCache.Add(mod.profile);
+                            modsRetrievedFromCache.Add(mod.profile);
 
                             // Continue to next iteration because this one succeeded
                             continue;
@@ -218,12 +250,12 @@ namespace ModIO.Implementation.API
                 // SUCCEEDED
                 if(logCacheMessages)
                 {
-                    Logger.Log(LogLevel.Verbose, "[CACHE] retrieved mods from cache");
+                    Logger.Log(LogLevel.Verbose, $"[CACHE] retrieved {modsRetrievedFromCache.Count} mods from cache");
                 }
 
                 modPage = new ModPage();
                 modPage.totalSearchResultsFound = modPages[url].resultCount;
-                modPage.modProfiles = modsRetrievedfromCache.ToArray();
+                modPage.modProfiles = modsRetrievedFromCache.ToArray();
                 return true;
             }
 
@@ -320,7 +352,41 @@ namespace ModIO.Implementation.API
             terms = default;
             return false;
         }
-#endregion // Getting entries from Cache
+
+        public static bool GetModDependenciesCache(ModId modId, out ModDependencies[] modDependencies)
+        {
+            if(modsDependencies.ContainsKey(modId))
+            {
+                if(logCacheMessages)
+                {
+                    Logger.Log(LogLevel.Verbose, "[CACHE] retrieved mod dependency from cache");
+                }
+
+                modDependencies = modsDependencies[modId];
+                return true;
+            }
+
+            modDependencies = default;
+            return false;
+        }
+
+        public static bool GetCurrentUserRatingsCache(out Rating[] ratings)
+        {
+            ratings = currentUserRatings.Values.ToArray();
+            if(currentUserRatings == null)
+            {
+                return false;
+            }
+
+            if(logCacheMessages)
+            {
+                Logger.Log(LogLevel.Verbose, "[CACHE] retrieved mod rating from cache");
+            }
+            return true;
+
+        }
+
+        #endregion // Getting entries from Cache
 
 #region Clearing Cache entries
 
@@ -407,6 +473,8 @@ namespace ModIO.Implementation.API
             termsHash = default;
             termsOfUse = null;
             gameTags = null;
+            modsDependencies?.Clear();
+            currentUserRatings?.Clear();
             ClearUserFromCache();
         }
 #endregion // Clearing Cache entries

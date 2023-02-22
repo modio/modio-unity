@@ -2,46 +2,43 @@
 using System.Collections.Generic;
 using System.Threading;
 
-namespace ModIO
+namespace ModIO.Util
 {
-    partial class Utility
+    public class Dispatcher : SimpleMonoSingleton<Dispatcher>
     {
-        public class Dispatcher : SimpleMonoSingleton<Dispatcher>
+        Thread mainThread;
+        readonly Queue<Action> actions = new Queue<Action>();
+
+        protected override void Awake()
         {
-            Thread mainThread;
-            readonly Queue<Action> actions = new Queue<Action>();
+            base.Awake();
+            mainThread = Thread.CurrentThread;
+        }
 
-            protected override void Awake()
+        public bool MainThread() => Thread.CurrentThread == mainThread;
+
+        public void Run(Action action)
+        {
+            if(MainThread())
             {
-                base.Awake();
-                mainThread = Thread.CurrentThread;
+                action();
             }
-
-            public bool MainThread() => Thread.CurrentThread == mainThread;
-
-            public void Run(Action action)
-            {
-                if(MainThread())
-                {
-                    action();
-                }
-                else
-                {
-                    lock(actions)
-                    {
-                        actions.Enqueue(action);
-                    }
-                }
-            }
-
-            void Update()
+            else
             {
                 lock(actions)
                 {
-                    while(actions.Count > 0)
-                    {
-                        actions.Dequeue()();
-                    }
+                    actions.Enqueue(action);
+                }
+            }
+        }
+
+        void Update()
+        {
+            lock(actions)
+            {
+                while(actions.Count > 0)
+                {
+                    actions.Dequeue()();
                 }
             }
         }
