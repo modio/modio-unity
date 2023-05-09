@@ -20,7 +20,7 @@ Alternatively, you can download an archive of the code using GitHub's download f
 
 ## Getting started
 
-1. Set up your [game profile on mod.io](https://mod.io/games/add) (or our [private test environment](https://test.mod.io/games/add)) to get your game ID and API key.
+1. Set up your [game profile on mod.io](https://mod.io/g/add) (or our [private test environment](https://test.mod.io/g/add)) to get your game ID and API key.
 2. Add the plugin to your project using the installation instructions above.
 3. Ensure you dont have any conflicting libraries by going to Assets/Plugins/mod.io/ThirdParty to remove any libraries you may already have in your project (such as JsonNet).
 4. Restart unity to ensure it recognises the new assembly definitions.
