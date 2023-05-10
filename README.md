@@ -5,13 +5,21 @@
 [![Master docs](https://img.shields.io/badge/docs-master-green.svg)](https://github.com/modio/modio-unity-v2/wiki)
 [![Unity 3D](https://img.shields.io/badge/Unity-2018.4+-lightgrey.svg)](https://unity3d.com)
 
-Welcome to the mod.io Unity Engine plugin repository. It allows game developers to host and automatically install user-created mods in their games which use Unity 2019.4 or newer. It provides a UI for mod discovery, installation and collection management, and a C# interface which connects to the [mod.io REST API](https://docs.mod.io).
+Welcome to the mod.io Unity Engine plugin repository. It allows game developers to host and automatically install user-created mods in their games which use Unity 2018.4 or newer. It provides a UI for mod discovery, installation and collection management, and a C# interface which connects to the [mod.io REST API](https://docs.mod.io).
 
 ## Watch the video tutorial
-<a href="https://www.youtube.com/watch?v=pmECrkdzHzQ"><img src="https://img.youtube.com/vi/pmECrkdzHzQ/0.jpg" alt="mod.io" width="420"/></a>
+<a href="https://www.youtube.com/watch?v=pmECrkdzHzQ"><img src="https://i.ytimg.com/vi/pmECrkdzHzQ/maxresdefault.jpg" alt="mod.io" width="560"/></a>
 
-## Installation
-Requires **Unity 2019.4** or later. Developed for Windows, Mac, Linux, Xbox, PlayStation and Switch.
+## Platform Support
+
+|Platform       | Support |
+| ------------- | ------- |
+|Windows        | ✔       |
+|Windows (GDK)  | ✔ [Contact us](#game-studios-and-publishers) |
+|Nintendo Switch| ✔ [Contact us](#game-studios-and-publishers) |
+|XBox (GDK)     | ✔ [Contact us](#game-studios-and-publishers) |
+|Linux          | ✔       |
+|macOS          | ✔       |
 
 ### Git Repository or .unitypackage
 You can import the plugin directly from the [Unity Asset Store](https://assetstore.unity.com/packages/tools/integration/mod-browser-manager-by-mod-io-138866), or by downloading the package directly from the [Releases page](https://github.com/modio/modio-unity/releases). If you have any previous versions of the plugin installed, it is highly recommended to delete them before importing a newer version.
@@ -218,8 +226,8 @@ mod.io offers the same core functionality as Steamworks Workshop (1 click mod in
 * Our platform is built by the super experienced ModDB.com team and is continually improving for your benefit.
 * Your community can consume the mod.io API to build modding fan sites or discord bots if they want.
 
-## Large studios and Publishers
-A private white label option is available to license, if you want a fully featured mod-platform that you can control and host in-house. [Contact us](mailto:developers@mod.io?subject=Whitelabel) to discuss.
+## Game studios and Publishers
+If you need assistance with 1st party approvals, or require a private, white-label UGC solution. [Contact us](mailto:developers@mod.io) to discuss.
 
 ## Contributions Welcome
 Our Unity plugin is public and open source. Game developers are welcome to utilize it directly, to add support for mods in their games, or fork it for their games customized use. Want to make changes to our plugin? Submit a pull request with your recommended changes to be reviewed.
