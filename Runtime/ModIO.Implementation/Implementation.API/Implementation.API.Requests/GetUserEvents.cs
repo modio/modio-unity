@@ -2,21 +2,28 @@
 
 namespace ModIO.Implementation.API.Requests
 {
+
     internal static class GetUserEvents
     {
         [System.Serializable]
-        internal class ResponseSchema : PaginatingRequest<UserEventObject>
-        {
-        }
+        internal class ResponseSchema : PaginatedResponse<UserEventObject> { }
 
-        public static readonly RequestConfig Template =
-            new RequestConfig { requireAuthToken = true, canCacheResponse = false,
-                                  requestResponseType = WebRequestResponseType.Text,
-                                  requestMethodType = WebRequestMethodType.GET };
-
-        public static string URL()
+        public static WebRequestConfig Request(string filterUrl = null)
         {
-            return $"{Settings.server.serverURL}{@"/me/events"}?game_id={Settings.server.gameId}";
+            var request = new WebRequestConfig()
+            {
+                Url = $"{Settings.server.serverURL}{@"/me/events"}?game_id={Settings.server.gameId}",
+                RequestMethodType = "GET"
+            };
+
+            if(filterUrl != null)
+            {
+                request.Url += filterUrl;
+            }
+            
+            
+
+            return request;
         }
     }
 }

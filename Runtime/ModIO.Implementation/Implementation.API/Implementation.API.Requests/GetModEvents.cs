@@ -2,22 +2,28 @@
 
 namespace ModIO.Implementation.API.Requests
 {
+
     internal static class GetModEvents
     {
         [System.Serializable]
-        internal class ResponseSchema : PaginatingRequest<ModEventObject>
-        {
-        }
+        internal class ResponseSchema : PaginatedResponse<ModEventObject> { }
 
-        public static readonly RequestConfig Template =
-            new RequestConfig { requireAuthToken = true, canCacheResponse = false,
-                                  requestResponseType = WebRequestResponseType.Text,
-                                  requestMethodType = WebRequestMethodType.GET };
-
-        public static string URL()
+        public static WebRequestConfig Request(string paginationUrl = null)
         {
-            return $"{Settings.server.serverURL}{@"/games/"}"
-                   + $"{Settings.server.gameId}{@"/mods/events"}?";
+            var request = new WebRequestConfig()
+            {
+                Url = $"{Settings.server.serverURL}{@"/games/"}{Settings.server.gameId}{@"/mods/events"}?",
+                RequestMethodType = "GET"
+            };
+
+            if(paginationUrl != null)
+            {
+                request.Url += paginationUrl;
+            }
+
+            
+
+            return request;
         }
     }
 }

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using UnityEngine;
 
 namespace ModIO.Implementation
 {
@@ -15,6 +14,7 @@ namespace ModIO.Implementation
             public Task task;
             public int taskSize;
             public TaskPriority priority;
+            public bool useSeparateThread;
         }
 
         List<TaskQueueItem> tasks = new List<TaskQueueItem>();
@@ -36,7 +36,7 @@ namespace ModIO.Implementation
         /// </param>
         /// <param name="synchronizedJobs">if true, all jobs will be run in order. If false, all jobs
         /// will ge started at the same time and be awaited on together until finish.
-        /// Warning: Setting this to true will mean that all other tasks wait until finished. 
+        /// Warning: Setting this to true will mean that all other tasks wait until finished.
         /// </param>
         public TaskQueueRunner(int upperTasksBoundary, bool runsAutomatically = false, bool synchronizedJobs = false)
         {
@@ -111,28 +111,48 @@ namespace ModIO.Implementation
         /// Returns true if the Task Priority Queue runner has more tasks to run
         /// </summary>
         public bool HasTasks() => tasks.Count > 0;
-        
-        /// <summary>
-        /// Add a task to the queue.
-        /// </summary>
-        /// <returns>Returns given Task for awaiting purposes.</returns>
-        public Task<T> AddTask<T>(TaskPriority prio, int taskSize, Func<Task<T>> function)
-        {
-           Task<T> task = new Task<T>(() => function().Result);
 
-           tasks.Add(new TaskQueueItem
-           {
-                task = task,
-                taskSize = taskSize,
-                priority = prio
+        /// <summary>
+        /// Adds a new task to the TaskQueueRunner with a given priority and task size.
+        /// </summary>
+        /// <param name="taskFunc">The function that represents the task to be executed.</param>
+        /// <param name="prio">The priority of the task (TaskPriority).</param>
+        /// <param name="taskSize">The size of the task.</param>
+        /// <returns>Returns a Task of type T for awaiting purposes.</returns>
+        public Task<T> AddTask<T>(TaskPriority prio, int taskSize, Func<Task<T>> taskFunc, bool useSeparateThread = false)
+        {
+            TaskCompletionSource<T> taskCompletionSource = new TaskCompletionSource<T>();
+
+            Task task = new Task(async () =>
+            {
+                try
+                {
+                    T result = await taskFunc();
+                    taskCompletionSource.SetResult(result);
+                }
+                catch (Exception ex)
+                {
+                    taskCompletionSource.SetException(ex);
+                }
             });
 
-            if(runsAutomatically)
+            lock (tasks)
             {
-                AutoRun();
+                tasks.Add(new TaskQueueItem
+                {
+                    task = task,
+                    taskSize = taskSize,
+                    priority = prio,
+                    useSeparateThread = useSeparateThread
+                });
+
+                if (runsAutomatically)
+                {
+                    AutoRun();
+                }
             }
 
-            return task;
+            return taskCompletionSource.Task;
         }
 
         /// <summary>
@@ -179,12 +199,19 @@ namespace ModIO.Implementation
                     {
                         continue;
                     }
-                    
+
                     try
                     {
-                        item.task.Start();
-                        item.task.Wait();
-                        await item.task;
+                        if(item.useSeparateThread)
+                        {
+                            await Task.Run(() => item.task.Start());
+                        }
+                        else
+                        {
+                            item.task.Start();
+                            item.task.Wait();
+                            await item.task;
+                        }
                     }
                     catch(Exception e)
                     {
@@ -203,10 +230,17 @@ namespace ModIO.Implementation
                     {
                         continue;
                     }
-                    
+
                     try
                     {
-                        item.task.Start();
+                        if(item.useSeparateThread)
+                        {
+                            await Task.Run(() => item.task.Start());
+                        }
+                        else
+                        {
+                            item.task.Start();
+                        }
                     }
                     catch(Exception e)
                     {
@@ -216,9 +250,9 @@ namespace ModIO.Implementation
                                                      + $" {e.InnerException?.Message}");
                     }
                 }
-                
+
                 await Task.WhenAll(items.Select(x => x.task).ToArray());
-            }                
+            }
         }
     }
 }

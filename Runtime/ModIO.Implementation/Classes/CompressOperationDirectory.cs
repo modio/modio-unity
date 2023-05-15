@@ -27,6 +27,8 @@ namespace ModIO.Implementation
 
         public override async Task<ResultAnd<MemoryStream>> Compress()
         {
+            Logger.Log(LogLevel.Verbose, $"COMPRESS STARTED [{directory}]");
+            
             ResultAnd<MemoryStream> resultAnd = new ResultAnd<MemoryStream>();
             resultAnd.value = new MemoryStream();
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -9,7 +10,7 @@ using ModIO.Util;
 
 namespace ModIOBrowser.Implementation
 {
-    public class Collection : SimpleMonoSingleton<Collection>
+    public class Collection : SelfInstancingMonoSingleton<Collection>
     {
         [Header("Collection Panel")]
         [SerializeField]
@@ -144,17 +145,57 @@ namespace ModIOBrowser.Implementation
             Refresh();
             
             //--------------------------------------------------------------------------------//
+            //                              GET FILTER SETTINGS                               //
+            //--------------------------------------------------------------------------------//
+            // check the first dropdown filter to decide if we show/hide subs/unsubs
+            bool showSubscribed = true;
+            bool showUnsubscribed = false;
+            switch(CollectionPanelFirstDropDownFilter.value)
+            {
+                case 1:
+                    showUnsubscribed = true; 
+                    showSubscribed = false;
+                    break;
+                case 2:
+                    showUnsubscribed = true;
+                    break;
+            }
+            
+            //--------------------------------------------------------------------------------//
             //                              GET MODS TO DISPLAY                               //
             //--------------------------------------------------------------------------------//
-            List<ModProfile> subscribedAndPending = new List<ModProfile>();
-
-            List<SubscribedMod> subscribed = new List<SubscribedMod>(subscribedMods);
-            foreach(SubscribedMod mod in subscribed)
+            List<CollectionProfile> allMods = new List<CollectionProfile>();
+            
+            if (showSubscribed)
             {
-                subscribedAndPending.Add(mod.modProfile);
+                foreach(SubscribedMod mod in subscribedMods)
+                {
+                    if(pendingUnsubscribes.Contains(mod.modProfile.id))
+                    {
+                        continue;
+                    }
+                    allMods.Add(new CollectionProfile(mod.modProfile, true, mod.enabled, 1, modStatus[mod.modProfile.id]));
+                }
+                foreach(ModProfile mod in pendingSubscriptions)
+                {
+                    allMods.Add(new CollectionProfile(mod, true, true, 1, modStatus[mod.id]));
+                }
             }
-            subscribedAndPending.AddRange(pendingSubscriptions);
-            List<InstalledMod> installed = new List<InstalledMod>(installedMods);
+            if (showUnsubscribed)
+            {
+                // cache the pending subs in ModIds for an easier comparison
+                List<ModId> pendingSubs = pendingSubscriptions.Select(mod => mod.id).ToList();
+                
+                foreach(InstalledMod mod in installedMods)
+                {
+                    // If we have subscribed to this, dont display it as an 'Unsubscribed' mod
+                    if(pendingSubs.Contains(mod.modProfile.id) || mod.subscribedUsers.Count < 1)
+                    {
+                        continue;
+                    }
+                    allMods.Add(new CollectionProfile(mod.modProfile, false, false, mod.subscribedUsers.Count, modStatus[mod.modProfile.id]));
+                }
+            }
 
             string accentHashColor = ColorUtility.ToHtmlStringRGBA(Browser.Instance.colorScheme.GetSchemeColor(ColorSetterType.Highlight));
 
@@ -166,180 +207,62 @@ namespace ModIOBrowser.Implementation
             {
                 Translation.Get(CollectionPanelTitleTranslation,
                     "Collection <size=20><color=#{accentHashColor}>({subscribedAndPending.Count})</color></size>",
-                    CollectionPanelTitle, $"{accentHashColor}", $"{subscribedAndPending.Count}");
+                    CollectionPanelTitle, $"{accentHashColor}", $"{allMods.Count}");
             }
-
+            
+            
             //--------------------------------------------------------------------------------//
-            //                              GET FILTER SETTINGS                               //
+            //                              SORT AND FILTER                                   //
             //--------------------------------------------------------------------------------//
-            // check the first dropdown filter to decide if we show/hide subs/unsubs
-            bool hideSubs = false;
-            bool hideUnsubs = true;
-            switch(CollectionPanelFirstDropDownFilter.value)
-            {
-                case 0:
-                    hideSubs = false;
-                    break;
-                case 1:
-                    hideSubs = true; 
-                    hideUnsubs = false;
-                    break;
-                case 2:
-                    hideSubs = false;
-                    break;
-            }
             
             // Sort the lists of mods according to dropdown filters
             switch(CollectionPanelSecondDropDownFilter.value)
             {
                 case 0:
-                    subscribedAndPending.Sort(Utility.CompareModProfilesAlphabetically);
-                    installed.Sort(Utility.CompareModProfilesAlphabetically);
+                    allMods.Sort(CompareModProfilesAlphabetically);
                     break;
                 case 1:
-                    subscribedAndPending.Sort(Utility.CompareModProfilesByFileSize);
-                    installed.Sort(Utility.CompareModProfilesByFileSize);
+                    allMods.Sort(CompareModProfilesByFileSize);
                     break;
-            }
-
-            // Check if we have a search phrase to compare against mods
-            HashSet<ModId> omittedBySearchPhrase = new HashSet<ModId>();
-
-            if(CollectionPanelSearchField.text.Length > 0)
-            {
-                string searchPhrase = CollectionPanelSearchField.text;
-                
-                foreach(ModProfile modProfile in subscribedAndPending)
-                {
-                    if(modProfile.name.IndexOf(searchPhrase, StringComparison.OrdinalIgnoreCase) < 0)
-                    {
-                        omittedBySearchPhrase.Add(modProfile.id);
-                    }
-                }
-                
-                foreach(InstalledMod mod in installed)
-                {
-                    if(mod.modProfile.name.IndexOf(searchPhrase, StringComparison.OrdinalIgnoreCase) < 0)
-                    {
-                        omittedBySearchPhrase.Add(mod.modProfile.id);
-                    }
-                }
             }
 
 
             //--------------------------------------------------------------------------------//
             //                                 DISPLAY MODS                                   //
             //--------------------------------------------------------------------------------//
-            // hide list items @UNDONE not needed with current setup
-            // ListItem.HideListItems<CollectionModListItem>();
+            
+            // Hide the existing collection items
+            ListItem.HideListItems<CollectionModListItem>();
 
             bool hasSelection = false;
-
-            // SUBSCRIBED MODS
-            foreach(ModProfile mod in subscribedAndPending)
+            string searchPhrase = CollectionPanelSearchField.text;
+            CollectionModListItem lastItem = null;
+            
+            // GET LIST ITEMS TO SETUP
+            foreach(var mod in allMods)
             {
-                bool hide = hideSubs ? hideSubs : omittedBySearchPhrase.Contains(mod.id);
+                // check if the search phrase omits this mod id
+                if(mod.name.IndexOf(searchPhrase, StringComparison.OrdinalIgnoreCase) < 0)
+                {
+                    continue;
+                }
+
+                ListItem li = ListItem.GetListItem<CollectionModListItem>(CollectionPanelModListItem, CollectionPanelModListItemParent, Browser.Instance.colorScheme);
                 
-                // first check if we have an active list item for this
-                if(CollectionModListItem.listItems.ContainsKey(mod.id))
+                if(li is CollectionModListItem item)
                 {
-                    if(pendingUnsubscribes.Contains(mod.id) || hide)
-                    {
-                        CollectionModListItem.listItems[mod.id].gameObject.SetActive(false);
-                        continue;
-                    }
-                    CollectionModListItem.listItems[mod.id].Setup(mod, true, modStatus[mod.id]);
-                    CollectionModListItem.listItems[mod.id].SetViewportRestraint(CollectionPanelContentParent, null);
-                    if(!hasSelection)
-                    {
-                        hasSelection = true;
-                        InputNavigation.Instance.Select(CollectionModListItem.listItems[mod.id].selectable);
-                        SetExplicitDownNavigationForTopRowButtons(CollectionModListItem.listItems[mod.id].selectable);
-                    }
-                } 
-                // make a new list item
-                else
-                {
-                    if(pendingUnsubscribes.Contains(mod.id) || hide)
-                    {
-                        continue;
-                    }
-                    ListItem li = ListItem.GetListItem<CollectionModListItem>(CollectionPanelModListItem, CollectionPanelModListItemParent, Browser.Instance.colorScheme);
-                    li.Setup(mod, true, modStatus[mod.id]);
+                    li.Setup(mod);
                     li.SetViewportRestraint(CollectionPanelContentParent, null);
                     if(!hasSelection)
                     {
                         hasSelection = true;
                         InputNavigation.Instance.Select(li.selectable);
                         SetExplicitDownNavigationForTopRowButtons(li.selectable);
+                        item.SetNavigationAbove(CollectionPanelCheckForUpdatesButton);
                     }
-                }
-            }
-            
-            // INSTALLED MODS
-            if(installed != null && installed.Count > 0)
-            {
-                foreach(InstalledMod mod in installed)
-                { 
-                    ModId modId = mod.modProfile.id;
-                    
-                    // Check if this has a pending subscription, if so, hide it
-                    bool hide = hideUnsubs ? hideUnsubs : mod.subscribedUsers.Count > 0;
 
-                    // check if we need to hide this if it's filtered out via search phrase
-                    if(!hide)
-                    {
-                        hide = omittedBySearchPhrase.Contains(modId);
-                    }
-                    
-                    // if we dont need to hide this, check if the current user has a pending
-                    // subscription, in which case we'll create a list item from iterating over
-                    // pendingSubscriptions instead of here
-                    if (!hide)
-                    {
-                        foreach(ModProfile profile in pendingSubscriptions)
-                        {
-                            if(profile.id.Equals(modId))
-                            {
-                                hide = true;
-                                break;
-                            }
-                        }
-                    }
-                    
-                    // first check if we have an active list item for this
-                    if(CollectionModListItem.listItems.ContainsKey(modId))
-                    {
-                        if(hide)
-                        {
-                            CollectionModListItem.listItems[modId].gameObject.SetActive(false);
-                            continue;
-                        }
-                        CollectionModListItem.listItems[modId].Setup(mod);
-                        if(!hasSelection)
-                        {
-                            hasSelection = true;
-                            CollectionModListItem.listItems[modId].selectable?.Select();
-                            SetExplicitDownNavigationForTopRowButtons(CollectionModListItem.listItems[modId].selectable);
-                        }
-                    }
-                    // make a new list item
-                    else
-                    {
-                        if(hide)
-                        {
-                            continue;
-                        }
-                        ListItem li = ListItem.GetListItem<CollectionModListItem>(CollectionPanelModListItem, CollectionPanelModListItemParent, Browser.Instance.colorScheme);
-                        li.Setup(mod);
-                        li.SetViewportRestraint(CollectionPanelContentParent, null);
-                        if(!hasSelection)
-                        {
-                            hasSelection = true;
-                            InputNavigation.Instance.Select(li.selectable);
-                            SetExplicitDownNavigationForTopRowButtons(li.selectable);
-                        }
-                    }
+                    lastItem?.ConnectNavigationToItemBelow(item);
+                    lastItem = item;
                 }
             }
 
@@ -557,5 +480,86 @@ namespace ModIOBrowser.Implementation
             profile = default;
             return false;
         }
+        
+        #region Comparer<T> delegates for sorting a List<ModProfile> via List<T>.Sort()
+        static int CompareModProfilesAlphabetically(SubscribedMod A, SubscribedMod B)
+        {
+            return CompareModProfilesAlphabetically(A.modProfile, B.modProfile);
+        }
+        static int CompareModProfilesAlphabetically(InstalledMod A, InstalledMod B)
+        {
+            return CompareModProfilesAlphabetically(A.modProfile, B.modProfile);
+        }
+        static int CompareModProfilesAlphabetically(CollectionProfile A, CollectionProfile B)
+        {
+            return CompareModProfilesAlphabetically(A.modProfile, B.modProfile);
+        }
+
+        static int CompareModProfilesAlphabetically(ModProfile A, ModProfile B)
+        {
+            float valueOfA = 0;
+            float valueOfB = 0;
+            float depthMultiplier = 0;
+            int maxDepth = 10;
+            int depth = 0;
+
+            foreach(char character in A.name)
+            {
+                if(depth >= maxDepth)
+                {
+                    break;
+                }
+                depthMultiplier = depthMultiplier == 0 ? 1 : depthMultiplier + 100;
+                valueOfA += char.ToLower(character) / depthMultiplier;
+                depth++;
+            }
+
+            depthMultiplier = 0;
+            depth = 0;
+
+            foreach(char character in B.name)
+            {
+                if(depth >= maxDepth)
+                {
+                    break;
+                }
+                depthMultiplier = depthMultiplier == 0 ? 1 : depthMultiplier + 100;
+                valueOfB += char.ToLower(character) / depthMultiplier;
+                depth++;
+            }
+            if(valueOfA > valueOfB)
+            {
+                return 1;
+            }
+            if(valueOfB > valueOfA)
+            {
+                return -1;
+            }
+            return 0;
+        }
+
+        static int CompareModProfilesByFileSize(InstalledMod A, InstalledMod B)
+        {
+            return CompareModProfilesByFileSize(A.modProfile, B.modProfile);
+        }
+
+        static int CompareModProfilesByFileSize(CollectionProfile A, CollectionProfile B)
+        {
+            return CompareModProfilesByFileSize(A.modProfile, B.modProfile);
+        }
+
+        static int CompareModProfilesByFileSize(ModProfile A, ModProfile B)
+        {
+            if(A.archiveFileSize > B.archiveFileSize)
+            {
+                return -1;
+            }
+            if(A.archiveFileSize < B.archiveFileSize)
+            {
+                return 1;
+            }
+            return 0;
+        }
+        #endregion Comparer<T> delegates for sorting a List<ModProfile> via List<T>.Sort()
     }
 }

@@ -8,7 +8,7 @@ using UnityEngine.UI;
 
 namespace ModIOBrowser.Implementation
 {
-    class SearchPanel : SimpleMonoSingleton<SearchPanel>
+    class SearchPanel : SelfInstancingMonoSingleton<SearchPanel>
     {
         [Header("Search Panel")]
         [SerializeField] public GameObject SearchPanelGameObject;

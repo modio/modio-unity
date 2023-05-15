@@ -6,20 +6,21 @@ using TMPro;
 using System.Linq;
 using System;
 using ModIO.Util;
-using JetBrains.Annotations;
+using Plugins.mod.io.UI.Translations;
+using ModIOBrowser.Implementation;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
-namespace ModIOBrowser.Implementation
+namespace ModIOBrowser
 {
 
     /// <summary>
     /// How to use:
-    ///      
+    ///
     /// Each string you translate needs to exist in the corresponding .po file. It should be located
     /// in resources/mod.io/BrowserLanguages.
-    /// 
+    ///
     /// Any TextMeshProUGUI in the list translated will be automatically translated.
     /// If you are using instanced prefabs, you may not be able to or want to mutate said list,
     /// in that case, use the class "Translatable", or the Get method to change the value when needed.
@@ -29,42 +30,42 @@ namespace ModIOBrowser.Implementation
     ///
     /// To directly translate a string, use:
     /// TranslationManager.Instance.Get("We were unable to validate your credentials with the mod.io server."));
-    /// 
-    /// To directly translate a string where values need to be changed or appended, use: 
-    /// 
+    ///
+    /// To directly translate a string where values need to be changed or appended, use:
+    ///
     /// Translator.Instance.Get("I am punching a {ball} using {arms}", "Flower Pot", "Feet"));
-    /// 
+    ///
     /// In this case, it will get translated into "I am punching a Flower Pot using Feet".
     /// (Which is kind of a kick but whatever.)
     /// Get will look for anything inside a {}, and replace it sequentially, so it doesn't really
     /// matter what's inside each {} parameter.
-    /// 
+    ///
     /// In some cases, you aren't able or don't want to use the direct Get translator, for example
     /// when you're working with a prefab in the editor which carries no code, and you don't want to
     /// add a bunch of code just for a simple text change.
-    /// 
+    ///
     /// In that case, you can attach the script "Translatable" to the object. It will automatically
     /// connect itself to the translator and update on runtime. It requires a TextMeshProUGUI variable,
     /// and will add one to the object it is added to, if there is none.
-    /// 
+    ///
     /// Translatable will automatically try to detect if there is any text in the TextMeshProUGUI variable,
     /// and attempt to translate it. It will also automatically an field to English.po, if it doesn't already exist.
     ///
     /// Sometimes you need to change texts on the fly inside the actual code, for that purpose use:
     /// Translation.Get()
     /// </summary>
-    class TranslationManager : SimpleMonoSingleton<TranslationManager>
+    public class TranslationManager : SelfInstancingMonoSingleton<TranslationManager>
     {
         public TranslatedLanguages SelectedLanguage { get { return Language; } }
 
         public bool markUntranslatedStringsWithRed = true;
-        
 
         private TranslatedLanguages Language;
         private List<string> originalTranslationKeyCache = new List<string>();
         private Dictionary<string, string> translations = new Dictionary<string, string>();
         public string attemptToTranslate;
         public List<TextAsset> translationsTextAssets;
+        public TranslatedLanguageFontPairings defaultTranslatedLanguageFontPairings;
 
         protected override void Awake()
         {
@@ -94,7 +95,7 @@ namespace ModIOBrowser.Implementation
         private void ForceChangeLanguage(TranslatedLanguages language)
         {
             this.Language = language;
-            translations = BuildLanguageDictionary(language);            
+            translations = BuildLanguageDictionary(language);
             ApplyTranslations();
         }
 
@@ -102,13 +103,13 @@ namespace ModIOBrowser.Implementation
         /// Get a translation.
         /// Example 1:
         /// TranslationManager.Instance.Get("Mod installation failed")
-        /// 
+        ///
         /// Example 2:
         /// TranslationManager.Instance.Get("Mod installation failed because {1}", {"my dog ate it."})
         /// returns a translation with the meaning ""Mod installation failed because my dog ate it."
         ///
         /// The Get function will automatically replace anything inside a {} using specified values, sequentially.
-        /// 
+        ///
         /// </summary>
         /// <returns>The translation, or the key of the translation on fail.</returns>
         public string Get(string key, params string[] values) =>
@@ -160,7 +161,7 @@ namespace ModIOBrowser.Implementation
                             translations.Add(key, text);
 
                     }
-                    else if(line.StartsWith("\"")) 
+                    else if(line.StartsWith("\""))
                     {
                         //Multi-line input, just add to translation
                         text += "\n" + GetQuotedString(line);
@@ -257,7 +258,7 @@ namespace ModIOBrowser.Implementation
                 //You likely just forgot to add as many {}'s as you have input values!
                 Debug.LogError($"translating {originalText} gives error:\n{ex}");
             }
-            
+
             if(i != values.Length)
             {
                 Debug.LogWarning($"String of \"{text}\" parameter count did not match expected parameter count, ({values.Length} ");
@@ -305,7 +306,7 @@ namespace ModIOBrowser.Implementation
             Language = TranslatedLanguages.English;
             ForceChangeLanguage(Language);
         }
-        
+
         [ExposeMethodInEditor]
         public void AttemptToTranslateInput()
         {

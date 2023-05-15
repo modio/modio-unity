@@ -108,7 +108,7 @@ namespace ModIO.Implementation.Platform
                     using(var sourceStream = File.Open(filePath, FileMode.Open))
                     {
                         data = new byte[sourceStream.Length];
-                        await sourceStream.ReadAsync(data, 0, (int)sourceStream.Length).ConfigureAwait(false);
+                        var pos = await sourceStream.ReadAsync(data, 0, (int)sourceStream.Length);
                     }
 
                     result = ResultBuilder.Success;
@@ -118,6 +118,53 @@ namespace ModIO.Implementation.Platform
                     Logger.Log(LogLevel.Warning, "Unhandled error when attempting to read the file."
                                                      + $"\n.path={filePath}"
                                                      + $"\n.Exception:{e.Message}");
+
+                    result = ResultBuilder.Create(ResultCode.IO_FileCouldNotBeRead);
+                }
+            }
+
+            Logger.Log(
+                LogLevel.Verbose,
+                $"Read file: {filePath} - Result: [{result.code}] - Data: {(data == null ? "NULL" : data.Length+"B")}");
+
+            // now that we are done with this file, remove it from the table of open files
+            currentlyOpenFiles.Remove(filePath);
+
+            return ResultAnd.Create(result, data);
+        }
+
+        /// <summary>Reads a file.</summary>
+        public static ResultAnd<byte[]> ReadFile(string filePath)
+        {
+            byte[] data = null;
+
+            // If the file we wish to open is already open we return
+            if(currentlyOpenFiles.Contains(filePath))
+            {
+                return ResultAnd.Create(ResultBuilder.Create(ResultCode.IO_AccessDenied), data);
+            }
+
+            // add this filepath to a table of all currently open files
+            currentlyOpenFiles.Add(filePath);
+
+            if(IsPathValid(filePath, out Result result)
+               && DoesFileExist(filePath, out result))
+            {
+                try
+                {
+                    using(var sourceStream = File.Open(filePath, FileMode.Open))
+                    {
+                        data = new byte[sourceStream.Length];
+                        var pos = sourceStream.Read(data, 0, (int)sourceStream.Length);
+                    }
+
+                    result = ResultBuilder.Success;
+                }
+                catch(Exception e) // TODO(@jackson): Handle UnauthorizedAccessException
+                {
+                    Logger.Log(LogLevel.Warning, "Unhandled error when attempting to read the file."
+                                                 + $"\n.path={filePath}"
+                                                 + $"\n.Exception:{e.Message}");
 
                     result = ResultBuilder.Create(ResultCode.IO_FileCouldNotBeRead);
                 }
@@ -164,7 +211,61 @@ namespace ModIO.Implementation.Platform
                     using(var fileStream = File.Open(filePath, FileMode.Create))
                     {
                         fileStream.Seek(0, SeekOrigin.End);
-                        await fileStream.WriteAsync(data, 0, data.Length).ConfigureAwait(false);
+                        await fileStream.WriteAsync(data, 0, data.Length);
+                    }
+
+                    result = ResultBuilder.Success;
+                }
+                catch(Exception e)
+                {
+                    Logger.Log(LogLevel.Error,
+                               "Unhandled error when attempting to write the file."
+                                   + $"\n.path={filePath}" + $"\n.Exception:{e.Message}");
+
+                    result = ResultBuilder.Create(ResultCode.IO_FileCouldNotBeWritten);
+                }
+            }
+
+            Logger.Log(LogLevel.Verbose, $"Write file: {filePath} - Result: [{result.code}]");
+
+            // now that we are done with this file, remove it from the table of open files
+            currentlyOpenFiles.Remove(filePath);
+
+            return result;
+        }
+
+         /// <summary>Writes a file.</summary>
+        public static Result WriteFile(string filePath, byte[] data)
+        {
+            Result result = ResultBuilder.Success;
+
+            if(data == null)
+            {
+                Logger.Log(LogLevel.Verbose,
+                    "Was not given any data to write. Cancelling write operation."
+                    + $"\n.path={filePath}");
+                return result;
+            }
+
+            // NOTE @Jackson I'm not a huge fan of this but would like to hear ideas for a better solution
+            // If the file we wish to open is already open we return
+            if(currentlyOpenFiles.Contains(filePath))
+            {
+                return ResultBuilder.Create(ResultCode.IO_AccessDenied);
+            }
+
+            // add this filepath to a table of all currently open files
+            currentlyOpenFiles.Add(filePath);
+
+            if(IsPathValid(filePath, out result)
+               && TryCreateParentDirectory(filePath, out result))
+            {
+                try
+                {
+                    using(var fileStream = File.Open(filePath, FileMode.Create))
+                    {
+                        fileStream.Seek(0, SeekOrigin.End);
+                        fileStream.Write(data, 0, data.Length);
                     }
 
                     result = ResultBuilder.Success;
@@ -365,7 +466,7 @@ namespace ModIO.Implementation.Platform
         }
 
         /// <summary>Gets the size and hash of a file.</summary>
-        public static async Task<ResultAnd<(long fileSize, string fileHash)>> GetFileSizeAndHash(
+        public static ResultAnd<(long fileSize, string fileHash)> GetFileSizeAndHash(
             string filePath)
         {
             long fileSize = -1;
@@ -404,13 +505,12 @@ namespace ModIO.Implementation.Platform
             }
 
             // get hash
-            ResultAnd<string> hashResult;
             try
             {
                 using(var stream = File.OpenRead(filePath))
                 {
-                    hashResult = await IOUtil.GenerateMD5Async(stream);
-                    fileHash = hashResult.value;
+                    string hash = IOUtil.GenerateMD5(stream);
+                    fileHash = hash;
                 }
             }
             catch(UnauthorizedAccessException e)

@@ -1,24 +1,21 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Reflection;
 using JetBrains.Annotations;
 using ModIO;
 using ModIO.Util;
 using ModIOBrowser.Implementation;
-using TMPro;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace ModIOBrowser
 {
 
+
     /// <summary>
     /// The main handler for opening and closing the mod IO Browser.
-    /// Use Browser.OpenBrowser() to open and Browser.CloseBrowser() to close.
+    /// Use Browser.Open() to open and Browser.Close() to close.
     /// </summary>
-    public class Browser : SimpleMonoSingleton<Browser>
+    public class Browser : MonoSingleton<Browser>
     {
         // All of the following fields with [SerializeField] attributes are assigned on the prefab
         // from the unity editor inspector
@@ -26,6 +23,8 @@ namespace ModIOBrowser
         [Tooltip("Setting this to false will stop the Browser from automatically initializing the plugin")]
         [SerializeField] bool autoInitialize = true;
         [SerializeField] public UiSettings uiConfig;
+        [SerializeField] public Home homePanel;
+        public SingletonAwakener SingletonAwakener;
 
         [Header("Main")]
         public ColorScheme colorScheme;
@@ -42,7 +41,7 @@ namespace ModIOBrowser
 
         // This is assigned on OpenBrowser() and will get invoked each time the Browser is closed.
         internal static Action OnClose;
-        
+
         /// <summary>
         /// This delegate will get invoked whenever an InputField is selected. You can specify what
         /// virtual keyboard you'd like to open by providing the Browser with a delegate.
@@ -56,9 +55,9 @@ namespace ModIOBrowser
                                                      int characterLimit,
                                                      bool multiline,
                                                      Action<string> onClose);
-        
+
         public delegate void RetrieveAuthenticationCodeDelegate(Action<string> callbackOnReceiveCode);
-        
+
         /// <summary>
         /// Represents the type of keyboard layout appropriate for the type of InputField being selected
         /// </summary>
@@ -68,7 +67,7 @@ namespace ModIOBrowser
             Search,
             EmailAddress
         }
-        
+
         // if the ModIO plugin hasn't been initialized yet but the user wishes to open the UI we set
         // this to true and open the browser the moment we have been initialized
         static bool openOnInitialize = false;
@@ -116,6 +115,7 @@ namespace ModIOBrowser
         public void CloseBrowserPanel()
         {
             Close();
+            homePanel.ResetScrollRect();
         }
 
 
@@ -201,7 +201,7 @@ namespace ModIOBrowser
         /// <param name="userEmail">(Optional) provide the users email address</param>
         public static void SetupXboxAuthenticationOption(RetrieveAuthenticationCodeDelegate getXboxTokenDelegate, string userEmail = null)
         {
-            Dispatcher.Instance.Run(() =>
+            MonoDispatcher.Instance.Run(() =>
             {
                 Authentication.getXboxToken = getXboxTokenDelegate;
                 Authentication.optionalThirdPartyEmailAddressUsedForAuthentication = userEmail;
@@ -217,7 +217,7 @@ namespace ModIOBrowser
         /// <param name="userEmail">(Optional) provide the users email address</param>
         public static void SetupSwitchAuthenticationOption(RetrieveAuthenticationCodeDelegate getSwitchNsaIdDelegate, string userEmail = null)
         {
-            Dispatcher.Instance.Run(() =>
+            MonoDispatcher.Instance.Run(() =>
             {
                 Authentication.getSwitchToken = getSwitchNsaIdDelegate;
                 Authentication.optionalThirdPartyEmailAddressUsedForAuthentication = userEmail;
@@ -240,9 +240,18 @@ namespace ModIOBrowser
         /// <seealso cref="EncodeEncryptedSteamAppTicket"/>
         public static void SetupSteamAuthenticationOption(RetrieveAuthenticationCodeDelegate getSteamTicketDelegate, string userEmail = null)
         {
-            Dispatcher.Instance.Run(() =>
+            MonoDispatcher.Instance.Run(() =>
             {
                 Authentication.getSteamAppTicket = getSteamTicketDelegate;
+                Authentication.optionalThirdPartyEmailAddressUsedForAuthentication = userEmail;
+            });
+        }
+
+        public static void SetupEpicAuthenticationOption(RetrieveAuthenticationCodeDelegate getEpicTicketDelegate, string userEmail = null)
+        {
+            MonoDispatcher.Instance.Run(() =>
+            {
+                Authentication.getEpicAuthCode = getEpicTicketDelegate;
                 Authentication.optionalThirdPartyEmailAddressUsedForAuthentication = userEmail;
             });
         }
@@ -256,14 +265,14 @@ namespace ModIOBrowser
         /// <param name="userEmail">(Optional) provide the users email address</param>
         public static void SetupPlayStationAuthenticationOption(RetrieveAuthenticationCodeDelegate getPlayStationAuthCodeDelegate, PlayStationEnvironment environment, string userEmail = null)
         {
-            Dispatcher.Instance.Run(() =>
+            MonoDispatcher.Instance.Run(() =>
             {
                 Authentication.getPlayStationAuthCode = getPlayStationAuthCodeDelegate;
                 Authentication.optionalThirdPartyEmailAddressUsedForAuthentication = userEmail;
                 Authentication.PSEnvironment = environment;
             });
         }
-    
+
 #endregion // Frontend methods
 
 #region Initialization
@@ -318,6 +327,9 @@ namespace ModIOBrowser
                 return;
             }
 
+            //Ensure singletons are initialized
+            Instance.SingletonAwakener.AttemptInitilization();
+            
             // Activate the Canvas
             if(!Instance.BrowserCanvas.activeSelf)
             {
@@ -328,20 +340,20 @@ namespace ModIOBrowser
             Implementation.Avatar.Instance.SetupUser();
             Home.Instance.Open();
             Home.Instance.RefreshHomePanel();
-
-            Result result = ModIOUnity.EnableModManagement(Mods.ModManagementEvent);
+            ModIOUnity.EnableModManagement(Mods.ModManagementEvent);
 
             SelectionManager.Instance.gameObject.SetActive(true);
         }
 
         public void OpenMenuProfile() => Navigating.OpenMenuProfile();
-        
+
         #endregion
 
 #region Editor helpers
         [ExposeMethodInEditor]
         public void CheckForMissingReferencesInScene()
         {
+            Debug.LogWarning("This function may give false positives, mostly in the case of text input fields and dropdowns");
             MonoBehaviour[] components = Resources.FindObjectsOfTypeAll<MonoBehaviour>();
             foreach(MonoBehaviour component in components)
             {
@@ -350,7 +362,8 @@ namespace ModIOBrowser
                 {
                     if(field.FieldType == typeof(GameObject) && field.GetValue(component) == null)
                     {
-                        Debug.LogError("Missing reference on " + component.name + " of object: " + component.gameObject.name);
+                        //Debug.LogError("Missing reference on " + component.name + " of object: " + component.gameObject.name);
+                        Debug.LogError("Missing reference at: " + component.transform.FullPath());
                     }
                 }
             }

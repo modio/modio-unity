@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using ModIO;
 using ModIO.Util;
-using ModIOBrowser.Implementation;
 using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace ModIOBrowser.Implementation
 {
@@ -18,7 +15,7 @@ namespace ModIOBrowser.Implementation
     ///     new NotificationPopup.ButtonConfig("Cancel", ()=> Debug.Log("cancel"))
     /// );
     /// </summary>
-    class NotificationPopup : SimpleMonoSingleton<NotificationPopup>
+    class NotificationPopup : SelfInstancingMonoSingleton<NotificationPopup>
     {
         public class ButtonConfig
         {

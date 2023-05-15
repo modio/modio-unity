@@ -8,7 +8,7 @@ namespace ModIO.Util
     //needs to inherit from this interface
     public interface ISimpleMessage { }
 
-    public class SimpleMessageHub : SimpleMonoSingleton<SimpleMessageHub>
+    public class SimpleMessageHub : SelfInstancingMonoSingleton<SimpleMessageHub>
     {
         private readonly Dictionary<Type, List<Action<ISimpleMessage>>> dictionary =
             new Dictionary<Type, List<Action<ISimpleMessage>>>();

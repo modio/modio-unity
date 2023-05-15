@@ -8,7 +8,7 @@ namespace ModIO.Implementation
         /// <summary>Configuration for Windows.</summary>
         public BuildSettings standaloneConfiguration;
 
-#if UNITY_STANDALONE && !UNITY_EDITOR
+#if (UNITY_STANDALONE || UNITY_WSA) && !UNITY_EDITOR
 
         /// <summary>Gets the configuration for standalone.</summary>
         public BuildSettings GetBuildSettings()

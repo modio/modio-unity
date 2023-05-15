@@ -1,12 +1,11 @@
 ﻿using ModIO.Util;
-using ModIOBrowser.Implementation;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace ModIOBrowser.Implementation
 {
-    class ModioContextMenu : SimpleMonoSingleton<ModioContextMenu>
+    class ModioContextMenu : SelfInstancingMonoSingleton<ModioContextMenu>
     {
         public GameObject ContextMenu;
         [SerializeField] public Transform ContextMenuList;

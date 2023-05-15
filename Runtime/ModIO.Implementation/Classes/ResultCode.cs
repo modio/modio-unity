@@ -299,34 +299,34 @@ namespace ModIO.Implementation
 
 #endregion
 
-        private static List<long> cacheClearingErrorCodes =
-            new List<long>() { RESTAPI_OAuthTokenExpired,
-                               RESTAPI_InvalidSteamEncryptedAppTicket,
-                               RESTAPI_CantVerifyCredentialsExternally,
-                               RESTAPI_KeyNotAssociatedWithGame,
-                               RESTAPI_TestKeyForTestEnvOnly,
-                               RESTAPI_SecretSteamAppTicketNotConfigured,
-                               RESTAPI_UserMustAgreeToModIoTerms,
-                               RESTAPI_GogInvalidAppTicket,
-                               RESTAPI_GogGameNotConfigured,
-                               RESTAPI_UnableToFetchAccountDataFromItchIo,
-                               RESTAPI_OculusRiftAppTicketNotConfigured,
-                               RESTAPI_OculusQuestAppTicketNotConfigured,
-                               RESTAPI_XboxLiveTokenInvalid,
-                               RESTAPI_XboxLiveTokenExpired,
-                               RESTAPI_XboxNotAllowedToInteractWithUGC,
-                               RESTAPI_XboxLiveChildAccountNotPermitted,
-                               RESTAPI_NsaIdTokenInvalid,
-                               RESTAPI_UnableToVerifyNintendoCredentials,
-                               RESTAPI_NsaIdTokenNotValidYet,
-                               RESTAPI_NsaIdTokenExpired,
-                               RESTAPI_NintendoSwitchAppIdNotConfigured,
-                               RESTAPI_NintendoSwitchNotPermittedToAuthUsers,
-                               RESTAPI_AccessTokenInvalid,
-                               RESTAPI_UnableToValidateCredentialsWithGoogle,
-                               RESTAPI_GoogleAccessTokenNotValidYet,
-                               RESTAPI_GoogleAccessTokenExpired,
-                               RESTAPI_DiscordUnableToGetAccountData };
+        private static HashSet<long> cacheClearingErrorCodes =
+            new HashSet<long>() {  RESTAPI_OAuthTokenExpired,
+                                   RESTAPI_InvalidSteamEncryptedAppTicket,
+                                   RESTAPI_CantVerifyCredentialsExternally,
+                                   RESTAPI_KeyNotAssociatedWithGame,
+                                   RESTAPI_TestKeyForTestEnvOnly,
+                                   RESTAPI_SecretSteamAppTicketNotConfigured,
+                                   RESTAPI_UserMustAgreeToModIoTerms,
+                                   RESTAPI_GogInvalidAppTicket,
+                                   RESTAPI_GogGameNotConfigured,
+                                   RESTAPI_UnableToFetchAccountDataFromItchIo,
+                                   RESTAPI_OculusRiftAppTicketNotConfigured,
+                                   RESTAPI_OculusQuestAppTicketNotConfigured,
+                                   RESTAPI_XboxLiveTokenInvalid,
+                                   RESTAPI_XboxLiveTokenExpired,
+                                   RESTAPI_XboxNotAllowedToInteractWithUGC,
+                                   RESTAPI_XboxLiveChildAccountNotPermitted,
+                                   RESTAPI_NsaIdTokenInvalid,
+                                   RESTAPI_UnableToVerifyNintendoCredentials,
+                                   RESTAPI_NsaIdTokenNotValidYet,
+                                   RESTAPI_NsaIdTokenExpired,
+                                   RESTAPI_NintendoSwitchAppIdNotConfigured,
+                                   RESTAPI_NintendoSwitchNotPermittedToAuthUsers,
+                                   RESTAPI_AccessTokenInvalid,
+                                   RESTAPI_UnableToValidateCredentialsWithGoogle,
+                                   RESTAPI_GoogleAccessTokenNotValidYet,
+                                   RESTAPI_GoogleAccessTokenExpired,
+                                   RESTAPI_DiscordUnableToGetAccountData };
 
         private static Dictionary<uint, string> errorCodesClearText = new Dictionary<uint,
                                                                                      string>() {
@@ -497,7 +497,7 @@ namespace ModIO.Implementation
               "mod.io was unable to get account data from the Discord servers." },
         };
 
-        public static bool IsCacheClearingError(ErrorObject errorObject)
+        public static bool IsInvalidSession(ErrorObject errorObject)
         {
             return cacheClearingErrorCodes.Any(x => x == errorObject.error.error_ref);
         }

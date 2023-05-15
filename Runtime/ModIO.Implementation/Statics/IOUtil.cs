@@ -46,7 +46,7 @@ namespace ModIO.Implementation
                 data = Encoding.UTF8.GetBytes(dataString);
             }
             catch (Exception e)
-            {   
+            {
                 Logger.Log(LogLevel.Error, $"Failed to serialize jsonObject. Exception: {e.Message}");
                 data = null;
             }
@@ -114,6 +114,16 @@ namespace ModIO.Implementation
         }
 
         /// <summary>Generates an MD5 hash for a given byte array.</summary>
+        public static string GenerateMD5(Stream data)
+        {
+            using(var md5 = System.Security.Cryptography.MD5.Create())
+            {
+                byte[] hash = md5.ComputeHash(data);
+                return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
+            }
+        }
+
+        /// <summary>Generates an MD5 hash for a given byte array.</summary>
         public static string GenerateMD5(byte[] data)
         {
             using(var md5 = System.Security.Cryptography.MD5.Create())
@@ -124,33 +134,30 @@ namespace ModIO.Implementation
         }
 
         /// <summary>Generates an MD5 hash from a given stream.</summary>
-        public static async Task<string> GenerateArchiveMD5Async(string filepath)
+        public static string GenerateArchiveMD5(string filepath)
         {
             string fileHash = string.Empty;
-            
+
             using(var stream = DataStorage.OpenArchiveReadStream(filepath, out Result result))
             {
                 if(!result.Succeeded())
                 {
                     return string.Empty;
                 }
-                ResultAnd<string> hashResult = await IOUtil.GenerateMD5Async(stream);
-                fileHash = hashResult.value;
+                fileHash = GenerateMD5(stream);
             }
             return fileHash;
         }
 
         /// <summary>Generates an MD5 hash for a given stream.</summary>
-        public static async Task<ResultAnd<string>> GenerateMD5Async(Stream stream)
+        public static Result GenerateMD5(Stream stream, out string MD5)
         {
-            // TODO @Jackson, why is this here?
-            await Task.Delay(1); // ???
-
             using(var md5 = System.Security.Cryptography.MD5.Create())
             {
                 byte[] hash = md5.ComputeHash(stream);
                 string hashString = BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
-                return ResultAnd.Create(ResultCode.Success, hashString);
+                MD5 = hashString;
+                return ResultBuilder.Success;
             }
         }
 
@@ -181,17 +188,17 @@ namespace ModIO.Implementation
         {
             // replace spaces with dashes
             string cleanedName = filename.Replace(" ", "-");
-            
+
             // trim - and . from ends of string
             char[] invalidToTrim = {'-','.'};
             cleanedName = cleanedName.Trim(invalidToTrim);
-            
+
             // completely remove any invalid characters
             foreach(char c in Path.GetInvalidFileNameChars())
             {
                 cleanedName = cleanedName.Replace(c.ToString(), "");
             }
-            
+
             return cleanedName;
         }
     }

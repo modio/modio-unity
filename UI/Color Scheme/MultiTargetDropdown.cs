@@ -29,6 +29,12 @@ namespace ModIOBrowser
             currentMultiTargetDropdown = null;
         }
 
+        public override void OnDeselect(BaseEventData eventData)
+        {
+            base.OnDeselect(eventData);
+            currentMultiTargetDropdown = null;
+        }
+        
 #if UNITY_EDITOR
         protected override void Reset()
         {

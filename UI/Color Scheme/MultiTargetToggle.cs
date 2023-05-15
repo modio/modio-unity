@@ -8,11 +8,43 @@ namespace ModIOBrowser
   {
     public ColorScheme scheme;
     public List<Target> extraTargets = new List<Target>();
+    
+    /// <summary>
+    /// This is the object, eg Checkmark, inside the toggle that indicates if it is on or off.
+    /// We cannot directly override the behavior that sets the checkmark graphic so instead we
+    /// manage an additional object on our own that we can turn on and off whenever we do a
+    /// state transition
+    /// </summary>
+    public GameObject targetIsOnIndicator;
+    
+    /// <summary>
+    /// Same as above, but for when the toggle has been disabled
+    /// </summary>
+    public GameObject targetIsDisabledIndicator;
 
+    /// <summary>
+    /// There is a slight edge case with the 'targetIsOnIndicator' field. It wont get affected on
+    /// toggle until DoStateTransition. So we have a method here to manually call it to be run
+    /// after we toggle it
+    /// </summary>
+    public void DoStateTransition()
+    {
+      DoStateTransition(currentSelectionState, true);
+    }
+    
     protected override void DoStateTransition(SelectionState state, bool instant)
     {
       base.DoStateTransition(state, instant);
 
+      if(targetIsOnIndicator != null)
+      {
+          targetIsOnIndicator.SetActive(isOn);
+      }
+      if(targetIsDisabledIndicator != null)
+      {
+          targetIsDisabledIndicator.SetActive(state == SelectionState.Disabled);
+      }
+      
       foreach(var target in extraTargets)
       {
         Color color;

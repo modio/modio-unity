@@ -1,28 +1,20 @@
-﻿using System;
-using UnityEngine;
-
-namespace ModIO.Implementation.API.Requests
+﻿namespace ModIO.Implementation.API.Requests
 {
+
     internal static class AddModRating
     {
-        // public struct ResponseSchema
-        // {
-        //     // (NOTE): mod.io returns a MessageObject as the schema.
-        //     // This schema will only be used if the server schema changes or gets expanded on
-        // }
-
-        public static readonly RequestConfig Template =
-            new RequestConfig { requireAuthToken = true, canCacheResponse = false,
-                                  requestMethodType = WebRequestMethodType.POST,
-                                  requestResponseType = WebRequestResponseType.Text };
-
-        public static string URL(ModId modId, ModRating rating, out WWWForm form)
+        public static WebRequestConfig Request(ModId modId, ModRating rating)
         {
-            form = new WWWForm();
-            form.AddField("rating", ((int)rating).ToString());
+            var request = new WebRequestConfig()
+            {
+                Url = $"{Settings.server.serverURL}{@"/games/"}{Settings.server.gameId}{@"/mods/"}{modId.id}{@"/ratings"}?",
+                RequestMethodType = "POST",
+            };
 
-            return $"{Settings.server.serverURL}{@"/games/"}"
-                   + $"{Settings.server.gameId}{@"/mods/"}{modId.id}{@"/ratings"}?";
+            
+            request.AddField("rating", ((int)rating).ToString());
+
+            return request;
         }
     }
 }

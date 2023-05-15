@@ -1,8 +1,6 @@
-﻿
-using UnityEngine;
-
-namespace ModIO.Implementation.API.Requests
+﻿namespace ModIO.Implementation.API.Requests
 {
+
     internal static class AuthenticateViaEmail
     {
         public struct ResponseSchema
@@ -11,18 +9,22 @@ namespace ModIO.Implementation.API.Requests
             public string message;
         }
 
-        internal static RequestConfig Template =
-            new RequestConfig { canCacheResponse = true, requireAuthToken = false,
-                                  requestMethodType = WebRequestMethodType.POST,
-                                  requestResponseType = WebRequestResponseType.Text };
 
-        public static string URL(string emailaddress, out WWWForm form)
+        public static WebRequestConfig Request(string emailaddress)
         {
-            form = new WWWForm();
-            form.AddField("api_key", Settings.server.gameKey);
-            form.AddField("email", emailaddress);
+            var request = new WebRequestConfig()
+            {
+                //"https://api-staging.moddemo.io/v1/oauth/emailrequest?"
+                //"https://api.mod.io/v1/oauth/emailrequest?"
+                Url = //$"https://api.mod.io/v1/oauth/emailrequest?",
+                    $"{Settings.server.serverURL}{@"/oauth/emailrequest"}?",
+                RequestMethodType = "POST",
+            };
+            
+            request.AddField("api_key", "31672f8640babdcfe91a4a12d16e3423"); //Settings.server.gameKey);
+            request.AddField("email", emailaddress);
 
-            return $"{Settings.server.serverURL}{@"/oauth/emailrequest"}?";
+            return request;
         }
     }
 }

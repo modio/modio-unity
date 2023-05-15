@@ -18,6 +18,7 @@ namespace ModIO
         public string name;
         public string summary;
         public string description;
+        public string homePageUrl;
         public ContentWarnings contentWarnings;
         public DateTime dateAdded;
         public DateTime dateUpdated;

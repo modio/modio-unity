@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using ModIO.Implementation.API;
 using ModIO.Implementation.API.Objects;
-using ModIO.Implementation.API.Requests;
-using UnityEngine;
-using UnityEngine.Networking;
 
 namespace ModIO.Implementation
 {
@@ -80,9 +76,9 @@ namespace ModIO.Implementation
         /// </summary>
         public static ModManagementEventDelegate modManagementEventDelegate;
 
-        private static HashSet<long> abortingDownloadsModObjectIds = new HashSet<long>();
+        static HashSet<long> abortingDownloadsModObjectIds = new HashSet<long>();
 
-        #region Creation Tokens
+#region Creation Tokens
         public static CreationToken GenerateNewCreationToken()
         {
             CreationToken token = new CreationToken();
@@ -138,7 +134,7 @@ namespace ModIO.Implementation
             // AWAKE
             isModManagementAwake = true;
             Logger.Log(LogLevel.Verbose,"Mod Management Awake");
-            
+
             // Wait until we have no more jobs to run
             operation = PerformJobs();
             await operation;
@@ -164,11 +160,11 @@ namespace ModIO.Implementation
             Logger.Log(LogLevel.Message,
                 $"Aborting download of Mod[{currentJob.mod.modObject.id}_" +
                 $"{currentJob.mod.modObject.modfile.id}]");
-            currentJob.downloadWebRequest.Abort();
+            currentJob.downloadWebRequest?.cancel?.Invoke();
             abortingDownloadsModObjectIds.Add(currentJob.mod.modObject.id);
         }
 
-        private static bool DownloadIsAborting(long id)
+        static bool DownloadIsAborting(long id)
         {
             return abortingDownloadsModObjectIds.Contains(id);
         }
@@ -176,7 +172,7 @@ namespace ModIO.Implementation
         static async Task PerformJobs()
         {
             // Look for a job to be performed
-            currentJob = await GetNextModManagementJob();
+            currentJob = GetNextModManagementJob();
 
             while(currentJob != null && isModManagementEnabled)
             {
@@ -202,10 +198,10 @@ namespace ModIO.Implementation
                         taintedMods.Add((ModId)currentJob.mod.modObject.id);
                     }
                 }
-                
+
                 ModCollectionManager.SaveRegistry();
 
-                currentJob = isModManagementEnabled ? await GetNextModManagementJob() : null;
+                currentJob = isModManagementEnabled ? GetNextModManagementJob() : null;
             }
             currentJob = null;
         }
@@ -243,6 +239,7 @@ namespace ModIO.Implementation
 
             //-------------------[ SETUP PROGRESS HANDLE ]-----------------//
             job.progressHandle = new ProgressHandle();
+            job.progressHandle.modId = (ModId)modId;
 
             switch(job.type)
             {
@@ -385,14 +382,14 @@ namespace ModIO.Implementation
                         InvokeModManagementDelegate((ModId)modId,
                                                     ModManagementEventType.Uninstalled,
                                                     ResultBuilder.Success);
-                        
+
                         // Re-check mods that may not have installed from low storage space
                         if(notEnoughStorageMods.Count > 0)
                         {
                             // Also remove the temp archive file if we know we ran into storage issues
                             // We do not need to check the result
                             DataStorage.TryDeleteModfileArchive(modId, job.mod.currentModfile.id, out Result _);
-                            // the reason we dont always delete the archive is because a user may 
+                            // the reason we dont always delete the archive is because a user may
                             // accidentally hit unsubscribe or change their mind a few seconds later
                             // and if it is a large mod it would take a long time to re-download it.
                         }
@@ -434,7 +431,7 @@ namespace ModIO.Implementation
         {
             long modId = job.mod.modObject.id;
             long fileId = job.mod.modObject.modfile.id;
-            
+
             // Check for enough storage space
             if(!await DataStorage.temp.IsThereEnoughDiskSpaceFor(job.mod.modObject.modfile.filesize))
             {
@@ -442,15 +439,19 @@ namespace ModIO.Implementation
                 notEnoughStorageMods.Add((ModId)modId);
                 return ResultBuilder.Create(ResultCode.IO_InsufficientStorage);
             }
-            
+
             Logger.Log(LogLevel.Message, $"DOWNLOADING MODFILE[{modId}_{fileId}]");
 
-            Result result = ResultBuilder.Unknown;
+            //Result result = ResultBuilder.Unknown;
 
-            // Get Mod
-            string url = API.Requests.GetMod.URL(modId);
-            ResultAnd<ModObject> modResponse =
-                await RESTAPI.Request<ModObject>(url, GetMod.Template);
+            //OLD RESTAPI CODE - leaving this here until we're sure the new code works
+            //// Get Mod
+            //string url = API.Requests.GetMod.URL(modId);
+            //ResultAnd<ModObject> modResponse =
+            //    await RESTAPI.Request<ModObject>(url, GetMod.Template);
+
+            var modResponse = await WebRequestManager.Request<ModObject>(API.Requests.GetMod.Request(modId));            
+            var result = modResponse.result;
             if(!modResponse.result.Succeeded())
             {
                 // If this fails we continue by trying out the fileId we have already
@@ -461,16 +462,17 @@ namespace ModIO.Implementation
             else
             {
                 job.mod.modObject = modResponse.value;
-                
+
                 //Re-cache file id in case of an update/patch to the mod
                 fileId = job.mod.modObject.modfile.id;
-                
+
                 // Update the registry for this mod as it's now the newest instance of this mod we have
                 ModCollectionManager.UpdateModCollectionEntry((ModId)modResponse.value.id, modResponse.value);
             }
 
             if(!ShouldModManagementBeRunning())
             {
+                // Mod management has been shutdown or disabled
                 return DownloadCleanup(result, modId, fileId);
             }
 
@@ -480,15 +482,31 @@ namespace ModIO.Implementation
             // Get correctMD5 and download location
             string md5 = job.mod.modObject.modfile.filehash.md5;
             string downloadFilepath = DataStorage.GenerateModfileArchiveFilePath(modId, fileId);
+            
+            Result downloadResult = ResultBuilder.Unknown;
+            
+            using (ModIOFileStream downloadStream = DataStorage.CreateArchiveDownloadStream(downloadFilepath, out Result openStreamResult))
+            {
+                if(!openStreamResult.Succeeded())
+                {
+                    // Failed to open file stream to download to
+                    return DownloadCleanup(result, modId, fileId);
+                }
+
+                // downloadResult = await ModioCommunications.DownloadBinary(fileURL, downloadStream, job.progressHandle);
+                var handle = WebRequestManager.Download(fileURL, downloadStream, job.progressHandle);
+                job.downloadWebRequest = handle;
+                downloadResult = await handle.task;
+            }
 
             // Begin download
-            DownloadHandlerFile downloadHandler = new DownloadHandlerFile(downloadFilepath);
-            ResultAnd<string> downloadResponse = await RESTAPI.Request<string>(
-                fileURL, DownloadBinary.Template, null, downloadHandler,
-                job.progressHandle);
+            // DownloadHandlerFile downloadHandler = new DownloadHandlerFile(downloadFilepath);
+            // ResultAnd<string> downloadResponse = await RESTAPI.Request<string>(
+            //     fileURL, DownloadBinary.Template, null, downloadHandler,
+            //     job.progressHandle);
 
             // Check download result
-            if(downloadResponse.result.Succeeded())
+            if(downloadResult.Succeeded())
             {
                 // Always check after an async await
                 if(!ShouldModManagementBeRunning())
@@ -505,15 +523,15 @@ namespace ModIO.Implementation
             {
                 Logger.Log(LogLevel.Error, $"Failed to download modfile[{modId}_{fileId}]");
 
-                result = downloadResponse.result.code == ResultCode.Internal_OperationCancelled 
-                    ? downloadResponse.result 
+                result = downloadResult.code == ResultCode.Internal_OperationCancelled 
+                    ? downloadResult
                     : ResultBuilder.Create(ResultCode.Internal_ModManagementOperationFailed);
-                
+
                 return DownloadCleanup(result, modId, fileId);
             }
 
             // Make sure the downloaded file MD5 matches the given MD5
-            if(await ValidateDownload_md5(md5, downloadFilepath))
+            if(ValidateDownload_md5(md5, downloadFilepath))
             {
                 if(!ShouldModManagementBeRunning())
                 {
@@ -529,7 +547,7 @@ namespace ModIO.Implementation
                 Logger.Log(LogLevel.Error,
                            $"Failed to verify downloaded modfile[{modId}_{fileId}]");
                 result = ResultBuilder.Create(ResultCode.Internal_ModManagementOperationFailed);
-                
+
                 return DownloadCleanup(result, modId, fileId);
             }
 
@@ -561,7 +579,7 @@ namespace ModIO.Implementation
                 notEnoughStorageMods.Add((ModId)modId);
                 return ResultBuilder.Create(ResultCode.IO_InsufficientStorage);
             }
-            
+
             Logger.Log(LogLevel.Verbose, $"INSTALLING MODFILE[{modId}_{fileId}]");
 
             ExtractOperation extractOperation =
@@ -644,11 +662,7 @@ namespace ModIO.Implementation
                     }
                 }
                 // shutdown download request if one exists
-                if(currentJob?.downloadWebRequest != null)
-                {
-                    // Don't Dispose(), this will happen in RESTAPI.cs
-                    currentJob.downloadWebRequest.Abort();
-                }
+                currentJob?.downloadWebRequest?.cancel?.Invoke();
             }
 
             if(operation != null)
@@ -673,7 +687,7 @@ namespace ModIO.Implementation
             }
 
             currentJob.progressHandle.modId = (ModId)currentJob.mod.modObject.id;
-            
+
             return currentJob.progressHandle;
         }
 
@@ -690,30 +704,30 @@ namespace ModIO.Implementation
             ModId modId = (ModId)mod.modObject.id;
             long fileId = mod.modObject.modfile.id;
             long currentFileId = mod.currentModfile.id;
-            
+
             // This block is nearly identical to GetNextJobTypeForModCollectionEntry()
             // except without the async md5 check
             if(taintedMods.Contains(modId))
             {
                 return SubscribedModStatus.ProblemOccurred;
-            } 
+            }
             if(ShouldThisModBeUninstalled(modId))
             {
                 if(DataStorage.TryGetInstallationDirectory(modId, currentFileId,
-                    out string notbeingusedhere))
+                    out string _))
                 {
                     return SubscribedModStatus.WaitingToUninstall;
                 }
             }
             else if(DataStorage.TryGetInstallationDirectory(modId, currentFileId,
-                out string notbeingusedhere))
+                out string _))
             {
                 if(currentFileId != fileId)
                 {
                     return SubscribedModStatus.WaitingToUpdate;
                 }
             }
-            else if(DataStorage.TryGetModfileArchive(modId, fileId, out string downloadFilepath))
+            else if(DataStorage.TryGetModfileArchive(modId, fileId, out string _))
             {
                 return SubscribedModStatus.WaitingToInstall;
             }
@@ -725,7 +739,7 @@ namespace ModIO.Implementation
             return SubscribedModStatus.Installed;
         }
 
-        static async Task<ModManagementJob> GetNextModManagementJob()
+        static ModManagementJob GetNextModManagementJob()
         {
             // Early out
             if(!ShouldModManagementBeRunning())
@@ -741,7 +755,7 @@ namespace ModIO.Implementation
             if(uninstalledModsWithNoUserSubscriptions == null)
             {
                 uninstalledModsWithNoUserSubscriptions = new List<ModId>();
-            } 
+            }
             else
             {
                 uninstalledModsWithNoUserSubscriptions.Clear();
@@ -764,7 +778,7 @@ namespace ModIO.Implementation
                     }
 
                     ModManagementOperationType jobType =
-                        await GetNextJobTypeForModCollectionEntry(mod);
+                        GetNextJobTypeForModCollectionEntry(mod);
 
                     if(jobType != ModManagementOperationType.None_AlreadyInstalled
                        && jobType != ModManagementOperationType.None_ErrorOcurred)
@@ -791,7 +805,7 @@ namespace ModIO.Implementation
             return job;
         }
 
-        private static ModManagementJob FilterJob(ModManagementJob job, ModCollectionEntry mod, ModManagementOperationType jobType)
+        static ModManagementJob FilterJob(ModManagementJob job, ModCollectionEntry mod, ModManagementOperationType jobType)
         {
             if(job == null)
             {
@@ -806,7 +820,7 @@ namespace ModIO.Implementation
             return job;
         }
 
-        static async Task<ModManagementOperationType> GetNextJobTypeForModCollectionEntry(
+        static ModManagementOperationType GetNextJobTypeForModCollectionEntry(
             ModCollectionEntry mod)
         {
             ModId modId = (ModId)mod.modObject.id;
@@ -824,7 +838,7 @@ namespace ModIO.Implementation
             if(delete)
             {
                 if(DataStorage.TryGetInstallationDirectory(modId, currentFileId,
-                                                           out string notbeingusedhere))
+                                                           out string _))
                 {
                     return ModManagementOperationType.Uninstall;
                 }
@@ -833,7 +847,7 @@ namespace ModIO.Implementation
                 uninstalledModsWithNoUserSubscriptions.Add(modId);
             }
             else if(DataStorage.TryGetInstallationDirectory(modId, currentFileId,
-                                                            out string notbeingusedhere))
+                                                            out string _))
             {
                 // INSTALLED (Check for update)
                 if(currentFileId != fileId)
@@ -845,7 +859,7 @@ namespace ModIO.Implementation
             {
                 // Make sure the installed modfile has the correct md5
                 //DataStorage.TryGetModFileArchive(mod, out var downloadFilepath);
-                if(!await ValidateDownload_md5(mod.modObject.modfile.filehash.md5, downloadFilepath))
+                if(!ValidateDownload_md5(mod.modObject.modfile.filehash.md5, downloadFilepath))
                 {
                     // if the md5 is incorrect re-download the file
                     // (it may have been interrupted from a previous session)
@@ -909,10 +923,10 @@ namespace ModIO.Implementation
             return false;
         }
 
-        public static async Task<bool> ValidateDownload_md5(string correctMD5,
+        public static bool ValidateDownload_md5(string correctMD5,
                                                             string zippedFilepath)
         {
-            string md5 = await IOUtil.GenerateArchiveMD5Async(zippedFilepath);
+            string md5 = IOUtil.GenerateArchiveMD5(zippedFilepath);
 
             bool isCorrect = correctMD5.Equals(md5);
             if(!isCorrect)
@@ -934,11 +948,11 @@ namespace ModIO.Implementation
         {
             // Early out
             if(!isModManagementEnabled
-               || !ModIOUnityImplementation.IsAuthenticatedSessionValid(out Result credentialsResult))
+               || !ModIOUnityImplementation.IsAuthenticatedSessionValid(out Result _))
             {
                 return false;
             }
-            if(!ModIOUnityImplementation.IsInitialized(out Result initResult))
+            if(!ModIOUnityImplementation.IsInitialized(out Result _))
             {
                 // we aren't initialize
                 DisableModManagement();

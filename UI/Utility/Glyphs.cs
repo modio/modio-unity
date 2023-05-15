@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using ModIO.Util;
@@ -9,8 +10,8 @@ namespace ModIOBrowser.Implementation
 {
     class MessageGlyphUpdate : ISimpleMessage { }
 
-    class Glyphs : SimpleMonoSingleton<Glyphs>
-    {                
+    class Glyphs : SelfInstancingMonoSingleton<Glyphs>
+    {
         private ColorScheme colorScheme;
         public GlyphPlatforms PlatformType { get; internal set; }
 
@@ -18,14 +19,32 @@ namespace ModIOBrowser.Implementation
         public Sprite fallbackSprite;
         public Color fallbackColor = Color.white;
 
+        private bool hasStarted = false;
+        
         private void Start()
         {
             colorScheme = Browser.Instance.colorScheme;
-            ChangeGlyphs(Browser.Instance.uiConfig.GlyphPlatform);
+            if(this.PlatformType == default)
+                ChangeGlyphs(Browser.Instance.uiConfig.GlyphPlatform);
+        }
+
+        public void SetColor(ColorSetterType colorSetter, Action<Color> setter)
+        {
+            StartCoroutine(InternalSetColor(colorSetter, setter));
+        }
+
+        private IEnumerator InternalSetColor(ColorSetterType colorSetter, Action<Color> setter)
+        {
+            while(!hasStarted)
+            {
+                yield return new WaitForEndOfFrame();
+            }
+
+            setter(GetColor(colorSetter));
         }
 
         public Color GetColor(ColorSetterType colorSetter)
-        {            
+        {
             Color color = colorScheme.GetSchemeColor(colorSetter);
             return color == default(Color) ? fallbackColor : color;
         }

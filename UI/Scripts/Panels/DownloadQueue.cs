@@ -7,7 +7,7 @@ using UnityEngine.UI;
 
 namespace ModIOBrowser.Implementation
 {
-    public class DownloadQueue : SimpleMonoSingleton<DownloadQueue>
+    public class DownloadQueue : SelfInstancingMonoSingleton<DownloadQueue>
     {
         [Header("Download History Panel")]
         [SerializeField] public GameObject DownloadQueuePanel;

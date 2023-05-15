@@ -1,11 +1,11 @@
 <a href="https://mod.io"><img src="https://mod.io/images/branding/modio-logo-bluedark.svg" alt="mod.io" width="360" align="right"/></a>
-# mod.io Unity Plugin v4.1.0
+# mod.io Unity Plugin v2023.5.12
 [![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)](https://github.com/modio/modio-unity/blob/master/LICENSE)
 [![Discord](https://img.shields.io/discord/389039439487434752.svg?label=Discord&logo=discord&color=7289DA&labelColor=2C2F33)](https://discord.mod.io)
 [![Master docs](https://img.shields.io/badge/docs-master-green.svg)](https://github.com/modio/modio-unity-v2/wiki)
-[![Unity 3D](https://img.shields.io/badge/Unity-2018.4+-lightgrey.svg)](https://unity3d.com)
+[![Unity 3D](https://img.shields.io/badge/Unity-2019.4+-lightgrey.svg)](https://unity3d.com)
 
-Welcome to the mod.io Unity Engine plugin repository. It allows game developers to host and automatically install user-created mods in their games which use Unity 2018.4 or newer. It provides a UI for mod discovery, installation and collection management, and a C# interface which connects to the [mod.io REST API](https://docs.mod.io).
+Welcome to the mod.io Unity Engine plugin repository. It allows game developers to host and automatically install user-created mods in their games which use **Unity 2019.4** or newer. It provides a UI for mod discovery, installation and collection management, and a C# interface which connects to the [mod.io REST API](https://docs.mod.io).
 
 ## Watch the video tutorial
 <a href="https://www.youtube.com/watch?v=pmECrkdzHzQ"><img src="https://i.ytimg.com/vi/pmECrkdzHzQ/maxresdefault.jpg" alt="mod.io" width="560"/></a>
@@ -18,6 +18,8 @@ Welcome to the mod.io Unity Engine plugin repository. It allows game developers 
 |Windows (GDK)  | ✔ [Contact us](#game-studios-and-publishers) |
 |Nintendo Switch| ✔ [Contact us](#game-studios-and-publishers) |
 |XBox (GDK)     | ✔ [Contact us](#game-studios-and-publishers) |
+|PlayStation 4  | ✔ [Contact us](#game-studios-and-publishers) |
+|PlayStation 5  | ✔ [Contact us](#game-studios-and-publishers) |
 |Linux          | ✔       |
 |macOS          | ✔       |
 
@@ -166,49 +168,85 @@ async void Example()
 }
 ```
 
-##Submitting mods
+## Submitting mods
 You can also submit mods directly from the plugin. Refer to the documentation for methods such as `ModIOUnity.CreateModProfile` and `ModIOUnity.UploadModfile`.
 
 Users can also submit mods directly from the mod.io website by going to your game profile page. Simply create an account and upload mods directly.
 
-## Example Usages
+### Adding a mod
+Here we go through the mod addition flow. Generate Token, Create Mod Profile, and Upload Mod File
+```c#
+public async void CreateMod()
+{
+   //token used to create mod profile
+   var token = ModIOUnity.GenerateCreationToken();
+
+   //Mod profile specifics
+   ModProfileDetails modDetails = new ModProfileDetails
+   {
+       logo = GetTexture(),//the texture you will use for this mod's logo
+       summary = "A brief summary of the mod.",
+       name = "Mod Name"
+   };
+
+   //create the mod profile
+   var createResultAnd = await ModIOUnityAsync.CreateModProfile(token, modDetails);
+   if(!createResultAnd.result.Succeeded())
+       return;//create mod unsuccessful
+
+   //Points to a folder where all mod files are located (folder cannot be empty)
+   ModfileDetails modFile = new ModfileDetails
+   {
+       modId = createResultAnd.value,
+       directory = "files/mods/mod_123"
+   };
+
+   //upload the file to the mod profile
+   var result = await ModIOUnityAsync.UploadModfile(modFile);
+   if(result.Succeeded())
+   {
+       //Upload file successful!
+   }
+}
+```
+
 ### Loading mods
 Here is an example that grabs all mods installed for the current user, finds the png files in the mod's directory if they are tagged as a "Texture" and then loads them into a Texture2D asset.
 ```c#
-     public void LoadModExample()
-    {
-        UserInstalledMod[] mods = ModIOUnity.GetInstalledModsForUser(out Result result);
-        if (result.Succeeded())
-        {
-            foreach(var mod in mods)
-            {
-                //Tags are USER defined strings for a game and are setup in the web portal.
-                string textureTag = "Texture";
-
-                string directoryWithInstalledMod = mod.directory;
-
-                //Optionally, you may want to use tags to help you determine the files to look for in an installed mod folder
-                if(!mod.modProfile.tags.Contains(textureTag))
-                {
-                    //Get all files in a directory
-                    string[] filePaths = System.IO.Directory.GetFiles(directoryWithInstalledMod);
-                    foreach(var path in filePaths)
-                    {
-                        //Find .png files so that we can convert them into textures
-                        if(path.EndsWith(".png"))
-                        {
-                            Texture2D tex = new Texture2D(1024, 1024);
-                            
-                            //Load a texture from directory
-                            tex.LoadImage(File.ReadAllBytes(path));
-                            
-                            //Now you can replace the current texture in your game with the new one
-                        }
-                    }
-                }
-            }
-        }
-    }
+public void LoadModExample()
+{
+   UserInstalledMod[] mods = ModIOUnity.GetInstalledModsForUser(out Result result);
+   if (result.Succeeded())
+   {
+      foreach(var mod in mods)
+      {
+          //Tags are USER defined strings for a game and are setup in the web portal.
+          string textureTag = "Texture";
+   
+          string directoryWithInstalledMod = mod.directory;
+   
+          //Optionally, you may want to use tags to help you determine the files to look for in an installed mod folder
+          if(!mod.modProfile.tags.Contains(textureTag))
+          {
+              //Get all files in a directory
+              string[] filePaths = System.IO.Directory.GetFiles(directoryWithInstalledMod);
+              foreach(var path in filePaths)
+              {
+                  //Find .png files so that we can convert them into textures
+                  if(path.EndsWith(".png"))
+                  {
+                      Texture2D tex = new Texture2D(1024, 1024);
+                      
+                      //Load a texture from directory
+                      tex.LoadImage(File.ReadAllBytes(path));
+                      
+                      //Now you can replace the current texture in your game with the new one
+                  }
+              }
+          }
+      }
+   }
+}
 ```
 
 ## Dependencies

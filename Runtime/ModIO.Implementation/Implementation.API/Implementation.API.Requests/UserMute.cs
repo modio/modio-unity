@@ -1,23 +1,20 @@
-﻿using System;
-
-namespace ModIO.Implementation.API.Requests
+﻿namespace ModIO.Implementation.API.Requests
 {
+
     internal static class UserMute
     {
-        [Obsolete("No response object is given")]
-        public struct ResponseSchema
+        public static WebRequestConfig Request(long userId)
         {
-            // (NOTE): no response object is given, just a 204 for success
-        }
+            var request = new WebRequestConfig()
+            {
+                Url = $"{Settings.server.serverURL}{@"/users/"}{userId}{@"/mute"}?",
+                RequestMethodType = "POST"
+            };
 
-        public static readonly RequestConfig Template =
-            new RequestConfig { requireAuthToken = true, canCacheResponse = false,
-                                  requestResponseType = WebRequestResponseType.Text,
-                                  requestMethodType = WebRequestMethodType.POST };
-
-        public static string URL(long userId)
-        {
-            return $"{Settings.server.serverURL}{@"/users/"}{userId}{@"/mute"}?";
+            
+            return request;
         }
     }
+
+
 }

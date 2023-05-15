@@ -1,29 +1,24 @@
 ﻿using ModIO;
 using ModIO.Util;
-using ModIOBrowser.Implementation;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace ModIOBrowser.Implementation
 {
-    public partial class Authentication : SimpleMonoSingleton<Authentication>
+    public partial class Authentication : SelfInstancingMonoSingleton<Authentication>
     {
         public bool IsAuthenticated = false;
-        
+
         internal static string optionalThirdPartyEmailAddressUsedForAuthentication;
 
         internal static PlayStationEnvironment PSEnvironment;
-        
+
         internal static Browser.RetrieveAuthenticationCodeDelegate getSteamAppTicket;
         internal static Browser.RetrieveAuthenticationCodeDelegate getXboxToken;
         internal static Browser.RetrieveAuthenticationCodeDelegate getSwitchToken;
         internal static Browser.RetrieveAuthenticationCodeDelegate getPlayStationAuthCode;
+        internal static Browser.RetrieveAuthenticationCodeDelegate getEpicAuthCode;
+        internal static Browser.RetrieveAuthenticationCodeDelegate getGogAuthCode;
+
 
         public UserProfile currentUserProfile;
         public TermsOfUse LastReceivedTermsOfUse;
@@ -31,7 +26,7 @@ namespace ModIOBrowser.Implementation
         public string termsOfUseURL;
 
         public UserPortal currentAuthenticationPortal = UserPortal.None;
-        
+
         #region Send Request
         public void GetTermsOfUse()
         {
@@ -58,13 +53,65 @@ namespace ModIOBrowser.Implementation
 
         #region Third Party
 
+        public void SubmitGogAuthenticationRequest()
+        {
+            AuthenticationPanels.Instance.OpenPanel_Waiting();
+
+            getGogAuthCode((token) =>
+            {
+                MonoDispatcher.Instance.Run(() =>
+                {
+                    if(string.IsNullOrEmpty(token))
+                    {
+                        currentAuthenticationPortal = UserPortal.None;
+                        AuthenticationPanels.Instance.OpenPanel_Problem("We were unable to validate your credentials with the mod.io server.");
+                        return;
+                    }
+
+                    ModIOUnity.AuthenticateUserViaGOG(token,
+                        optionalThirdPartyEmailAddressUsedForAuthentication,
+                        LastReceivedTermsOfUse.hash,
+                        delegate (Result result)
+                        {
+                            ThirdPartyAuthenticationSubmitted(result, UserPortal.GOG);
+                        });
+                });
+            });
+        }
+
+        public void SubmitEpicAuthenticationRequest()
+        {
+            AuthenticationPanels.Instance.OpenPanel_Waiting();
+
+            getEpicAuthCode((token) =>
+            {
+                MonoDispatcher.Instance.Run(() =>
+                {
+                    if(string.IsNullOrEmpty(token))
+                    {
+                        currentAuthenticationPortal = UserPortal.None;
+                        AuthenticationPanels.Instance.OpenPanel_Problem("We were unable to validate your credentials with the mod.io server.");
+                        return;
+                    }
+
+                    ModIOUnity.AuthenticateUserViaEpic(token,
+                        optionalThirdPartyEmailAddressUsedForAuthentication,
+                        LastReceivedTermsOfUse.hash,
+                        delegate (Result result)
+                        {
+                            ThirdPartyAuthenticationSubmitted(result, UserPortal.EpicGamesStore);
+                        });
+                });
+            });
+        }
+
         public void SubmitSteamAuthenticationRequest()
         {
             AuthenticationPanels.Instance.OpenPanel_Waiting();
 
             getSteamAppTicket.Invoke((appTicket) =>
             {
-                Dispatcher.Instance.Run(() =>
+                MonoDispatcher.Instance.Run(() =>
                 {
                     if(string.IsNullOrEmpty(appTicket))
                     {
@@ -90,7 +137,7 @@ namespace ModIOBrowser.Implementation
 
             getXboxToken((token) =>
             {
-                Dispatcher.Instance.Run(() =>
+                MonoDispatcher.Instance.Run(() =>
                 {
                     if(string.IsNullOrEmpty(token))
                     {
@@ -116,7 +163,7 @@ namespace ModIOBrowser.Implementation
 
             getSwitchToken((token) =>
             {
-                Dispatcher.Instance.Run(() =>
+                MonoDispatcher.Instance.Run(() =>
                 {
                     if(string.IsNullOrEmpty(token))
                     {
@@ -142,7 +189,7 @@ namespace ModIOBrowser.Implementation
 
             getPlayStationAuthCode((authCode) =>
             {
-                Dispatcher.Instance.Run(() =>
+                MonoDispatcher.Instance.Run(() =>
                 {
                     if(string.IsNullOrEmpty(authCode))
                     {
@@ -168,7 +215,7 @@ namespace ModIOBrowser.Implementation
         public void Close() => AuthenticationPanels.Instance.Close();
 
         public void HyperLinkToTOS() => AuthenticationPanels.Instance.HyperLinkToTOS();
-        
+
         public void HyperLinkToPrivacyPolicy() => AuthenticationPanels.Instance.HyperLinkToPrivacyPolicy();
 
         void Logout()
@@ -205,7 +252,6 @@ namespace ModIOBrowser.Implementation
                 }
                 else
                 {
-                    Debug.LogError("something else wrong email");
                     AuthenticationPanels.Instance.OpenPanel_Problem(
                         "Make sure you entered a valid email address and that you are still connected to the internet before trying again.",
                         "Something went wrong",

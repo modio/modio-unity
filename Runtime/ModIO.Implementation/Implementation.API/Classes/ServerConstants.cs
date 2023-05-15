@@ -7,7 +7,6 @@
         {
             public const string LANGUAGE = "accept-language";
             public const string PLATFORM = "x-modio-platform";
-            public const string PLUGIN_VERSION = "user-agent";
             public const string PORTAL = "x-modio-portal";
         }
 

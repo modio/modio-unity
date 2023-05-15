@@ -1,8 +1,8 @@
 ﻿using UnityEngine;
 
-namespace ModIOBrowser.Implementation
+namespace ModIOBrowser
 {
-    interface ITranslatable
+    public interface ITranslatable
     {
         /// <summary>
         /// Returns the key reference for the item that needs to be translated

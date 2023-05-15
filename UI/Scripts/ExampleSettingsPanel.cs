@@ -10,31 +10,39 @@ namespace ModIO.Implementation
     {
         [SerializeField] TMP_InputField gameIdInputField;
         [SerializeField] TMP_InputField apiKeyInputField;
+        [SerializeField] TMP_InputField initUserInputField;
         [SerializeField] TextMeshProUGUI currentServerUrlText;
         [SerializeField] TextMeshProUGUI currentGameIdText;
         [SerializeField] Button[] buttons;
 
-        private Translation gameIdTranslation = null;
-        private Translation serverUrlTranslation = null;
+        Translation gameIdTranslation = null;
+        Translation serverUrlTranslation = null;
+        string urlToUse;
 
         public void ActivatePanel(bool isActive)
         {
+            SetServerUrl(Settings.server.serverURL);
+            
             Translation.Get(serverUrlTranslation, "Server Url: {text}", currentServerUrlText, Settings.server.serverURL);
             Translation.Get(gameIdTranslation, "Game id: {text}", currentGameIdText, Settings.server.gameId.ToString());
 
-            this.gameObject.SetActive(isActive);
+            gameObject.SetActive(isActive);
+            
+            LayoutRebuilder.ForceRebuildLayoutImmediate(transform as RectTransform);
+            LayoutRebuilder.ForceRebuildLayoutImmediate(transform as RectTransform);
         }
 
         public void SetServerUrl(string url)
         {
-            currentServerUrlText.text = url;
+            urlToUse = url;
+            Translation.Get(serverUrlTranslation, "Server Url: {text}", currentServerUrlText, urlToUse);
         }
 
         public async void SaveSettings()
         {
             try
             {
-                foreach(var b in this.buttons)
+                foreach(var b in buttons)
                 {
                     b.enabled = false;
                 }
@@ -57,12 +65,13 @@ namespace ModIO.Implementation
                     serverSettings.gameKey = apiKeyInputField.text;
                 }
 
-                serverSettings.serverURL = currentServerUrlText.text;
+                serverSettings.serverURL = urlToUse;
 
-                var result = ModIOUnity.InitializeForUser("User", serverSettings, buildSettings);
+                string user = string.IsNullOrWhiteSpace(initUserInputField.text) ? "User" : initUserInputField.text;
+                ModIOUnity.InitializeForUser(user, serverSettings, buildSettings);
 
                 Translation.Get(gameIdTranslation, "Game id: {text}", currentGameIdText, Settings.server.gameId.ToString());
-                Translation.Get(serverUrlTranslation, "Server Url: {text}", currentServerUrlText, Settings.server.serverURL);
+                Translation.Get(serverUrlTranslation, "Server Url: {text}", currentServerUrlText, urlToUse);
             }
             catch(Exception e)
             {
@@ -70,7 +79,7 @@ namespace ModIO.Implementation
             }
             finally
             {
-                foreach(var b in this.buttons)
+                foreach(var b in buttons)
                 {
                     b.enabled = true;
                 }

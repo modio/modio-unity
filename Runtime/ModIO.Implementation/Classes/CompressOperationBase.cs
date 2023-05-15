@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using ICSharpCode.SharpZipLib.Zip;
 using JetBrains.Annotations;
+using UnityEngine;
 
 namespace ModIO.Implementation
 {
@@ -36,17 +37,20 @@ namespace ModIO.Implementation
         protected async Task CompressStream(string entryName, Stream fileStream, ZipOutputStream zipStream)
         {
             ZipEntry newEntry = new ZipEntry(entryName);
- 
+
             zipStream.PutNextEntry(newEntry);
 
-            int size;
             long max = fileStream.Length;
             byte[] data = new byte[4096];
-            while(true)
+            if (fileStream.CanSeek)
+            {
+                fileStream.Seek(0, SeekOrigin.Begin);
+            }
+            while(fileStream.Position < fileStream.Length)
             {
                 // TODO @Jackson ensure ReadAsync and WriteAsync are
                 // implemented on all filestream wrappers
-                size = await fileStream.ReadAsync(data, 0, data.Length);
+                int size = await fileStream.ReadAsync(data, 0, data.Length);
                 if(size > 0)
                 {
                     await zipStream.WriteAsync(data, 0, size);

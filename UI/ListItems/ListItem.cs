@@ -96,6 +96,7 @@ namespace ModIOBrowser.Implementation
 		public virtual void Setup(ModProfile profile) { isPlaceholder = false; }
 		public virtual void Setup(SubscribedMod mod) { isPlaceholder = false; }
 		public virtual void Setup(InstalledMod profile) { isPlaceholder = false; }
+		public virtual void Setup(CollectionProfile profile) { isPlaceholder = false; }
 		public virtual void Setup(ModProfile profile, bool subscriptionStatus, string progressStatus) { isPlaceholder = false; }
 		public virtual void Setup(Action onClick) { isPlaceholder = false; }
 		public virtual void Setup(string title, Action onClick) { isPlaceholder = false; }

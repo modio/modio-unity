@@ -3,7 +3,6 @@ using ICSharpCode.SharpZipLib.Zip.Compression;
 using ICSharpCode.SharpZipLib.Zip.Compression.Streams;
 using System;
 using System.IO;
-using System.Text;
 
 namespace ICSharpCode.SharpZipLib.GZip
 {

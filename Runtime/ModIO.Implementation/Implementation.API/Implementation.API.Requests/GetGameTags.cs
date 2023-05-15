@@ -1,36 +1,24 @@
 ﻿using ModIO.Implementation.API.Objects;
-using Newtonsoft.Json;
 
 namespace ModIO.Implementation.API.Requests
 {
+
     internal static class GetGameTags
     {
         [System.Serializable]
-        public struct ResponseSchema
+        public class ResponseSchema : PaginatedResponse<GameTagOptionObject> { }
+
+        public static WebRequestConfig Request()
         {
-            [JsonProperty(Required = Required.Always)]
-            internal GameTagOptionObject[] data;
+            var request = new WebRequestConfig()
+            {
+                Url = $"{Settings.server.serverURL}{@"/games/"}{Settings.server.gameId}{@"/tags"}?",
+                RequestMethodType = "GET"
+            };
 
-            [JsonProperty]
-            public int result_count;
+            
 
-            [JsonProperty]
-            public int result_offset;
-
-            [JsonProperty]
-            public int result_limit;
-
-            [JsonProperty]
-            public int result_total;
-        }
-
-        public static readonly RequestConfig Template =
-            new RequestConfig { requireAuthToken = false,
-                                  requestMethodType = WebRequestMethodType.GET };
-
-        public static string URL()
-        {
-            return $"{Settings.server.serverURL}{@"/games/"}{Settings.server.gameId}{@"/tags"}?";
+            return request;
         }
     }
 }

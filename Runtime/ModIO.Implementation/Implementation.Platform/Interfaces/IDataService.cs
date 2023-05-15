@@ -20,8 +20,14 @@ namespace ModIO.Implementation.Platform
         /// <summary>Reads an entire file asynchronously.</summary>
         Task<ResultAnd<byte[]>> ReadFileAsync(string filePath);
 
+        /// <summary>Reads an entire file synchronously.</summary>
+        ResultAnd<byte[]> ReadFile(string filePath);
+
         /// <summary>Writes an entire file asynchronously.</summary>
         Task<Result> WriteFileAsync(string filePath, byte[] data);
+
+        /// <summary>Writes an entire file synchronously.</summary>
+        Result WriteFile(string filePath, byte[] data);
 
         // Task<Result> DeleteFileAsync(string filePath);
 
@@ -41,7 +47,7 @@ namespace ModIO.Implementation.Platform
         bool FileExists(string filePath);
 
         /// <summary>Gets the size and hash of a file.</summary>
-        Task<ResultAnd<(long fileSize, string fileHash)>> GetFileSizeAndHash(string filePath);
+        ResultAnd<(long fileSize, string fileHash)> GetFileSizeAndHash(string filePath);
 
         /// <summary>Determines whether a directory exists.</summary>
         bool DirectoryExists(string directoryPath);

@@ -42,27 +42,27 @@ namespace ModIO.Implementation
             return (!string.IsNullOrEmpty(oAuthToken) && !oAuthTokenWasRejected);
         }
 
-        public async Task SetUserObject(UserObject user)
+        public void SetUserObject(UserObject user)
         {
             userObject = user;
             ModCollectionManager.AddUserToRegistry(user);
-            await DataStorage.SaveUserData();
+            DataStorage.SaveUserData();
         }
 
-        public async Task ClearUser()
+        public void ClearUser()
         {
             userObject = default;
             ClearAuthenticatedSession();
-            await DataStorage.SaveUserData();
+            DataStorage.SaveUserData();
         }
 
         /// <summary>Convenience wrapper that sets OAuthToken and clears rejected flag.</summary>
-        public async Task SetOAuthToken(AccessTokenObject newToken)
+        public void SetOAuthToken(AccessTokenObject newToken)
         {
             oAuthToken = newToken.access_token;
             oAuthExpiryDate = newToken.date_expires;
             oAuthTokenWasRejected = false;
-            await DataStorage.SaveUserData();
+            DataStorage.SaveUserData();
         }
 
         public void SetOAuthTokenAsRejected()

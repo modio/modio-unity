@@ -8,7 +8,7 @@ namespace ModIOBrowser
 {
     //Split into input and navigation?
     //Yes its doing two things
-    class InputNavigation : SimpleMonoSingleton<InputNavigation>
+    class InputNavigation : SelfInstancingMonoSingleton<InputNavigation>
     {        
         [SerializeField] List<GameObject> ControllerButtonIcons = new List<GameObject>();
         [SerializeField] List<GameObject> MouseButtonIcons = new List<GameObject>();

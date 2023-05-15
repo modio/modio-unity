@@ -1,10 +1,13 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading.Tasks;
 using ModIO.Implementation.API.Objects;
+using Plugins.mod.io.Runtime.Utility;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace ModIO.Implementation.API
 {
@@ -67,6 +70,7 @@ namespace ModIO.Implementation.API
         static Dictionary<long, CachedModProfile> mods = new Dictionary<long, CachedModProfile>();
         static Dictionary<long, ModDependencies[]> modsDependencies = new Dictionary<long, ModDependencies[]>();
         static Dictionary<long, Rating> currentUserRatings = new Dictionary<long, Rating>();
+        static bool currentRatingsCached = false;
 
         /// <summary>
         /// the terms of use, cached for the entire session.
@@ -83,7 +87,9 @@ namespace ModIO.Implementation.API
         /// </summary>
         static UserProfile? currentUser;
 
-#region Adding entries to Cache
+        public static int CacheSize => mods.Count;
+
+        #region Adding entries to Cache
 
         public static void AddModsToCache(string url, int offset, ModPage modPage)
         {
@@ -157,14 +163,6 @@ namespace ModIO.Implementation.API
             gameTags = tags;
         }
 
-        public static async Task AddTextureToCache(DownloadReference downloadReference, Texture2D texture)
-        {
-            // We can fire and forget, we will check the cache later if it worked with
-            // GetTextureFromCache()
-            await DataStorage.StoreImage(downloadReference, texture);
-
-        }
-
         /// <summary>
         /// This caches the terms of use for the entire session. We only cache the ToS for one
         /// platform at a time. It is cached as a KeyValuePair to ensure we dont return the
@@ -199,6 +197,7 @@ namespace ModIO.Implementation.API
 
         public static void ReplaceCurrentUserRatings(Rating[] ratings)
         {
+            currentRatingsCached = true;
             currentUserRatings.Clear();
             foreach(var rating in ratings)
             {
@@ -312,12 +311,30 @@ namespace ModIO.Implementation.API
             return false;
         }
 
-        public static async Task<ResultAnd<Texture2D>> GetTextureFromCache(
-            DownloadReference downloadReference)
+        public static async Task<ResultAnd<byte[]>> GetImageFromCache(string url)
+        {
+            ResultAnd<byte[]> result = new ResultAnd<byte[]>();
+            ResultAnd<byte[]> resultIO = await DataStorage.TryRetrieveImageBytes(url);
+
+            result.result = resultIO.result;
+
+            if(resultIO.result.Succeeded())
+            {
+                if(logCacheMessages)
+                {
+                    Logger.Log(LogLevel.Verbose,
+                        "[CACHE] retrieved texture from temp folder cache");
+                }
+                result.value = resultIO.value;
+            }
+
+            return result;
+        }
+
+        public static async Task<ResultAnd<Texture2D>> GetTextureFromCache(string url)
         {
             ResultAnd<Texture2D> result = new ResultAnd<Texture2D>();
-
-            ResultAnd<Texture2D> resultIO = await DataStorage.TryRetrieveImage(downloadReference);
+            ResultAnd<Texture2D> resultIO = await DataStorage.TryRetrieveImage(url);
 
             result.result = resultIO.result;
 
@@ -333,6 +350,14 @@ namespace ModIO.Implementation.API
 
             return result;
         }
+
+        public static async Task<ResultAnd<byte[]>> GetImageFromCache(
+            DownloadReference downloadReference)
+            => await GetImageFromCache(downloadReference.url);
+
+        public static async Task<ResultAnd<Texture2D>> GetTextureFromCache(
+            DownloadReference downloadReference)
+            => await GetTextureFromCache(downloadReference.url);
 
         public static bool GetTermsFromCache(string url, out TermsOfUse terms)
         {
@@ -385,6 +410,25 @@ namespace ModIO.Implementation.API
             return true;
 
         }
+
+        public static bool GetCurrentUserRatingFromCache(ModId modId, out ModRating modRating)
+        {
+            if(HaveRatingsBeenCachedThisSession())
+            {
+                if(currentUserRatings.TryGetValue(modId, out Rating rating))
+                {
+                    modRating = rating.rating;
+                    return true;
+                }
+                modRating = ModRating.None;
+                return true;
+            }
+
+            modRating = ModRating.None;
+            return false;
+        }
+
+        public static bool HaveRatingsBeenCachedThisSession() => currentRatingsCached;
 
         #endregion // Getting entries from Cache
 
@@ -475,6 +519,7 @@ namespace ModIO.Implementation.API
             gameTags = null;
             modsDependencies?.Clear();
             currentUserRatings?.Clear();
+            currentRatingsCached = false;
             ClearUserFromCache();
         }
 #endregion // Clearing Cache entries

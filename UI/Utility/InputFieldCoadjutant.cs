@@ -96,7 +96,7 @@ namespace ModIOBrowser.Implementation
 		{
             // We need to add this action to a queue to be run on the main thread because this
             // callback may have come from a different thread when dealing with cross platform SDKs
-            Dispatcher.Instance.Run(() =>
+            MonoDispatcher.Instance.Run(() =>
             {
 				// Change the text of the input field
 				inputField.text = text;

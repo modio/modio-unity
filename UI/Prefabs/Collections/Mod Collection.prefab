@@ -282,6 +282,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   reference: Collection
   text: {fileID: 3151635504402113707}
+  translatedLanguageFontPairingOverrides: {fileID: 0}
 --- !u!1 &3151635505209770847
 GameObject:
   m_ObjectHideFlags: 0
@@ -1333,6 +1334,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   reference: Enter keyword
   text: {fileID: 9095449701689612660}
+  translatedLanguageFontPairingOverrides: {fileID: 0}
 --- !u!1001 &3151635504411107861
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1563,7 +1565,7 @@ PrefabInstance:
     - target: {fileID: 8415282165173031208, guid: 50b3a7c8f9573ab4bb339bf803ddeff7,
         type: 3}
       propertyPath: m_OnValueChanged.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
-      value: RefreshCollectionListItems
+      value: RefreshList
       objectReference: {fileID: 0}
     - target: {fileID: 8415282165173031208, guid: 50b3a7c8f9573ab4bb339bf803ddeff7,
         type: 3}
@@ -2263,6 +2265,11 @@ PrefabInstance:
       objectReference: {fileID: 6878629680744723261}
     - target: {fileID: 8415282165173031208, guid: 50b3a7c8f9573ab4bb339bf803ddeff7,
         type: 3}
+      propertyPath: m_Options.m_Options.Array.data[0].m_Text
+      value: Subscribed
+      objectReference: {fileID: 0}
+    - target: {fileID: 8415282165173031208, guid: 50b3a7c8f9573ab4bb339bf803ddeff7,
+        type: 3}
       propertyPath: m_OnValueChanged.m_PersistentCalls.m_Calls.Array.size
       value: 1
       objectReference: {fileID: 0}
@@ -2279,7 +2286,7 @@ PrefabInstance:
     - target: {fileID: 8415282165173031208, guid: 50b3a7c8f9573ab4bb339bf803ddeff7,
         type: 3}
       propertyPath: m_OnValueChanged.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
-      value: RefreshCollectionListItems
+      value: RefreshList
       objectReference: {fileID: 0}
     - target: {fileID: 8415282165173031208, guid: 50b3a7c8f9573ab4bb339bf803ddeff7,
         type: 3}
@@ -2716,7 +2723,7 @@ PrefabInstance:
         type: 3}
       propertyPath: m_OnValueChanged.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 4940903284276904462}
     - target: {fileID: 6288028452663676033, guid: 41734941304f2e843ac339b5227f4c8b,
         type: 3}
       propertyPath: m_OnValueChanged.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
@@ -2725,7 +2732,7 @@ PrefabInstance:
     - target: {fileID: 6288028452663676033, guid: 41734941304f2e843ac339b5227f4c8b,
         type: 3}
       propertyPath: m_OnValueChanged.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
-      value: RefreshCollectionListItems
+      value: RefreshList
       objectReference: {fileID: 0}
     - target: {fileID: 6288028452663676033, guid: 41734941304f2e843ac339b5227f4c8b,
         type: 3}

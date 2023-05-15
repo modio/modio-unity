@@ -3,7 +3,6 @@ using System.IO;
 using System.Threading.Tasks;
 using ICSharpCode.SharpZipLib.Zip;
 using JetBrains.Annotations;
-using UnityEngine;
 
 namespace ModIO.Implementation
 {
@@ -12,7 +11,7 @@ namespace ModIO.Implementation
     /// pausing, etc
     /// </summary>
     internal class ExtractOperation : IModIOZipOperation
-    {                
+    {
         public bool cancel;
         public long modId;
         public long fileId;
@@ -30,8 +29,8 @@ namespace ModIO.Implementation
 
         public async Task<Result> Extract()
         {
-            return await DataStorage.taskRunner.AddTask(TaskPriority.HIGH, 1, 
-                async () => await ExtractAll());
+            return await DataStorage.taskRunner.AddTask(TaskPriority.HIGH, 1,
+                async () => await ExtractAll(), true);
         }
 
         // ---------[ Interface ]---------
@@ -53,7 +52,7 @@ namespace ModIO.Implementation
                         using(ZipInputStream stream = new ZipInputStream(fileStream))
                         {
                             stream.IsStreamOwner = false;
-                            
+
                             ZipEntry entry;
                             while((entry = stream.GetNextEntry()) != null)
                             {
@@ -76,7 +75,7 @@ namespace ModIO.Implementation
                                             out result))
                                     {
                                         if(result.Succeeded())
-                                        {                                            
+                                        {
                                             int size;
                                             byte[] data = new byte[1048760]; // 1 MiB buffer size
                                             while(true)
@@ -89,7 +88,7 @@ namespace ModIO.Implementation
                                                     break;
                                                 }
 
-                                                // These don't need to be async as it's already running 
+                                                // These don't need to be async as it's already running
                                                 // on another thread (consider testing this on larger
                                                 // mods, eg 5 GiB size mods)
 
@@ -152,7 +151,7 @@ namespace ModIO.Implementation
             {
                 return CancelAndCleanup(result);
             }
-            
+
             // End
             Logger.Log(LogLevel.Verbose,
                        $"EXTRACTED RESULT [{result.code}] MODFILE [{modId}_{fileId}]");
@@ -172,7 +171,7 @@ namespace ModIO.Implementation
                 // If result wasn't assigned, we have been cancelled
                 result = ResultBuilder.Create(ResultCode.Internal_OperationCancelled);
             }
-            
+
             return result;
         }
 

@@ -17,6 +17,7 @@ namespace ModIOBrowser
             else if(MultiTargetDropdown.currentMultiTargetDropdown != null)
             {
                 MultiTargetDropdown.currentMultiTargetDropdown.Hide();
+                MultiTargetDropdown.currentMultiTargetDropdown = null;
             }
             else if(SearchPanel.Instance.SearchPanelGameObject.activeSelf)
             {

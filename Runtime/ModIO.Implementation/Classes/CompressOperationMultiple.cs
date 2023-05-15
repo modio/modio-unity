@@ -1,9 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using ICSharpCode.SharpZipLib.Zip;
 using JetBrains.Annotations;
+using UnityEngine;
 
 namespace ModIO.Implementation
 {
@@ -27,18 +27,22 @@ namespace ModIO.Implementation
             ResultAnd<MemoryStream> resultAnd = new ResultAnd<MemoryStream>();
             resultAnd.value = new MemoryStream();
 
+            int count = 0;
+
             using(ZipOutputStream zipStream = new ZipOutputStream(resultAnd.value))
             {
                 zipStream.SetLevel(3);
 
                 foreach(var bytes in data)
                 {
-                    string entryName = Guid.NewGuid().ToString();
+                    string entryName = $"image_{count}.png";
+                    count++;
 
-                    MemoryStream memoryStream = new MemoryStream();
-                    memoryStream.Write(bytes, 0, bytes.Length);
-
-                    await CompressStream(entryName, memoryStream, zipStream);
+                    using(MemoryStream memoryStream = new MemoryStream())
+                    {
+                        memoryStream.Write(bytes, 0, bytes.Length);
+                        await CompressStream(entryName, memoryStream, zipStream);
+                    }
 
                     if(cancel || ModIOUnityImplementation.shuttingDown)
                     {

@@ -3,25 +3,24 @@ using ModIO.Implementation.API.Objects;
 
 namespace ModIO.Implementation.API.Requests
 {
+
     internal static class GetUserSubscriptions
     {
         [System.Serializable]
-        internal class ResponseSchema : PaginatingRequest<ModObject>
+        internal class ResponseSchema : PaginatedResponse<ModObject> { }
+        
+        public static WebRequestConfig Request([CanBeNull] SearchFilter searchFilter = null)
         {
-        }
+            string filter = searchFilter == null ? "" : FilterUtil.ConvertToURL(searchFilter);
+            var request = new WebRequestConfig()
+            {
+                Url = $"{Settings.server.serverURL}{@"/me/subscribed?"}game_id={Settings.server.gameId}{filter}",
+                RequestMethodType = "GET"
+            };
 
-        public static readonly RequestConfig Template =
-            new RequestConfig { requireAuthToken = true, canCacheResponse = true,
-                                  requestResponseType = WebRequestResponseType.Text,
-                                  requestMethodType = WebRequestMethodType.GET };
-
-        public static string URL([CanBeNull] SearchFilter searchFilter = null)
-        {
-            // Convert filter into string
-            string filter =
-                searchFilter == null ? "" : FilterUtil.ConvertToURL(searchFilter);
-
-            return $"{Settings.server.serverURL}{@"/me/subscribed?"}game_id={Settings.server.gameId}{filter}";
+            
+            
+            return request;
         }
     }
 }

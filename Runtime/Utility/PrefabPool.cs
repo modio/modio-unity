@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace ModIO.Util
 {
-    internal class PrefabPool : SimpleMonoSingleton<PrefabPool>
+    internal class PrefabPool : SelfInstancingMonoSingleton<PrefabPool>
     {
         public Dictionary<string, List<MonoBehaviour>> pool = new Dictionary<string, List<MonoBehaviour>>();
         public List<GameObject> pooledItems = new List<GameObject>(); //can find by name here
@@ -18,9 +18,7 @@ namespace ModIO.Util
             var prefab = pooledItems.FirstOrDefault(x => x.name == name);
             if(prefab == null)
             {
-#if UNITY_EDITOR
-                throw new FileNotFoundException($"Unable to find {name}");
-#endif
+                Debug.LogWarning($"Unable to find {name}");
                 return null;
             }
 

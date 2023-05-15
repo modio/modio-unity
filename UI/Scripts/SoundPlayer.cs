@@ -1,5 +1,4 @@
-﻿using ModIO;
-using ModIO.Util;
+﻿using ModIO.Util;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -13,7 +12,7 @@ namespace ModIOBrowser
     /// 
     /// It also helps browser handle volume.
     /// </summary>
-    public class SoundPlayer : SimpleMonoSingleton<SoundPlayer>
+    public class SoundPlayer : SelfInstancingMonoSingleton<SoundPlayer>
     {
         const float soundFatiguePreventionTime = 0.05f;
         static float lastPlayedHoverSoundSeconds;
@@ -64,7 +63,11 @@ namespace ModIOBrowser
         /// </summary>
         public static void SetVolume(float volume)
         {
-            Browser.Instance.uiConfig.volume = volume;
+            if(Browser.SingletonIsInstantiated())
+            {
+                Browser.Instance.uiConfig.volume = volume;
+            }
+            
         }
 
         /// <summary>
@@ -82,6 +85,11 @@ namespace ModIOBrowser
 
         void PlaySound(SoundEffect sfx)
         {
+            if(!Browser.SingletonIsInstantiated())
+            {
+                return;
+            }
+
             //This prevents an "rrrrrr" sound if you pass through many objects
             if(lastPlayedHoverSoundSeconds + soundFatiguePreventionTime > Time.realtimeSinceStartup)
             {

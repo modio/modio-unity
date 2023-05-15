@@ -22,6 +22,7 @@ namespace ModIO
         internal int pageSize;
         internal List<string> searchPhrases = new List<string>();
         internal List<string> tags = new List<string>();
+        internal List<long> users = new List<long>();
 #endregion
         /// <summary>
         /// Adds a phrase into the filter to be used when filtering mods in a request.
@@ -91,6 +92,17 @@ namespace ModIO
         {
             this.pageSize = pageSize;
             hasPageSizeBeenSet = true;
+        }
+
+        /// <summary>
+        /// Adds a specific user to the filter, so that mods that were not created by the user
+        /// (or other users added to the filter) will not be returned.
+        /// </summary>
+        /// <param name="userId">Id of the user to add</param>
+        /// <seealso cref="UserProfile"/>
+        public void AddUser(long userId)
+        {
+            users.Add(userId);
         }
 
         /// <summary>

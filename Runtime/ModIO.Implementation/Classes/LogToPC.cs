@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using ModIO.Util;
 using UnityEngine;
 
@@ -28,8 +27,8 @@ namespace ModIO.Implementation
         
         public bool halt = false;
 
-        public LogToPC() => Dispatcher.Instance.Run(() => Setup(DateTime.Now));
-        public LogToPC(DateTime time) => Dispatcher.Instance.Run(() => Setup(time));
+        public LogToPC() => MonoDispatcher.Instance.Run(() => Setup(DateTime.Now));
+        public LogToPC(DateTime time) => MonoDispatcher.Instance.Run(() => Setup(time));
 
         private void Setup(DateTime date)
         {            
@@ -122,7 +121,7 @@ namespace ModIO.Implementation
                 return;
             
             messageCache.Add(new LogMessage() { level = level, message = logMessage });
-            Dispatcher.Instance.Run(WriteMessagesToLog);
+            MonoDispatcher.Instance.Run(WriteMessagesToLog);
         }
     }
 }

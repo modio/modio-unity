@@ -1,8 +1,7 @@
-#if UNITY_STANDALONE || UNITY_ANDROID || UNITY_IOS || (MODIO_COMPILE_ALL && UNITY_EDITOR)
+#if UNITY_STANDALONE || UNITY_ANDROID || UNITY_IOS || (MODIO_COMPILE_ALL && UNITY_EDITOR) || UNITY_WSA
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading.Tasks;
 using UnityEngine;
 
@@ -67,7 +66,7 @@ namespace ModIO.Implementation.Platform
 #region Initialization
 
         /// <summary>Init as IUserDataService.</summary>
-        async Task<Result> IUserDataService.InitializeAsync(string userProfileIdentifier,
+        Result IUserDataService.Initialize(string userProfileIdentifier,
                                                             long gameId, BuildSettings settings)
         {
             // TODO(@jackson): Make valid userProfileIdentifier
@@ -94,18 +93,17 @@ namespace ModIO.Implementation.Platform
 
 
         /// <summary>Init as IPersistentDataService.</summary>
-        async Task<Result> IPersistentDataService.InitializeAsync(long gameId,
+        Result IPersistentDataService.Initialize(long gameId,
                                                                   BuildSettings settings)
         {
             // Default root directory
             rootDir = $"{PersistentDataRootDirectory}/{gameId.ToString()}";
             // If standalone PC look for a user override root directory
-#if UNITY_STANDALONE
+#if UNITY_STANDALONE || UNITY_WSA
             string desiredRootDir = rootDir;
             Result result;
 
-            ResultAnd<byte[]> settingsRead =
-                await SystemIOWrapper.ReadFileAsync(GlobalSettingsFilePath).ConfigureAwait(false);
+            ResultAnd<byte[]> settingsRead = SystemIOWrapper.ReadFile(GlobalSettingsFilePath);
             result = settingsRead.result;
 
             GlobalSettingsFile gsData;
@@ -139,8 +137,7 @@ namespace ModIO.Implementation.Platform
                 byte[] fileData = IOUtil.GenerateUTF8JSONData(gsData);
 
                 // ignore the result
-                await SystemIOWrapper.WriteFileAsync(GlobalSettingsFilePath,
-                    fileData).ConfigureAwait(false);
+                SystemIOWrapper.WriteFile(GlobalSettingsFilePath, fileData);
 
                 Logger.Log(LogLevel.Verbose,
                     "RootLocalStoragePath written to new globalsettings.json");
@@ -166,7 +163,7 @@ namespace ModIO.Implementation.Platform
         }
 
         /// <summary>Init as ITempDataService.</summary>
-        async Task<Result> ITempDataService.InitializeAsync(long gameId, BuildSettings settings)
+        Result ITempDataService.Initialize(long gameId, BuildSettings settings)
         {
             // TODO(@jackson): Test dir creation
             rootDir = $@"{TempRootDirectory}/{gameId.ToString()}";
@@ -196,13 +193,26 @@ namespace ModIO.Implementation.Platform
         /// <summary>Reads an entire file asynchronously.</summary>
         public async Task<ResultAnd<byte[]>> ReadFileAsync(string filePath)
         {
-            return await SystemIOWrapper.ReadFileAsync(filePath).ConfigureAwait(false);
+            return await SystemIOWrapper.ReadFileAsync(filePath);
         }
+
+        /// <summary>Reads an entire file asynchronously.</summary>
+        public ResultAnd<byte[]> ReadFile(string filePath)
+        {
+            return SystemIOWrapper.ReadFile(filePath);
+        }
+
 
         /// <summary>Writes an entire file asynchronously.</summary>
         public async Task<Result> WriteFileAsync(string filePath, byte[] data)
         {
-            return await SystemIOWrapper.WriteFileAsync(filePath, data).ConfigureAwait(false);
+            return await SystemIOWrapper.WriteFileAsync(filePath, data);
+        }
+
+        /// <summary>Writes an entire file asynchronously.</summary>
+        public Result WriteFile(string filePath, byte[] data)
+        {
+            return SystemIOWrapper.WriteFile(filePath, data);
         }
 
         /// <summary> Deletes a file </summary>
@@ -244,10 +254,10 @@ namespace ModIO.Implementation.Platform
         }
 
         /// <summary>Gets the size and hash of a file.</summary>
-        public async Task<ResultAnd<(long fileSize, string fileHash)>> GetFileSizeAndHash(
+        public ResultAnd<(long fileSize, string fileHash)> GetFileSizeAndHash(
             string filePath)
         {
-            return await SystemIOWrapper.GetFileSizeAndHash(filePath);
+            return SystemIOWrapper.GetFileSizeAndHash(filePath);
         }
 
         /// <summary>Determines whether a directory exists.</summary>

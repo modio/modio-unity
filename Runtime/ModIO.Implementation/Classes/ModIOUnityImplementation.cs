@@ -5,14 +5,16 @@ using System.Net.Mail;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using ModIO.Implementation.API;
-using ModIO.Implementation.API.Requests;
 using ModIO.Implementation.API.Objects;
 using ModIO.Implementation.Platform;
 using UnityEngine;
 using System.Linq;
+using ModIO.Implementation.API.Requests;
+using UnityEngine.Profiling;
 
 namespace ModIO.Implementation
 {
+
     /// <summary>
     /// The actual implementation for methods called from the ModIOUnity interface
     /// </summary>
@@ -30,14 +32,17 @@ namespace ModIO.Implementation
         /// TaskCompletionSource and adds it to this hashset. Shutdown will make sure to wait for
         /// all of these callbacks to return before invoking the final shutdown callback.
         /// </summary>
-        static Dictionary<TaskCompletionSource<bool>, Task> openCallbacks =
+        static Dictionary<TaskCompletionSource<bool>, Task> openCallbacks_dictionary =
             new Dictionary<TaskCompletionSource<bool>, Task>();
 
+        static Dictionary<string, Task<ResultAnd<byte[]>>> onGoingImageDownloads = new Dictionary<string, Task<ResultAnd<byte[]>>>();
         /// <summary>
         /// cached Task of the shutdown operation so we dont run several shutdowns simultaneously
         /// </summary>
         static Task shutdownOperation;
 
+        internal static OpenCallbacks openCallbacks = new OpenCallbacks();
+        
 #region Synchronous Requirement Checks - to detect early outs and failures
 
         /// <summary>Has the plugin been initialized.</summary>
@@ -49,10 +54,10 @@ namespace ModIO.Implementation
         public static bool shuttingDown;
 
         //Whether we auto initialize after the first call to the plugin
-        private static bool autoInitializePlugin = false;
+        static bool autoInitializePlugin = false;
 
         //has the autoInitializePlugin been set using SettingsAsset
-        private static bool autoInitializePluginSet = false;
+        static bool autoInitializePluginSet = false;
 
         public static bool AutoInitializePlugin
         {
@@ -87,6 +92,7 @@ namespace ModIO.Implementation
 
             if(AutoInitializePlugin)
             {
+                Debug.Log("Auto initialized");
                 result = InitializeForUser("Default");
                 if(result.Succeeded())
                 {
@@ -111,7 +117,7 @@ namespace ModIO.Implementation
             if(UserData.instance == null || string.IsNullOrEmpty(UserData.instance.oAuthToken))
             {
                 Logger.Log(
-                    LogLevel.Warning,
+                    LogLevel.Verbose,
                     "The current session is not authenticated.");
                 result = ResultBuilder.Create(ResultCode.User_NotAuthenticated);
                 return false;
@@ -203,7 +209,7 @@ namespace ModIO.Implementation
                                                                 BuildSettings buildSettings)
         {
             TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
-            openCallbacks.Add(callbackConfirmation, null);
+            openCallbacks_dictionary.Add(callbackConfirmation, null);
 
             // clean user profile identifier in case of filename usage
             userProfileIdentifier = IOUtil.CleanFileNameForInvalidCharacters(userProfileIdentifier);
@@ -219,38 +225,29 @@ namespace ModIO.Implementation
             //  directory override will be loaded in to the BuildSettings.extData field.
 
             // TODO(@jackson): Handle errors
-            var createUserDataServiceTask = PlatformConfiguration.CreateUserDataService(userProfileIdentifier,
+            var createUds = PlatformConfiguration.CreateUserDataService(userProfileIdentifier,
                 serverSettings.gameId, buildSettings);
-            createUserDataServiceTask.ConfigureAwait(false);
-            ResultAnd<IUserDataService> createUDS = createUserDataServiceTask.Result;
 
-            DataStorage.user = createUDS.value;
+            DataStorage.user = createUds.value;
 
             // - load user data - user.json needs to be loaded before persistant data service
-            var loadUserDataTask = DataStorage.LoadUserData();
-            loadUserDataTask.ConfigureAwait(false);
-            Result result = loadUserDataTask.Result;
+            var result = DataStorage.LoadUserData();
 
-            var createPersistentDataServiceTask = PlatformConfiguration.CreatePersistentDataService(serverSettings.gameId,
+            ResultAnd<IPersistentDataService> createPds = PlatformConfiguration.CreatePersistentDataService(serverSettings.gameId,
                 buildSettings);
-            createPersistentDataServiceTask.ConfigureAwait(false);
-            ResultAnd<IPersistentDataService> createPDS = createPersistentDataServiceTask.Result;
 
-            DataStorage.persistent = createPDS.value;
-            var createTempDataServiceTask = PlatformConfiguration.CreateTempDataService(serverSettings.gameId,
+            DataStorage.persistent = createPds.value;
+
+            ResultAnd<ITempDataService> createTds = PlatformConfiguration.CreateTempDataService(serverSettings.gameId,
                 buildSettings);
-            createTempDataServiceTask.ConfigureAwait(false);
-            ResultAnd<ITempDataService> createTDS = createTempDataServiceTask.Result;
 
-            DataStorage.temp = createTDS.value;
+            DataStorage.temp = createTds.value;
 
             if(result.code == ResultCode.IO_FileDoesNotExist
                || result.code == ResultCode.IO_DirectoryDoesNotExist)
             {
                 UserData.instance = new UserData();
-                var saveUserDataTask = DataStorage.SaveUserData();
-                saveUserDataTask.ConfigureAwait(false);
-                result = saveUserDataTask.Result;
+                result = DataStorage.SaveUserData();
             }
 
             // TODO We need to have one line that invokes
@@ -259,18 +256,16 @@ namespace ModIO.Implementation
             {
                 // TODO(@jackson): Prepare for public
                 callbackConfirmation.SetResult(true);
-                openCallbacks.Remove(callbackConfirmation);
+                openCallbacks_dictionary.Remove(callbackConfirmation);
                 return result;
             }
 
             Logger.Log(LogLevel.Verbose, "Loading Registry");
             // - load registry -
-            var loadRegistryTask = ModCollectionManager.LoadRegistry();
-            loadRegistryTask.ConfigureAwait(false);
-            result = loadRegistryTask.Result;
+            result = ModCollectionManager.LoadRegistry();
 
             Logger.Log(LogLevel.Verbose, "Finished Loading Registry");
-            openCallbacks[callbackConfirmation] = null;
+            openCallbacks_dictionary[callbackConfirmation] = null;
 
             // Set response cache size limit
             ResponseCache.maxCacheSize = buildSettings.requestCacheLimitKB * 1024;
@@ -288,7 +283,7 @@ namespace ModIO.Implementation
 
             result = ResultBuilder.Success;
             callbackConfirmation.SetResult(true);
-            openCallbacks.Remove(callbackConfirmation);
+            openCallbacks_dictionary.Remove(callbackConfirmation);
 
             Logger.Log(LogLevel.Message, $"Initialized User[{userProfileIdentifier}]");
 
@@ -301,7 +296,7 @@ namespace ModIO.Implementation
         public static Result InitializeForUser(string userProfileIdentifier)
         {
             TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
-            openCallbacks.Add(callbackConfirmation, null);
+            openCallbacks_dictionary.Add(callbackConfirmation, null);
 
             ServerSettings serverSettings;
             BuildSettings buildSettings;
@@ -314,7 +309,7 @@ namespace ModIO.Implementation
             }
 
             callbackConfirmation.SetResult(true);
-            openCallbacks.Remove(callbackConfirmation);
+            openCallbacks_dictionary.Remove(callbackConfirmation);
             return result;
         }
 
@@ -334,6 +329,7 @@ namespace ModIO.Implementation
             // being called at the same time.
             if(shuttingDown && shutdownOperation != null)
             {
+                Logger.Log(LogLevel.Verbose, "WAITING FOR SHUTDOWN ");
                 await shutdownOperation;
             }
             else
@@ -349,6 +345,8 @@ namespace ModIO.Implementation
                     shutdownOperation = ShutdownTask();
 
                     await shutdownOperation;
+            
+                    await openCallbacks.ShutDown();
 
                     shutdownOperation = null;
 
@@ -357,13 +355,13 @@ namespace ModIO.Implementation
                 catch(Exception e)
                 {
                     shuttingDown = false;
-                    Logger.Log(LogLevel.Error, $"Exception caught when shutting down plugin: {e.Message} - inner={e.InnerException?.Message}");
+                    Logger.Log(LogLevel.Error, $"Exception caught when shutting down plugin: {e.Message} - inner={e.InnerException?.Message} - stacktrace: {e.StackTrace}");
                 }
 
 
                 Logger.Log(LogLevel.Verbose, "FINISHED SHUTDOWN");
             }
-
+            
             shutdownComplete?.Invoke();
         }
 
@@ -373,7 +371,7 @@ namespace ModIO.Implementation
         /// </summary>
         static async Task ShutdownTask()
         {
-            RESTAPI.Shutdown();
+            await WebRequestManager.Shutdown();
             await ModManagement.ShutdownOperations();
 
             isInitialized = false;
@@ -385,7 +383,7 @@ namespace ModIO.Implementation
 
             // get new instance of dictionary so it's thread safe
             Dictionary<TaskCompletionSource<bool>, Task> tasks =
-                new Dictionary<TaskCompletionSource<bool>, Task>(openCallbacks);
+                new Dictionary<TaskCompletionSource<bool>, Task>(openCallbacks_dictionary);
 
             // iterate over the tasks and await for non faulted callbacks to finish
             using(var enumerator = tasks.GetEnumerator())
@@ -398,9 +396,9 @@ namespace ModIO.Implementation
                             "An Unhandled Exception was thrown in"
                             + " an awaited task. The corresponding callback"
                             + " will never be invoked.");
-                        if(openCallbacks.ContainsKey(enumerator.Current.Key))
+                        if(openCallbacks_dictionary.ContainsKey(enumerator.Current.Key))
                         {
-                            openCallbacks.Remove(enumerator.Current.Key);
+                            openCallbacks_dictionary.Remove(enumerator.Current.Key);
                         }
                     }
                     else
@@ -409,40 +407,32 @@ namespace ModIO.Implementation
                     }
                 }
             }
+            Logger.Log(LogLevel.Verbose, "Shutdown main handlers");
         }
 
-#endregion // Initialization and Maintenance
+        #endregion // Initialization and Maintenance
 
-#region Authentication
+        #region Authentication
 
         public static async Task<Result> IsAuthenticated()
         {
-            TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
-            openCallbacks.Add(callbackConfirmation, null);
-
+            var callbackConfirmation = openCallbacks.New();
             Result result = ResultBuilder.Unknown;
 
             if(IsInitialized(out result) && IsAuthenticatedSessionValid(out result))
             {
-                string url = GetAuthenticatedUser.URL();
+                var config = API.Requests.GetAuthenticatedUser.Request();
+                var task = await openCallbacks.Run(callbackConfirmation, WebRequestManager.Request<UserObject>(config));
+                result = task.result;
 
-                Task<ResultAnd<UserObject>> task =
-                    RESTAPI.Request<UserObject>(url, GetAuthenticatedUser.Template);
-
-                // We always cache the task while awaiting so we can check IsFaulted externally
-                openCallbacks[callbackConfirmation] = task;
-                ResultAnd<UserObject> response = await task;
-                openCallbacks[callbackConfirmation] = null;
-
-                if(response.result.Succeeded())
+                if(result.Succeeded())
                 {
-                    result = response.result;
-                    await UserData.instance.SetUserObject(response.value);
+                    result = task.result;
+                    UserData.instance.SetUserObject(task.value);
                 }
             }
 
-            callbackConfirmation.SetResult(true);
-            openCallbacks.Remove(callbackConfirmation);
+            openCallbacks.Complete(callbackConfirmation);
             return result;
         }
 
@@ -461,43 +451,15 @@ namespace ModIO.Implementation
 
         public static async Task<Result> RequestEmailAuthToken(string emailaddress)
         {
-            TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
-            openCallbacks.Add(callbackConfirmation, null);
+            var callbackConfirmation = openCallbacks.New();
 
-            //------------------------------[ Setup callback param ]-------------------------------
-            Result result;
-            //-------------------------------------------------------------------------------------
-
-            if(IsInitialized(out result) && IsValidEmail(emailaddress, out result))
+            if(IsInitialized(out var result) && IsValidEmail(emailaddress, out result))
             {
-                //      Synchronous checks SUCCEEDED
-
-
-                string url = AuthenticateViaEmail.URL(emailaddress, out WWWForm form);
-
-                Task<ResultAnd<AuthenticateViaEmail.ResponseSchema>> task =
-                    RESTAPI.Request<AuthenticateViaEmail.ResponseSchema>(
-                        url, AuthenticateViaEmail.Template, form);
-
-                // We always cache the task while awaiting so we can check IsFaulted externally
-                openCallbacks[callbackConfirmation] = task;
-                ResultAnd<AuthenticateViaEmail.ResponseSchema> response = await task;
-                openCallbacks[callbackConfirmation] = null;
-
-                result = response.result;
-
-                if(response.result.Succeeded())
-                {
-                    // Server request SUCCEEDED
-
-                    result = ResultBuilder.Success;
-
-                    // continue to invoke at the end of this method
-                }
+                var config = API.Requests.AuthenticateViaEmail.Request(emailaddress);
+                result = await openCallbacks.Run(callbackConfirmation, WebRequestManager.Request(config));
             }
 
-            callbackConfirmation.SetResult(true);
-            openCallbacks.Remove(callbackConfirmation);
+            openCallbacks.Complete(callbackConfirmation);
 
             return result;
         }
@@ -515,13 +477,13 @@ namespace ModIO.Implementation
             }
 
             var result = await RequestEmailAuthToken(emailaddress);
-            callback(result);
+            callback?.Invoke(result);
         }
 
         public static async Task<Result> SubmitEmailSecurityCode(string securityCode)
         {
             TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
-            openCallbacks.Add(callbackConfirmation, null);
+            openCallbacks_dictionary.Add(callbackConfirmation, null);
 
             //------------------------------[ Setup callback param ]-------------------------------
             Result result = ResultBuilder.Unknown;
@@ -537,29 +499,25 @@ namespace ModIO.Implementation
             else if(IsInitialized(out result))
             {
                 //      Synchronous checks SUCCEEDED
-
-                // Create Form fields
-                string url =
-                    API.Requests.AuthenticateUser.InternalURL(securityCode, out WWWForm form);
-
-                Task<ResultAnd<AccessTokenObject>> task = RESTAPI.Request<AccessTokenObject>(
-                    url, API.Requests.AuthenticateUser.Template, form);
+                WebRequestConfig config = API.Requests.AuthenticateUser.InternalRequest(securityCode);
+                
+                Task<ResultAnd<AccessTokenObject>> task = WebRequestManager.Request<AccessTokenObject>(config);
 
                 // We always cache the task while awaiting so we can check IsFaulted externally
-                openCallbacks[callbackConfirmation] = task;
+                openCallbacks_dictionary[callbackConfirmation] = task;
                 ResultAnd<AccessTokenObject> response = await task;
-                openCallbacks[callbackConfirmation] = null;
+                openCallbacks_dictionary[callbackConfirmation] = null;
 
                 result = response.result;
 
-                if(response.result.Succeeded())
+                if(result.Succeeded())
                 {
                     // Server request SUCCEEDED
 
                     // Assign deserialized response as the token
 
                     // Set User Access Token
-                    await UserData.instance.SetOAuthToken(response.value);
+                    UserData.instance.SetOAuthToken(response.value);
 
                     // Get and cache the current user
                     // (using empty delegate instead of null callback to avoid log and early-out)
@@ -580,7 +538,7 @@ namespace ModIO.Implementation
 
             //callback?.Invoke(result);
             callbackConfirmation.SetResult(true);
-            openCallbacks.Remove(callbackConfirmation);
+            openCallbacks_dictionary.Remove(callbackConfirmation);
 
             return result;
         }
@@ -603,44 +561,29 @@ namespace ModIO.Implementation
 
         public static async Task<ResultAnd<TermsOfUse>> GetTermsOfUse()
         {
-            TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
-            openCallbacks.Add(callbackConfirmation, null);
+            var callbackConfirmation = openCallbacks.New();
 
-            //------------------------------[ Setup callback param ]-------------------------------
-            Result result;
-            TermsOfUse termsOfUse = default;
-            //-------------------------------------------------------------------------------------
+            var config = API.Requests.GetTerms.Request();
+            TermsOfUse termsOfUse = default(TermsOfUse);
 
-            string url = GetTerms.URL();
-
-            if(IsInitialized(out result) && !ResponseCache.GetTermsFromCache(url, out termsOfUse))
+            if(IsInitialized(out var result) && !ResponseCache.GetTermsFromCache(config.Url, out termsOfUse))
             {
-                //      Synchronous checks SUCCEEDED
-
-                Task<ResultAnd<TermsObject>> task =
-                    RESTAPI.Request<TermsObject>(url, GetTerms.Template);
-
-                // We always cache the task while awaiting so we can check IsFaulted externally
-                openCallbacks[callbackConfirmation] = task;
-                ResultAnd<TermsObject> response = await task;
-                openCallbacks[callbackConfirmation] = null;
-
+                //hmm okay
+                //lets call it without the open callbacks?
+                var task = WebRequestManager.Request<TermsObject>(config);
+                var response = await openCallbacks.Run(callbackConfirmation, task);
                 result = response.result;
-
-                if(response.result.Succeeded())
+                
+                if(result.Succeeded())
                 {
-                    // Server request SUCCEEDED
-
-                    // convert response to user friendly TermsOfUse struct
                     termsOfUse = ResponseTranslator.ConvertTermsObjectToTermsOfUse(response.value);
 
                     // Add terms to cache
-                    ResponseCache.AddTermsToCache(url, termsOfUse);
+                    ResponseCache.AddTermsToCache(config.Url, termsOfUse);
                 }
             }
 
-            callbackConfirmation.SetResult(true);
-            openCallbacks.Remove(callbackConfirmation);
+            openCallbacks.Complete(callbackConfirmation);
 
             return ResultAnd.Create(result, termsOfUse);
         }
@@ -666,7 +609,7 @@ namespace ModIO.Implementation
             [CanBeNull] OculusDevice? device, [CanBeNull] string userId, PlayStationEnvironment environment)
         {
             TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
-            openCallbacks.Add(callbackConfirmation, null);
+            openCallbacks_dictionary.Add(callbackConfirmation, null);
 
             //------------------------------[ Setup callback param ]-------------------------------
             Result result;
@@ -677,29 +620,24 @@ namespace ModIO.Implementation
             {
                 //      Synchronous checks SUCCEEDED
 
-                string url = API.Requests.AuthenticateUser.ExternalURL(
-                    serviceProvider, data, hash, emailAddress,
-                    // Oculus nonce, device, user_id
-                    nonce, device, userId, environment,
-                    // -----------------------------
-                    out WWWForm form);
-
-                Task<ResultAnd<AccessTokenObject>> task = RESTAPI.Request<AccessTokenObject>(
-                    url, API.Requests.AuthenticateUser.Template, form);
+                WebRequestConfig config = API.Requests.AuthenticateUser.ExternalRequest(
+                        serviceProvider, data, hash, emailAddress,nonce, device, userId, environment);
+                
+                Task<ResultAnd<AccessTokenObject>> task = WebRequestManager.Request<AccessTokenObject>(config);
 
                 // We always cache the task while awaiting so we can check IsFaulted externally
-                openCallbacks[callbackConfirmation] = task;
+                openCallbacks_dictionary[callbackConfirmation] = task;
                 ResultAnd<AccessTokenObject> response = await task;
-                openCallbacks[callbackConfirmation] = null;
+                openCallbacks_dictionary[callbackConfirmation] = null;
 
                 result = response.result;
 
-                if(response.result.Succeeded())
+                if(result.Succeeded())
                 {
                     // Server request SUCCEEDED
 
                     // Set User Access Token
-                    await UserData.instance.SetOAuthToken(response.value);
+                    UserData.instance.SetOAuthToken(response.value);
 
                     // TODO @Steve (see other example, same situation in email auth)
                     await GetCurrentUser(delegate { });
@@ -707,7 +645,7 @@ namespace ModIO.Implementation
             }
 
             callbackConfirmation.SetResult(true);
-            openCallbacks.Remove(callbackConfirmation);
+            openCallbacks_dictionary.Remove(callbackConfirmation);
 
             return result;
         }
@@ -732,98 +670,78 @@ namespace ModIO.Implementation
         }
 
 
-#endregion // Authentication
+        #endregion // Authentication
 
-#region Mod Browsing
-
+        #region Mod Browsing
 
         public static async Task<ResultAnd<TagCategory[]>> GetGameTags()
         {
-            TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
-            openCallbacks.Add(callbackConfirmation, null);
+            var callbackConfirmation = openCallbacks.New();
 
-            //------------------------------[ Setup callback params ]------------------------------
             Result result;
             TagCategory[] tags = new TagCategory[0];
-            //-------------------------------------------------------------------------------------
 
             if(IsInitialized(out result) && !ResponseCache.GetTagsFromCache(out tags))
             {
-                string url = API.Requests.GetGameTags.URL();
+                var config = API.Requests.GetGameTags.Request();
 
-                // MAKE RESTAPI REQUEST
-                Task<ResultAnd<GetGameTags.ResponseSchema>> task =
-                    RESTAPI.Request<GetGameTags.ResponseSchema>(url,
-                        API.Requests.GetGameTags.Template);
+                var task = await openCallbacks.Run(callbackConfirmation,
+                    WebRequestManager.Request<API.Requests.GetGameTags.ResponseSchema>(config));
 
-                // We always cache the task while awaiting so we can check IsFaulted externally
-                openCallbacks[callbackConfirmation] = task;
-                ResultAnd<GetGameTags.ResponseSchema> response = await task;
-                openCallbacks[callbackConfirmation] = null;
-
-                result = response.result;
-
-                if(response.result.Succeeded())
+                result = task.result;
+                if(result.Succeeded())
                 {
-                    tags = ResponseTranslator.ConvertGameTagOptionsObjectToTagCategories(
-                        response.value.data);
-
-                    // Add tags to cache (This will last for the session)
+                    tags = ResponseTranslator.ConvertGameTagOptionsObjectToTagCategories(task.value.data);
                     ResponseCache.AddTagsToCache(tags);
                 }
             }
 
-            // FINAL SUCCESS / FAILURE depending on callback params set previously
-            callbackConfirmation.SetResult(true);
-            openCallbacks.Remove(callbackConfirmation);
+            openCallbacks.Complete(callbackConfirmation);
 
             return ResultAnd.Create(result, tags);
         }
-
-
+        
         public static async void GetGameTags(Action<ResultAnd<TagCategory[]>> callback)
         {
+            // Early out
+            if(callback == null)
+            {
+                Logger.Log(
+                    LogLevel.Warning,
+                    "No callback was given to the GetGameTags method, any response "
+                    + "returned from the server wont be used. This operation has been cancelled.");
+                return;
+            }
             ResultAnd<TagCategory[]> result = await GetGameTags();
-            callback(result);
+            callback?.Invoke(result);
         }
-
 
         public static async Task<ResultAnd<ModPage>> GetMods(SearchFilter filter)
         {
-            TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
-            openCallbacks.Add(callbackConfirmation, null);
+            var callbackConfirmation = openCallbacks.New();
 
-            //------------------------------[ Setup callback params ]------------------------------
             Result result;
             ModPage page = new ModPage();
-            //-------------------------------------------------------------------------------------
-            string referenceURL = API.Requests.GetMods.URL_Unpaginated(filter);
-            int offset = filter.pageIndex * filter.pageSize;
+
+            string unpaginatedURL = API.Requests.GetMods.UnpaginatedURL();
+            var offset = filter.pageIndex * filter.pageSize;
 
             if(IsInitialized(out result) && IsSearchFilterValid(filter, out result)
-                                         && !ResponseCache.GetModsFromCache(referenceURL, offset, filter.pageSize, out page))
+                                         && !ResponseCache.GetModsFromCache(unpaginatedURL, offset, filter.pageSize, out page))
             {
-                //      Synchronous checks SUCCEEDED
+                var config = API.Requests.GetMods.RequestPaginated(filter);
 
-                string url = API.Requests.GetMods.URL_Paginated(filter);
+                var task = await openCallbacks.Run(callbackConfirmation,
+                    WebRequestManager.Request<API.Requests.GetMods.ResponseSchema>(config)); //doesnt outright match with v2 but class is same shape
 
-                // MAKE RESTAPI REQUEST
-                Task<ResultAnd<GetMods.ResponseSchema>> task =
-                    RESTAPI.Request<GetMods.ResponseSchema>(url, API.Requests.GetMods.Template);
+                result = task.result;
 
-                openCallbacks[callbackConfirmation] = task;
-                ResultAnd<GetMods.ResponseSchema> response = await task;
-                openCallbacks[callbackConfirmation] = null;
-
-                result = response.result;
-
-                if(response.result.Succeeded())
+                if(result.Succeeded())
                 {
-                    // Convert the ModObject response into ModProfiles
-                    page = ResponseTranslator.ConvertResponseSchemaToModPage(response.value, filter);
-
-                    // Add the ModProfiles to the cache
-                    // ResponseCache.AddModsToCache(url, offset, page);
+                    page = ResponseTranslator.ConvertResponseSchemaToModPage(task.value, filter);
+                    
+                    // Add this response into the cache
+                    ResponseCache.AddModsToCache(unpaginatedURL, offset, page);
 
                     // Return the exact number of mods that were requested (not more)
                     if(page.modProfiles.Length > filter.pageSize)
@@ -833,15 +751,12 @@ namespace ModIO.Implementation
                 }
             }
 
-            // FINAL SUCCESS / FAILURE depending on callback params set previously
-            callbackConfirmation.SetResult(true);
-            openCallbacks.Remove(callbackConfirmation);
+            openCallbacks.Complete(callbackConfirmation);
 
             return ResultAnd.Create(result, page);
         }
-
-
-        public static async void GetMods(SearchFilter filter, Action<Result, ModPage> callback)
+        
+        public static async void GetMods(SearchFilter filter, Action<ResultAnd<ModPage>> callback)
         {
             // Early out
             if(callback == null)
@@ -853,53 +768,31 @@ namespace ModIO.Implementation
                 return;
             }
             ResultAnd<ModPage> result = await GetMods(filter);
-            callback?.Invoke(result.result, result.value);
+            callback?.Invoke(result);
         }
-
-
+        
         public static async Task<ResultAnd<ModProfile>> GetMod(long id)
         {
-            TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
-            openCallbacks.Add(callbackConfirmation, null);
+            var callbackConfirmation = openCallbacks.New();
 
-            //------------------------------[ Setup callback params ]------------------------------
             Result result;
             ModProfile profile = default;
-            //-------------------------------------------------------------------------------------
 
-            // generate endpoint here because it's synchronous and we can check validity early on
-
-            if(ModIOUnityImplementation.IsInitialized(out result)
-               && !ResponseCache.GetModFromCache((ModId)id, out profile))
+            if(IsInitialized(out result) && !ResponseCache.GetModFromCache((ModId)id, out profile))
             {
-                //      Synchronous checks SUCCEEDED
+                var config = API.Requests.GetMod.Request((ModId)id);
+                var task = await openCallbacks.Run(callbackConfirmation, WebRequestManager.Request<ModObject>(config));
 
-                string url = API.Requests.GetMod.URL(id);
+                result = task.result;
 
-                // MAKE RESTAPI REQUEST
-                Task<ResultAnd<ModObject>> task =
-                    RESTAPI.Request<ModObject>(url, API.Requests.GetMod.Template);
-
-                openCallbacks[callbackConfirmation] = task;
-                ResultAnd<ModObject> response = await task;
-                openCallbacks[callbackConfirmation] = null;
-
-                result = response.result;
-
-                if(response.result.Succeeded())
+                if(result.Succeeded())
                 {
-                    // Convert ModObject to ModProfile
-                    profile = ResponseTranslator.ConvertModObjectToModProfile(response.value);
-
-                    // Add ModProfile to cache
+                    profile = ResponseTranslator.ConvertModObjectToModProfile(task.value);
                     ResponseCache.AddModToCache(profile);
                 }
             }
 
-            // FINAL SUCCESS / FAILURE depending on callback params set previously
-            callbackConfirmation.SetResult(true);
-            openCallbacks.Remove(callbackConfirmation);
-
+            openCallbacks.Complete(callbackConfirmation);
             return ResultAnd.Create(result, profile);
         }
 
@@ -917,43 +810,30 @@ namespace ModIO.Implementation
             ResultAnd<ModProfile> result = await GetMod(id);
             callback?.Invoke(result);
         }
+
         public static async Task<ResultAnd<ModDependencies[]>> GetModDependencies(ModId modId)
         {
-            TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
-            openCallbacks.Add(callbackConfirmation, null);
+            var callbackConfirmation = openCallbacks.New();
 
-            //------------------------------[ Setup callback params ]------------------------------
             Result result;
             ModDependencies[] modDependencies = default;
-            //-------------------------------------------------------------------------------------
-
-            string referenceURL = API.Requests.GetModDependencies.Url(modId);
 
             if(IsInitialized(out result) && IsAuthenticatedSessionValid(out result)
                                          && !ResponseCache.GetModDependenciesCache(modId, out modDependencies))
             {
-                //Synchronous checks SUCCEEDED
+                var config = API.Requests.GetModDependencies.Request(modId);
+                var task = await openCallbacks.Run(callbackConfirmation, WebRequestManager.Request<API.Requests.GetModDependencies.ResponseSchema>(config));
 
-                // MAKE RESTAPI REQUEST
-                Task<ResultAnd<GetModDependencies.ResponseSchema>> task = RESTAPI.Request<GetModDependencies.ResponseSchema>(referenceURL, API.Requests.GetModDependencies.Template);
+                result = task.result;
 
-                openCallbacks[callbackConfirmation] = task;
-                ResultAnd<GetModDependencies.ResponseSchema> response = await task;
-                openCallbacks[callbackConfirmation] = null;
-
-                result = response.result;
-
-                if(response.result.Succeeded())
+                if(result.Succeeded())
                 {
-                    modDependencies = ResponseTranslator.ConvertModDependenciesObjectToModDependencies(response.value.data);
+                    modDependencies = ResponseTranslator.ConvertModDependenciesObjectToModDependencies(task.value.data);
                     ResponseCache.AddModDependenciesToCache(modId, modDependencies);
                 }
             }
 
-            // FINAL SUCCESS / FAILURE depending on callback params set previously
-            callbackConfirmation.SetResult(true);
-            openCallbacks.Remove(callbackConfirmation);
-
+            openCallbacks.Complete(callbackConfirmation);
             return ResultAnd.Create(result, modDependencies);
         }
 
@@ -972,45 +852,36 @@ namespace ModIO.Implementation
             var result = await GetModDependencies(modId);
             callback?.Invoke(result);
         }
+        
         public static async Task<ResultAnd<Rating[]>> GetCurrentUserRatings()
         {
-            TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
-            openCallbacks.Add(callbackConfirmation, null);
+            var callbackConfirmation = openCallbacks.New();
 
-            //------------------------------[ Setup callback params ]------------------------------
-            Result result;
+            Result result = default;
             Rating[] ratings = default;
-            //-------------------------------------------------------------------------------------
-
-            string referenceURL = API.Requests.GetCurrentUserRatings.Url();
 
             if(IsInitialized(out result) && IsAuthenticatedSessionValid(out result)
                                          && !ResponseCache.GetCurrentUserRatingsCache(out ratings))
             {
-                //Synchronous checks SUCCEEDED
-
-                // MAKE RESTAPI REQUEST
-                Task<ResultAnd<GetCurrentUserRatings.ResponseSchema>> task = RESTAPI.Request<GetCurrentUserRatings.ResponseSchema>(referenceURL, API.Requests.GetCurrentUserRatings.Template);
-
-                openCallbacks[callbackConfirmation] = task;
-                ResultAnd<GetCurrentUserRatings.ResponseSchema> response = await task;
-                openCallbacks[callbackConfirmation] = null;
+                var config = API.Requests.GetCurrentUserRatings.Request();
+                var task = ModCollectionManager.TryRequestAllResults<RatingObject>(config.Url, API.Requests.GetCurrentUserRatings.Request);
+                var response = await openCallbacks.Run(callbackConfirmation, task);
 
                 result = response.result;
 
-                if(response.result.Succeeded())
+                if(result.Succeeded())
                 {
-                    ratings = ResponseTranslator.ConvertModRatingsObjectToRatings(response.value.data);
+                    ratings = ResponseTranslator.ConvertModRatingsObjectToRatings(response.value);
+
                     ResponseCache.ReplaceCurrentUserRatings(ratings);
                 }
             }
 
             // FINAL SUCCESS / FAILURE depending on callback params set previously
-            callbackConfirmation.SetResult(true);
-            openCallbacks.Remove(callbackConfirmation);
-
+            openCallbacks.Complete(callbackConfirmation);
             return ResultAnd.Create(result, ratings);
         }
+
         public static async void GetCurrentUserRatings(Action<ResultAnd<Rating[]>> callback)
         {
             // Check for callback
@@ -1024,6 +895,63 @@ namespace ModIO.Implementation
             }
 
             var result = await GetCurrentUserRatings();
+            callback?.Invoke(result);
+        }
+
+        public static async Task<ResultAnd<ModRating>> GetCurrentUserRatingFor(ModId modId)
+        {
+            var callbackConfirmation = openCallbacks.New();
+
+            //------------------------------[ Setup callback params ]------------------------------
+            Result result = ResultBuilder.Unknown;
+            ModRating rating = default;
+            //-------------------------------------------------------------------------------------
+
+            if(IsInitialized(out result) && IsAuthenticatedSessionValid(out result))
+            {
+                // If the ratings haven't been cached this session, we can do so here
+                if(!ResponseCache.HaveRatingsBeenCachedThisSession())
+                {
+                    // If there is no rating, make sure we've cached the ratings
+                    Task<ResultAnd<Rating[]>> task = GetCurrentUserRatings();
+                    ResultAnd<Rating[]> response = await openCallbacks.Run(callbackConfirmation, task);
+
+                    if(!response.result.Succeeded())
+                    {
+                        result = response.result;
+                        goto End;
+                    }
+                }
+
+                // Try to get a single rating from the cache
+                if(ResponseCache.GetCurrentUserRatingFromCache(modId, out rating))
+                {
+                    result = ResultBuilder.Success;
+                }
+            }
+
+            End:
+
+            // FINAL SUCCESS / FAILURE depending on callback params set previously
+            callbackConfirmation.SetResult(true);
+            openCallbacks.Remove(callbackConfirmation);
+
+            return ResultAnd.Create(result, rating);
+        }
+
+        public static async void GetCurrentUserRatingFor(ModId modId, Action<ResultAnd<ModRating>> callback)
+        {
+            // Check for callback
+            if(callback == null)
+            {
+                Logger.Log(
+                    LogLevel.Warning,
+                    "No callback was given to the GetCurrentUserRatingFor method. You will not "
+                    + "be informed of the result for this action. It is highly recommended to "
+                    + "provide a valid callback.");
+            }
+
+            var result = await GetCurrentUserRatingFor(modId);
             callback?.Invoke(result);
         }
 #endregion // Mod Browsing
@@ -1057,18 +985,11 @@ namespace ModIO.Implementation
 
         public static async Task<Result> FetchUpdates()
         {
-            TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
-            openCallbacks.Add(callbackConfirmation, null);
+            var callbackConfirmation = openCallbacks.New();
 
             if(IsInitialized(out Result result) && IsAuthenticatedSessionValid(out result))
             {
-                // This syncs the user's subscribed mods and also looks for modfile changes to
-                // update
-                Task<Result> task = ModCollectionManager.FetchUpdates();
-
-                openCallbacks[callbackConfirmation] = task;
-                result = await task;
-                openCallbacks[callbackConfirmation] = null;
+                result = await openCallbacks.Run(callbackConfirmation, ModCollectionManager.FetchUpdates());
 
                 if(result.Succeeded())
                 {
@@ -1076,13 +997,10 @@ namespace ModIO.Implementation
                 }
             }
 
-            callbackConfirmation.SetResult(true);
-            openCallbacks.Remove(callbackConfirmation);
-
+            openCallbacks.Complete(callbackConfirmation);
             return result;
         }
-
-
+        
         public static async Task FetchUpdates(Action<Result> callback)
         {
             if(callback == null)
@@ -1145,33 +1063,21 @@ namespace ModIO.Implementation
 
         public static async Task<Result> AddModRating(ModId modId, ModRating modRating)
         {
-            TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
-            openCallbacks.Add(callbackConfirmation, null);
+            var callbackConfirmation = openCallbacks.New();
 
-            //------------------------------[ Setup callback param ]-------------------------------
             Result result;
-            //-------------------------------------------------------------------------------------
 
             if(IsInitialized(out result) && IsAuthenticatedSessionValid(out result))
             {
-                //      Synchronous checks SUCCEEDED
 
-                // Get endpoint and form data
-                string url = API.Requests.AddModRating.URL(modId, modRating, out WWWForm form);
-
-                // MAKE RESTAPI REQUEST
-                Task<ResultAnd<MessageObject>> task =
-                    RESTAPI.Request<MessageObject>(url, API.Requests.AddModRating.Template, form);
-
-                openCallbacks[callbackConfirmation] = task;
-                ResultAnd<MessageObject> response = await task;
-                openCallbacks[callbackConfirmation] = null;
+                var config = API.Requests.AddModRating.Request(modId, modRating);
+                var response = await openCallbacks.Run(callbackConfirmation, WebRequestManager.Request<MessageObject>(config));
 
                 result = response.result;
 
-                var rating = new Rating {
+                var rating = new Rating
+                {
                     dateAdded = DateTime.Now,
-                    gameId = Settings.server.gameId,
                     rating = modRating,
                     modId = modId
                 };
@@ -1185,8 +1091,7 @@ namespace ModIO.Implementation
                 }
             }
 
-            callbackConfirmation.SetResult(true);
-            openCallbacks.Remove(callbackConfirmation);
+            openCallbacks.Complete(callbackConfirmation);
             return result;
         }
 
@@ -1210,38 +1115,23 @@ namespace ModIO.Implementation
 
         public static async Task<ResultAnd<UserProfile>> GetCurrentUser()
         {
-            TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
-            openCallbacks.Add(callbackConfirmation, null);
+            var callbackConfirmation = openCallbacks.New();
 
-            //------------------------------[ Setup callback param ]-------------------------------
             Result result;
             UserProfile userProfile = default;
-            //-------------------------------------------------------------------------------------
-
-            string url = GetAuthenticatedUser.URL();
 
             if(IsInitialized(out result) && IsAuthenticatedSessionValid(out result)
                                          && !ResponseCache.GetUserProfileFromCache(out userProfile))
             {
-                //      Synchronous checks SUCCEEDED
+                var config = API.Requests.GetAuthenticatedUser.Request();
+                var task = await openCallbacks.Run(callbackConfirmation, WebRequestManager.Request<UserObject>(config));
 
-                // MAKE RESTAPI REQUEST
+                result = task.result;
 
-                Task<ResultAnd<UserObject>> task =
-                    RESTAPI.Request<UserObject>(url, GetAuthenticatedUser.Template);
-
-                openCallbacks[callbackConfirmation] = task;
-                ResultAnd<UserObject> response = await task;
-                openCallbacks[callbackConfirmation] = null;
-
-                result = response.result;
-
-                if(response.result.Succeeded())
+                if(result.Succeeded())
                 {
-                    await UserData.instance.SetUserObject(response.value);
-
-                    // Convert UserObject to UsePrrofile
-                    userProfile = ResponseTranslator.ConvertUserObjectToUserProfile(response.value);
+                    UserData.instance.SetUserObject(task.value);
+                    userProfile = ResponseTranslator.ConvertUserObjectToUserProfile(task.value);
 
                     // Add UserProfile to cache (lasts for the whole session)
                     ResponseCache.AddUserToCache(userProfile);
@@ -1249,7 +1139,7 @@ namespace ModIO.Implementation
             }
 
             callbackConfirmation.SetResult(true);
-            openCallbacks.Remove(callbackConfirmation);
+            openCallbacks_dictionary.Remove(callbackConfirmation);
 
             return ResultAnd.Create(result, userProfile);
         }
@@ -1272,26 +1162,16 @@ namespace ModIO.Implementation
 
         public static async Task<Result> UnsubscribeFrom(ModId modId)
         {
-            TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
-            openCallbacks.Add(callbackConfirmation, null);
+            var callbackConfirmation = openCallbacks.New();
 
-            //------------------------------[ Setup callback param ]-------------------------------
             Result result;
-            //-------------------------------------------------------------------------------------
 
             if(IsInitialized(out result) && IsAuthenticatedSessionValid(out result))
             {
-                //      Synchronous checks SUCCEEDED
+                var config = API.Requests.UnsubscribeFromMod.Request(modId);
+                var task = await openCallbacks.Run(callbackConfirmation, WebRequestManager.Request<MessageObject>(config));
 
-                string url = UnsubscribeFromMod.URL(modId);
-
-                // MAKE RESTAPI REQUEST
-                Task<Result> task = RESTAPI.Request(url, UnsubscribeFromMod.Template);
-
-                openCallbacks[callbackConfirmation] = task;
-                result = await task;
-                openCallbacks[callbackConfirmation] = null;
-
+                result = task.result;
                 var success = result.Succeeded()
                    || result.code_api == ResultCode.RESTAPI_ModSubscriptionNotFound;
 
@@ -1314,19 +1194,18 @@ namespace ModIO.Implementation
                 ModCollectionManager.RemoveModFromUserSubscriptions(modId, success);
             }
 
-            callbackConfirmation.SetResult(true);
-            openCallbacks.Remove(callbackConfirmation);
+            openCallbacks.Complete(callbackConfirmation);
             return result;
         }
 
-        private static bool ShouldAbortDueToDownloading(ModId modId)
+        static bool ShouldAbortDueToDownloading(ModId modId)
         {
             return ModManagement.currentJob != null
                    && ModManagement.currentJob.mod.modObject.id == modId
                    && ModManagement.currentJob.type == ModManagementOperationType.Download;
         }
 
-        private static bool ShouldAbortDueToInstalling(ModId modId)
+        static bool ShouldAbortDueToInstalling(ModId modId)
         {
             return ModManagement.currentJob != null
                 && ModManagement.currentJob.mod.modObject.id == modId
@@ -1351,32 +1230,20 @@ namespace ModIO.Implementation
 
         public static async Task<Result> SubscribeTo(ModId modId)
         {
-            TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
-            openCallbacks.Add(callbackConfirmation, null);
+            var callbackConfirmation = openCallbacks.New();
 
-            //------------------------------[ Setup callback param ]-------------------------------
             Result result;
-            //-------------------------------------------------------------------------------------
 
             if(IsInitialized(out result) && IsAuthenticatedSessionValid(out result))
             {
-                //      Synchronous checks SUCCEEDED
+                var config = API.Requests.SubscribeToMod.Request(modId);
+                var taskResult = await openCallbacks.Run(callbackConfirmation, WebRequestManager.Request<ModObject>(config));
 
-                string url = SubscribeToMod.URL(modId);
-
-                // MAKE RESTAPI REQUEST
-                Task<ResultAnd<ModObject>> task =
-                    RESTAPI.Request<ModObject>(url, SubscribeToMod.Template);
-
-                openCallbacks[callbackConfirmation] = task;
-                ResultAnd<ModObject> response = await task;
-                openCallbacks[callbackConfirmation] = null;
-
-                result = response.result;
+                result = taskResult.result;
 
                 if(result.Succeeded())
                 {
-                    ModCollectionManager.UpdateModCollectionEntry(modId, response.value);
+                    ModCollectionManager.UpdateModCollectionEntry(modId, taskResult.value);
                     ModCollectionManager.AddModToUserSubscriptions(modId);
                     ModManagement.WakeUp();
                 }
@@ -1388,29 +1255,22 @@ namespace ModIO.Implementation
                     // If the we attempt to fetch the Mod Object, and it fails,
                     // treat the subscribe attempt as a failure.
 
-                    result = ResultBuilder.Success;
                     ModCollectionManager.AddModToUserSubscriptions(modId);
 
-                    url = API.Requests.GetMod.URL(modId);
+                    var getModConfig = API.Requests.GetMod.Request(modId);
+                    var getModConfigResult = await openCallbacks.Run(callbackConfirmation, WebRequestManager.Request<ModObject>(getModConfig));
 
-                    task = RESTAPI.Request<ModObject>(url, API.Requests.GetMod.Template);
-
-                    openCallbacks[callbackConfirmation] = task;
-                    response = await task;
-                    openCallbacks[callbackConfirmation] = null;
-
-                    if(response.result.Succeeded())
+                    if(getModConfigResult.result.Succeeded())
                     {
-                        ModCollectionManager.UpdateModCollectionEntry(modId, response.value);
+                        ModCollectionManager.UpdateModCollectionEntry(modId, getModConfigResult.value);
                         ModManagement.WakeUp();
                     }
 
-                    result = response.result;
+                    result = getModConfigResult.result;
                 }
             }
 
-            callbackConfirmation.SetResult(true);
-            openCallbacks.Remove(callbackConfirmation);
+            openCallbacks.Complete(callbackConfirmation);
 
             return result;
         }
@@ -1430,56 +1290,33 @@ namespace ModIO.Implementation
             callback?.Invoke(result);
         }
 
-        public static async void GetUserSubscriptions(SearchFilter filter,
-                                                      Action<Result, ModProfile[], int> callback)
+
+        //Should this be exposed in ModIOUnity/ModIOUnityAsync?
+        public static async Task<ResultAnd<ModPage>> GetUserSubscriptions(SearchFilter filter)
         {
-            // Early out
-            if(callback == null)
-            {
-                Logger.Log(
-                    LogLevel.Warning,
-                    "No callback was given to the GetUserSubscriptionsFromModio method, any response "
-                    + "returned from the server wont be used. This operation  has been cancelled.");
-                return;
-            }
-
-            TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
-            openCallbacks.Add(callbackConfirmation, null);
-
-            //------------------------------[ Setup callback params ]------------------------------
+            var callbackConfirmation = openCallbacks.New();
             Result result;
             ModPage page = new ModPage();
-            //-------------------------------------------------------------------------------------
 
             if(IsInitialized(out result) && IsSearchFilterValid(filter, out result)
                                          && IsAuthenticatedSessionValid(out result))
             {
-                //      Synchronous checks SUCCEEDED
+                var config = API.Requests.GetUserSubscriptions.Request(filter);
+                var task = await openCallbacks.Run(callbackConfirmation,
+                    WebRequestManager.Request<API.Requests.GetUserSubscriptions.ResponseSchema>(config));
 
-                string url = API.Requests.GetUserSubscriptions.URL(filter);
+                result = task.result;
 
-                Task<ResultAnd<GetUserSubscriptions.ResponseSchema>> task =
-                    RESTAPI.Request<GetUserSubscriptions.ResponseSchema>(
-                        url, API.Requests.GetUserSubscriptions.Template);
-
-                openCallbacks[callbackConfirmation] = task;
-                ResultAnd<GetUserSubscriptions.ResponseSchema> response = await task;
-                openCallbacks[callbackConfirmation] = null;
-
-                result = response.result;
-
-                if(response.result.Succeeded())
+                if(result.Succeeded())
                 {
-                    page = ResponseTranslator.ConvertResponseSchemaToModPage(response.value, filter);
+                    page = ResponseTranslator.ConvertResponseSchemaToModPage(task.value, filter);
                 }
             }
 
-            // FINAL SUCCESS / FAILURE depending on callback params set previously
-            callback?.Invoke(result, page.modProfiles, (int)page.totalSearchResultsFound);
-            callbackConfirmation.SetResult(true);
-            openCallbacks.Remove(callbackConfirmation);
+            openCallbacks.Complete(callbackConfirmation);
+            return ResultAnd.Create(result, page);
         }
-
+        
         public static SubscribedMod[] GetSubscribedMods(out Result result)
         {
             if(IsInitialized(out result) && IsAuthenticatedSessionValid(out result))
@@ -1576,144 +1413,178 @@ namespace ModIO.Implementation
             Result result = await UnmuteUser(userId);
             callback?.Invoke(result);
         }
-
+        
         public static async Task<Result> MuteUser(long userId)
         {
-
-            TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
-            openCallbacks.Add(callbackConfirmation, null);
-
-            //------------------------------[ Setup callback param ]-------------------------------
+            var callbackConfirmation = openCallbacks.New();
             Result result;
-            //-------------------------------------------------------------------------------------
 
             if(IsInitialized(out result) && IsAuthenticatedSessionValid(out result))
             {
-                //      Synchronous checks SUCCEEDED
-
-                string url = UserMute.URL(userId);
-
-                // MAKE RESTAPI REQUEST
-                Task<Result> task =
-                    RESTAPI.Request(url, UserMute.Template);
-
-                openCallbacks[callbackConfirmation] = task;
-                Result response = await task;
-                openCallbacks[callbackConfirmation] = null;
-
-                result = response;
+                var config = API.Requests.UserMute.Request(userId);
+                var task = await openCallbacks.Run(callbackConfirmation, WebRequestManager.Request(config));
+                result = task;
             }
 
-            callbackConfirmation.SetResult(true);
-            openCallbacks.Remove(callbackConfirmation);
-
+            openCallbacks.Complete(callbackConfirmation);
             return result;
         }
 
         public static async Task<Result> UnmuteUser(long userId)
         {
-
-            TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
-            openCallbacks.Add(callbackConfirmation, null);
-
-            //------------------------------[ Setup callback param ]-------------------------------
+            var callbackConfirmation = openCallbacks.New();
             Result result;
-            //-------------------------------------------------------------------------------------
 
             if(IsInitialized(out result) && IsAuthenticatedSessionValid(out result))
             {
-                //      Synchronous checks SUCCEEDED
-
-                string url = UserUnmute.URL(userId);
-
-                // MAKE RESTAPI REQUEST
-                Task<Result> task =
-                    RESTAPI.Request(url, UserUnmute.Template);
-
-                openCallbacks[callbackConfirmation] = task;
-                Result response = await task;
-                openCallbacks[callbackConfirmation] = null;
-
-                result = response;
+                var config = API.Requests.UserUnmute.Request(userId);
+                var task = await openCallbacks.Run(callbackConfirmation, WebRequestManager.Request(config));
+                result = task;
             }
 
-            callbackConfirmation.SetResult(true);
-            openCallbacks.Remove(callbackConfirmation);
-
+            openCallbacks.Complete(callbackConfirmation);
             return result;
         }
-
+        
 #endregion // User Management
 
 #region Mod Media
-
-
         public static async Task<ResultAnd<Texture2D>> DownloadTexture(DownloadReference downloadReference)
         {
-
-            TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
-            openCallbacks.Add(callbackConfirmation, null);
-
             //------------------------------[ Setup callback params ]------------------------------
             Result result;
             Texture2D texture = null;
             //-------------------------------------------------------------------------------------
-
-            if(downloadReference.IsValid())
+            
+            ResultAnd<byte[]> resultAnd = await GetImage(downloadReference);
+            result = resultAnd.result;
+            
+            if(result.Succeeded())
             {
+                IOUtil.TryParseImageData(resultAnd.value, out texture, out result);
+            }
+
+            return ResultAnd.Create(result, texture);
+        }
+
+        /// <summary>
+        /// This will first check if we are already attempting to download the same image with a
+        /// different web request. Instead of competing for a file stream it will simply wait for
+        /// the result of the other duplicate request (if any)
+        /// </summary>
+        public static async Task<ResultAnd<byte[]>> GetImage(DownloadReference downloadReference)
+        {
+            if (!downloadReference.IsValid()) 
+            {
+                Logger.Log(
+                    LogLevel.Warning,
+                    "The DownloadReference provided for the DownloadImage method was not"
+                    + " valid. Consider using the DownloadReference.IsValid() method to check if the"
+                    + "DownloadReference has an existing URL before using this method.");
+                return ResultAnd.Create<byte[]>(ResultCode.InvalidParameter_DownloadReferenceIsntValid, null);
+            }
+            if(onGoingImageDownloads.ContainsKey(downloadReference.url))
+            {
+                Logger.Log(LogLevel.Verbose, $"The image ({downloadReference.filename}) "
+                                             + $"is already being download. Waiting for duplicate request's result.");
+                return await onGoingImageDownloads[downloadReference.url];
+            }
+
+            var task = DownloadImage(downloadReference);
+            onGoingImageDownloads.Add(downloadReference.url, task);
+            var result = await task;
+            onGoingImageDownloads.Remove(downloadReference.url);
+            return result;
+        }
+
+        static async Task<ResultAnd<byte[]>> DownloadImage(DownloadReference downloadReference)
+        {
+            TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
+            openCallbacks_dictionary.Add(callbackConfirmation, null);
+
+            //------------------------------[ Setup callback params ]------------------------------
+            Result result;
+            byte[] image = null;
+            //-------------------------------------------------------------------------------------
+
                 if(IsInitialized(out result))
                 {
                     // Check cache asynchronously for texture in temp folder
-                    Task<ResultAnd<Texture2D>> cacheTask =
-                        ResponseCache.GetTextureFromCache(downloadReference);
+                    Task<ResultAnd<byte[]>> cacheTask =
+                        ResponseCache.GetImageFromCache(downloadReference);
 
-                    openCallbacks[callbackConfirmation] = cacheTask;
-                    ResultAnd<Texture2D> cacheResponse = await cacheTask;
-                    openCallbacks[callbackConfirmation] = null;
+                    openCallbacks_dictionary[callbackConfirmation] = cacheTask;
+                    ResultAnd<byte[]> cacheResponse = await cacheTask;
+                    openCallbacks_dictionary[callbackConfirmation] = null;
+                    result = cacheResponse.result;
 
-                    if(cacheResponse.result.Succeeded())
+                    if(result.Succeeded())
                     {
                         // CACHE SUCCEEDED
-
                         result = cacheResponse.result;
-                        texture = cacheResponse.value;
+                        image = cacheResponse.value;
                     }
                     else
                     {
-                        // MAKE RESTAPI REQUEST
-                        Task<ResultAnd<Texture2D>> task =
-                            RESTAPI.Request<Texture2D>(downloadReference.url, DownloadImage.Template);
+                        // GET FILE STREAM TO DOWNLOAD THE IMAGE FILE TO
+                        // This stream is a direct write to the file location we will cache the
+                        // image to so we dont need to add the image to cache once we're done so to speak
+                        ResultAnd<ModIOFileStream> openWriteStream = DataStorage.GetImageFileWriteStream(downloadReference.url);
+                        result = openWriteStream.result;
 
-                        openCallbacks[callbackConfirmation] = task;
-                        ResultAnd<Texture2D> response = await task;
-                        openCallbacks[callbackConfirmation] = null;
-
-                        result = response.result;
-
-                        if(response.result.Succeeded())
+                        if(result.Succeeded())
                         {
-                            texture = response.value;
+                            using(openWriteStream.value)
+                            {
+                                // DOWNLOAD THE IMAGE
+                                var handle = WebRequestManager.Download(downloadReference.url, openWriteStream.value, null);
+                                result = await handle.task;
+                            }
 
-                            await ResponseCache.AddTextureToCache(downloadReference, response.value);
+                            if(result.Succeeded())
+                            {
+                                // We need to re-open the stream because some platforms only allow a Read or Write stream, not both
+                                ResultAnd<ModIOFileStream> openReadStream = DataStorage.GetImageFileReadStream(downloadReference.url);
+                                result = openReadStream.result;
+                                
+                                if(result.Succeeded())
+                                {
+                                    using (openReadStream.value)
+                                    {
+                                        var readAllBytes = await openReadStream.value.ReadAllBytesAsync();
+                                        result = readAllBytes.result;
+
+                                        if(result.Succeeded())
+                                        {
+                                            // CACHE SUCCEEDED
+                                            image = readAllBytes.value;
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            // FAILED DOWNLOAD - ERASE THE FILE SO WE DONT CREATE A CORRUPT CACHED IMAGE
+                            if(!result.Succeeded())
+                            {
+                                Result cleanupResult = DataStorage.DeleteStoredImage(downloadReference.url);
+                                if(!cleanupResult.Succeeded())
+                                {
+                                    Logger.Log(LogLevel.Error, 
+                                        $"[Internal] Failed to cleanup downloaded image."
+                                        + $" This may result in a corrupt or invalid image being"
+                                        + $" loaded for modId {downloadReference.modId}");
+                                }
+                            }
                         }
                     }
                     // continue to invoke at the end of this method
                 }
-            }
-            else
-            {
-                Logger.Log(
-                    LogLevel.Warning,
-                    "The DownloadReference provided for the DownloadTexture method was not"
-                    + " valid. Consider using the DownloadReference.IsValid() method to check if the"
-                    + "DownloadReference has an existing URL before using this method.");
-                result = ResultBuilder.Create(ResultCode.InvalidParameter_DownloadReferenceIsntValid);
-            }
+            
 
             callbackConfirmation.SetResult(true);
-            openCallbacks.Remove(callbackConfirmation);
+            openCallbacks_dictionary.Remove(callbackConfirmation);
 
-            return ResultAnd.Create(result, texture);
+            return ResultAnd.Create(result, image);
         }
 
         public static async void DownloadTexture(DownloadReference downloadReference,
@@ -1727,52 +1598,66 @@ namespace ModIO.Implementation
                     "No callback was given to the DownloadTexture method. This operation has been cancelled.");
                 return;
             }
+            if(!IsInitialized(out Result initResult))
+            {
+                var r = ResultAnd.Create<Texture2D>(initResult, null);
+                callback?.Invoke(r);
+                return;
+            }
 
             ResultAnd<Texture2D> result = await DownloadTexture(downloadReference);
             callback?.Invoke(result);
         }
 
-#endregion // Mod Media
+        public static async void DownloadImage(DownloadReference downloadReference,
+                                                 Action<ResultAnd<byte[]>> callback)
+        {
+            // Early out
+            if(callback == null)
+            {
+                Logger.Log(
+                    LogLevel.Warning,
+                    "No callback was given to the DownloadImage method. This operation has been cancelled.");
+                return;
+            }
+            if(!IsInitialized(out Result initResult))
+            {
+                var r = ResultAnd.Create<byte[]>(initResult, null);
+                callback?.Invoke(r);
+                return;
+            }
 
-#region Reporting
+            ResultAnd<byte[]> result = await GetImage(downloadReference);
+            callback?.Invoke(result);
+        }
+
+        #endregion // Mod Media
+
+        #region Reporting
 
         public static async Task<Result> Report(Report report)
         {
-
-            TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
-            openCallbacks.Add(callbackConfirmation, null);
-
-            //------------------------------[ Setup callback param ]-------------------------------
+            var callbackConfirmation = openCallbacks.New();
             Result result = ResultBuilder.Unknown;
-            //-------------------------------------------------------------------------------------
 
             if(report == null || !report.CanSend())
             {
-                Logger.Log(
-                    LogLevel.Error,
+                Logger.Log(LogLevel.Error,
                     "The Report instance provided to the Reporting method is not setup correctly"
                     + " and cannot be sent as a valid report to mod.io");
+
                 result = report == null
                     ? ResultBuilder.Create(ResultCode.InvalidParameter_CantBeNull)
                     : ResultBuilder.Create(ResultCode.InvalidParameter_ReportNotReady);
             }
             else if(IsInitialized(out result))
             {
-                string url = API.Requests.Report.URL(report, out WWWForm form);
-
-                Task<ResultAnd<MessageObject>> task =
-                    RESTAPI.Request<MessageObject>(url, API.Requests.Report.Template, form);
-
-                openCallbacks[callbackConfirmation] = task;
-                ResultAnd<MessageObject> response = await task;
-                openCallbacks[callbackConfirmation] = null;
-
-                result = response.result;
+                var config = API.Requests.Report.Request(report);
+                var task = await openCallbacks.Run(callbackConfirmation, WebRequestManager.Request<MessageObject>(config));
+                result = task.result;
             }
 
-
-            callbackConfirmation.SetResult(true);
-            openCallbacks.Remove(callbackConfirmation);
+            openCallbacks.Complete(callbackConfirmation);
 
             return result;
         }
@@ -1806,8 +1691,6 @@ namespace ModIO.Implementation
         public static async Task<ResultAnd<ModId>> CreateModProfile(CreationToken token, ModProfileDetails modDetails)
         {
             // - Early Outs -
-            // Check callback
-            // Check disableUploads
             if(Settings.server.disableUploads)
             {
                 Logger.Log(LogLevel.Error,
@@ -1816,14 +1699,10 @@ namespace ModIO.Implementation
                 return ResultAnd.Create(ResultBuilder.Create(ResultCode.Settings_UploadsDisabled), ModId.Null);
             }
 
+            var callbackConfirmation = openCallbacks.New();
 
-            TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
-            openCallbacks.Add(callbackConfirmation, null);
-
-            //------------------------------[ Setup callback param ]-------------------------------
-            Result result = ResultBuilder.Unknown;
+            Result result;
             ModId modId = (ModId)0;
-            //-------------------------------------------------------------------------------------
 
             // Check valid token
             if(!ModManagement.IsCreationTokenValid(token))
@@ -1840,32 +1719,22 @@ namespace ModIO.Implementation
                 if(IsInitialized(out result) && IsAuthenticatedSessionValid(out result)
                                              && IsModProfileDetailsValid(modDetails, out result))
                 {
-                    //      Synchronous checks SUCCEEDED
-
-                    string url = AddMod.URL(modDetails, out WWWForm form);
-
-                    // MAKE RESTAPI REQUEST
-                    Task<ResultAnd<ModObject>> task =
-                        RESTAPI.Request<ModObject>(url, AddMod.Template, form);
-
-                    openCallbacks[callbackConfirmation] = task;
-                    ResultAnd<ModObject> response = await task;
-                    openCallbacks[callbackConfirmation] = null;
-
+                    //make call
+                    var config = API.Requests.AddMod.Request(modDetails);
+                    var response = await openCallbacks.Run(callbackConfirmation, WebRequestManager.Request<ModObject>(config));
                     result = response.result;
 
                     if(result.Succeeded())
                     {
-                        // Succeeded
                         modId = (ModId)response.value.id;
 
                         ModManagement.InvalidateCreationToken(token);
+                        ResponseCache.ClearCache();
                     }
                 }
             }
 
-            callbackConfirmation.SetResult(true);
-            openCallbacks.Remove(callbackConfirmation);
+            openCallbacks.Complete(callbackConfirmation);
             return ResultAnd.Create(result, modId);
         }
 
@@ -1900,15 +1769,10 @@ namespace ModIO.Implementation
                 return ResultBuilder.Create(ResultCode.Settings_UploadsDisabled);
             }
 
-            TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
-            openCallbacks.Add(callbackConfirmation, null);
-
-            //------------------------------[ Setup callback param ]-------------------------------
+            var callbackConfirmation = openCallbacks.New();
             Result result;
-            //-------------------------------------------------------------------------------------
 
             // Check for modId
-
             if(modDetails == null)
             {
                 Logger.Log(LogLevel.Error,
@@ -1918,47 +1782,37 @@ namespace ModIO.Implementation
             }
             else if(modDetails.modId == null)
             {
-                Logger.Log(
-                    LogLevel.Error,
+                Logger.Log(LogLevel.Error,
                     "The provided ModProfileDetails has not been assigned a ModId. Ensure"
                     + " you assign the Id of the mod you intend to edit to the ModProfileDetails.modId"
                     + " field.");
-                result = ResultBuilder.Create(
-                    ResultCode.InvalidParameter_ModProfileRequiredFieldsNotSet);
+                result = ResultBuilder.Create(ResultCode.InvalidParameter_ModProfileRequiredFieldsNotSet);
             }
             else if(IsInitialized(out result) && IsAuthenticatedSessionValid(out result)
                                               && IsModProfileDetailsValidForEdit(modDetails, out result))
             {
-                //      Synchronous checks SUCCEEDED
-
-                string url = EditMod.URL(modDetails, out WWWForm form);
+                // TODO remove this warning if the EditMod endpoint adds tag editing feature
+                if(modDetails.tags != null && modDetails.tags.Length > 0)
+                {
+                    Logger.Log(LogLevel.Warning,
+                        "The EditMod method cannot be used to change a ModProfile's tags."
+                        + " Use the ModIOUnity.AddTags and ModIOUnity.DeleteTags methods instead."
+                        + " The 'tags' array in the ModProfileDetails will be ignored.");
+                }
                 
-                // This needs to be POST if we are adding a logo, or PUT if we are not adding a logo
-                RequestConfig templateSchema = modDetails.logo != null ? 
-                        EditMod.TemplateForAddingLogo : EditMod.Template;
+                var config = modDetails.logo != null
+                    ? API.Requests.EditMod.RequestPOST(modDetails)
+                    : API.Requests.EditMod.RequestPUT(modDetails);
                 
-                // MAKE RESTAPI REQUEST
-                Task<ResultAnd<ModObject>> task =
-                    RESTAPI.Request<ModObject>(url, templateSchema, form);
-
-                openCallbacks[callbackConfirmation] = task;
-                ResultAnd<ModObject> response = await task;
-                openCallbacks[callbackConfirmation] = null;
-
-                result = response.result;
+                result = await openCallbacks.Run(callbackConfirmation, WebRequestManager.Request(config));
 
                 if(result.Succeeded())
                 {
-                    // Succeeded
-                }
-                else
-                {
-                    // Failed
+                    // TODO This request returns the new ModObject, we should cache this new mod profile when we succeed
                 }
             }
 
-            callbackConfirmation.SetResult(true);
-            openCallbacks.Remove(callbackConfirmation);
+            openCallbacks.Complete(callbackConfirmation);
 
             return result;
         }
@@ -2010,61 +1864,31 @@ namespace ModIO.Implementation
                 return ResultBuilder.Create(ResultCode.Settings_UploadsDisabled);
             }
 
-            TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
-            openCallbacks.Add(callbackConfirmation, null);
-
-            //------------------------------[ Setup callback param ]-------------------------------
+            var callbackConfirmation = openCallbacks.New();
             Result result;
-            //-------------------------------------------------------------------------------------
-
-            // Check for modId
 
             if(modId == 0)
             {
-                Logger.Log(LogLevel.Error,
-                    "You must provide a valid mod id to delete tags.");
+                Logger.Log(LogLevel.Error, "You must provide a valid mod id to delete tags.");
                 result = ResultBuilder.Create(ResultCode.InvalidParameter_MissingModId);
             }
             else if(tags == null || tags.Length == 0)
             {
-                Logger.Log(
-                    LogLevel.Error,
-                    "You must provide tags to be deleted from the mod");
-                result = ResultBuilder.Create(
-                    ResultCode.InvalidParameter_CantBeNull);
+                Logger.Log(LogLevel.Error, "You must provide tags to be deleted from the mod");
+                result = ResultBuilder.Create(ResultCode.InvalidParameter_CantBeNull);
             }
             else if(IsInitialized(out result) && IsAuthenticatedSessionValid(out result))
             {
-                //      Synchronous checks SUCCEEDED
-
-                string url = DeleteModTags.URL(modId, tags, out WWWForm form);
-
-                // MAKE RESTAPI REQUEST
-                Task<ResultAnd<MessageObject>> task =
-                    RESTAPI.Request<MessageObject>(url, AddModTags.Template, form);
-
-                openCallbacks[callbackConfirmation] = task;
-                ResultAnd<MessageObject> response = await task;
-                openCallbacks[callbackConfirmation] = null;
-
-                result = response.result;
-
-                if(result.Succeeded())
-                {
-                    // Succeeded
-                }
-                else
-                {
-                    // Failed
-                }
+                var config = API.Requests.DeleteModTags.Request(modId, tags);
+                var taskResult = await openCallbacks.Run(callbackConfirmation, WebRequestManager.Request<MessageObject>(config));
+                result = taskResult.result;
             }
 
-            callbackConfirmation.SetResult(true);
-            openCallbacks.Remove(callbackConfirmation);
+            openCallbacks.Complete(callbackConfirmation);
 
             return result;
         }
-
+        
         public static async void AddTags(ModId modId, string[] tags,
                                                 Action<Result> callback)
         {
@@ -2088,64 +1912,32 @@ namespace ModIO.Implementation
             // Check disableUploads
             if(Settings.server.disableUploads)
             {
-                Logger.Log(LogLevel.Error,
-                    "The current plugin configuration has uploading disabled.");
-
+                Logger.Log(LogLevel.Error, "The current plugin configuration has uploading disabled.");
                 return ResultBuilder.Create(ResultCode.Settings_UploadsDisabled);
             }
 
-            TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
-            openCallbacks.Add(callbackConfirmation, null);
-
-            //------------------------------[ Setup callback param ]-------------------------------
+            var callbackConfirmation = openCallbacks.New();
             Result result;
-            //-------------------------------------------------------------------------------------
 
             // Check for modId
-
             if(modId == 0)
             {
-                Logger.Log(LogLevel.Error,
-                    "You must provide a valid mod id to add tags.");
+                Logger.Log(LogLevel.Error, "You must provide a valid mod id to add tags.");
                 result = ResultBuilder.Create(ResultCode.InvalidParameter_MissingModId);
             }
             else if(tags == null || tags.Length == 0)
             {
-                Logger.Log(
-                    LogLevel.Error,
-                    "You must provide tags to be added to the mod");
-                result = ResultBuilder.Create(
-                    ResultCode.InvalidParameter_CantBeNull);
+                Logger.Log(LogLevel.Error, "You must provide tags to be added to the mod");
+                result = ResultBuilder.Create(ResultCode.InvalidParameter_CantBeNull);
             }
             else if(IsInitialized(out result) && IsAuthenticatedSessionValid(out result))
             {
-                //      Synchronous checks SUCCEEDED
-
-                string url = AddModTags.URL(modId, tags, out WWWForm form);
-
-                // MAKE RESTAPI REQUEST
-                Task<ResultAnd<MessageObject>> task =
-                    RESTAPI.Request<MessageObject>(url, AddModTags.Template, form);
-
-                openCallbacks[callbackConfirmation] = task;
-                ResultAnd<MessageObject> response = await task;
-                openCallbacks[callbackConfirmation] = null;
-
-                result = response.result;
-
-                if(result.Succeeded())
-                {
-                    // Succeeded
-                }
-                else
-                {
-                    // Failed
-                }
+                var config = API.Requests.AddModTags.Request(modId, tags);
+                var taskResult = await openCallbacks.Run(callbackConfirmation, WebRequestManager.Request<MessageObject>(config));
+                result = taskResult.result;
             }
 
-            callbackConfirmation.SetResult(true);
-            openCallbacks.Remove(callbackConfirmation);
-
+            openCallbacks.Complete(callbackConfirmation);
             return result;
         }
 
@@ -2158,79 +1950,56 @@ namespace ModIO.Implementation
         {
             // - Early outs -
             // Check Modfile
-            if (modProfileDetails == null)
+            if(modProfileDetails == null)
             {
                 Logger.Log(LogLevel.Error, "ModfileDetails parameter cannot be null.");
-
                 return ResultBuilder.Create(ResultCode.InvalidParameter_CantBeNull);
             }
 
             // Check mod id
-            if (modProfileDetails.modId == null)
+            if(modProfileDetails.modId == null)
             {
-                Logger.Log(
-                    LogLevel.Error,
+                Logger.Log(LogLevel.Error,
                     "The provided ModfileDetails has not been assigned a ModId. Ensure"
                         + " you assign the Id of the mod you intend to edit to the ModProfileDetails.modId"
                         + " field.");
-
                 return ResultBuilder.Create(ResultCode.InvalidParameter_MissingModId);
             }
 
             // Check disableUploads
-            if (Settings.server.disableUploads)
+            if(Settings.server.disableUploads)
             {
-                Logger.Log(LogLevel.Error,
-                           "The current plugin configuration has uploading disabled.");
-
+                Logger.Log(LogLevel.Error, "The current plugin configuration has uploading disabled.");
                 return ResultBuilder.Create(ResultCode.Settings_UploadsDisabled);
             }
 
-            ProgressHandle handle = new ProgressHandle();
-            currentUploadHandle = handle;
-            currentUploadHandle.OperationType = ModManagementOperationType.Upload;
+            var callbackConfirmation = openCallbacks.New();
 
-            TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
-            openCallbacks.Add(callbackConfirmation, null);
-
-            //------------------------------[ Setup callback param ]-------------------------------
             Result result;
-            //-------------------------------------------------------------------------------------
 
-            if (IsInitialized(out result) && IsAuthenticatedSessionValid(out result)
+            if(IsInitialized(out result) && IsAuthenticatedSessionValid(out result)
                && IsModProfileDetailsValidForEdit(modProfileDetails, out result))
             {
-                Task<ResultAnd<AddModMedia.AddModMediaUrlResult>> urlResultTask =
-                    AddModMedia.URL(modProfileDetails);
-
-                openCallbacks[callbackConfirmation] = urlResultTask;
-                ResultAnd<AddModMedia.AddModMediaUrlResult> urlResult = await urlResultTask;
-                openCallbacks[callbackConfirmation] = null;
-
-                if(urlResult.result.Succeeded())
+                // This will compress the images (if they exist) and add them to the request
+                // TODO Add progress handle to the compress method
+                var addModMediaResult = await AddModMedia.Request(modProfileDetails);
+                result = addModMediaResult.result;
+                
+                if(result.Succeeded())
                 {
-                    Task<ResultAnd<ModMediaObject>> task = RESTAPI.Request<ModMediaObject>(
-                        urlResult.value.url, AddModMedia.Template, urlResult.value.form, null, currentUploadHandle);
-
-                    openCallbacks[callbackConfirmation] = task;
-                    ResultAnd<ModMediaObject> response = await task;
-                    openCallbacks[callbackConfirmation] = null;
-
-                    result = response.result;
+                    WebRequestConfig config = addModMediaResult.value;
+                    var task = WebRequestManager.Request<ModMediaObject>(config);
+                    var resultAnd = await openCallbacks.Run(callbackConfirmation, task);
+                    result = resultAnd.result;
 
                     if(!result.Succeeded())
                     {
                         currentUploadHandle.Failed = true;
                     }
                 }
-
             }
 
-            currentUploadHandle.Completed = true;
-            currentUploadHandle = null;
-
-            callbackConfirmation.SetResult(true);
-            openCallbacks.Remove(callbackConfirmation);
+            openCallbacks.Complete(callbackConfirmation);
 
             return result;
         }
@@ -2267,12 +2036,11 @@ namespace ModIO.Implementation
                 return ResultBuilder.Create(ResultCode.Settings_UploadsDisabled);
             }
 
-            ProgressHandle handle = new ProgressHandle();
-            currentUploadHandle = handle;
+            ProgressHandle progressHandle = new ProgressHandle();
+            currentUploadHandle = progressHandle;
             currentUploadHandle.OperationType = ModManagementOperationType.Upload;
 
-            TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
-            openCallbacks.Add(callbackConfirmation, null);
+            var callbackConfirmation = openCallbacks.New();
 
             //------------------------------[ Setup callback param ]-------------------------------
             Result result;
@@ -2285,41 +2053,38 @@ namespace ModIO.Implementation
 
                 Task<ResultAnd<MemoryStream>> compressTask = compressOperation.Compress();
 
-                openCallbacks[callbackConfirmation] = compressTask;
-                ResultAnd<MemoryStream> compressResult = await compressTask;
-                openCallbacks[callbackConfirmation] = null;
 
-                result = compressResult.result;
+                var compressionTaskResult = await openCallbacks.Run(callbackConfirmation, compressTask);
+                result = compressionTaskResult.result;
 
                 if(!result.Succeeded())
                 {
                     //      Compression FAILED
-
                     currentUploadHandle.Failed = true;
-
                     Logger.Log(LogLevel.Error, "Failed to compress the files at the "
-                                               + $"given directory ({modfile.directory}).");
+                                                 + $"given directory ({modfile.directory}).");
                 }
                 else
                 {
-                    //      Compression SUCCEEDED
-
-                    string url =
-                        AddModfile.URL(modfile, compressResult.value.ToArray(), out WWWForm form);
-
-                    // MAKE RESTAPI REQUEST
-                    Task<ResultAnd<ModfileObject>> task = RESTAPI.Request<ModfileObject>(
-                        url, AddModfile.Template, form, null, currentUploadHandle);
-
-                    openCallbacks[callbackConfirmation] = task;
-                    ResultAnd<ModfileObject> response = await task;
-                    openCallbacks[callbackConfirmation] = null;
-
-                    result = response.result;
-
+                    Logger.Log(LogLevel.Verbose, $"Compressed file ({modfile.directory})"
+                                                 + $"\nstream length: {compressionTaskResult.value.Length}");
+                    
+                    callbackConfirmation = openCallbacks.New();
+                    var requestConfig = API.Requests.AddModFile.Request(modfile, compressionTaskResult.value.ToArray());
+                    Task<ResultAnd<ModfileObject>> task = WebRequestManager.Request<ModfileObject>(requestConfig, currentUploadHandle);
+                    ResultAnd<ModfileObject> uploadResult = await openCallbacks.Run(callbackConfirmation, task);
+                    result = uploadResult.result;
+                    
                     if(!result.Succeeded())
                     {
                         currentUploadHandle.Failed = true;
+                    }
+                    else
+                    {
+                        // TODO only remove the mod of the ID that we uploaded modfile.modId - add the modfile object we got back from the server to the cache
+                        ResponseCache.ClearCache();
+                        
+                        Logger.Log(LogLevel.Verbose, $"UPLOAD SUCCEEDED [{modfile.modId}_{uploadResult.value.id}]");
                     }
                 }
             }
@@ -2327,8 +2092,7 @@ namespace ModIO.Implementation
             currentUploadHandle.Completed = true;
             currentUploadHandle = null;
 
-            callbackConfirmation.SetResult(true);
-            openCallbacks.Remove(callbackConfirmation);
+            openCallbacks.Complete(callbackConfirmation);
 
             return result;
         }
@@ -2367,30 +2131,17 @@ namespace ModIO.Implementation
 
         public static async Task<Result> ArchiveModProfile(ModId modId)
         {
-            TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
-            openCallbacks.Add(callbackConfirmation, null);
+            var callbackConfirmation = openCallbacks.New();
 
-            //------------------------------[ Setup callback param ]-------------------------------
             Result result;
-            //-------------------------------------------------------------------------------------
 
             if(IsInitialized(out result) && IsAuthenticatedSessionValid(out result))
             {
-                //      Synchronous checks SUCCEEDED
-
-                string url = DeleteMod.URL(modId);
-
-                // MAKE RESTAPI REQUEST
-                Task<Result> task = RESTAPI.Request(url, DeleteMod.Template);
-
-                // We always cache the task while awaiting so we can check IsFaulted externally
-                openCallbacks[callbackConfirmation] = task;
-                result = await task;
-                openCallbacks[callbackConfirmation] = null;
+                var config = API.Requests.DeleteMod.Request(modId);
+                result = await openCallbacks.Run(callbackConfirmation, WebRequestManager.Request(config));
             }
 
-            callbackConfirmation.SetResult(true);
-            openCallbacks.Remove(callbackConfirmation);
+            openCallbacks.Complete(callbackConfirmation);
 
             return result;
         }
@@ -2428,7 +2179,7 @@ namespace ModIO.Implementation
             {
                 Logger.Log(LogLevel.Error,
                     "The provided metadata in ModProfileDetails exceeds 50,000 characters"
-                    + $"(Was given {modfile.metadata.Length})");
+                    + $"\n(Was given {modfile.metadata.Length} characters)");
                 result = ResultBuilder.Create(ResultCode.InvalidParameter_ModMetadataTooLarge);
                 return false;
             }
@@ -2511,38 +2262,30 @@ namespace ModIO.Implementation
 
         public static async Task<ResultAnd<ModPage>> GetCurrentUserCreations(SearchFilter filter)
         {
-            TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
-            openCallbacks.Add(callbackConfirmation, null);
+            var callbackConfirmation = openCallbacks.New();
 
-            //------------------------------[ Setup callback params ]------------------------------
             Result result;
             ModPage page = new ModPage();
-            //-------------------------------------------------------------------------------------
 
-            string referenceURL = API.Requests.GetCurrentUserCreations.Url(filter);
+            var config = API.Requests.GetCurrentUserCreations.Request(filter);
+
             int offset = filter.pageIndex * filter.pageSize;
-
             if(IsInitialized(out result) && IsSearchFilterValid(filter, out result)
                                          && IsAuthenticatedSessionValid(out result)
-                                         && !ResponseCache.GetModsFromCache(referenceURL, offset, filter.pageSize, out page))
+                                         && !ResponseCache.GetModsFromCache(config.Url, offset, filter.pageSize, out page))
             {
-                //      Synchronous checks SUCCEEDED
 
-                // MAKE RESTAPI REQUEST
-                Task<ResultAnd<GetCurrentUserCreations.ResponseSchema>> task = RESTAPI.Request<GetCurrentUserCreations.ResponseSchema>(referenceURL, API.Requests.GetCurrentUserCreations.Template);
+                var task = await openCallbacks.Run(callbackConfirmation, WebRequestManager.
+                    Request<API.Requests.GetCurrentUserCreations.ResponseSchema>(config));
 
-                openCallbacks[callbackConfirmation] = task;
-                ResultAnd<GetCurrentUserCreations.ResponseSchema> response = await task;
-                openCallbacks[callbackConfirmation] = null;
+                result = task.result;
 
-                result = response.result;
-
-                if(response.result.Succeeded())
+                if(result.Succeeded())
                 {
-                    // Convert the ModObject response into ModProfiles
-                    page = ResponseTranslator.ConvertResponseSchemaToModPage(response.value, filter);
+                    page = ResponseTranslator.ConvertResponseSchemaToModPage(task.value, filter);
 
-                    // Return the exact number of mods that were requested (not more)
+                    ResponseCache.AddModsToCache(config.Url, offset, page);
+
                     if(page.modProfiles.Length > filter.pageSize)
                     {
                         Array.Copy(page.modProfiles, page.modProfiles, filter.pageSize);
@@ -2550,9 +2293,7 @@ namespace ModIO.Implementation
                 }
             }
 
-            // FINAL SUCCESS / FAILURE depending on callback params set previously
-            callbackConfirmation.SetResult(true);
-            openCallbacks.Remove(callbackConfirmation);
+            openCallbacks.Complete(callbackConfirmation);
 
             return ResultAnd.Create(result, page);
         }

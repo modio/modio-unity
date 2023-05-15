@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using ModIOBrowser.Implementation;
 
 namespace ModIO.Util
 {
@@ -61,77 +62,6 @@ namespace ModIO.Util
             }
         }
         
-        #region Comparer<T> delegates for sorting a List<ModProfile> via List<T>.Sort()
-        public static int CompareModProfilesAlphabetically(SubscribedMod A, SubscribedMod B)
-        {
-            return CompareModProfilesAlphabetically(A.modProfile, B.modProfile);
-        }
-        public static int CompareModProfilesAlphabetically(InstalledMod A, InstalledMod B)
-        {
-            return CompareModProfilesAlphabetically(A.modProfile, B.modProfile);
-        }
-
-        public static int CompareModProfilesAlphabetically(ModProfile A, ModProfile B)
-        {
-            float valueOfA = 0;
-            float valueOfB = 0;
-            float depthMultiplier = 0;
-            int maxDepth = 10;
-            int depth = 0;
-
-            foreach(char character in A.name)
-            {
-                if(depth >= maxDepth)
-                {
-                    break;
-                }
-                depthMultiplier = depthMultiplier == 0 ? 1 : depthMultiplier + 100;
-                valueOfA += char.ToLower(character) / depthMultiplier;
-                depth++;
-            }
-
-            depthMultiplier = 0;
-            depth = 0;
-
-            foreach(char character in B.name)
-            {
-                if(depth >= maxDepth)
-                {
-                    break;
-                }
-                depthMultiplier = depthMultiplier == 0 ? 1 : depthMultiplier + 100;
-                valueOfB += char.ToLower(character) / depthMultiplier;
-                depth++;
-            }
-            if(valueOfA > valueOfB)
-            {
-                return 1;
-            }
-            if(valueOfB > valueOfA)
-            {
-                return -1;
-            }
-            return 0;
-        }
-
-        public static int CompareModProfilesByFileSize(InstalledMod A, InstalledMod B)
-        {
-            return CompareModProfilesByFileSize(A.modProfile, B.modProfile);
-        }
-
-        public static int CompareModProfilesByFileSize(ModProfile A, ModProfile B)
-        {
-            if(A.archiveFileSize > B.archiveFileSize)
-            {
-                return -1;
-            }
-            if(A.archiveFileSize < B.archiveFileSize)
-            {
-                return 1;
-            }
-            return 0;
-        }
-        #endregion Comparer<T> delegates for sorting a List<ModProfile> via List<T>.Sort()
 
         #region Get a mod status in string format
 

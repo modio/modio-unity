@@ -5,11 +5,11 @@
     {
         // ---------[ Singleton ]---------
         /// <summary>Singleton instance for current version.</summary>
-        public static readonly ModIOVersion Current = new ModIOVersion(4, 1, 0, "alpha");
+        public static readonly ModIOVersion Current = new ModIOVersion(2023, 5, 12, "beta");
 
         // ---------[ Fields ]---------
         /// <summary>Main Version number.</summary>
-        public int version;
+        public int year;
         
         // ---------[ Fields ]---------
         /// <summary>Major version number.</summary>
@@ -17,7 +17,7 @@
         /// to the interface.
         /// Changing between versions of the codebase with a different X value, will require changes
         /// to a consumer codebase in order to integrate.</remarks>
-        public int major;
+        public int month;
 
         /// <summary>Version build number.</summary>
         /// <remarks>Represents the build version number. Increases when a new release is created
@@ -25,7 +25,7 @@
         /// Changing between versions of the codebase with a different Y value, will never require
         /// changes to a consumer codebase in order to integrate, but may offer additional
         /// functionality if changes are made.</remarks>
-        public int minor;
+        public int day;
 
         /// <summary>Suffix for the current version.</summary>
         /// <remarks>Represents additional, non-incremental version information about a build.
@@ -37,11 +37,11 @@
 
         // ---------[ Initialization ]---------
         /// <summary>Constructs an object with the given version values.</summary>
-        public ModIOVersion(int version, int major, int minor, string suffix = null)
+        public ModIOVersion(int year, int month, int day, string suffix = null)
         {
-            this.version = version;
-            this.major = major;
-            this.minor = minor;
+            this.year = year;
+            this.month = month;
+            this.day = day;
 
             if(suffix == null)
             {
@@ -54,15 +54,15 @@
         /// <summary>Compares the current instance with another ModIOVersion.</summary>
         public int CompareTo(ModIOVersion other)
         {
-            int result = version.CompareTo(other.version);
+            int result = year.CompareTo(other.year);
             
             if(result == 0)
             {
-                result = major.CompareTo(other.major);
+                result = month.CompareTo(other.month);
             }
             if(result == 0)
             {
-                result = minor.CompareTo(other.minor);
+                result = day.CompareTo(other.day);
             }
 
             return result;
@@ -97,10 +97,8 @@
 #region Utility
 
         /// <summary>Creates the request header representation of the version.</summary>
-        public string ToHeaderString()
-        {
-            return $"modioUnityPlugin-{version.ToString()}.{major.ToString()}.{minor.ToString()}-{suffix}";
-        }
+        public string ToHeaderString() => $"modioUnityPlugin-{year.ToString()}.{month.ToString()}.{day.ToString()}-{suffix}";
+        
 
 #endregion // Utility
     }

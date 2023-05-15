@@ -11,11 +11,11 @@ namespace ModIOBrowser.Implementation
         {
             if(eventData.moveDir == MoveDirection.Left)
             {
-                Home.Instance.PageFeaturedRowLeft();
+                Home.Instance.PageFeaturedRow(false);
             }
             else if(eventData.moveDir == MoveDirection.Right)
             {
-                Home.Instance.PageFeaturedRowRight();
+                Home.Instance.PageFeaturedRow(true);
             }
         }
 

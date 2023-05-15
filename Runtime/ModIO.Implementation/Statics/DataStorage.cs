@@ -36,18 +36,26 @@ namespace ModIO.Implementation
         const string UserDataFilePath = "user.json";
 
         /// <summary>Writes the user data to disk.</summary>
-        public static async Task<Result> SaveUserData()
+        public static async Task<Result> SaveUserDataAsync()
         {
             byte[] userDataJSON = IOUtil.GenerateUTF8JSONData(UserData.instance);
 
-            return await user.WriteFileAsync($@"{user.RootDirectory}/{UserDataFilePath}", userDataJSON).ConfigureAwait(false);
+            return await user.WriteFileAsync($@"{user.RootDirectory}/{UserDataFilePath}", userDataJSON);
+        }
+
+        /// <summary>Writes the user data to disk.</summary>
+        public static Result SaveUserData()
+        {
+            byte[] userDataJSON = IOUtil.GenerateUTF8JSONData(UserData.instance);
+
+            return user.WriteFile($@"{user.RootDirectory}/{UserDataFilePath}", userDataJSON);
         }
 
         /// <summary>Reads the user data from disk.</summary>
-        public static async Task<Result> LoadUserData()
+        public static async Task<Result> LoadUserDataAsync()
         {
             var userDataReadTask =
-                await user.ReadFileAsync($@"{user.RootDirectory}/{UserDataFilePath}").ConfigureAwait(false);
+                await user.ReadFileAsync($@"{user.RootDirectory}/{UserDataFilePath}");
             Result result = userDataReadTask.result;
 
             if(result.Succeeded()
@@ -57,6 +65,20 @@ namespace ModIO.Implementation
             }
 
             return result;
+        }
+
+        /// <summary>Reads the user data from disk.</summary>
+        public static Result LoadUserData()
+        {
+            var userDataRead = user.ReadFile($@"{user.RootDirectory}/{UserDataFilePath}");
+
+            if(userDataRead.result.Succeeded()
+               && IOUtil.TryParseUTF8JSONData(userDataRead.value, out UserData userData, out userDataRead.result))
+            {
+                UserData.instance = userData;
+            }
+
+            return userDataRead.result;
         }
 
 #endregion // User IO
@@ -70,7 +92,7 @@ namespace ModIO.Implementation
             {
                 Logger.Log(
                     LogLevel.Verbose,
-                    ":INTERNAL: Attempted to generated a file path for a NULL/Empty image URL.");
+                    ":INTERNAL: Attempted to generate a file path for a NULL/Empty image URL.");
                 return null;
             }
 
@@ -84,10 +106,10 @@ namespace ModIO.Implementation
         }
 
         /// <summary>Stores an image to the temporary cache.</summary>
-        public static async Task<Result> StoreImage(DownloadReference imageURL, Texture2D texture)
+        public static async Task<Result> StoreImage(string imageURL, Texture2D texture)
         {
             // - generate file path -
-            string filePath = GenerateImageCacheFilePath(imageURL.url);
+            string filePath = GenerateImageCacheFilePath(imageURL);
             if(filePath == null)
             {
                 return ResultBuilder.Create(ResultCode.Internal_InvalidParameter);
@@ -107,11 +129,38 @@ namespace ModIO.Implementation
             return result;
         }
 
-        /// <summary>Attempts to retrieve an image from the temporary cache.</summary>
-        public static async Task<ResultAnd<Texture2D>> TryRetrieveImage(DownloadReference imageURL)
+        /// <summary>Stores an image to the temporary cache.</summary>
+        public static Result DeleteStoredImage(string imageURL)
         {
             // - generate file path -
-            string filePath = GenerateImageCacheFilePath(imageURL.url);
+            string filePath = GenerateImageCacheFilePath(imageURL);
+            if(filePath == null)
+            {
+                return ResultBuilder.Create(ResultCode.Internal_InvalidParameter);
+            }
+
+            Result result = temp.DeleteFile(imageURL);
+        
+            return result;
+        }
+
+        public static ResultAnd<ModIOFileStream> GetImageFileReadStream(string imageURL)
+        {
+            ModIOFileStream stream = temp.OpenReadStream(GenerateImageCacheFilePath(imageURL), out Result result);
+            return ResultAnd.Create(result, stream);
+        }
+
+        public static ResultAnd<ModIOFileStream> GetImageFileWriteStream(string imageURL)
+        {
+            ModIOFileStream stream = temp.OpenWriteStream(GenerateImageCacheFilePath(imageURL), out Result result);
+            return ResultAnd.Create(result, stream);
+        }
+
+        /// <summary>Attempts to retrieve an image from the temporary cache.</summary>        
+        public static async Task<ResultAnd<Texture2D>> TryRetrieveImage(string imageURL)
+        {
+            // - generate file path -
+            string filePath = GenerateImageCacheFilePath(imageURL);
             if(filePath == null)
             {
                 return ResultAnd.Create<Texture2D>(ResultCode.Internal_InvalidParameter, null);
@@ -139,7 +188,30 @@ namespace ModIO.Implementation
             return ResultAnd.Create(ResultCode.Success, texture);
         }
 
-#endregion // Mod Browsing
+        /// <summary>Attempts to retrieve an image from the temporary cache.</summary>        
+        public static async Task<ResultAnd<byte[]>> TryRetrieveImageBytes(string imageURL)
+        {
+            // - generate file path -
+            string filePath = GenerateImageCacheFilePath(imageURL);
+            if(filePath == null)
+            {
+                return ResultAnd.Create<byte[]>(ResultCode.Internal_InvalidParameter, null);
+            }
+
+            // - read -
+            ResultAnd<byte[]> readResult = await taskRunner.AddTask(TaskPriority.HIGH, 1,
+                async () => await temp.ReadFileAsync(filePath));
+
+            if(!readResult.result.Succeeded())
+            {
+                return ResultAnd.Create<byte[]>(readResult.result, null);
+            }
+
+            // - success -
+            return ResultAnd.Create(ResultCode.Success, readResult.value);
+        }
+
+        #endregion // Mod Browsing
 
 #region Mod Management
 
@@ -159,7 +231,7 @@ namespace ModIO.Implementation
         /// <summary>Generates the path for an installation directory.</summary>
         public static string GenerateModfileDetailsDirectoryPath(string directory)
         {
-            Debug.Log("Not Implemented Yet");
+            Logger.Log(LogLevel.Verbose, "Not Implemented Yet");
             return directory;
         }
 
@@ -269,14 +341,13 @@ namespace ModIO.Implementation
         }
 
         /// <summary>Tests to see if a modfile archive exists and matches the given info.</summary>
-        public static async Task<ResultAnd<string>> GetModfileArchivePathIfValid(
+        public static ResultAnd<string> GetModfileArchivePathIfValid(
             long modId, long modfileId, long expectedSize, string expectedHash)
         {
             string filePath = GenerateModfileArchiveFilePath(modId, modfileId);
 
             ResultAnd<(long fileSize, string fileHash)> sizeAndHashResult =
-                await taskRunner.AddTask(TaskPriority.HIGH, 1,
-                    async () => await temp.GetFileSizeAndHash(filePath));
+                temp.GetFileSizeAndHash(filePath);
 
             if(!sizeAndHashResult.result.Succeeded())
             {
@@ -314,7 +385,7 @@ namespace ModIO.Implementation
         }
 
         /// <summary>Reads the ModCollectionRegistry from disk.</summary>
-        public static async Task<ResultAnd<ModCollectionRegistry>> LoadSystemRegistry()
+        public static async Task<ResultAnd<ModCollectionRegistry>> LoadSystemRegistryAsync()
         {
             string filePath = GenerateSystemRegistryFilePath();
 
@@ -324,7 +395,31 @@ namespace ModIO.Implementation
                 return ResultAnd.Create(ResultBuilder.Success, new ModCollectionRegistry());
             }
 
-            ResultAnd<byte[]> readResult = await persistent.ReadFileAsync(filePath).ConfigureAwait(false);
+            ResultAnd<byte[]> readResult = await persistent.ReadFileAsync(filePath);
+
+            Result result = readResult.result;
+            ModCollectionRegistry registry = null;
+
+            if(result.Succeeded())
+            {
+                IOUtil.TryParseUTF8JSONData(readResult.value, out registry, out result);
+            }
+
+            return ResultAnd.Create(result, registry);
+        }
+
+        /// <summary>Reads the ModCollectionRegistry from disk.</summary>
+        public static ResultAnd<ModCollectionRegistry> LoadSystemRegistry()
+        {
+            string filePath = GenerateSystemRegistryFilePath();
+
+            if(!persistent.FileExists(filePath))
+            {
+                // Registry hasn't been created yet, returning new object
+                return ResultAnd.Create(ResultBuilder.Success, new ModCollectionRegistry());
+            }
+
+            ResultAnd<byte[]> readResult = persistent.ReadFile(filePath);
 
             Result result = readResult.result;
             ModCollectionRegistry registry = null;
@@ -342,7 +437,7 @@ namespace ModIO.Implementation
             await Task.Delay(1);
 
             // TODO @Jackson
-            Debug.LogWarning("Not Implemented Yet");
+            Logger.Log(LogLevel.Verbose, "Not Implemented Yet");
             return ResultBuilder.Success;
         }
 

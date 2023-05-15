@@ -27,6 +27,10 @@ namespace ModIOBrowser
             labelStyle.alignment = TextAnchor.MiddleCenter;
             labelStyle.fontStyle = UnityEngine.FontStyle.Bold;
         
+            myTarget.targetIsOnIndicator = (GameObject)EditorGUILayout.ObjectField("Is On - Enabled Object", myTarget.targetIsOnIndicator, typeof(GameObject), true);
+            
+            myTarget.targetIsDisabledIndicator = (GameObject)EditorGUILayout.ObjectField("Is Disabled - Enabled Object", myTarget.targetIsDisabledIndicator, typeof(GameObject), true);
+
             Target removeTarget = null;
             foreach(var t in myTarget.extraTargets)
             {

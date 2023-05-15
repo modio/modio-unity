@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace ICSharpCode.SharpZipLib.Zip
+﻿namespace ICSharpCode.SharpZipLib.Zip
 {
 	/// <summary>
 	/// General ZipEntry helper extensions

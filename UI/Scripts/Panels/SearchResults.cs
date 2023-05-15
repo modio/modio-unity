@@ -8,7 +8,7 @@ using UnityEngine.UI;
 
 namespace ModIOBrowser.Implementation
 {
-    public class SearchResults : SimpleMonoSingleton<SearchResults>
+    public class SearchResults : SelfInstancingMonoSingleton<SearchResults>
     {
         [Header("Search Results Panel")]
         [SerializeField] public GameObject SearchResultsPanel;
@@ -226,9 +226,9 @@ namespace ModIOBrowser.Implementation
             }
         }
 
-        void Get(Result result, ModPage modPage)
+        void Get(ResultAnd<ModPage> response)
         {
-            if(result.Succeeded())
+            if(response.result.Succeeded())
             {
                 // set the status so we know how to control 
                 if(searchResultsStatus == SearchResultsStatus.GettingFirstResults)
@@ -240,8 +240,8 @@ namespace ModIOBrowser.Implementation
                     searchResultsStatus = SearchResultsStatus.RetrievedAllResults;
                 }
 
-                string numberOfResults = Utility.GenerateHumanReadableNumber(modPage.totalSearchResultsFound);
-                numberOfRemainingResultsToShow = modPage.totalSearchResultsFound - 100;
+                string numberOfResults = Utility.GenerateHumanReadableNumber(response.value.totalSearchResultsFound);
+                numberOfRemainingResultsToShow = response.value.totalSearchResultsFound - 100;
                 moreResultsToShow = numberOfRemainingResultsToShow > 0;
 
                 // show searched tag info
@@ -275,7 +275,7 @@ namespace ModIOBrowser.Implementation
                 }
 
                 // Setup the end of results footer and text
-                if(modPage.totalSearchResultsFound == 0)
+                if(response.value.totalSearchResultsFound == 0)
                 {
                     SearchResultsNoResultsText.SetActive(true);
                     SearchResultsEndOfResults.SetActive(false);
@@ -286,7 +286,7 @@ namespace ModIOBrowser.Implementation
                 }
                 else
                 {
-                    long numberOfDisplayedMods = modPage.totalSearchResultsFound > 200 ? 200 : modPage.totalSearchResultsFound;
+                    long numberOfDisplayedMods = response.value.totalSearchResultsFound > 200 ? 200 : response.value.totalSearchResultsFound;
                     Translation.Get(SearchResultsEndOfResultsHeaderTranslation, "You've gone through {number} mods", SearchResultsEndOfResultsHeader, $"{numberOfDisplayedMods}");
                     Translation.Get(SearchResultsEndOfResultsTextTranslation, "Let's refine your search if you haven't found what you were looking for.", SearchResultsEndOfResultsText);
                     SearchResultsNoResultsText.SetActive(false);
@@ -304,7 +304,7 @@ namespace ModIOBrowser.Implementation
                 }
 
                 // Create list items for the mod profiles we now have
-                Populate(modPage.modProfiles);
+                Populate(response.value.modProfiles);
             }
             else
             {

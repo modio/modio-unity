@@ -31,8 +31,10 @@ namespace Plugins.mod.io.UI.Examples
 
         IEnumerator SetupTranslationDropDown()
         {
-            //Wait until Translation manager is all set up
-            yield return new WaitForEndOfFrame();
+            while(!TranslationManager.SingletonIsInstantiated())
+            {
+                yield return new WaitForSeconds(0.1f);
+            }            
 
             languageSelectionDropdown.gameObject.SetActive(true);
             languageSelectionDropdown.ClearOptions();
@@ -51,10 +53,7 @@ namespace Plugins.mod.io.UI.Examples
 
         public void OpenMods()
         {
-            // Assign the 'GoBackToTitleScene' method as the onClose method so we can maintain a focused
-            // selectable highlight if we're on controller
-            Browser.Instance.gameObject.SetActive(true);
-            Browser.Open(OpenTitle);
+            //Browser is now opened via BrowserSpawnIn.SpawnIn, also connected to the button which activates this
             gameObject.transform.parent.gameObject.SetActive(false);
         }
 

@@ -44,3 +44,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   audioSlider: {fileID: 0}
+  SoundClick:
+    clip: {fileID: 8300000, guid: 1d0b2ded031fc884897ca4e1a9f9d806, type: 3}
+    defaultVolume: 0.3
+  SoundHover:
+    clip: {fileID: 8300000, guid: 3a37ef5a9201957408d515a0fb4cf086, type: 3}
+    defaultVolume: 0.3

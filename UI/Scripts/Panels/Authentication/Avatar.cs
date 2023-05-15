@@ -7,7 +7,7 @@ using UnityEngine.UI;
 namespace ModIOBrowser.Implementation
 {   
     
-    public class Avatar : SimpleMonoSingleton<Avatar>
+    public class Avatar : SelfInstancingMonoSingleton<Avatar>
     {       
         [SerializeField] public Image Avatar_Main;
         [SerializeField] public Image AvatarDownloadBar;

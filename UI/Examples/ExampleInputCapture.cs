@@ -22,19 +22,27 @@ public class ExampleInputCapture : MonoBehaviour
     // refer to the StandaloneInputModule component on the EventSystem gameObject in scene.
     
     // The following inputs are for added ergonomic use.
-    [SerializeField] KeyCode Cancel = KeyCode.Joystick1Button1;
-    [SerializeField] KeyCode Alternate = KeyCode.Joystick1Button2;
-    [SerializeField] KeyCode Options = KeyCode.Joystick1Button3;
-    [SerializeField] KeyCode TabLeft = KeyCode.Joystick1Button4;
-    [SerializeField] KeyCode TabRight = KeyCode.Joystick1Button5;
-    [SerializeField] KeyCode Search = KeyCode.Joystick1Button9;
-    [SerializeField] KeyCode Menu = KeyCode.Joystick1Button7;
+    [SerializeField] KeyCode Cancel = KeyCode.JoystickButton1;
+    [SerializeField] KeyCode Alternate = KeyCode.JoystickButton2;
+    [SerializeField] KeyCode Options = KeyCode.JoystickButton3;
+    [SerializeField] KeyCode TabLeft = KeyCode.JoystickButton4;
+    [SerializeField] KeyCode TabRight = KeyCode.JoystickButton5;
+    [SerializeField] KeyCode Search = KeyCode.JoystickButton9;
+    [SerializeField] KeyCode Menu = KeyCode.JoystickButton7;
 
     // Control mappings for keyboard, controller, and mouse. If the controls for the app
     // are changed under: Project Settings -> Input -> Axes, then they must be also be changed here!
     // Unfortunately as of developing this, there is no simple way to fetch these values by code.
-    public List<string> controllerAndKeyboardInput = new List<string>();
-    public List<string> mouseInput = new List<string>();
+    public List<string> controllerAndKeyboardInput = new List<string>
+    {
+        "Horizontal",
+        "Vertical"
+    };
+    public List<string> mouseInput = new List<string>
+    {
+        "Mouse X",
+        "Mouse Y"
+    };
     public string verticalControllerInput = "Vertical";
 
     void Update()

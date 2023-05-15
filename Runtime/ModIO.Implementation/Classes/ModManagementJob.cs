@@ -1,4 +1,4 @@
-﻿using UnityEngine.Networking;
+﻿using ModIO.Implementation.API;
 
 namespace ModIO.Implementation
 {
@@ -12,7 +12,7 @@ namespace ModIO.Implementation
         public ModCollectionEntry mod;
         public ModManagementOperationType type;
 
-        public UnityWebRequest downloadWebRequest;
+        public RequestHandle<Result> downloadWebRequest;
         public IModIOZipOperation zipOperation;
     }
 }

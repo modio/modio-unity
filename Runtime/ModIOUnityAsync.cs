@@ -205,6 +205,21 @@ namespace ModIO
         }
 
         /// <summary>
+        /// Attempts to authenticate a user via the epic API.
+        /// </summary>
+        /// <param name="epicToken">the user's epic token</param>
+        /// <param name="emailAddress">the user's email address</param>
+        /// <seealso cref="ModIOUnity.AuthenticateUserViaEpic"/>
+        public static async Task<Result> AuthenticateUserViaEpic(string epicToken,
+                                                                  [CanBeNull] string emailAddress,
+                                                                  [CanBeNull] TermsHash? hash)
+        {
+            return await ModIOUnityImplementation.AuthenticateUser(
+                epicToken, AuthenticationServiceProvider.Steam, emailAddress, hash, null, null,
+                null, 0);
+        }
+
+        /// <summary>
         /// Attempts to authenticate a user via the steam API.
         /// </summary>
         /// <remarks>
@@ -237,7 +252,7 @@ namespace ModIO
         /// // Once we have the Terms of Use and hash we can attempt to authenticate
         /// async void Authenticate_Example()
         /// {
-        ///     Result result = await ModIOUnityAsync.AuthenticateUserViaPlayStation(authCode, "johndoe@gmail.com", modIOTermsOfUse.hash);
+        ///     Result result = await ModIOUnityAsync.AuthenticateUserViaPlayStation(authCode, "johndoe@gmail.com", modIOTermsOfUse.hash, PlayStationEnvironment.np);
         ///
         ///     if (result.Succeeded())
         ///     {
@@ -251,11 +266,12 @@ namespace ModIO
         /// </code>
         public static async Task<Result> AuthenticateUserViaPlayStation(string authCode,
                                                                   [CanBeNull] string emailAddress,
-                                                                  [CanBeNull] TermsHash? hash)
+                                                                  [CanBeNull] TermsHash? hash,
+                                                                  PlayStationEnvironment environment)
         {
             return await ModIOUnityImplementation.AuthenticateUser(
                 authCode, AuthenticationServiceProvider.PlayStation, emailAddress, hash, null, null,
-                null, 0);
+                null, environment);
         }
 
         /// <summary>
@@ -790,24 +806,19 @@ namespace ModIO
         /// Get all mod rating's submitted by the authenticated user. Successful request will return an array of Rating Objects.
         /// </summary>
         /// <param name="modId">the ModId of the ModProfile to get</param>
-        /// <param name="callback">callback with the Result and an array of RatingObject</param>
         /// <seealso cref="ModId"/>
-        /// <seealso cref="RatingObject"/>
+        /// <seealso cref="Rating"/>
         /// <seealso cref="ResultAnd"/>
         /// <code>
-        /// void Example()
+        /// async void Example()
         /// {
-        ///    ModId modId = new ModId(1234);
-        ///    ModIOUnity.GetCurrentUserRatings(modId, GetCurrentUserRatingsCallback);
-        /// }
+        ///    ResultAnd&lt;Rating[]&gt; response = await ModIOUnityAsync.GetCurrentUserRatings();
         ///
-        /// void GetCurrentUserRatingsCallback(ResultAnd&lt;RatingObject[]&gt; response)
-        /// {
         ///    if (response.result.Succeeded())
         ///    {
         ///        foreach(var ratingObject in response.value)
         ///        {
-        ///            Debug.Log($"retrieved rating {ratingObject.rating} for {ratingObject.mod_id}");
+        ///            Debug.Log($"retrieved rating {ratingObject.rating} for {ratingObject.modId}");
         ///        }
         ///    }
         ///    else
@@ -816,9 +827,40 @@ namespace ModIO
         ///    }
         /// }
         /// </code>
-        public static void GetCurrentUserRatings(Action<ResultAnd<Rating[]>> callback)
+        public static async Task<ResultAnd<Rating[]>> GetCurrentUserRatings()
         {
-            ModIOUnityImplementation.GetCurrentUserRatings(callback);
+            return await ModIOUnityImplementation.GetCurrentUserRatings();
+        }
+
+
+        /// <summary>
+        /// Gets the rating that the current user has given for a specified mod. You must have an
+        /// authenticated session for this to be successful.
+        /// </summary>
+        /// <remarks>Note that the rating can be 'None'</remarks>
+        /// <param name="modId">the id of the mod to check for a rating</param>
+        /// <seealso cref="ModRating"/>
+        /// <seealso cref="ModId"/>
+        /// <seealso cref="ResultAnd"/>
+        /// <code>
+        /// async void Example()
+        /// {
+        ///    ModId modId = new ModId(1234);
+        ///    ResultAnd&lt;ModRating&gt; response = await ModIOUnityAsync.GetCurrentUserRatingFor(modId);
+        ///
+        ///    if (response.result.Succeeded())
+        ///    {
+        ///        Debug.Log($"retrieved rating: {response.value}");
+        ///    }
+        ///    else
+        ///    {
+        ///        Debug.Log("failed to get rating");
+        ///    }
+        /// }
+        /// </code>
+        public static async Task<ResultAnd<ModRating>> GetCurrentUserRatingFor(ModId modId)
+        {
+            return await ModIOUnityImplementation.GetCurrentUserRatingFor(modId);
         }
 
 #endregion // Mod Browsing
@@ -1261,9 +1303,9 @@ namespace ModIO
         ///     }
         /// }
         /// </code>
-        public static void AddTags(ModId modId, string[] tags)
-        {
-            ModIOUnityImplementation.AddTags(modId, tags);
+        public static async Task<Result> AddTags(ModId modId, string[] tags)
+        {            
+            return await ModIOUnityImplementation.AddTags(modId, tags);
         }
 
         /// <summary>
@@ -1294,9 +1336,9 @@ namespace ModIO
         ///     }
         /// }
         /// </code>
-        public static void DeleteTags(ModId modId, string[] tags)
+        public static async Task<Result> DeleteTags(ModId modId, string[] tags)
         {
-            ModIOUnityImplementation.DeleteTags(modId, tags);
+            return await ModIOUnityImplementation.DeleteTags(modId, tags);
         }
 #endregion // Mod Uploading
 
@@ -1333,6 +1375,11 @@ namespace ModIO
         public static async Task<ResultAnd<Texture2D>> DownloadTexture(DownloadReference downloadReference)
         {
             return await ModIOUnityImplementation.DownloadTexture(downloadReference);
+        }
+        
+        public static async Task<ResultAnd<byte[]>> DownloadImage(DownloadReference downloadReference)
+        {
+            return await ModIOUnityImplementation.GetImage(downloadReference);
         }
 
 #endregion // Media Download

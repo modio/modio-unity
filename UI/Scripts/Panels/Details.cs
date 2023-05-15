@@ -10,9 +10,9 @@ using ModIO.Util;
 
 namespace ModIOBrowser.Implementation
 {
-    public class Details : SimpleMonoSingleton<Details>
+    public class Details : SelfInstancingMonoSingleton<Details>
     {
-        
+
         [Header("Mod Details Panel")]
         [SerializeField] public GameObject ModDetailsPanel;
         [SerializeField]
@@ -31,6 +31,10 @@ namespace ModIOBrowser.Implementation
         [SerializeField] TMP_Text ModDetailsCreatedBy;
         [SerializeField] TMP_Text ModDetailsUpVotes;
         [SerializeField] TMP_Text ModDetailsDownVotes;
+        [SerializeField] GameObject ModDetailsUpVoteActiveOverlay;
+        [SerializeField] GameObject ModDetailsDownVoteActiveOverlay;
+        [SerializeField] TMP_Text ModDetailsUpVotesActiveOverlayText;
+        [SerializeField] TMP_Text ModDetailsDownVotesActiveOverlayText;
         [SerializeField] GameObject ModDetailsGalleryNavBar;
         [SerializeField] Transform ModDetailsGalleryNavButtonParent;
         [SerializeField] GameObject ModDetailsGalleryNavButtonPrefab;
@@ -51,9 +55,10 @@ namespace ModIOBrowser.Implementation
         IEnumerator galleryTransition;
         ModProfile currentModProfileBeingViewed;
         IEnumerator downloadProgressUpdater;
+        ModRating currentAssumedRating = ModRating.None;
 
         internal Translation ModDetailsSubscribeButtonTextTranslation = null;
-        
+
         //cached nav button list items
         List<ListItem> _listItems = new List<ListItem>();
 
@@ -71,7 +76,7 @@ namespace ModIOBrowser.Implementation
         float detailsProgressTimePassed_onLastTextUpdate = 0f;
 
         public static bool IsOn() => Instance != null && Instance.ModDetailsPanel != null && Instance.ModDetailsPanel.activeSelf;
-        
+
         internal void Open(ModProfile profile, Action actionToInvokeWhenClosed)
         {
             ModDetailsProgressTab.Setup(profile);
@@ -109,6 +114,7 @@ namespace ModIOBrowser.Implementation
         {
             currentModProfileBeingViewed = profile;
             UpdateSubscribeButtonText();
+            UpdateRatingButtons();
             ModDetailsGalleryLoadingAnimation.SetActive(true);
             ModDetailsGalleryImage[0].color = Color.clear;
             ModDetailsGalleryImage[1].color = Color.clear;
@@ -119,8 +125,6 @@ namespace ModIOBrowser.Implementation
             ModDetailsLastUpdated.text = TranslationManager.Instance.SelectedLanguage.DateShort(profile.dateUpdated);
             ModDetailsReleaseDate.text = TranslationManager.Instance.SelectedLanguage.DateShort(profile.dateLive);
             ModDetailsCreatedBy.text = profile.creator.username;
-            ModDetailsUpVotes.text = Utility.GenerateHumanReadableNumber(profile.stats.ratingsPositive);
-            ModDetailsDownVotes.text = Utility.GenerateHumanReadableNumber(profile.stats.ratingsNegative);
             ModDetailsSubscribers.text = Utility.GenerateHumanReadableNumber(profile.stats.subscriberTotal);
 
             int position = 0;
@@ -155,9 +159,13 @@ namespace ModIOBrowser.Implementation
                 Action<ResultAnd<Texture2D>> imageDownloaded = r =>
                 {
                     if(r.result.Succeeded())
-                    {                        
+                    {
                         QueueRunner.Instance.AddSpriteCreation(r.value, sprite =>
                         {
+                            if(ModDetailsGalleryImages.Length <= scopePosition)
+                            {
+                                return;
+                            }
                             ModDetailsGalleryImages[scopePosition] = sprite;
                             if(scopePosition == galleryPosition)
                             {
@@ -240,7 +248,13 @@ namespace ModIOBrowser.Implementation
                 AuthenticationPanels.Instance.Open();
                 return;
             }
-            Mods.RateEvent(currentModProfileBeingViewed.id, ModRating.Positive);
+
+            // If the rating is already positive we want to undo it
+            ModRating ratingToGive = currentAssumedRating == ModRating.Positive
+                ? ModRating.None : ModRating.Positive;
+
+            UpdateRatingButtons(ratingToGive);
+            Mods.RateEvent(currentModProfileBeingViewed.id, ratingToGive);
         }
 
         public void RateNegativeButtonPress()
@@ -250,7 +264,13 @@ namespace ModIOBrowser.Implementation
                 AuthenticationPanels.Instance.Open();
                 return;
             }
-            Mods.RateEvent(currentModProfileBeingViewed.id, ModRating.Negative);
+
+            // If the rating is already negative we want to undo it
+            ModRating ratingToGive = currentAssumedRating == ModRating.Negative
+                ? ModRating.None : ModRating.Negative;
+
+            UpdateRatingButtons(ratingToGive);
+            Mods.RateEvent(currentModProfileBeingViewed.id, ratingToGive);
         }
 
         public void ReportButtonPress()
@@ -264,6 +284,52 @@ namespace ModIOBrowser.Implementation
                 //Am I missing something?
             }
             Reporting.Instance.Open(currentModProfileBeingViewed, selectionOnClose);
+        }
+
+        /// <summary>
+        /// We use this to update the colors on the ratings button based on the user's current ratings
+        /// </summary>
+        public void UpdateRatingButtons()
+        {
+            ModIOUnity.GetCurrentUserRatingFor(currentModProfileBeingViewed.id, UpdateRatingButtons);
+        }
+
+        public void UpdateRatingButtons(ResultAnd<ModRating> response)
+        {
+            if (response.result.Succeeded())
+            {
+                UpdateRatingButtons(response.value);
+            }
+            else
+            {
+                UpdateRatingButtons(ModRating.None);
+            }
+        }
+
+        public void UpdateRatingButtons(ModRating rating)
+        {
+            currentAssumedRating = rating;
+
+            ModDetailsUpVotes.text = Utility.GenerateHumanReadableNumber(currentModProfileBeingViewed.stats.ratingsPositive);
+            ModDetailsDownVotes.text = Utility.GenerateHumanReadableNumber(currentModProfileBeingViewed.stats.ratingsNegative);
+            ModDetailsUpVotesActiveOverlayText.text = Utility.GenerateHumanReadableNumber(currentModProfileBeingViewed.stats.ratingsPositive);
+            ModDetailsDownVotesActiveOverlayText.text = Utility.GenerateHumanReadableNumber(currentModProfileBeingViewed.stats.ratingsNegative);
+
+            switch(rating)
+            {
+                case ModRating.Positive:
+                    ModDetailsDownVoteActiveOverlay.SetActive(false);
+                    ModDetailsUpVoteActiveOverlay.SetActive(true);
+                    break;
+                case ModRating.Negative:
+                    ModDetailsDownVoteActiveOverlay.SetActive(true);
+                    ModDetailsUpVoteActiveOverlay.SetActive(false);
+                    break;
+                case ModRating.None:
+                    ModDetailsDownVoteActiveOverlay.SetActive(false);
+                    ModDetailsUpVoteActiveOverlay.SetActive(false);
+                    break;
+            }
         }
 
         public void UpdateSubscribeButtonText()
@@ -352,7 +418,7 @@ namespace ModIOBrowser.Implementation
             detailsProgressTimePassed += Time.deltaTime;
         }
 
-        internal void GalleryImageTransition(bool showNext)
+        public void GalleryImageTransition(bool showNext)
         {
             StopCoroutine(this._autoRotateImagesCoroutine);
             if(showNext)
@@ -365,14 +431,14 @@ namespace ModIOBrowser.Implementation
             }
         }
 
-        public void ShowNextGalleryImage()
+        internal void ShowNextGalleryImage()
         {
             int index = GetNextIndex(galleryPosition, ModDetailsGalleryImages.Length);
             TransitionToDifferentGalleryImage(index);
             ActivateButton(index);
         }
 
-        public void ShowPreviousGalleryImage()
+        internal void ShowPreviousGalleryImage()
         {
             int index = GetPreviousIndex(galleryPosition, ModDetailsGalleryImages.Length);
             TransitionToDifferentGalleryImage(index);

@@ -1,14 +1,12 @@
 ﻿using System.Collections;
-using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using ModIO;
 using ModIO.Util;
 
 namespace ModIOBrowser.Implementation
 {
-    public class NavBar : SimpleMonoSingleton<NavBar>
+    public class NavBar : SelfInstancingMonoSingleton<NavBar>
     {
         [Header("Nav Bar")]
         [SerializeField] TMP_Text BrowserPanelNavButton;

@@ -22,6 +22,11 @@ namespace ModIOBrowser
 
         private bool Apply()
         {
+            if(colorScheme == null && !Browser.SingletonIsInstantiated())
+            {
+                return false;
+            }
+
             var scheme = colorScheme == null ? Browser.Instance.colorScheme : colorScheme;
             if(scheme != null)
             {
@@ -46,8 +51,8 @@ namespace ModIOBrowser
                     yield break;
                 }
 
-                Debug.LogError($"Unable to set color scheme to {transform.FullPath()} - is this intentional? Attempting again...");
-                yield return new WaitForFixedUpdate();
+                //Debug.LogError($"Unable to set color scheme to {transform.FullPath()} - is this intentional? Attempting again...");
+                yield return new WaitForSeconds(0.1f); //less cpu intensive than frame
             }
         }
     }

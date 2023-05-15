@@ -9,7 +9,7 @@ using UnityEngine.EventSystems;
 namespace ModIOBrowser.Implementation
 {
 
-    public class KeyInput5DigitsUi : SimpleMonoSingleton<KeyInput5DigitsUi>
+    public class KeyInput5DigitsUi : SelfInstancingMonoSingleton<KeyInput5DigitsUi>
     {
         public KeyInput5Digits keyInput5Digits;
         public List<TMP_Text> texts = new List<TMP_Text>();

@@ -1,6 +1,4 @@
-﻿using UnityEngine;
-
-namespace ModIO
+﻿namespace ModIO
 {
     public enum ReportType
     {

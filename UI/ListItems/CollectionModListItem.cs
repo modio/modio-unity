@@ -15,6 +15,8 @@ namespace ModIOBrowser.Implementation
     /// </summary>
     internal class CollectionModListItem : ListItem, ISelectHandler, IDeselectHandler
     {
+        CollectionProfile profile;
+
         [SerializeField] Button listItemButton;
         [SerializeField] Image image;
         [SerializeField] GameObject imageBackground;
@@ -33,18 +35,19 @@ namespace ModIOBrowser.Implementation
         [SerializeField] GameObject errorInstalling;
         [SerializeField] TMP_Text errorInstallingText;
         [SerializeField] Transform contextMenuPosition;
+        [SerializeField] MultiTargetToggle enabledOrDisabledToggle;
+        ViewportRestraint togglesViewportRestraint;
+        [SerializeField] GameObject disabledBlackOverlay;
         public Action imageLoaded;
         RectTransform rectTransform;
 
 #pragma warning disable 0649 //they are allocated
-        private Translation subscriptionStatusTranslation = null;
-        private Translation installStatusTranslation = null;
-        private Translation progressBarTextTranslation = null;
-        private Translation otherSubscribersTextTranslation = null;
-        private Translation errorInstallingTextTranslation = null;
+        Translation subscriptionStatusTranslation = null;
+        Translation installStatusTranslation = null;
+        Translation progressBarTextTranslation = null;
+        Translation otherSubscribersTextTranslation = null;
+        Translation errorInstallingTextTranslation = null;
 #pragma warning restore 0649
-
-        internal ModProfile profile;
 
         internal static Dictionary<ModId, CollectionModListItem> listItems = new Dictionary<ModId, CollectionModListItem>();
 
@@ -82,7 +85,7 @@ namespace ModIOBrowser.Implementation
             title.text = string.Empty;
             //downloads.text = string.Empty;
         }
-        
+
         public override void Select()
         {
             InputNavigation.Instance.Select(listItemButton);
@@ -92,78 +95,200 @@ namespace ModIOBrowser.Implementation
         {
             base.SetViewportRestraint(content, viewport);
 
+            // We add a viewport restraint to the toggle as well
+            if(togglesViewportRestraint == null)
+            {
+                togglesViewportRestraint = enabledOrDisabledToggle.gameObject.AddComponent<ViewportRestraint>();
+            }
+            togglesViewportRestraint.DefaultViewportContainer = content;
+            togglesViewportRestraint.Viewport = viewport;
+
+            togglesViewportRestraint.PercentPaddingVertical = 0.35f;
             viewportRestraint.PercentPaddingVertical = 0.35f;
         }
 
-        
-
-        public override void Setup(InstalledMod profile)
-        {
-            base.Setup();
-            this.profile = profile.modProfile;
-
-            Translation.Get(subscriptionStatusTranslation, "Installed", subscriptionStatus);
-            subscriptionStatus.color = scheme.Inactive1;
-
-            Translation.Get(installStatusTranslation, "Installed", installStatus);
-            Translation.Get(otherSubscribersTextTranslation, "{subcount} other users", otherSubscribersText, $"{profile.subscribedUsers.Count}");
-            otherSubscribersText.transform.parent.gameObject.SetActive(true);
-            unsubscribeButton.gameObject.SetActive(false);
-            progressBar.SetActive(false);
-            Hydrate();
-        }
-
-        public override void Setup(ModProfile profile, bool subscriptionStatus, string installationStatus)
+        public override void Setup(CollectionProfile profile)
         {
             base.Setup();
             this.profile = profile;
 
-            if(subscriptionStatus)
+            // Enabled or Disabled Toggle
+            SetupEnableDisableToggle();
+
+            // Subscribed or Number of subscribers text
+            SetupSubscribedStatusText();
+
+            // Installed / Downloading text
+            SetupInstallationStatusText();
+
+            // Set explicit navigation between toggle and the list item button itself
+            SetupNavigationBetweenToggleAndListItem();
+
+            // Deactivate button if not subscribed
+            unsubscribeButton.gameObject.SetActive(profile.subscribed);
+
+            // Always set the progress bar to off by default
+            progressBar.SetActive(false);
+
+            Hydrate();
+        }
+
+#endregion
+        void SetupSubscribedStatusText()
+        {
+            if(profile.subscribed)
             {
-                Translation.Get(subscriptionStatusTranslation, "Subscribed", this.subscriptionStatus);
+                Translation.Get(subscriptionStatusTranslation, "Subscribed", subscriptionStatus);
+                subscriptionStatus.color = scheme.PositiveAccent;
             }
             else
             {
-                Translation.Get(subscriptionStatusTranslation, "Unsubscribed", this.subscriptionStatus);
+                Translation.Get(subscriptionStatusTranslation, "Installed", subscriptionStatus);
+                subscriptionStatus.color = scheme.Inactive1;
+
+                Translation.Get(otherSubscribersTextTranslation, "{subcount} other users", otherSubscribersText, $"{profile.subscribers}");
+            }
+            otherSubscribersText.transform.parent.gameObject.SetActive(!profile.subscribed);
+        }
+
+        void SetupEnableDisableToggle()
+        {
+            if (profile.subscribed)
+            {
+                enabledOrDisabledToggle.onValueChanged.RemoveAllListeners();
+                enabledOrDisabledToggle.isOn = profile.enabled;
+                enabledOrDisabledToggle.interactable = true;
+                enabledOrDisabledToggle.onValueChanged.AddListener(ToggleModEnabled);
+            }
+            else
+            {
+                enabledOrDisabledToggle.interactable = false;
+            }
+            enabledOrDisabledToggle.DoStateTransition();
+        }
+
+        void SetupNavigationBetweenToggleAndListItem()
+        {
+            Navigation navigation = listItemButton.navigation;
+            navigation.selectOnLeft = enabledOrDisabledToggle.interactable ? enabledOrDisabledToggle : null;
+            listItemButton.navigation = navigation;
+
+            navigation = enabledOrDisabledToggle.navigation;
+            navigation.selectOnRight = listItemButton;
+            enabledOrDisabledToggle.navigation = navigation;
+        }
+
+        void ToggleModEnabled(bool enabled)
+        {
+            if(enabled)
+            {
+                EnableMod();
+            }
+            else
+            {
+                DisabledMod();
             }
 
-            this.subscriptionStatus.color = subscriptionStatus ? scheme.PositiveAccent : scheme.Inactive1;
-            if(installationStatus == "Problem occurred")
+            SetDisabledStateOverlay();
+            enabledOrDisabledToggle.DoStateTransition();
+        }
+
+        /// <summary>
+        /// This should only be used for the very top item in the list to move onto the
+        /// 'Check for updates' button, for example
+        /// </summary>
+        /// <param name="above">the button above</param>
+        public void SetNavigationAbove(Selectable above)
+        {
+            Navigation navigation = listItemButton.navigation;
+            navigation.selectOnUp = above;
+            listItemButton.navigation = navigation;
+
+            navigation = enabledOrDisabledToggle.navigation;
+            navigation.selectOnUp = above;
+            enabledOrDisabledToggle.navigation = navigation;
+        }
+
+        public void ConnectNavigationToItemBelow(CollectionModListItem below)
+        {
+            // Set navigation down to the item beneath this one
+            Navigation navigation = listItemButton.navigation;
+            navigation.selectOnDown = below.listItemButton;
+            listItemButton.navigation = navigation;
+
+            navigation = enabledOrDisabledToggle.navigation;
+            navigation.selectOnDown = below.enabledOrDisabledToggle.interactable
+                ? (Selectable)below.enabledOrDisabledToggle : below.listItemButton;
+            enabledOrDisabledToggle.navigation = navigation;
+
+            // Set navigation up for the item beneath this one
+            navigation = below.listItemButton.navigation;
+            navigation.selectOnUp = listItemButton;
+            below.listItemButton.navigation = navigation;
+
+            navigation = below.enabledOrDisabledToggle.navigation;
+            navigation.selectOnUp = enabledOrDisabledToggle.interactable
+                ? (Selectable)enabledOrDisabledToggle : listItemButton;
+            below.enabledOrDisabledToggle.navigation = navigation;
+        }
+
+        void EnableMod()
+        {
+            if(ModIOUnity.EnableMod(profile.modProfile.id))
+            {
+                profile.enabled = true;
+            }
+        }
+
+        void DisabledMod()
+        {
+            if(ModIOUnity.DisableMod(profile.modProfile.id))
+            {
+                profile.enabled = false;
+            }
+        }
+
+        void SetupInstallationStatusText()
+        {
+            // If not subscribed
+            if(!profile.subscribed)
+            {
+                Translation.Get(installStatusTranslation, "Installed", installStatus);
+                return;
+            }
+
+            // If subscribed
+            if(profile.installationStatus == "Problem occurred")
             {
                 installStatus.gameObject.SetActive(false);
                 errorInstalling.SetActive(true);
 
-                if(Collection.Instance.notEnoughSpaceForTheseMods.Contains(profile.id))
+                if(Collection.Instance.notEnoughSpaceForTheseMods.Contains(profile.modProfile.id))
                 {
                     Translation.Get(errorInstallingTextTranslation, "Full storage", errorInstallingText);
                 }
                 else
                 {
                     Translation.Get(errorInstallingTextTranslation, "Error", errorInstallingText);
-                }                
-            } 
+                }
+            }
             else
             {
                 installStatus.gameObject.SetActive(true);
                 errorInstalling.SetActive(false);
-                Translation.Get(installStatusTranslation, installationStatus, installStatus);
+                Translation.Get(installStatusTranslation, profile.installationStatus, installStatus);
             }
-            unsubscribeButton.gameObject.SetActive(true);
-            progressBar.SetActive(false);
-            otherSubscribersText.transform.parent.gameObject.SetActive(false);
-            Hydrate();
         }
-#endregion
 
         void AddToStaticDictionaryCache()
         {
-            if(listItems.ContainsKey(profile.id))
+            if(listItems.ContainsKey(profile.modProfile.id))
             {
-                listItems[profile.id] = this;
+                listItems[profile.modProfile.id] = this;
             }
             else
             {
-                listItems.Add(profile.id, this);
+                listItems.Add(profile.modProfile.id, this);
             }
         }
 
@@ -172,11 +297,12 @@ namespace ModIOBrowser.Implementation
             AddToStaticDictionaryCache();
             failedToLoadLogo.SetActive(false);
             imageBackground.gameObject.SetActive(false);
-            title.text = profile.name;
-            fileSize.text = Utility.GenerateHumanReadableStringForBytes(profile.archiveFileSize);
-            ModIOUnity.DownloadTexture(profile.logoImage_320x180, SetIcon);
+            title.text = profile.modProfile.name;
+            fileSize.text = Utility.GenerateHumanReadableStringForBytes(profile.modProfile.archiveFileSize);
+            ModIOUnity.DownloadTexture(profile.modProfile.logoImage_320x180, SetIcon);
             gameObject.SetActive(true);
             transform.SetAsLastSibling();
+            SetDisabledStateOverlay();
             RedrawRectTransform();
         }
 
@@ -186,14 +312,14 @@ namespace ModIOBrowser.Implementation
             {
                 return;
             }
-            Details.Instance.Open(profile, Collection.Instance.Open);
+            Details.Instance.Open(profile.modProfile, Collection.Instance.Open);
         }
 
         void RemoveFromStaticDictionaryCache()
         {
-            if(listItems.ContainsKey(profile.id))
+            if(listItems.ContainsKey(profile.modProfile.id))
             {
-                listItems.Remove(profile.id);
+                listItems.Remove(profile.modProfile.id);
             }
         }
 
@@ -214,11 +340,17 @@ namespace ModIOBrowser.Implementation
             imageLoaded?.Invoke();
         }
 
+        /// <summary>
+        /// Turns the black overlay on or off depending on the state
+        /// </summary>
+        void SetDisabledStateOverlay() => disabledBlackOverlay.SetActive(profile.subscribed && !profile.enabled);
+
+
         public void ShowMoreOptions()
         {
             List<ContextMenuOption> options = new List<ContextMenuOption>();
 
-            //TODO If not subscribed add force uninstall and subscribe options 
+            //TODO If not subscribed add force uninstall and subscribe options
 
             // Add Vote up option to context menu
             options.Add(new ContextMenuOption
@@ -226,7 +358,7 @@ namespace ModIOBrowser.Implementation
                 nameTranslationReference = "Vote up",
                 action = delegate
                 {
-                    ModIOUnity.RateMod(profile.id, ModRating.Positive, delegate { });
+                    ModIOUnity.RateMod(profile.modProfile.id, ModRating.Positive, delegate { });
                     ModioContextMenu.Instance.Close();
                 }
             });
@@ -237,7 +369,7 @@ namespace ModIOBrowser.Implementation
                 nameTranslationReference = "Vote down",
                 action = delegate
                 {
-                    ModIOUnity.RateMod(profile.id, ModRating.Negative, delegate { });
+                    ModIOUnity.RateMod(profile.modProfile.id, ModRating.Negative, delegate { });
                     ModioContextMenu.Instance.Close();
                 }
             });
@@ -249,18 +381,56 @@ namespace ModIOBrowser.Implementation
                 action = delegate
                 {
                     ModioContextMenu.Instance.Close();
-                    Reporting.Instance.Open(profile, selectable);
+                    Reporting.Instance.Open(profile.modProfile, selectable);
                 }
             });
+
+            if (!profile.subscribed)
+            {
+                // Add Uninstall option to context menu
+                options.Add(new ContextMenuOption
+                {
+                    nameTranslationReference = "Uninstall",
+                    action = delegate
+                    {
+                        ModioContextMenu.Instance.Close();
+                        ForceUninstall();
+                    }
+                });
+            }
 
             // Open context menu
             ModioContextMenu.Instance.Open(contextMenuPosition, options, listItemButton);
         }
 
+        void ForceUninstall()
+        {
+            Result result = ModIOUnity.ForceUninstallMod(profile.modProfile.id);
+            if(result.Succeeded())
+            {
+                Notifications.Instance.AddNotificationToQueue(new Notifications.QueuedNotice
+                {
+                    title = "Uninstalled",
+                    description = $"Uninstalled the mod '{profile.modProfile.name}'",
+                    positiveAccent = true
+                });
+                gameObject.SetActive(false);
+            }
+            else
+            {
+                Notifications.Instance.AddNotificationToQueue(new Notifications.QueuedNotice
+                {
+                    title = "Failed to uninstall",
+                    description = $"Failed to uninstall the mod '{profile.modProfile.name}'",
+                    positiveAccent = false
+                });
+            }
+        }
+
         public void UnsubscribeButton()
         {
             // TODO add 'subscribe' alternate for installed mods
-            Collection.Instance.OpenUninstallConfirmation(profile);
+            Collection.Instance.OpenUninstallConfirmation(profile.modProfile);
         }
 
         internal void UpdateStatus(ModManagementEventType updatedStatus)
@@ -306,7 +476,7 @@ namespace ModIOBrowser.Implementation
                     Translation.Get(installStatusTranslation, "Updating", installStatus);
                     break;
                 case ModManagementEventType.Updated:
-                    Translation.Get(installStatusTranslation, "Updated", installStatus); 
+                    Translation.Get(installStatusTranslation, "Updated", installStatus);
                     break;
                 case ModManagementEventType.UpdateFailed:
                     installStatus.gameObject.SetActive(false);
@@ -324,7 +494,7 @@ namespace ModIOBrowser.Implementation
             }
 
             progressBarFill.fillAmount = handle.Progress;
-            
+
             switch(handle.OperationType)
             {
                 case ModManagementOperationType.None_AlreadyInstalled:

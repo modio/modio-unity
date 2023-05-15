@@ -1,6 +1,4 @@
-﻿
-using System;
-using ResultCode = ModIO.Implementation.ResultCode;
+﻿using ResultCode = ModIO.Implementation.ResultCode;
 
 namespace ModIO
 {
@@ -85,5 +83,6 @@ namespace ModIO
             return this.code == ResultCode.IO_InsufficientStorage;
         }
 
+        
     }
 }

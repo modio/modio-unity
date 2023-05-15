@@ -1,7 +1,9 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using TMPro;
 using System.Collections.Generic;
 using ModIO.Util;
+using Plugins.mod.io.UI.Translations;
 
 namespace ModIOBrowser.Implementation
 {
@@ -15,7 +17,7 @@ namespace ModIOBrowser.Implementation
     /// If the TextMeshProUGUI contains a text which is not translated, the Translatable class will
     /// attempt to add it to the dictionary. However, sometimes Unity can muddy that file, and that operation
     /// fails. However, if you keep the file open in Sublime or similar text editing apps, tabbing onto
-    /// it is usually enough to make sure Unity doesnt restore the file.    
+    /// it is usually enough to make sure Unity doesnt restore the file.
     /// </summary>
     [RequireComponent(typeof(TextMeshProUGUI))]
     class Translatable : MonoBehaviour, ITranslatable
@@ -25,7 +27,9 @@ namespace ModIOBrowser.Implementation
 
         public string reference;
 
-        public TextMeshProUGUI text; 
+        public TextMeshProUGUI text;
+
+        public TranslatedLanguageFontPairings translatedLanguageFontPairingOverrides;
 
         public string Identifier => gameObject.name;
 
@@ -36,11 +40,11 @@ namespace ModIOBrowser.Implementation
         /// If the TextMeshProUGUI contains a text which is not translated, the Translatable class will
         /// attempt to add it to the dictionary. However, sometimes Unity can muddy that file, and that operation
         /// fails. However, if you keep the file open in Sublime or similar text editing apps, tabbing onto
-        /// it is usually enough to make sure Unity doesnt restore the file.    
+        /// it is usually enough to make sure Unity doesnt restore the file.
         /// </summary>
         //TODO: Can probably fix unitys shaky behaviour regarding text file manipulation, see above comments.
         private void OnValidate()
-        {            
+        {
             if(text == null)
             {
                 text = GetComponent<TextMeshProUGUI>();
@@ -49,7 +53,7 @@ namespace ModIOBrowser.Implementation
                     Debug.Log("Unable to find text field, unable to apply translation.");
                     return;
                 }
-                
+
                 Dictionary<string, string> lang = TranslationManager.BuildLanguageDictionary(EditorLanguage);
                 string potentialKey = text.text;
                 if(lang.ContainsKey(potentialKey))
@@ -62,7 +66,7 @@ namespace ModIOBrowser.Implementation
                     {
                         reference = TranslationManager.AppendTranslation(EditorLanguage, text.text);
                     }
-                }                
+                }
             }
         }
 #endif
@@ -83,10 +87,34 @@ namespace ModIOBrowser.Implementation
         private void Awake()
         {
             SimpleMessageHub.Instance.Subscribe<MessageUpdateTranslations>(
-                x => TranslationManager.Instance.Translate(this));
+                (s)=>ApplyTranslation());
         }
 
-        public void Start() => TranslationManager.Instance.Translate(this);
+        public void Start() => ApplyTranslation();
+
+        private void ApplyTranslation()
+        {
+            if(TranslationManager.SingletonIsInstantiated())
+            {
+                TranslationManager.Instance.Translate(this);
+                if(translatedLanguageFontPairingOverrides == null)
+                    return;
+
+                var selectedLanguage = TranslationManager.Instance.SelectedLanguage;
+                //Look for an override font for the selected language
+                if(translatedLanguageFontPairingOverrides.GetFontAsset(selectedLanguage)
+                   is TMP_FontAsset fontAssetOverride)
+                {
+                    this.text.font = fontAssetOverride;
+                }
+                //Look for the default font for the selected language
+                else if(TranslationManager.Instance.defaultTranslatedLanguageFontPairings.GetFontAsset(selectedLanguage)
+                        is TMP_FontAsset fontAsset)
+                {
+                    this.text.font = fontAsset;
+                }
+            }            
+        }
 
     }
 }

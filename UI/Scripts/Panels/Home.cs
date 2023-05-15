@@ -9,7 +9,7 @@ using ModIO.Util;
 
 namespace ModIOBrowser.Implementation
 {
-    public class Home : SimpleMonoSingleton<Home>
+    public class Home : SelfInstancingMonoSingleton<Home>
     {
         [Header("Browse Panel")]
         public GameObject BrowserPanel;
@@ -23,7 +23,7 @@ namespace ModIOBrowser.Implementation
         IEnumerator browserHeaderTransition;
         float browserHeaderLastAlphaTarget = -1;
         Dictionary<GameObject, HashSet<ListItem>> cachedModListItemsByRow = new Dictionary<GameObject, HashSet<ListItem>>();
-        
+
         [Header("Browse Panel Featured Set")]
         [SerializeField] FeaturedModListItem[] featuredSlotListItems;
         [SerializeField] RectTransform[] featuredSlotPositions;
@@ -34,13 +34,14 @@ namespace ModIOBrowser.Implementation
         [SerializeField] Image browserFeaturedSlotBackplate;
         [SerializeField] GameObject browserFeaturedSlotInfo;
         [SerializeField] GameObject featuredOptionsButtons;
+        [SerializeField] ScrollRect scrollRect;
         internal bool isFeaturedItemSelected = false;
         ModProfile[] featuredProfiles;
         int featuredIndex;
 
         [Header("Settings")]
         [SerializeField] Selectable browserFeaturedSlotSelection;
-        
+
         public static bool IsOn() => Instance != null && Instance.BrowserPanel.activeSelf;
 
         internal Translation featuredSubscribeTranslation = null;
@@ -55,7 +56,7 @@ namespace ModIOBrowser.Implementation
             SelectionManager.Instance.SelectView(UiViews.Browse);
             NavBar.Instance.UpdateNavbarSelection();
         }
-        
+
         /// <summary>
         /// This is invoked when the current highlighted featured mod gets selected. This will open
         /// the Mod details view and display more information about the specified mod.
@@ -68,8 +69,8 @@ namespace ModIOBrowser.Implementation
             }
             Details.Instance.Open(featuredProfiles[featuredIndex], Open);
         }
-        
-        
+
+
         /// <summary>
         /// This will open the context menu for the current highlighted featured mod 'more options'
         /// </summary>
@@ -118,7 +119,6 @@ namespace ModIOBrowser.Implementation
                 nameTranslationReference = "Report",
                 action = delegate
                 {
-                    Debug.Log("report");
                     ModioContextMenu.Instance.Close();
                     Reporting.Instance.Open(Instance.featuredProfiles[Instance.featuredIndex], browserFeaturedSlotSelection);
                 }
@@ -160,9 +160,8 @@ namespace ModIOBrowser.Implementation
         /// <summary>
         /// This is used specifically for the main featured carousel at the top of the home view.
         /// This will swipe the current featured selection left and select the next one in the carousel
-        /// (to the right)
         /// </summary>
-        public void PageFeaturedRowLeft()
+        public void PageFeaturedRow(bool right)
         {
             if(featuredProfiles == null || featuredProfiles.Length == 0)
             {
@@ -170,59 +169,43 @@ namespace ModIOBrowser.Implementation
                 return;
             }
 
-            featuredIndex = GetPreviousIndex(featuredIndex, featuredProfiles.Length);
+            if(right)
+                featuredIndex = GetNextIndex(featuredIndex, featuredProfiles.Length);
+            else
+                featuredIndex = GetPreviousIndex(featuredIndex, featuredProfiles.Length);
 
             FeaturedModListItem.transitionCount = 0;
             foreach(FeaturedModListItem li in featuredSlotListItems)
             {
-                int next = GetNextIndex(li.rowIndex, featuredSlotPositions.Length);
+                int next;
+                if(right)
+                    next = GetPreviousIndex(li.rowIndex, featuredSlotPositions.Length);
+                else
+                    next = GetNextIndex(li.rowIndex, featuredSlotPositions.Length);
+
 
                 // transition the list item to it's next position
-                if(next != 0)
+                bool isTransitionable;
+                if(right)
+                    isTransitionable = next != featuredSlotPositions.Length - 1;
+                else
+                    isTransitionable = next != 0;
+
+                if(isTransitionable)
                 {
                     li.Transition(featuredSlotPositions[li.rowIndex], featuredSlotPositions[next]);
                 }
                 else
                 {
                     li.transform.position = featuredSlotPositions[next].position;
-                    li.profileIndex = GetIndex(li.profileIndex, featuredProfiles.Length, featuredSlotPositions.Length * -1);
-                    li.Setup(featuredProfiles[li.profileIndex]);
-                }
 
-                // change list item index
-                li.rowIndex = next;
-            }
-            RefreshSelectedFeaturedModDetails();
-        }
+                    int change;
+                    if(right)
+                        change = featuredSlotPositions.Length;
+                    else
+                        change = featuredSlotPositions.Length * -1;
 
-        /// <summary>
-        /// This is used specifically for the main featured carousel at the top of the home view.
-        /// This will swipe the current featured selection right and select the previous one in the
-        /// carousel (to the left)
-        /// </summary>
-        public void PageFeaturedRowRight()
-        {
-            if(featuredProfiles == null || featuredProfiles.Length == 0)
-            {
-                // hasn't loaded yet or has no mods
-                return;
-            }
-            featuredIndex = GetNextIndex(featuredIndex, featuredProfiles.Length);
-
-            FeaturedModListItem.transitionCount = 0;
-            foreach(FeaturedModListItem li in featuredSlotListItems)
-            {
-                int next = GetPreviousIndex(li.rowIndex, featuredSlotPositions.Length);
-
-                // transition the list item to it's next position
-                if(next != featuredSlotPositions.Length - 1)
-                {
-                    li.Transition(featuredSlotPositions[li.rowIndex], featuredSlotPositions[next]);
-                }
-                else
-                {
-                    li.transform.position = featuredSlotPositions[next].position;
-                    li.profileIndex = GetIndex(li.profileIndex, featuredProfiles.Length, featuredSlotPositions.Length);
+                    li.profileIndex = GetIndex(li.profileIndex, featuredProfiles.Length, change);
                     li.Setup(featuredProfiles[li.profileIndex]);
                 }
 
@@ -443,26 +426,26 @@ namespace ModIOBrowser.Implementation
         /// </summary>
         /// <param name="result">whether or not the request succeeded</param>
         /// <param name="modPage">the mods retrieved, if any</param>
-        void AddModProfilesToFeaturedCarousel(Result result, ModPage modPage)
+        void AddModProfilesToFeaturedCarousel(ResultAnd<ModPage> response)
         {
-            if(!result.Succeeded())
+            if(!response.result.Succeeded())
             {
                 // TODO we need to setup a reattempt option similar to mod list rows
                 return;
             }
 
-            featuredProfiles = modPage.modProfiles;
-            if(modPage.modProfiles.Length < 10 && modPage.modProfiles.Length > 0)
+            featuredProfiles = response.value.modProfiles;
+            if(response.value.modProfiles.Length < 10 && response.value.modProfiles.Length > 0)
             {
                 featuredProfiles = new ModProfile[10];
                 int next = 0;
                 for(int i = 0; i < 10; i++)
                 {
-                    if(next >= modPage.modProfiles.Length)
+                    if(next >= response.value.modProfiles.Length)
                     {
                         next = 0;
                     }
-                    featuredProfiles[i] = modPage.modProfiles[next];
+                    featuredProfiles[i] = response.value.modProfiles[next];
                     next++;
                 }
             }
@@ -524,7 +507,7 @@ namespace ModIOBrowser.Implementation
                 StartCoroutine(browserHeaderTransition);
             }
         }
-        
+
         public void FeaturedItemSelect(bool state)
         {
             isFeaturedItemSelected = state;
@@ -563,7 +546,7 @@ namespace ModIOBrowser.Implementation
                 }
             }
         }
-        
+
         public void RefreshModListItems()
         {
             List<SubscribedMod> subbedMods = ModIOUnity.GetSubscribedMods(out var result).ToList();
@@ -582,6 +565,11 @@ namespace ModIOBrowser.Implementation
                                       x.Value.Setup(x.Value.profile);
                                   }
                               });
+        }
+
+        public void ResetScrollRect()
+        {
+            scrollRect.verticalNormalizedPosition = 1;
         }
 
         #region Utility

@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace ModIOBrowser.Implementation
 {
-    internal class SelectionOverlayHandler : SimpleMonoSingleton<SelectionOverlayHandler>
+    internal class SelectionOverlayHandler : SelfInstancingMonoSingleton<SelectionOverlayHandler>
     {
         [Header("Selection Overlay Objects")]
         [SerializeField] HomeModListItem_Overlay homeModListItemOverlay;

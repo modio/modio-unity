@@ -1,8 +1,6 @@
 #if UNITY_EDITOR || (MODIO_COMPILE_ALL && UNITY_EDITOR)
 
-using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading.Tasks;
 using UnityEngine;
 
@@ -34,9 +32,9 @@ namespace ModIO.Implementation.Platform
 
 #region Initialization
 
-        /// <summary>Init as IUserDataService.</summary>
-        async Task<Result> IUserDataService.InitializeAsync(string userProfileIdentifier,
-                                                            long gameId, BuildSettings settings)
+/// <summary>Init as IUserDataService.</summary>
+        Result IUserDataService.Initialize(string userProfileIdentifier,
+            long gameId, BuildSettings settings)
         {
             rootDir =
                 $"{GlobalRootDirectory}/{gameId.ToString("00000")}/users/{userProfileIdentifier}";
@@ -47,8 +45,8 @@ namespace ModIO.Implementation.Platform
         }
 
         /// <summary>Init as IPersistentDataService.</summary>
-        async Task<Result> IPersistentDataService.InitializeAsync(long gameId,
-                                                                  BuildSettings settings)
+        Result IPersistentDataService.Initialize(long gameId,
+            BuildSettings settings)
         {
             rootDir =
                 $"{GlobalRootDirectory}/{gameId.ToString("00000")}/data";
@@ -59,7 +57,7 @@ namespace ModIO.Implementation.Platform
         }
 
         /// <summary>Init as ITempDataService.</summary>
-        async Task<Result> ITempDataService.InitializeAsync(long gameId, BuildSettings settings)
+        Result ITempDataService.Initialize(long gameId, BuildSettings settings)
         {
             rootDir =
                 $"{GlobalRootDirectory}/{gameId.ToString("00000")}/temp";
@@ -88,13 +86,25 @@ namespace ModIO.Implementation.Platform
         /// <summary>Reads an entire file asynchronously.</summary>
         public async Task<ResultAnd<byte[]>> ReadFileAsync(string filePath)
         {
-            return await SystemIOWrapper.ReadFileAsync(filePath).ConfigureAwait(false);
+            return await SystemIOWrapper.ReadFileAsync(filePath);
+        }
+
+        /// <summary>Reads an entire file asynchronously.</summary>
+        public ResultAnd<byte[]> ReadFile(string filePath)
+        {
+            return SystemIOWrapper.ReadFile(filePath);
         }
 
         /// <summary>Writes an entire file asynchronously.</summary>
         public async Task<Result> WriteFileAsync(string filePath, byte[] data)
         {
-            return await SystemIOWrapper.WriteFileAsync(filePath, data).ConfigureAwait(false);
+            return await SystemIOWrapper.WriteFileAsync(filePath, data);
+        }
+
+        /// <summary>Writes an entire file asynchronously.</summary>
+        public Result WriteFile(string filePath, byte[] data)
+        {
+            return SystemIOWrapper.WriteFile(filePath, data);
         }
 
         /// <summary>Deletes a file.</summary>
@@ -142,10 +152,10 @@ namespace ModIO.Implementation.Platform
         }
 
         /// <summary>Gets the size and hash of a file.</summary>
-        public async Task<ResultAnd<(long fileSize, string fileHash)>> GetFileSizeAndHash(
+        public ResultAnd<(long fileSize, string fileHash)> GetFileSizeAndHash(
             string filePath)
         {
-            return await SystemIOWrapper.GetFileSizeAndHash(filePath);
+            return SystemIOWrapper.GetFileSizeAndHash(filePath);
         }
 
         /// <summary>Determines whether a directory exists.</summary>

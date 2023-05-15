@@ -1,24 +1,19 @@
-﻿using System;
-
-namespace ModIO.Implementation.API.Requests
+﻿namespace ModIO.Implementation.API.Requests
 {
+
     internal static class GetTerms
     {
-        // public struct ResponseSchema
-        // {
-        //     // This schema will only be used if the server schema changes or gets expanded on
-        // }
-
-        public static readonly RequestConfig Template =
-            new RequestConfig { canCacheResponse = true, requireAuthToken = false,
-                                  requestMethodType = WebRequestMethodType.GET,
-                                  requestResponseType = WebRequestResponseType.Text };
-
-        public static string URL()
+        public static WebRequestConfig Request()
         {
-            string url = $"{Settings.server.serverURL}{@"/authenticate/terms"}?";
+            var request = new WebRequestConfig()
+            {
+                Url = $"{Settings.server.serverURL}{@"/authenticate/terms"}?",
+                RequestMethodType = "GET"
+            };
 
-            return url;
+            //
+
+            return request;
         }
     }
 }

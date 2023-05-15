@@ -8,7 +8,7 @@ namespace ModIO.Util
         public int number;
     }
 
-    internal class SimpleMessageHubTester : SimpleMonoSingleton<SimpleMessageHubTester>
+    internal class SimpleMessageHubTester : SelfInstancingMonoSingleton<SimpleMessageHubTester>
     {
         SimpleMessageUnsubscribeToken subToken;
 

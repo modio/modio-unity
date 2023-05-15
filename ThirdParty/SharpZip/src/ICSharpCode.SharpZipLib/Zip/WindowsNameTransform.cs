@@ -1,7 +1,6 @@
 using ICSharpCode.SharpZipLib.Core;
 using System;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Text;
 
 namespace ICSharpCode.SharpZipLib.Zip

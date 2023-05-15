@@ -24,7 +24,7 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8893324564416866145}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 1019.75134, y: 521.43976, z: 15.910962}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
@@ -43,13 +43,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f95d137321812dd41a3ac7750adf5684, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Cancel: 351
-  Alternate: 352
-  Options: 353
-  TabLeft: 354
-  TabRight: 355
-  Search: 359
-  Menu: 357
+  Cancel: 331
+  Alternate: 332
+  Options: 333
+  TabLeft: 334
+  TabRight: 335
+  Search: 339
+  Menu: 337
   controllerAndKeyboardInput:
   - Horizontal
   - Vertical

@@ -8,7 +8,7 @@ using UnityEngine.UI;
 
 namespace ModIOBrowser.Implementation
 {
-    public class AuthenticationPanels : SimpleMonoSingleton<AuthenticationPanels>
+    public class AuthenticationPanels : SelfInstancingMonoSingleton<AuthenticationPanels>
     {
 
         internal Translation BrowserFeaturedSubscribeTranslation = null;
@@ -17,7 +17,7 @@ namespace ModIOBrowser.Implementation
         internal Translation AuthenticationPanelBackButtonTextTranslation = null;
         internal Translation AuthenticationPanelInfoTextTranslation = null;
         internal Translation AuthenticationPanelTitleTextTranslation = null;
-        
+
         [Header("Authentication Panel")]
         [SerializeField] public GameObject AuthenticationPanel;
         [SerializeField] public GameObject AuthenticationMainPanel;
@@ -29,6 +29,8 @@ namespace ModIOBrowser.Implementation
         [SerializeField] public TMP_InputField[] AuthenticationPanelCodeFields;
         [SerializeField] public TMP_InputField AuthenticationPanelHiddenInputField;
         [SerializeField] public Button AuthenticationPanelConnectViaSteamButton;
+        [SerializeField] public Button AuthenticationPanelConnectViaEpicButton;
+        [SerializeField] public Button AuthenticationPanelConnectViaGOGButton;
         [SerializeField] public Button AuthenticationPanelConnectViaXboxButton;
         [SerializeField] public Button AuthenticationPanelConnectViaSwitchButton;
         [SerializeField] public Button AuthenticationPanelConnectViaPlayStationButton;
@@ -81,9 +83,9 @@ namespace ModIOBrowser.Implementation
             SelectionManager.Instance.SelectView(UiViews.AuthPanel);
 
             if(!SkippedIntoEmailConnectionPanel())
-            {                
+            {
                 OpenConnectionTypePanel();
-            }            
+            }
         }
 
         bool SkippedIntoEmailConnectionPanel()
@@ -95,7 +97,7 @@ namespace ModIOBrowser.Implementation
             {
                 Authentication.Instance.GetTermsOfUse();
                 authenticationMethodAfterAgreeingToTheTOS = OpenPanel_Email;
-                
+
                 return true;
             }
 
@@ -128,12 +130,39 @@ namespace ModIOBrowser.Implementation
 
             // Selection
             InputNavigation.Instance.Select(AuthenticationPanelConnectViaEmailButton);
-            
+
             //-----------------------------------------------------------------------------------//
             //                            THIRD PARTY AUTHENTICATION                             //
             //-----------------------------------------------------------------------------------//
             Selectable thirdPartyOptionSelectable = null;
-            if(Authentication.getSteamAppTicket != null)
+
+            if(Authentication.getGogAuthCode != null)
+            {
+                AuthenticationPanelConnectViaGOGButton.gameObject.SetActive(true);
+                AuthenticationPanelConnectViaGOGButton.onClick.RemoveAllListeners();
+                AuthenticationPanelConnectViaGOGButton.onClick.AddListener(() =>
+                {
+                    Authentication.Instance.GetTermsOfUse();
+                    authenticationMethodAfterAgreeingToTheTOS = Authentication.Instance.SubmitGogAuthenticationRequest;
+                });
+                thirdPartyOptionSelectable = AuthenticationPanelConnectViaGOGButton;
+
+                InputNavigation.Instance.Select(AuthenticationPanelConnectViaGOGButton);
+            }
+            else if(Authentication.getEpicAuthCode != null)
+            {
+                AuthenticationPanelConnectViaEpicButton.gameObject.SetActive(true);
+                AuthenticationPanelConnectViaEpicButton.onClick.RemoveAllListeners();
+                AuthenticationPanelConnectViaEpicButton.onClick.AddListener(() =>
+                {
+                    Authentication.Instance.GetTermsOfUse();
+                    authenticationMethodAfterAgreeingToTheTOS = Authentication.Instance.SubmitEpicAuthenticationRequest;
+                });
+                thirdPartyOptionSelectable = AuthenticationPanelConnectViaEpicButton;
+
+                InputNavigation.Instance.Select(AuthenticationPanelConnectViaEpicButton);
+            }
+            else if(Authentication.getSteamAppTicket != null)
             {
                 AuthenticationPanelConnectViaSteamButton.gameObject.SetActive(true);
                 AuthenticationPanelConnectViaSteamButton.onClick.RemoveAllListeners();
@@ -143,7 +172,7 @@ namespace ModIOBrowser.Implementation
                     authenticationMethodAfterAgreeingToTheTOS = Authentication.Instance.SubmitSteamAuthenticationRequest;
                 });
                 thirdPartyOptionSelectable = AuthenticationPanelConnectViaSteamButton;
-                
+
                 InputNavigation.Instance.Select(AuthenticationPanelConnectViaSteamButton);
             }
             else if(Authentication.getXboxToken != null)
@@ -156,7 +185,7 @@ namespace ModIOBrowser.Implementation
                     authenticationMethodAfterAgreeingToTheTOS = Authentication.Instance.SubmitXboxAuthenticationRequest;
                 });
                 thirdPartyOptionSelectable = AuthenticationPanelConnectViaXboxButton;
-                
+
                 InputNavigation.Instance.Select(AuthenticationPanelConnectViaXboxButton);
             }
             else if(Authentication.getSwitchToken != null)
@@ -169,7 +198,7 @@ namespace ModIOBrowser.Implementation
                     authenticationMethodAfterAgreeingToTheTOS = Authentication.Instance.SubmitSwitchAuthenticationRequest;
                 });
                 thirdPartyOptionSelectable = AuthenticationPanelConnectViaSwitchButton;
-                
+
                 InputNavigation.Instance.Select(AuthenticationPanelConnectViaSwitchButton);
             }
             else if(Authentication.getPlayStationAuthCode != null)
@@ -182,7 +211,7 @@ namespace ModIOBrowser.Implementation
                     authenticationMethodAfterAgreeingToTheTOS = Authentication.Instance.SubmitPlayStationAuthenticationRequest;
                 });
                 thirdPartyOptionSelectable = AuthenticationPanelConnectViaPlayStationButton;
-                
+
                 InputNavigation.Instance.Select(AuthenticationPanelConnectViaPlayStationButton);
             }
 
@@ -216,7 +245,7 @@ namespace ModIOBrowser.Implementation
                 selectOnLeft = thirdPartyOptionSelectable == null
                     ? AuthenticationPanelBackButton : thirdPartyOptionSelectable
             };
-            
+
         }
 
         void HideAllPanels()
@@ -242,7 +271,6 @@ namespace ModIOBrowser.Implementation
             AuthenticationPanelConnectViaPlayStationButton.gameObject.SetActive(false);
             AuthenticationPanelCompletedButton.gameObject.SetActive(false);
             AuthenticationPanelLogoutButton.gameObject.SetActive(false);
-            AuthenticationPanelWaitingForResponseAnimation.SetActive(false);
             AuthenticationPanelLogo.SetActive(false);
             AuthenticationPanelCancelButton.gameObject.SetActive(false);
         }
@@ -335,7 +363,7 @@ namespace ModIOBrowser.Implementation
             LayoutRebuilder.ForceRebuildLayoutImmediate(AuthenticationPanelInfoText.transform as RectTransform);
             LayoutRebuilder.ForceRebuildLayoutImmediate(AuthenticationPanel.transform as RectTransform);
         }
-        
+
         public void OpenPanel_Problem(string problemTranslationKey = null, string titleTranslationKey = null, Action onBack = null)
         {
             titleTranslationKey = titleTranslationKey ?? "Something went wrong!";
@@ -352,7 +380,7 @@ namespace ModIOBrowser.Implementation
             Translation.Get(AuthenticationPanelInfoTextTranslation, problemTranslationKey, AuthenticationPanelInfoText);
 
             AuthenticationPanelCancelButton.gameObject.SetActive(true);
-            
+
             AuthenticationPanelBackButton.gameObject.SetActive(true);
             AuthenticationPanelBackButton.onClick.RemoveAllListeners();
             if(onBack == null)
@@ -489,7 +517,11 @@ namespace ModIOBrowser.Implementation
             if(newKeyInput)
             {
                 KeyInput5DigitsUi.Instance.Open(
-                    code => ModIOUnity.SubmitEmailSecurityCode(code, Authentication.Instance.CodeSubmitted),
+                    code =>
+                    {
+                        this.OpenPanel_Waiting();
+                        ModIOUnity.SubmitEmailSecurityCode(code, Authentication.Instance.CodeSubmitted);
+                    },
                     AuthenticationPanelEmailField.text,
                     OpenPanel_Email);
             }
@@ -518,9 +550,9 @@ namespace ModIOBrowser.Implementation
 
             AuthenticationPanelBackButton.gameObject.SetActive(true);
             AuthenticationPanelBackButton.onClick.RemoveAllListeners();
-            
+
             Translation.Get(AuthenticationPanelBackButtonTextTranslation, "Enter code", AuthenticationPanelBackButtonText);
-            
+
             AuthenticationPanelBackButton.onClick.AddListener(SelectHiddenInputFieldForVirtualKeyboardUser);
 
             AuthenticationPanelBackButton.navigation = new Navigation
@@ -554,10 +586,10 @@ namespace ModIOBrowser.Implementation
             OpenPanel_Waiting();
             ModIOUnity.SubmitEmailSecurityCode(AuthenticationPanelHiddenInputField.text, Authentication.Instance.CodeSubmitted);
         }
-        
+
         // void OpenPanel_Code_Old()
         // {
-        //     
+        //
         //     AuthenticationPanel.SetActive(true);
         //     AuthenticationMainPanel.SetActive(true);
         //     AuthenticationPanelEnterCode.SetActive(true);

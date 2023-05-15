@@ -24,7 +24,7 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1152965179246734492}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 400.79144, y: 252.08183, z: 3.0401669}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
@@ -43,6 +43,30 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 259f78a9175690845be8152999e84074, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ControllerButtonIcons: []
-  MouseButtonIcons: []
+  ControllerButtonIcons:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  MouseButtonIcons:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
   mouseNavigation: 0

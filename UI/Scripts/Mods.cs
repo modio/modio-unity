@@ -152,6 +152,7 @@ namespace ModIOBrowser
                 }
                 else
                 {
+                    Details.Instance.UpdateRatingButtons();
                     Notifications.Instance.AddNotificationToQueue(new Notifications.QueuedNotice
                     {
                         title = TranslationManager.Instance.Get("Failed to add rating"),

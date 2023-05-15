@@ -80,7 +80,7 @@ namespace ModIO.Implementation
 
             return categories;
         }
-        public static ModPage ConvertResponseSchemaToModPage(GetMods.ResponseSchema schema, SearchFilter filter)
+        public static ModPage ConvertResponseSchemaToModPage(API.Requests.GetMods.ResponseSchema schema, SearchFilter filter)
         {
             ModPage page = new ModPage();
             if(schema == null)
@@ -109,13 +109,13 @@ namespace ModIO.Implementation
             ModPage pageForCache = new ModPage();
             pageForCache.totalSearchResultsFound = schema.result_total;
             pageForCache.modProfiles = profiles;
-            ResponseCache.AddModsToCache(GetMods.URL_Unpaginated(filter), offset, pageForCache);
+            ResponseCache.AddModsToCache(GetMods.UnpaginatedURL(), offset, pageForCache);
 
             return page;
         }
 
         // The schema is identical to GetMods but left in here in case it changes in the future
-        public static ModPage ConvertResponseSchemaToModPage(PaginatingRequest<ModObject> schema, SearchFilter filter)
+        public static ModPage ConvertResponseSchemaToModPage(PaginatedResponse<ModObject> schema, SearchFilter filter)
         {
             ModPage page = new ModPage();
             if(schema == null)
@@ -154,8 +154,7 @@ namespace ModIO.Implementation
                 {
                     modId = new ModId(ratingObj.mod_id),
                     rating = (ModRating)ratingObj.rating,
-                    dateAdded = GetUTCDateTime(ratingObj.date_added),
-                    gameId = ratingObj.game_id
+                    dateAdded = GetUTCDateTime(ratingObj.date_added)
                 };
             }
 
@@ -192,11 +191,21 @@ namespace ModIO.Implementation
 
         public static ModProfile ConvertModObjectToModProfile(ModObject modObject)
         {
+            if(modObject.id == 0)
+            {
+                // This is not a valid mod object
+                Logger.Log(LogLevel.Error, "The method ConvertModObjectToModProfile(ModObject)"
+                                           + " was given an invalid ModObject. This is an internal"
+                                           + " error and should not happen.");
+                return default;
+            }
+            
             ModProfile profile = new ModProfile();
 
             profile.id = new ModId(modObject.id);
             profile.name = modObject.name ?? "";
             profile.summary = modObject.summary ?? "";
+            profile.homePageUrl = modObject.homepage_url;
             profile.status = (ModStatus)modObject.status;
             profile.visible = modObject.visible == 1;
             profile.contentWarnings = (ContentWarnings)modObject.maturity_option;

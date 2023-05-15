@@ -1,5 +1,4 @@
-﻿using System;
-using ModIO.Implementation.API.Requests;
+﻿using ModIO.Implementation.API.Requests;
 
 namespace ModIO.Implementation
 {
@@ -51,6 +50,16 @@ namespace ModIO.Implementation
                 foreach(string tag in searchFilter.tags)
                 {
                     url += $"{tag},";
+                }
+                url = url.Trim(',');
+            }
+            // add users we are looking for
+            if(searchFilter.users.Count > 0)
+            {
+                url += "&submitted_by=";
+                foreach(long user in searchFilter.users)
+                {
+                    url += $"{user},";
                 }
                 url = url.Trim(',');
             }

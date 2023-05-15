@@ -354,18 +354,18 @@ namespace ModIO.Implementation.Platform
 
         public override async Task<ResultAnd<byte[]>> ReadAllBytesAsync()
         {
-            Result result;
+            Result readResult;
             byte[] data = null;
 
-            if(SystemIOWrapper.IsPathValid(this.fileStream.Name, out result)
-               && SystemIOWrapper.DoesFileExist(this.fileStream.Name, out result))
+            if(SystemIOWrapper.IsPathValid(this.fileStream.Name, out readResult)
+               && SystemIOWrapper.DoesFileExist(this.fileStream.Name, out readResult))
             {
                 try
                 {
                     data = new byte[this.fileStream.Length];
-                    await this.fileStream.ReadAsync(data, 0, (int)this.fileStream.Length).ConfigureAwait(false);
+                    await this.fileStream.ReadAsync(data, 0, (int)this.fileStream.Length);
 
-                    result = ResultBuilder.Success;
+                    readResult = ResultBuilder.Success;
                 }
                 catch(Exception e) // TODO(@jackson): Handle exceptions
                 {
@@ -373,11 +373,39 @@ namespace ModIO.Implementation.Platform
                                                      + $"\n.path={this.fileStream.Name}"
                                                      + $"\n.Exception:{e.Message}");
 
-                    result = ResultBuilder.Create(ResultCode.IO_FileCouldNotBeRead);
+                    readResult = ResultBuilder.Create(ResultCode.IO_FileCouldNotBeRead);
                 }
             }
 
-            return ResultAnd.Create(result, data);
+            return ResultAnd.Create(readResult, data);
+        }
+
+        public override ResultAnd<byte[]> ReadAllBytes()
+        {
+            Result readResult;
+            byte[] data = null;
+
+            if(SystemIOWrapper.IsPathValid(this.fileStream.Name, out readResult)
+               && SystemIOWrapper.DoesFileExist(this.fileStream.Name, out readResult))
+            {
+                try
+                {
+                    data = new byte[this.fileStream.Length];
+                    var pos = this.fileStream.Read(data, 0, (int)this.fileStream.Length);
+
+                    readResult = ResultBuilder.Success;
+                }
+                catch(Exception e) // TODO(@jackson): Handle exceptions
+                {
+                    Logger.Log(LogLevel.Warning, "Unhandled error when attempting to read the file."
+                                                 + $"\n.path={this.fileStream.Name}"
+                                                 + $"\n.Exception:{e.Message}");
+
+                    readResult = ResultBuilder.Create(ResultCode.IO_FileCouldNotBeRead);
+                }
+            }
+
+            return ResultAnd.Create(readResult, data);
         }
 
         /// <summary>
@@ -550,17 +578,17 @@ namespace ModIO.Implementation.Platform
 
         public override async Task<Result> WriteAllBytesAsync(byte[] buffer)
         {
-            Result result;
+            Result writeResult;
 
-            if(SystemIOWrapper.IsPathValid(this.fileStream.Name, out result)
-               && SystemIOWrapper.TryCreateParentDirectory(this.fileStream.Name, out result))
+            if(SystemIOWrapper.IsPathValid(this.fileStream.Name, out writeResult)
+               && SystemIOWrapper.TryCreateParentDirectory(this.fileStream.Name, out writeResult))
             {
                 try
                 {
                     fileStream.Seek(0, SeekOrigin.End);
                     await fileStream.WriteAsync(buffer, 0, buffer.Length);
 
-                    result = ResultBuilder.Success;
+                    writeResult = ResultBuilder.Success;
                 }
                 catch(Exception e)
                 {
@@ -569,14 +597,45 @@ namespace ModIO.Implementation.Platform
                                    + $"\n.path={this.fileStream.Name}"
                                    + $"\n.Exception:{e.Message}");
 
-                    result = ResultBuilder.Create(ResultCode.IO_FileCouldNotBeWritten);
+                    writeResult = ResultBuilder.Create(ResultCode.IO_FileCouldNotBeWritten);
                 }
             }
 
             Logger.Log(LogLevel.Verbose,
-                       $"Write file: {this.fileStream.Name} - Result: [{result.code}]");
+                       $"Write file: {this.fileStream.Name} - Result: [{writeResult.code}]");
 
-            return result;
+            return writeResult;
+        }
+
+        public override Result WriteAllBytes(byte[] buffer)
+        {
+            Result writeResult;
+
+            if(SystemIOWrapper.IsPathValid(this.fileStream.Name, out writeResult)
+               && SystemIOWrapper.TryCreateParentDirectory(this.fileStream.Name, out writeResult))
+            {
+                try
+                {
+                    fileStream.Seek(0, SeekOrigin.End);
+                    fileStream.Write(buffer, 0, buffer.Length);
+
+                    writeResult = ResultBuilder.Success;
+                }
+                catch(Exception e)
+                {
+                    Logger.Log(LogLevel.Warning,
+                        "Unhandled error when attempting to write the file."
+                        + $"\n.path={this.fileStream.Name}"
+                        + $"\n.Exception:{e.Message}");
+
+                    writeResult = ResultBuilder.Create(ResultCode.IO_FileCouldNotBeWritten);
+                }
+            }
+
+            Logger.Log(LogLevel.Verbose,
+                $"Write file: {this.fileStream.Name} - Result: [{writeResult.code}]");
+
+            return writeResult;
         }
 
         /// <summary>

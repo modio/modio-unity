@@ -168,6 +168,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   reference: Settings
   text: {fileID: 2088110108775456844}
+  translatedLanguageFontPairingOverrides: {fileID: 0}
 --- !u!1 &714240331438823907
 GameObject:
   m_ObjectHideFlags: 0
@@ -407,6 +408,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   reference: Settings
   text: {fileID: 1675598491058277390}
+  translatedLanguageFontPairingOverrides: {fileID: 11400000, guid: a09562b54e7c549d7b9df18941d695d5,
+    type: 2}
 --- !u!1 &5949931777047081143
 GameObject:
   m_ObjectHideFlags: 0
@@ -1071,6 +1074,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   reference: Mods
   text: {fileID: 7183562815274611398}
+  translatedLanguageFontPairingOverrides: {fileID: 11400000, guid: a09562b54e7c549d7b9df18941d695d5,
+    type: 2}
 --- !u!1 &7183562815496087994
 GameObject:
   m_ObjectHideFlags: 0
@@ -1239,6 +1244,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   reference: Play
   text: {fileID: 7183562815496087992}
+  translatedLanguageFontPairingOverrides: {fileID: 0}
 --- !u!1 &7183562815509748484
 GameObject:
   m_ObjectHideFlags: 0
@@ -1656,6 +1662,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   reference: Mod support by
   text: {fileID: 7183562815579565196}
+  translatedLanguageFontPairingOverrides: {fileID: 0}
 --- !u!1 &7183562815602179402
 GameObject:
   m_ObjectHideFlags: 0
@@ -1895,6 +1902,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   reference: Play
   text: {fileID: 7183562815726400289}
+  translatedLanguageFontPairingOverrides: {fileID: 11400000, guid: a09562b54e7c549d7b9df18941d695d5,
+    type: 2}
 --- !u!1 &7183562815738721470
 GameObject:
   m_ObjectHideFlags: 0
@@ -2208,6 +2217,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   reference: Quit
   text: {fileID: 7183562815840021784}
+  translatedLanguageFontPairingOverrides: {fileID: 11400000, guid: a09562b54e7c549d7b9df18941d695d5,
+    type: 2}
 --- !u!1 &7183562815888202448
 GameObject:
   m_ObjectHideFlags: 0
@@ -3123,6 +3134,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   reference: Mods
   text: {fileID: 7183562816092791223}
+  translatedLanguageFontPairingOverrides: {fileID: 0}
 --- !u!1 &7183562816102131885
 GameObject:
   m_ObjectHideFlags: 0
@@ -3362,6 +3374,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   reference: Quit
   text: {fileID: 7183562816163860836}
+  translatedLanguageFontPairingOverrides: {fileID: 0}
 --- !u!1 &7183562816396195270
 GameObject:
   m_ObjectHideFlags: 0

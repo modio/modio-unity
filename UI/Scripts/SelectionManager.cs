@@ -1,17 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using ModIO;
 using ModIO.Util;
-using ModIOBrowser;
-using ModIOBrowser.Implementation;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace ModIOBrowser
 {
-    class SelectionManager : SimpleMonoSingleton<SelectionManager>
+    class SelectionManager : SelfInstancingMonoSingleton<SelectionManager>
     {
         public UiViews currentView { get; private set; } = UiViews.Browse;
         private UiViews previousView { get; set; } = UiViews.Nothing;

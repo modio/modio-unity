@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
-using ModIO;
 using ModIO.Util;
 
 namespace ModIOBrowser.Implementation
 {
-    class UnityDispatcher : SimpleMonoSingleton<UnityDispatcher>
+    class UnityDispatcher : SelfInstancingMonoSingleton<UnityDispatcher>
     {
         private static Thread mainThread;
         private static object lockItem = new object();

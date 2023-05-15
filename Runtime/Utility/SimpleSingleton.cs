@@ -2,7 +2,7 @@
 
 namespace ModIO.Util
 {
-    public class Singleton<T> where T : new()
+    public class SimpleSingleton<T> where T : new()
     {
         private static T _instance;
 

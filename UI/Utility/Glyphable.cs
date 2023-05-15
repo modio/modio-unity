@@ -22,9 +22,18 @@ namespace ModIOBrowser.Implementation
 
         public void UpdateGlyphs()
         {
-            gameObject.SetActive(true);
-            image.sprite = GetGlyphFromDisplayType();
-            image.color = Glyphs.Instance.GetColor(config.color);
+            var glyph = GetGlyphFromDisplayType();
+
+            if(glyph != null)
+            {
+                gameObject.SetActive(true);
+                image.sprite = glyph;
+                Glyphs.Instance.SetColor(config.color, x => image.color = x);
+            }
+            else
+            {
+                gameObject.SetActive(false);
+            }
         }
 
         private Sprite GetGlyphFromDisplayType()

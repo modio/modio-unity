@@ -8,7 +8,7 @@ using UnityEngine.UIElements;
 
 namespace ModIOBrowser.Implementation
 {
-    class QueueRunner : SimpleMonoSingleton<QueueRunner>
+    class QueueRunner : SelfInstancingMonoSingleton<QueueRunner>
     {
         private List<Action> sequences = new List<Action>();
         private Coroutine coroutine;

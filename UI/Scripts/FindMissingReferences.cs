@@ -1,7 +1,6 @@
 ﻿#if UNITY_EDITOR
 
 using System.Collections.Generic;
-using System.Reflection;
 using ModIOBrowser.Implementation;
 using UnityEditor;
 using UnityEngine;

@@ -8,7 +8,7 @@ using UnityEngine.UI;
 
 namespace ModIOBrowser.Implementation
 {
-    class Notifications : SimpleMonoSingleton<Notifications>
+    class Notifications : SelfInstancingMonoSingleton<Notifications>
     {
         [Header("Notifications")]
         [SerializeField] GameObject NotificationPanel;

@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using UnityEngine;
 
 namespace ModIO
 {
@@ -10,11 +11,18 @@ namespace ModIO
     {
         public static readonly ModId Null = new ModId(0L);
 
-        public long id;
+        private long _id;
+
+        public long id { get { return _id; }
+            set {
+                Debug.Log($"id is changed to {value}");
+                _id = value;
+            }
+        }
 
         public ModId(long id)
         {
-            this.id = id;
+            _id = id;
         }
 
         public static implicit operator long(ModId id) => id.id;

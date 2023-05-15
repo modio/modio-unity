@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 
 namespace ModIOBrowser
@@ -37,6 +38,7 @@ namespace ModIOBrowser
 			if(GUILayout.Button("Refresh Layout"))
 			{
 				myTarget.RefreshUI();
+				EditorSceneManager.MarkSceneDirty(myTarget.gameObject.scene);
 				EditorUtility.SetDirty(myTarget);
 			}
 			EditorGUILayout.Space();
@@ -44,6 +46,7 @@ namespace ModIOBrowser
 			if(GUI.changed)
 			{
 				myTarget.RefreshUI();
+				EditorSceneManager.MarkSceneDirty(myTarget.gameObject.scene);
 				EditorUtility.SetDirty(myTarget);
 			}
 		}

@@ -10,6 +10,14 @@ namespace ModIOBrowser
 		public ColorSetterType type;
 		MultiTargetButton button;
 
+		void OnEnable()
+		{
+            if(Browser.SingletonIsInstantiated())
+            {
+                Refresh(Browser.Instance.colorScheme);
+            }			
+		}
+
 		void SetGraphicColor(Color color)
 		{
 			Graphic graphic = GetComponent<Graphic>();
@@ -59,7 +67,8 @@ namespace ModIOBrowser
 					break;
 			}
  #if UNITY_EDITOR
-			EditorUtility.SetDirty(this);
+			if (!Application.isEditor)
+				EditorUtility.SetDirty(this);
  #endif
 		}
 	}

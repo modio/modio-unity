@@ -1,13 +1,12 @@
 ﻿using ModIO;
 using ModIO.Util;
-using ModIOBrowser.Implementation;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace ModIOBrowser.Implementation
 {
-    public class Reporting : SimpleMonoSingleton<Reporting>
+    public class Reporting : SelfInstancingMonoSingleton<Reporting>
     {
         [SerializeField] public GameObject Panel;
         [SerializeField] TMP_Text ReportPanelHeader;

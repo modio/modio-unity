@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace ICSharpCode.SharpZipLib.Core
+﻿namespace ICSharpCode.SharpZipLib.Core
 {
 	internal static class Empty
 	{

@@ -1,85 +1,56 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Linq;
 using UnityEngine;
 
 namespace ModIO.Implementation.API.Requests
 {
+
     internal static class EditMod
     {
-        // public struct ResponseSchema
-        // {
-        //     // (NOTE): mod.io returns a ModObject as the schema.
-        //     // This schema will only be used if the server schema changes or gets expanded on
-        // }
+        public static WebRequestConfig RequestPOST(ModProfileDetails details)
+            => InternalRequest(details, "POST");
 
-        public static readonly RequestConfig Template =
-            new RequestConfig { requireAuthToken = true, canCacheResponse = false,
-                                  requestResponseType = WebRequestResponseType.Text,
-                                  requestMethodType = WebRequestMethodType.PUT };
+        public static WebRequestConfig RequestPUT(ModProfileDetails details)
+            => InternalRequest(details, "PUT");
         
-        public static readonly RequestConfig TemplateForAddingLogo =
-            new RequestConfig { requireAuthToken = true, canCacheResponse = false,
-                requestResponseType = WebRequestResponseType.Text,
-                requestMethodType = WebRequestMethodType.POST };
-
-        public static string URL(ModProfileDetails details, out WWWForm form)
+        public static WebRequestConfig InternalRequest(ModProfileDetails details, string requestType)
         {
-            List<KeyValuePair<string, string>> kvps = new List<KeyValuePair<string, string>>();
+            long modId = details.modId != null ? details.modId.Value.id : 0;
+            
+            var request = new WebRequestConfig()
+            {
+                Url = $"{Settings.server.serverURL}{@"/games/"}{Settings.server.gameId}{@"/mods/"}{modId}?",
+                RequestMethodType = requestType
+            };
+            
+            request.AddField("visible", details.visible == false ? "0" : "1");
+            request.AddField("name", details.name);
+            request.AddField("summary", details.summary);
+            request.AddField("description", details.description);
+            request.AddField("name_id", details.name_id);
+            request.AddField("homepage_url", details.homepage_url);
+            request.AddField("stock", details.maxSubscribers.ToString());
 
-            kvps.Add(
-                new KeyValuePair<string, string>("visible", details.visible == false ? "0" : "1"));
-            kvps.Add(new KeyValuePair<string, string>("name", details.name));
-            kvps.Add(new KeyValuePair<string, string>("summary", details.summary));
-            kvps.Add(new KeyValuePair<string, string>("description", details.description));
-            kvps.Add(new KeyValuePair<string, string>("name_id", details.name_id));
-            kvps.Add(new KeyValuePair<string, string>("homepage_url", details.homepage_url));
-            kvps.Add(new KeyValuePair<string, string>("stock", details.maxSubscribers.ToString()));
             if(details.contentWarning != null)
-            {
-                kvps.Add(new KeyValuePair<string, string>(
-                    "maturity_option", ((int)details.contentWarning).ToString()));
-            }
+                request.AddField("maturity_option", ((int)details.contentWarning).ToString());
+
             if(details.communityOptions != null)
-            {
-                kvps.Add(new KeyValuePair<string, string>("community_options", ((int)details.communityOptions).ToString()));
-            }
+                request.AddField("community_options", ((int)details.communityOptions).ToString());
 
-            if(details.tags != null)
-            {
-                int count = 0;
-                foreach(string tag in details.tags)
-                {
-                    kvps.Add(new KeyValuePair<string, string>($"tags[{count}]", tag));
-                    count++;
-                }
-            }
+            // TODO Currently the EditMod endpoint doesnt allow changing/adding tags
+            // if(details.tags != null)
+            // {
+            //     for(int i = 0; i < details.tags.Count(); i++)
+            //     {
+            //         request.AddField($"tags[{i}]", details.tags[i]);
+            //     }
+            // }
 
-            kvps.Add(new KeyValuePair<string, string>("metadata_blob", details.metadata));
+            request.AddField("metadata_blob", details.metadata);
 
-            form = new WWWForm();
-
-            // Add logo
             if(details.logo != null)
-            {
-                form.AddBinaryData("logo", details.logo.EncodeToPNG(), "logo.png", null);
-            }
+                request.AddField("logo", "logo.png", details.logo.EncodeToPNG());
 
-            foreach(var kvp in kvps)
-            {
-                if(!string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
-                {
-                    form.AddField(kvp.Key, kvp.Value);
-                }
-            }
-
-            // Get the ModId (which is a nullable)
-            long modId = 0;
-            if(details.modId != null)
-            {
-                modId = details.modId.Value.id;
-            }
-            return $"{Settings.server.serverURL}{@"/games/"}"
-                   + $"{Settings.server.gameId}{@"/mods/"}{modId}?";
+            return request;
         }
     }
 }

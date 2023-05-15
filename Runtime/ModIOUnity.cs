@@ -2,7 +2,6 @@
 using System;
 using JetBrains.Annotations;
 using UnityEngine;
-using System.Threading.Tasks;
 using ModIO.Implementation.API.Objects;
 
 #pragma warning disable 4014 // Ignore warnings about calling async functions from non-async code
@@ -374,6 +373,27 @@ namespace ModIO
         }
 
         /// <summary>
+        /// Attempts to authenticate a user via the epic API.
+        /// </summary>
+        /// <param name="epicToken">the user's epic token</param>
+        /// <param name="emailAddress">the user's email address</param>
+        /// <param name="hash">the TermsHash retrieved from ModIOUnity.GetTermsOfUse()</param>
+        /// <param name="callback">Callback to be invoked when the operation completes</param>
+        /// <seealso cref="GetTermsOfUse"/>
+        /// <seealso cref="ModIOUnityAsync.AuthenticateUserViaEpic"/>
+        /// <code>
+        /// </code>
+        public static void AuthenticateUserViaEpic(string epicToken,
+                                                    [CanBeNull] string emailAddress,
+                                                    [CanBeNull] TermsHash? hash,
+                                                    Action<Result> callback)
+        {
+            ModIOUnityImplementation.AuthenticateUser(
+                epicToken, AuthenticationServiceProvider.Epic, emailAddress, hash, null, null,
+                null, 0, callback);
+        }
+
+        /// <summary>
         /// Attempts to authenticate a user via the GOG API.
         /// </summary>
         /// <remarks>
@@ -473,7 +493,7 @@ namespace ModIO
         /// // Once we have the Terms of Use and hash we can attempt to authenticate
         /// void Authenticate_Example()
         /// {
-        ///     ModIOUnity.AuthenticateUserViaPlaystation(authCode, "johndoe@gmail.com", modIOTermsOfUse.hash, AuthenticationCallback);
+        ///     ModIOUnity.AuthenticateUserViaPlaystation(authCode, "johndoe@gmail.com", modIOTermsOfUse.hash, PlayStationEnvironment.np, AuthenticationCallback);
         /// }
         ///
         /// void AuthenticationCallback(Result result)
@@ -1032,7 +1052,7 @@ namespace ModIO
         ///     }
         /// }
         /// </code>
-        public static void GetMods(SearchFilter filter, Action<Result, ModPage> callback)
+        public static void GetMods(SearchFilter filter, Action<ResultAnd<ModPage>> callback)
         {
             ModIOUnityImplementation.GetMods(filter, callback);
         }
@@ -1113,28 +1133,23 @@ namespace ModIO
         /// <summary>
         /// Get all mod rating's submitted by the authenticated user. Successful request will return an array of Rating Objects.
         /// </summary>
-        /// <remarks>
-        /// FetchUpdates() must be called before the current user's ratings are known
-        /// </remarks>
         /// <param name="callback">callback with the Result and an array of RatingObject</param>
         /// <seealso cref="ModId"/>
         /// <seealso cref="RatingObject"/>
         /// <seealso cref="ResultAnd"/>
-        /// <seealso cref="FetchUpdates"/>
         /// <code>
         /// void Example()
         /// {
-        ///    ModId modId = new ModId(1234);
-        ///    ModIOUnity.GetCurrentUserRatings(modId, GetCurrentUserRatingsCallback);
+        ///    ModIOUnity.GetCurrentUserRatings(GetCurrentUserRatingsCallback);
         /// }
         ///
-        /// void GetCurrentUserRatingsCallback(ResultAnd&lt;RatingObject[]&gt; response)
+        /// void GetCurrentUserRatingsCallback(ResultAnd&lt;Rating[]&gt; response)
         /// {
         ///    if (response.result.Succeeded())
         ///    {
         ///        foreach(var ratingObject in response.value)
         ///        {
-        ///            Debug.Log($"retrieved rating {response.rating} for {response.mod_id}");
+        ///            Debug.Log($"retrieved rating '{ratingObject.rating}' for {ratingObject.modId}");
         ///        }
         ///    }
         ///    else
@@ -1146,6 +1161,40 @@ namespace ModIO
         public static void GetCurrentUserRatings(Action<ResultAnd<Rating[]>> callback)
         {
             ModIOUnityImplementation.GetCurrentUserRatings(callback);
+        }
+
+        /// <summary>
+        /// Gets the rating that the current user has given for a specified mod. You must have an
+        /// authenticated session for this to be successful.
+        /// </summary>
+        /// <remarks>Note that the rating can be 'None'</remarks>
+        /// <param name="modId">the id of the mod to check for a rating</param>
+        /// <param name="callback">callback with the result and rating of the specified mod</param>
+        /// <seealso cref="ModRating"/>
+        /// <seealso cref="ModId"/>
+        /// <seealso cref="ResultAnd"/>
+        /// <code>
+        /// void Example()
+        /// {
+        ///    ModId modId = new ModId(1234);
+        ///    ModIOUnity.GetCurrentUserRatingFor(modId, GetRatingCallback);
+        /// }
+        ///
+        /// void GetRatingCallback(ResultAnd&lt;ModRating&gt; response)
+        /// {
+        ///    if (response.result.Succeeded())
+        ///    {
+        ///        Debug.Log($"retrieved rating: {response.value}");
+        ///    }
+        ///    else
+        ///    {
+        ///        Debug.Log("failed to get rating");
+        ///    }
+        /// }
+        /// </code>
+        public static void GetCurrentUserRatingFor(ModId modId, Action<ResultAnd<ModRating>> callback)
+        {
+            ModIOUnityImplementation.GetCurrentUserRatingFor(modId, callback);
         }
 
 #endregion // Mod Browsing
@@ -2035,6 +2084,12 @@ namespace ModIO
                                            Action<ResultAnd<Texture2D>> callback)
         {
             ModIOUnityImplementation.DownloadTexture(downloadReference, callback);
+        }
+        
+        public static void DownloadImage(DownloadReference downloadReference,
+                                           Action<ResultAnd<byte[]>> callback)
+        {
+            ModIOUnityImplementation.DownloadImage(downloadReference, callback);
         }
 
 #endregion // Media Download
