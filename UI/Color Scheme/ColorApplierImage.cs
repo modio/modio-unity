@@ -22,12 +22,12 @@ namespace ModIOBrowser
 
         private bool Apply()
         {
-            if(colorScheme == null && !Browser.SingletonIsInstantiated())
+            if(colorScheme == null || SharedUi.colorScheme == null)
             {
                 return false;
             }
 
-            var scheme = colorScheme == null ? Browser.Instance.colorScheme : colorScheme;
+            var scheme = colorScheme == null ? SharedUi.colorScheme : colorScheme;
             if(scheme != null)
             {
                 graphic.color = scheme.GetSchemeColor(color);

@@ -141,7 +141,7 @@ namespace ModIOBrowser.Implementation
             NotificationPanelTitle.text = notice.title;
             NotificationPanelDescription.text = notice.description;
             NotificationPanelIconBackgroundImage.color = notice.positiveAccent ?
-                Browser.Instance.colorScheme.PositiveAccent : Browser.Instance.colorScheme.NegativeAccent;
+                Browser.Instance.colorScheme.PositiveAccent : SharedUi.colorScheme.NegativeAccent;
             NotificationPanelIconImage.sprite = notice.positiveAccent ?
                 NotificationCheckmarkIcon : NotificationErrorIcon;
 

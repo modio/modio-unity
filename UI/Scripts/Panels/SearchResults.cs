@@ -318,7 +318,7 @@ namespace ModIOBrowser.Implementation
         {
             for(int i = 0; i < mods.Length; i++)
             {
-                ListItem li = ListItem.GetListItem<SearchResultListItem>(SearchResultsListItemPrefab, SearchResultsListItemParent, Browser.Instance.colorScheme);
+                ListItem li = ListItem.GetListItem<SearchResultListItem>(SearchResultsListItemPrefab, SearchResultsListItemParent, SharedUi.colorScheme);
                 li.Setup(mods[i]);
                 li.SetViewportRestraint(SearchResultsListItemParent as RectTransform, null);
 

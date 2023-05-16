@@ -10,7 +10,6 @@ using UnityEngine.UI;
 namespace ModIOBrowser
 {
 
-
     /// <summary>
     /// The main handler for opening and closing the mod IO Browser.
     /// Use Browser.Open() to open and Browser.Close() to close.
@@ -72,7 +71,17 @@ namespace ModIOBrowser
         // this to true and open the browser the moment we have been initialized
         static bool openOnInitialize = false;
 
+        public static bool IsOpen = false;
+
         // Use Awake() to setup the Singleton for Browser.cs and initialize the plugin
+        protected override void Awake()
+        {
+            base.Awake();
+
+            SharedUi.settings = uiConfig;
+            SharedUi.colorScheme = colorScheme;
+        }
+
         void Start()
         {
             if (autoInitialize)
@@ -156,6 +165,7 @@ namespace ModIOBrowser
 
             // Deactivate the Canvas
             Instance?.BrowserCanvas?.SetActive(false);
+            IsOpen = false;
             OnClose?.Invoke();
 
             SelectionManager.Instance.gameObject.SetActive(false);
@@ -334,6 +344,7 @@ namespace ModIOBrowser
             if(!Instance.BrowserCanvas.activeSelf)
             {
                 Instance.BrowserCanvas.SetActive(true);
+                IsOpen = true;
             }
 
             Collection.Instance.CacheLocalSubscribedModStatuses();

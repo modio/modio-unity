@@ -23,9 +23,9 @@ namespace ModIOBrowser.Implementation
         
         private void Start()
         {
-            colorScheme = Browser.Instance.colorScheme;
+            colorScheme = SharedUi.colorScheme;
             if(this.PlatformType == default)
-                ChangeGlyphs(Browser.Instance.uiConfig.GlyphPlatform);
+                ChangeGlyphs(SharedUi.settings.GlyphPlatform);
         }
 
         public void SetColor(ColorSetterType colorSetter, Action<Color> setter)

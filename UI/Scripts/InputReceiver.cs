@@ -21,7 +21,7 @@ namespace ModIOBrowser
 		/// </remarks>
 		public static void OnCancel()
 		{
-			if(Browser.Instance.BrowserCanvas.activeSelf)
+			if(Browser.IsOpen)
 			{
                 InputNavigation.Instance.SetToController();
 				Navigating.Cancel();
@@ -37,7 +37,7 @@ namespace ModIOBrowser
 		/// </remarks>
 		public static void OnAlternate()
 		{
-			if(Browser.Instance.BrowserCanvas.activeSelf)
+			if(Browser.IsOpen)
 			{
 				InputNavigation.Instance.SetToController();
                 Navigating.Alternate();
@@ -52,7 +52,7 @@ namespace ModIOBrowser
 		/// </remarks>
 		public static void OnOptions()
 		{
-			if(Browser.Instance.BrowserCanvas.activeSelf)
+			if(Browser.IsOpen)
 			{
                 InputNavigation.Instance.SetToController();
                 Navigating.Options();
@@ -64,7 +64,7 @@ namespace ModIOBrowser
 		/// </summary>
 		public static void OnTabRight()
 		{
-			if(Browser.Instance.BrowserCanvas.activeSelf)
+			if(Browser.IsOpen)
 			{
                 InputNavigation.Instance.SetToController();
                 Navigating.TabRight();
@@ -76,7 +76,7 @@ namespace ModIOBrowser
 		/// </summary>
 		public static void OnTabLeft()
 		{
-			if(Browser.Instance.BrowserCanvas.activeSelf)
+			if(Browser.IsOpen)
 			{
                 InputNavigation.Instance.SetToController();
                 Navigating.TabLeft();
@@ -91,7 +91,7 @@ namespace ModIOBrowser
 		/// </remarks>
 		public static void OnSearch()
 		{
-			if(Browser.Instance.BrowserCanvas.activeSelf)
+			if(Browser.IsOpen)
 			{
                 InputNavigation.Instance.SetToController();
                 SearchPanel.Instance.ToggleState();
@@ -106,7 +106,7 @@ namespace ModIOBrowser
 		/// </remarks>
 		public static void OnMenu()
 		{
-			if(Browser.Instance.BrowserCanvas.activeSelf)
+			if(Browser.IsOpen)
 			{
                 InputNavigation.Instance.SetToController();
                 Navigating.MenuInput();
@@ -122,7 +122,7 @@ namespace ModIOBrowser
 		/// </remarks>
 		public static void OnControllerScroll(float direction)
 		{
-			if(Browser.Instance.BrowserCanvas.activeSelf)
+			if(Browser.IsOpen)
 			{
                 InputNavigation.Instance.SetToController();
                 Navigating.Scroll(direction);
@@ -134,7 +134,7 @@ namespace ModIOBrowser
         /// </summary>
         public static void OnSetToControllerNavigation()
         {
-	        if(Browser.Instance.BrowserCanvas.activeSelf)
+	        if(Browser.IsOpen)
 	        {
                 InputNavigation.Instance.SetToController();
 	        }
@@ -145,7 +145,7 @@ namespace ModIOBrowser
         /// </summary>
         public static void OnSetToMouseNavigation()
         {
-	        if(Browser.Instance.BrowserCanvas.activeSelf)
+	        if(Browser.IsOpen)
 	        {
                 InputNavigation.Instance.SetToMouse();
 	        }

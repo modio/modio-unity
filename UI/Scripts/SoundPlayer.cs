@@ -65,9 +65,8 @@ namespace ModIOBrowser
         {
             if(Browser.SingletonIsInstantiated())
             {
-                Browser.Instance.uiConfig.volume = volume;
-            }
-            
+                SharedUi.settings.volume = volume;
+            }            
         }
 
         /// <summary>
@@ -85,7 +84,7 @@ namespace ModIOBrowser
 
         void PlaySound(SoundEffect sfx)
         {
-            if(!Browser.SingletonIsInstantiated())
+            if(SharedUi.settings == null || sfx == null)
             {
                 return;
             }
@@ -97,7 +96,7 @@ namespace ModIOBrowser
             }
             lastPlayedHoverSoundSeconds = Time.realtimeSinceStartup;
             
-            AudioSource().PlayOneShot(sfx.clip, sfx.defaultVolume * Browser.Instance.uiConfig.volume);
+            AudioSource().PlayOneShot(sfx.clip, sfx.defaultVolume * SharedUi.settings.volume);
         }
 
         public static void PlayClick() => Instance.PlaySound(Instance.SoundClick);

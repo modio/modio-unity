@@ -7,17 +7,18 @@ using UnityEngine.UI;
 namespace ModIOBrowser.Implementation
 {
 
-    class Glyphable : MonoBehaviour
+    internal class Glyphable : MonoBehaviour
     {
         public Image image;
         public GlyphSetting config;
+        SimpleMessageUnsubscribeToken subToken;
 
         public void OnValidate() => image = image == null ? GetComponent<Image>() : image;
 
-        void Awake()
+        void Start()
         {
             UpdateGlyphs();
-            SimpleMessageHub.Instance.Subscribe<MessageGlyphUpdate>(x => UpdateGlyphs());
+            subToken = SimpleMessageHub.Instance.Subscribe<MessageGlyphUpdate>(x => UpdateGlyphs());
         }
 
         public void UpdateGlyphs()
@@ -36,7 +37,7 @@ namespace ModIOBrowser.Implementation
             }
         }
 
-        private Sprite GetGlyphFromDisplayType()
+        Sprite GetGlyphFromDisplayType()
         {
             switch(Glyphs.Instance.PlatformType)
             {
@@ -49,6 +50,11 @@ namespace ModIOBrowser.Implementation
 
             Debug.LogWarning($"{gameObject.name} is missing configuration for {Glyphs.Instance.PlatformType}");
             return Glyphs.Instance.fallbackSprite;
+        }
+
+        void OnDestroy()
+        {
+            subToken?.Unsubscribe();
         }
     }
 }

@@ -390,7 +390,7 @@ namespace ModIOBrowser.Implementation
         {
             for(int i = 0; i < placeholders; i++)
             {
-                ListItem li = ListItem.GetListItem<T>(prefab, list, Browser.Instance.colorScheme, true);
+                ListItem li = ListItem.GetListItem<T>(prefab, list, SharedUi.colorScheme, true);
                 li.PlaceholderSetup();
                 li.SetViewportRestraint(SearchResults.Instance.SearchResultsListItemParent as RectTransform, null);
             }
@@ -428,6 +428,11 @@ namespace ModIOBrowser.Implementation
         /// <param name="modPage">the mods retrieved, if any</param>
         void AddModProfilesToFeaturedCarousel(ResultAnd<ModPage> response)
         {
+            if(!Browser.IsOpen)
+            {
+                return;
+            }
+            
             if(!response.result.Succeeded())
             {
                 // TODO we need to setup a reattempt option similar to mod list rows

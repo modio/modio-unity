@@ -12,9 +12,9 @@ namespace ModIOBrowser
 
 		void OnEnable()
 		{
-            if(Browser.SingletonIsInstantiated())
+            if(SharedUi.colorScheme != null)
             {
-                Refresh(Browser.Instance.colorScheme);
+                Refresh(SharedUi.colorScheme);
             }			
 		}
 

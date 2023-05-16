@@ -3,6 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
+
 namespace ModIOBrowser.Implementation
 {
     class ModioContextMenu : SelfInstancingMonoSingleton<ModioContextMenu>
@@ -56,9 +60,9 @@ namespace ModIOBrowser.Implementation
 
             foreach(var option in options)
             {
-                ListItem li = ListItem.GetListItem<ContextMenuListItem>(ContextMenuListItemPrefab, ContextMenuList, Browser.Instance.colorScheme);
+                ListItem li = ListItem.GetListItem<ContextMenuListItem>(ContextMenuListItemPrefab, ContextMenuList, SharedUi.colorScheme);
                 li.Setup(TranslationManager.Instance.Get(option.nameTranslationReference), option.action);
-                li.SetColorScheme(Browser.Instance.colorScheme);
+                li.SetColorScheme(SharedUi.colorScheme);
 
                 // Setup custom navigation
                 {
@@ -118,7 +122,7 @@ namespace ModIOBrowser.Implementation
             {
                 // if we detect a scroll, left or right mouse click, check if mouse is inside context
                 // menu bounds. If not, then close context menu
-                if(Input.GetKeyDown(KeyCode.Mouse0) || Input.GetKeyDown(KeyCode.Mouse1) || Input.GetAxis("Mouse ScrollWheel") != 0f)
+                if(IsMouseInUse())
                 {
                     // check if the mouse is within the bounds of the contextMenu
                     RectTransform contextRect = transform as RectTransform;
@@ -133,6 +137,15 @@ namespace ModIOBrowser.Implementation
                     }
                 }
             }
+        }
+
+        bool IsMouseInUse()
+        {
+#if ENABLE_INPUT_SYSTEM
+            return Mouse.current.leftButton.wasPressedThisFrame || Mouse.current.rightButton.wasPressedThisFrame || Mouse.current.scroll.y.ReadValue() != 0f;
+#else
+            return Input.GetKeyDown(KeyCode.Mouse0) || Input.GetKeyDown(KeyCode.Mouse1) || Input.GetAxis("Mouse ScrollWheel") != 0f;
+#endif
         }
     }
 }

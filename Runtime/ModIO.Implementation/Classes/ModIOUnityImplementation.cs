@@ -10,7 +10,6 @@ using ModIO.Implementation.Platform;
 using UnityEngine;
 using System.Linq;
 using ModIO.Implementation.API.Requests;
-using UnityEngine.Profiling;
 
 namespace ModIO.Implementation
 {
@@ -20,8 +19,6 @@ namespace ModIO.Implementation
     /// </summary>
     internal static class ModIOUnityImplementation
     {
-        // REVIEW @Jackson Not sure if this should go into mod management or just here. It doesnt
-        // really belong anywhere in particular.
         /// <summary>
         /// A cached reference to the current upload operation handle.
         /// </summary>

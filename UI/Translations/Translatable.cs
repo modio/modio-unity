@@ -79,6 +79,8 @@ namespace ModIOBrowser.Implementation
         /// </summary>
         public void MarkAsUntranslated() => text.text = $"<color=\"red\">{text.text}</color>";
 
+        private SimpleMessageUnsubscribeToken subToken;
+
         /// <summary>
         /// Immediately translates item
         /// Also hooks Translatable up so it listens to the MessageUpdateTranslations message,
@@ -86,7 +88,7 @@ namespace ModIOBrowser.Implementation
         /// </summary>
         private void Awake()
         {
-            SimpleMessageHub.Instance.Subscribe<MessageUpdateTranslations>(
+            subToken = SimpleMessageHub.Instance.Subscribe<MessageUpdateTranslations>(
                 (s)=>ApplyTranslation());
         }
 
@@ -116,5 +118,9 @@ namespace ModIOBrowser.Implementation
             }            
         }
 
+        private void OnDestroy()
+        {
+            subToken.Unsubscribe();
+        }
     }
 }

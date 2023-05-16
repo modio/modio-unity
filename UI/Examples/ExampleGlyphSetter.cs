@@ -1,17 +1,16 @@
 ﻿using System.Collections;
-using ModIOBrowser;
 using ModIOBrowser.Implementation;
 using UnityEngine;
 
 namespace Plugins.mod.io.UI.Examples
 {
-    public class ExmapleGlyphSetter : MonoBehaviour
+    public class ExampleGlyphSetter : MonoBehaviour
     {
-        private bool connected = false;
+        bool connected;
 
         void Awake()
         {
-            this.StartCoroutine(this.CheckForControllers());
+            StartCoroutine(CheckForControllers());
         }
 
         IEnumerator CheckForControllers()
@@ -20,9 +19,9 @@ namespace Plugins.mod.io.UI.Examples
             {
                 var controllers = Input.GetJoystickNames();
 
-                if (!this.connected && controllers.Length > 0)
+                if (!connected && controllers.Length > 0)
                 {
-                    this.connected = true;
+                    connected = true;
                     if(controllers[0].Contains("Microsoft"))
                     {
                         Glyphs.Instance.ChangeGlyphs(GlyphPlatforms.XBOX);
@@ -39,9 +38,9 @@ namespace Plugins.mod.io.UI.Examples
                     Debug.Log("Connected");
 
                 }
-                else if (this.connected && controllers.Length == 0)
+                else if (connected && controllers.Length == 0)
                 {
-                    this.connected = false;
+                    connected = false;
                     Glyphs.Instance.ChangeGlyphs(GlyphPlatforms.PC);
                     Debug.Log("Disconnected");
                 }

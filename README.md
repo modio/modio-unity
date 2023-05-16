@@ -2,7 +2,7 @@
 # mod.io Unity Plugin v2023.5.12
 [![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)](https://github.com/modio/modio-unity/blob/master/LICENSE)
 [![Discord](https://img.shields.io/discord/389039439487434752.svg?label=Discord&logo=discord&color=7289DA&labelColor=2C2F33)](https://discord.mod.io)
-[![Master docs](https://img.shields.io/badge/docs-master-green.svg)](https://github.com/modio/modio-unity-v2/wiki)
+[![Master docs](https://img.shields.io/badge/docs-master-green.svg)](https://go.mod.io/unity-docs)
 [![Unity 3D](https://img.shields.io/badge/Unity-2019.4+-lightgrey.svg)](https://unity3d.com)
 
 Welcome to the mod.io Unity Engine plugin repository. It allows game developers to host and automatically install user-created mods in their games which use **Unity 2019.4** or newer. It provides a UI for mod discovery, installation and collection management, and a C# interface which connects to the [mod.io REST API](https://docs.mod.io).
@@ -16,10 +16,10 @@ Welcome to the mod.io Unity Engine plugin repository. It allows game developers 
 | ------------- | ------- |
 |Windows        | ✔       |
 |Windows (GDK)  | ✔ [Contact us](#game-studios-and-publishers) |
-|Nintendo Switch| ✔ [Contact us](#game-studios-and-publishers) |
 |XBox (GDK)     | ✔ [Contact us](#game-studios-and-publishers) |
 |PlayStation 4  | ✔ [Contact us](#game-studios-and-publishers) |
 |PlayStation 5  | ✔ [Contact us](#game-studios-and-publishers) |
+|Nintendo Switch| ✔ [Contact us](#game-studios-and-publishers) |
 |Linux          | ✔       |
 |macOS          | ✔       |
 
@@ -272,4 +272,3 @@ Our Unity plugin is public and open source. Game developers are welcome to utili
 
 ## Other Repositories
 Our aim with [mod.io](https://mod.io), is to provide an [open modding API](https://docs.mod.io). You are welcome to [view, fork and contribute to our other codebases](https://github.com/modio) in use.
- 

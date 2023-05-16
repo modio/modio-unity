@@ -1,9 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using ModIOBrowser;
-using ModIOBrowser.Implementation;
 using UnityEngine;
-using UnityEngine.EventSystems;
 
 /// <summary>
 /// An Example script on how to setup the key/button bindings for the ModIO Browser. Inputs such as
@@ -47,6 +45,8 @@ public class ExampleInputCapture : MonoBehaviour
 
     void Update()
     {
+        if(!Browser.IsOpen) return;
+        
         // This is a basic example of one way to capture inputs and inform the UI browser what
         // action that that input should perform.
         //
@@ -62,7 +62,7 @@ public class ExampleInputCapture : MonoBehaviour
         HandleControllerInput();
     }
 
-    private void HandleInputReceiver()
+    void HandleInputReceiver()
     {
         if(Input.GetKeyDown(Cancel))
         {
@@ -94,7 +94,7 @@ public class ExampleInputCapture : MonoBehaviour
         }
     }
 
-    private void HandleControllerInput()
+    void HandleControllerInput()
     {
         // Handle controller scrolling
         // For now, this is only used in the mod details view, and may clash with "regular" navigation

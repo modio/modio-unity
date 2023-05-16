@@ -189,7 +189,7 @@ namespace ModIOBrowser
                 }
             }
 
-            if(!Browser.Instance.BrowserCanvas.activeSelf)
+            if(!Browser.IsOpen)
             {
                 return;
             }

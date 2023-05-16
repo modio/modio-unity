@@ -30,7 +30,7 @@ namespace ModIOBrowser.Implementation
 
 		void OnEnable()
 		{
-			if(!Browser.Instance.uiConfig.ShouldWeUseVirtualKeyboardDelegate())
+			if(!SharedUi.settings.ShouldWeUseVirtualKeyboardDelegate())
 			{
 				Destroy(this);
 			}
@@ -38,7 +38,7 @@ namespace ModIOBrowser.Implementation
 
 		public void OnSelect(BaseEventData eventData)
 		{
-			if (Browser.Instance.uiConfig.ShouldWeUseVirtualKeyboardDelegate())
+			if (SharedUi.settings.ShouldWeUseVirtualKeyboardDelegate())
 			{
 				if(editOnFocus)
 				{
@@ -61,7 +61,7 @@ namespace ModIOBrowser.Implementation
 		
 		public void OnDeselect(BaseEventData eventData)
 		{
-			if (Browser.Instance.uiConfig.ShouldWeUseVirtualKeyboardDelegate())
+			if (SharedUi.settings.ShouldWeUseVirtualKeyboardDelegate())
 			{
 				if(InputReceiver.currentSelectedInputField == this)
 				{
@@ -72,7 +72,7 @@ namespace ModIOBrowser.Implementation
 		
 		public void OnSubmit(BaseEventData eventData)
 		{
-			if (Browser.Instance.uiConfig.ShouldWeUseVirtualKeyboardDelegate())
+			if (SharedUi.settings.ShouldWeUseVirtualKeyboardDelegate())
 			{
 				// Check if the user has specified an OS virtual keyboard
 				OpenKeyboard();

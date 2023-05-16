@@ -150,7 +150,7 @@ namespace ModIOBrowser.Implementation
                 // if we have more than one image make pips for navigation
                 if(images.Count > 1)
                 {
-                    ListItem li = ListItem.GetListItem<GalleryImageButtonListItem>(ModDetailsGalleryNavButtonPrefab, ModDetailsGalleryNavButtonParent, Browser.Instance.colorScheme);
+                    ListItem li = ListItem.GetListItem<GalleryImageButtonListItem>(ModDetailsGalleryNavButtonPrefab, ModDetailsGalleryNavButtonParent, SharedUi.colorScheme);
                     li.Setup(delegate { this.OnNavButtonClicked(thisPosition); });
                     _listItems.Add(li);
                 }
@@ -200,7 +200,7 @@ namespace ModIOBrowser.Implementation
                             ModDetailsGalleryFailedToLoadIcon.gameObject.SetActive(true);
                             Image image = GetCurrentGalleryImageComponent();
                             image.sprite = null;
-                            image.color = Browser.Instance.colorScheme.GetSchemeColor(ColorSetterType.Inactive3);
+                            image.color = SharedUi.colorScheme.GetSchemeColor(ColorSetterType.Inactive3);
                         }
                     }
                 };
@@ -479,7 +479,7 @@ namespace ModIOBrowser.Implementation
             if(next.sprite == null)
             {
                 ModDetailsGalleryFailedToLoadIcon.gameObject.SetActive(true);
-                next.color = Browser.Instance.colorScheme.GetSchemeColor(ColorSetterType.Inactive3);
+                next.color = SharedUi.colorScheme.GetSchemeColor(ColorSetterType.Inactive3);
             }
             else
             {

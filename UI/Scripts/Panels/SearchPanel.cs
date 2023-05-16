@@ -110,7 +110,7 @@ namespace ModIOBrowser.Implementation
             //this can add the items to a list
             foreach(TagCategory category in tags)
             {
-                ListItem categoryListItem = ListItem.GetListItem<TagCategoryListItem>(SearchPanelTagCategoryPrefab, SearchPanelTagParent, Browser.Instance.colorScheme);
+                ListItem categoryListItem = ListItem.GetListItem<TagCategoryListItem>(SearchPanelTagCategoryPrefab, SearchPanelTagParent, SharedUi.colorScheme);
                 categoryListItem.Setup(category.name);
 
                 IEnumerable<ListItem> v = CreateTagListItems(category);
@@ -203,7 +203,7 @@ namespace ModIOBrowser.Implementation
 
             foreach(ModIO.Tag tag in category.tags)
             {
-                ListItem tagListItem = ListItem.GetListItem<TagListItem>(SearchPanelTagPrefab, SearchPanelTagParent, Browser.Instance.colorScheme);
+                ListItem tagListItem = ListItem.GetListItem<TagListItem>(SearchPanelTagPrefab, SearchPanelTagParent, SharedUi.colorScheme);
                 tagListItem.Setup(tag.name, category.name);
                 tagListItem.SetViewportRestraint(SearchPanelTagParent as RectTransform, SearchPanelTagViewport);
 

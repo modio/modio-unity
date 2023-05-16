@@ -105,7 +105,7 @@ namespace ModIOBrowser.Implementation
                     continue;
                 }
 
-                ListItem li = ListItem.GetListItem<DownloadQueueListItem>(DownloadQueueListItem, DownloadQueueList, Browser.Instance.colorScheme);
+                ListItem li = ListItem.GetListItem<DownloadQueueListItem>(DownloadQueueListItem, DownloadQueueList, SharedUi.colorScheme);
                 li.Setup(mod);
                 li.SetViewportRestraint(DownloadQueueList as RectTransform, DownloadQueueListViewport);
                 pendingModsInQueue = true;

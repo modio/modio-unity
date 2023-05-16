@@ -6,15 +6,15 @@ namespace ModIOBrowser
     public class BrowserSpawnIn : MonoBehaviour
     {
         public GameObject browserPrefab;
+        GameObject spawnedBrowser;
 
-        bool hasSpawned = false;
+        bool hasSpawned => spawnedBrowser != null;
 
         public void SpawnIn()
         {
             if(!hasSpawned)
             {
-                Instantiate(browserPrefab);
-                hasSpawned = true;
+                spawnedBrowser = Instantiate(browserPrefab);
             }
         
             Browser.Open(null);

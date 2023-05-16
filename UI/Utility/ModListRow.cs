@@ -154,6 +154,11 @@ namespace ModIOBrowser.Implementation
 
         void GetModsResponse(ResultAnd<ModPage> response)
         {
+            if(!Browser.IsOpen)
+            {
+                return;
+            }
+            
             LoadingPanel.SetActive(false);
             
             if(response.result.Succeeded())
@@ -181,7 +186,7 @@ namespace ModIOBrowser.Implementation
 
             foreach(ModProfile mod in page.modProfiles)
             {
-                ListItem li = ListItem.GetListItem<HomeModListItem>(ModListItemPrefab, ModListItemContainer, Browser.Instance.colorScheme);
+                ListItem li = ListItem.GetListItem<HomeModListItem>(ModListItemPrefab, ModListItemContainer, SharedUi.colorScheme);
                 li.Setup(mod);
                 li.SetViewportRestraint(ModListItemContainer as RectTransform, null);
                 Home.Instance.AddModListItemToRowDictionaryCache(li, ModListItemContainer.gameObject);

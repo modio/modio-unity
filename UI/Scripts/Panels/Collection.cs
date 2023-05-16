@@ -197,7 +197,7 @@ namespace ModIOBrowser.Implementation
                 }
             }
 
-            string accentHashColor = ColorUtility.ToHtmlStringRGBA(Browser.Instance.colorScheme.GetSchemeColor(ColorSetterType.Highlight));
+            string accentHashColor = ColorUtility.ToHtmlStringRGBA(SharedUi.colorScheme.GetSchemeColor(ColorSetterType.Highlight));
 
             if(subscribedMods == null)
             {
@@ -247,7 +247,7 @@ namespace ModIOBrowser.Implementation
                     continue;
                 }
 
-                ListItem li = ListItem.GetListItem<CollectionModListItem>(CollectionPanelModListItem, CollectionPanelModListItemParent, Browser.Instance.colorScheme);
+                ListItem li = ListItem.GetListItem<CollectionModListItem>(CollectionPanelModListItem, CollectionPanelModListItemParent, SharedUi.colorScheme);
                 
                 if(li is CollectionModListItem item)
                 {

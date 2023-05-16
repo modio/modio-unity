@@ -70,9 +70,11 @@ namespace ModIOBrowser
         protected override void Awake()
         {
             base.Awake();
+        }
 
-            Language = Browser.Instance.uiConfig.Language;
-
+        private void Start()
+        {
+            Language = SharedUi.settings.Language;
             ForceChangeLanguage(Language);
         }
 
