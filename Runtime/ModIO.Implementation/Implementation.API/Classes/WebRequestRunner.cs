@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using ModIO.Implementation.API.Objects;
 using ModIO.Implementation.Platform;
 using Newtonsoft.Json;
-using Debug = UnityEngine.Debug;
 
 namespace ModIO.Implementation.API
 {
@@ -370,7 +369,7 @@ namespace ModIO.Implementation.API
         static async Task<WebRequest> BuildWebRequest(WebRequestConfig config, ProgressHandle progressHandle)
         {
             // Add API key or Access token
-            if (UserData.instance.IsOAuthTokenValid())
+            if (UserData.instance.IsOAuthTokenValid() && !config.DontUseAuthToken)
             {
                 config.AddHeader("Authorization", $"Bearer {UserData.instance.oAuthToken}");
             }

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using ModIO.Implementation.API.Objects;
 using Newtonsoft.Json.Utilities;
-using UnityEngine;
  
 namespace ModIO.Implementation.API
 {
@@ -11,7 +10,7 @@ namespace ModIO.Implementation.API
 	/// objects and anything we serialize for the registry gets AOT code generated when using IL2CPP
 	/// compilation.
 	/// </summary>
-	internal class AotTypeEnforcer : MonoBehaviour
+	internal class AotTypeEnforcer
 	{
 		public void Awake()
 		{

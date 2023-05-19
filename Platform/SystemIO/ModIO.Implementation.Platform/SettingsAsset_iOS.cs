@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿#if UNITY_2019_4_OR_NEWER
+using UnityEngine;
 
 namespace ModIO.Implementation
 {
@@ -19,3 +20,4 @@ namespace ModIO.Implementation
 #endif // UNITY_STANDALONE_WIN && !UNITY_EDITOR
     }
 }
+#endif

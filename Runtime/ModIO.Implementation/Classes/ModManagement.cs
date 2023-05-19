@@ -777,6 +777,12 @@ namespace ModIO.Implementation
                         return null;
                     }
 
+                    // Check if this mod is part of the current game id. We dont want to manage mods for a different game
+                    if(mod.modObject.game_id != Settings.server.gameId)
+                    {
+                        continue;
+                    }
+
                     ModManagementOperationType jobType =
                         GetNextJobTypeForModCollectionEntry(mod);
 

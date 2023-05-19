@@ -16,9 +16,9 @@ namespace ModIOBrowser.Implementation
         public List<GameObject> indicators = new List<GameObject>();
         public TMP_Text instructionText;
 
-        private int MaxDigits => texts.Count;
-        private Action onCancel;
-        private Action<string> onContinue;
+        int MaxDigits => texts.Count;
+        Action onCancel;
+        Action<string> onContinue;
 
         internal Translation AuthenticationPanelInfoTextTranslation = null;
 
@@ -70,19 +70,19 @@ namespace ModIOBrowser.Implementation
         }
         #endregion
 
-        private void Close()
+        void Close()
         {
             gameObject.SetActive(false);
             keyInput5Digits.EndSession();
         }
 
-        private void Continue(string s)
+        void Continue(string s)
         {            
             Close();
             onContinue?.Invoke(s);
         }
 
-        private void Render(string renderString)
+        void Render(string renderString)
         {            
             texts.ForEach(t => t.text = "");
             foreach(var i in Enumerable.Range(0, Mathf.Min(MaxDigits, renderString.Length)))
@@ -90,17 +90,12 @@ namespace ModIOBrowser.Implementation
 
             OnIndexChange(keyInput5Digits.index);
         }
-        
 
-        private void OnIndexChange(int i)
+
+        void OnIndexChange(int i)
         {
             indicators.ForEach(x => x.gameObject.SetActive(false));
             indicators[i].gameObject.SetActive(true);
         }
-        
-        #region Editor Helper Methods
-        [ExposeMethodInEditor]
-        public void TestOpen() => Open(s => Debug.Log(s + " continued"), "bro", () => Debug.Log("cancelled"));
-        #endregion
     }
 }

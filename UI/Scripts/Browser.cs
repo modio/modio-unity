@@ -136,7 +136,7 @@ namespace ModIOBrowser
         /// Keep in mind that a user may close the browser from an internal method, such as using
         /// the UI 'back' button or pressing ESC.
         /// </remarks>
-        public static void Open([CanBeNull] Action onClose)
+        public static void Open(Action onClose)
         {
             OnClose = onClose;
 
@@ -266,6 +266,15 @@ namespace ModIOBrowser
             });
         }
 
+        public static void SetupGOGAuthenticationOption(RetrieveAuthenticationCodeDelegate getGogTicketDelegate, string userEmail = null)
+        {
+            MonoDispatcher.Instance.Run(() =>
+            {
+                Authentication.getGogAuthCode = getGogTicketDelegate;
+                Authentication.optionalThirdPartyEmailAddressUsedForAuthentication = userEmail;
+            });
+        }
+
         /// <summary>
         /// Using this method will enable an option in the Authentication modal for a user to
         /// log in with their PlayStation credentials. Simply provide the auth code
@@ -313,21 +322,9 @@ namespace ModIOBrowser
             }
         }
 
-        static void IsInitialized()
+        static async void IsInitialized()
         {
             openOnInitialize = false;
-            ModIOUnity.IsAuthenticated((r) =>
-            {
-                if(r.Succeeded())
-                {
-                    Authentication.Instance.IsAuthenticated = true;
-                    ModIOUnity.FetchUpdates(delegate { });
-                }
-                else
-                {
-                    Authentication.Instance.IsAuthenticated = false;
-                }
-            });
 
             if(Instance == null)
             {
@@ -349,7 +346,23 @@ namespace ModIOBrowser
 
             Collection.Instance.CacheLocalSubscribedModStatuses();
             Implementation.Avatar.Instance.SetupUser();
+            
+            // open the browser panel (This will show loading icons etc, but wont load yet)
             Home.Instance.Open();
+            
+            // wait and check if we're authenticated, we need to know if our access token is still valid
+            var isAuthed = await ModIOUnityAsync.IsAuthenticated();
+            if(isAuthed.Succeeded())
+            {
+                Authentication.Instance.IsAuthenticated = true;
+                ModIOUnity.FetchUpdates(delegate { });
+            }
+            else
+            {
+                Authentication.Instance.IsAuthenticated = false;
+            }
+            
+            // refresh the home panel now that we know if our access token will work
             Home.Instance.RefreshHomePanel();
             ModIOUnity.EnableModManagement(Mods.ModManagementEvent);
 

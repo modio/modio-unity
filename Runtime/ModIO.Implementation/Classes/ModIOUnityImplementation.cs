@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net.Mail;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
 using ModIO.Implementation.API;
 using ModIO.Implementation.API.Objects;
 using ModIO.Implementation.Platform;
@@ -602,8 +601,8 @@ namespace ModIO.Implementation
 
         public static async Task<Result> AuthenticateUser(
             string data, AuthenticationServiceProvider serviceProvider,
-            [CanBeNull] string emailAddress, [CanBeNull] TermsHash? hash, [CanBeNull] string nonce,
-            [CanBeNull] OculusDevice? device, [CanBeNull] string userId, PlayStationEnvironment environment)
+             string emailAddress,  TermsHash? hash,  string nonce,
+             OculusDevice? device,  string userId, PlayStationEnvironment environment)
         {
             TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
             openCallbacks_dictionary.Add(callbackConfirmation, null);
@@ -649,8 +648,8 @@ namespace ModIO.Implementation
 
         public static async void AuthenticateUser(
             string data, AuthenticationServiceProvider serviceProvider,
-            [CanBeNull] string emailAddress, [CanBeNull] TermsHash? hash, [CanBeNull] string nonce,
-            [CanBeNull] OculusDevice? device, [CanBeNull] string userId,
+            string emailAddress, TermsHash? hash, string nonce,
+            OculusDevice? device, string userId,
             PlayStationEnvironment environment, Action<Result> callback)
         {
             if(callback == null)
@@ -956,7 +955,7 @@ namespace ModIO.Implementation
 #region Mod Management
 
         public static Result EnableModManagement(
-            [CanBeNull] ModManagementEventDelegate modManagementEventDelegate)
+            ModManagementEventDelegate modManagementEventDelegate)
         {
             if(IsInitialized(out Result result) && IsAuthenticatedSessionValid(out result))
             {
@@ -1446,6 +1445,8 @@ namespace ModIO.Implementation
 #endregion // User Management
 
 #region Mod Media
+        
+#if UNITY_2019_4_OR_NEWER
         public static async Task<ResultAnd<Texture2D>> DownloadTexture(DownloadReference downloadReference)
         {
             //------------------------------[ Setup callback params ]------------------------------
@@ -1463,7 +1464,7 @@ namespace ModIO.Implementation
 
             return ResultAnd.Create(result, texture);
         }
-
+#endif
         /// <summary>
         /// This will first check if we are already attempting to download the same image with a
         /// different web request. Instead of competing for a file stream it will simply wait for
@@ -1584,6 +1585,7 @@ namespace ModIO.Implementation
             return ResultAnd.Create(result, image);
         }
 
+#if UNITY_2019_4_OR_NEWER
         public static async void DownloadTexture(DownloadReference downloadReference,
                                                  Action<ResultAnd<Texture2D>> callback)
         {
@@ -1605,7 +1607,7 @@ namespace ModIO.Implementation
             ResultAnd<Texture2D> result = await DownloadTexture(downloadReference);
             callback?.Invoke(result);
         }
-
+#endif
         public static async void DownloadImage(DownloadReference downloadReference,
                                                  Action<ResultAnd<byte[]>> callback)
         {

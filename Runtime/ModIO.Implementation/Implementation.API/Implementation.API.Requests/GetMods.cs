@@ -1,5 +1,4 @@
-﻿using JetBrains.Annotations;
-using ModIO.Implementation.API.Objects;
+﻿using ModIO.Implementation.API.Objects;
 
 namespace ModIO.Implementation.API.Requests
 {
@@ -7,7 +6,7 @@ namespace ModIO.Implementation.API.Requests
     {
         public class ResponseSchema : PaginatedResponse<ModObject> { }
 
-        public static WebRequestConfig RequestPaginated([CanBeNull] SearchFilter searchFilter)
+        public static WebRequestConfig RequestPaginated(SearchFilter searchFilter)
         {
             string filter = string.Empty;
             if(searchFilter != null)

@@ -1,13 +1,10 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading.Tasks;
 using ModIO.Implementation.API.Objects;
-using Plugins.mod.io.Runtime.Utility;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace ModIO.Implementation.API
 {
@@ -331,33 +328,9 @@ namespace ModIO.Implementation.API
             return result;
         }
 
-        public static async Task<ResultAnd<Texture2D>> GetTextureFromCache(string url)
-        {
-            ResultAnd<Texture2D> result = new ResultAnd<Texture2D>();
-            ResultAnd<Texture2D> resultIO = await DataStorage.TryRetrieveImage(url);
-
-            result.result = resultIO.result;
-
-            if(resultIO.result.Succeeded())
-            {
-                if(logCacheMessages)
-                {
-                    Logger.Log(LogLevel.Verbose,
-                               "[CACHE] retrieved texture from temp folder cache");
-                }
-                result.value = resultIO.value;
-            }
-
-            return result;
-        }
-
         public static async Task<ResultAnd<byte[]>> GetImageFromCache(
             DownloadReference downloadReference)
             => await GetImageFromCache(downloadReference.url);
-
-        public static async Task<ResultAnd<Texture2D>> GetTextureFromCache(
-            DownloadReference downloadReference)
-            => await GetTextureFromCache(downloadReference.url);
 
         public static bool GetTermsFromCache(string url, out TermsOfUse terms)
         {

@@ -6,12 +6,13 @@ using UnityEngine;
 [CustomEditor(typeof(SettingsAsset))]
 public class SettingsAssetEditor : Editor
 {
-    private SerializedProperty serverURL;
-    private SerializedProperty gameId;
-    private SerializedProperty gameKey;
-    private SerializedProperty languageCode;
+	SerializedProperty serverURL;
+	SerializedProperty gameId;
+	SerializedProperty gameKey;
+	SerializedProperty languageCode;
+	int previousGameId = 0;
 
-    private void OnEnable()
+	void OnEnable()
     {
         //get references to SerializedProperties
         var serverSettingsProperty = serializedObject.FindProperty("serverSettings");
@@ -24,7 +25,7 @@ public class SettingsAssetEditor : Editor
     public override void OnInspectorGUI()
 	{
         //Grab any changes to the original object data
-        this.serializedObject.UpdateIfRequiredOrScript();
+        serializedObject.UpdateIfRequiredOrScript();
 
         SettingsAsset myTarget = (SettingsAsset)target;
 
@@ -65,7 +66,7 @@ public class SettingsAssetEditor : Editor
         }
 		if(GUILayout.Button("Insert URL for Production API"))
 		{
-            serverURL.stringValue = "https://api.mod.io/v1";
+            serverURL.stringValue = $"https://g-{gameId.intValue}.modapi.io/v1";
             //remove focus from other fields
             GUI.FocusControl(null);
         }
@@ -83,8 +84,18 @@ public class SettingsAssetEditor : Editor
 			}
 		}
 
+		// If the gameId has been changed, update the url
+		if(gameId.intValue != previousGameId)
+		{
+			if(myTarget.serverSettings.serverURL != "https://api.test.mod.io/v1")
+			{
+				serverURL.stringValue = $"https://g-{gameId.intValue}.modapi.io/v1";
+			}
+			previousGameId = gameId.intValue;
+		}
+
         //Save the new values
-        this.serializedObject.ApplyModifiedProperties();
+        serializedObject.ApplyModifiedProperties();
     }
 }
 #endif

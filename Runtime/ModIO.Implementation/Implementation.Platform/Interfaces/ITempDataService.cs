@@ -1,5 +1,3 @@
-using System.Threading.Tasks;
-
 namespace ModIO.Implementation.Platform
 {
     /// <summary>Interface for the temp data operations.</summary>

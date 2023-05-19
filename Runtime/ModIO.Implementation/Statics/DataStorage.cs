@@ -106,30 +106,6 @@ namespace ModIO.Implementation
         }
 
         /// <summary>Stores an image to the temporary cache.</summary>
-        public static async Task<Result> StoreImage(string imageURL, Texture2D texture)
-        {
-            // - generate file path -
-            string filePath = GenerateImageCacheFilePath(imageURL);
-            if(filePath == null)
-            {
-                return ResultBuilder.Create(ResultCode.Internal_InvalidParameter);
-            }
-
-            // - process image -
-            byte[] pngData = IOUtil.GeneratePNGData(texture);
-            if(pngData == null)
-            {
-                return ResultBuilder.Create(ResultCode.Internal_InvalidParameter);
-            }
-
-            // - store -
-            Result result = await taskRunner.AddTask(TaskPriority.HIGH, 1,
-                async () => await temp.WriteFileAsync(filePath, pngData));
-
-            return result;
-        }
-
-        /// <summary>Stores an image to the temporary cache.</summary>
         public static Result DeleteStoredImage(string imageURL)
         {
             // - generate file path -
@@ -154,38 +130,6 @@ namespace ModIO.Implementation
         {
             ModIOFileStream stream = temp.OpenWriteStream(GenerateImageCacheFilePath(imageURL), out Result result);
             return ResultAnd.Create(result, stream);
-        }
-
-        /// <summary>Attempts to retrieve an image from the temporary cache.</summary>        
-        public static async Task<ResultAnd<Texture2D>> TryRetrieveImage(string imageURL)
-        {
-            // - generate file path -
-            string filePath = GenerateImageCacheFilePath(imageURL);
-            if(filePath == null)
-            {
-                return ResultAnd.Create<Texture2D>(ResultCode.Internal_InvalidParameter, null);
-            }
-
-            // - read -
-            ResultAnd<byte[]> readResult = await taskRunner.AddTask(TaskPriority.HIGH, 1,
-                async () => await temp.ReadFileAsync(filePath));
-
-            if(!readResult.result.Succeeded())
-            {
-                return ResultAnd.Create<Texture2D>(readResult.result, null);
-            }
-
-            // - parse -
-            Result parseResult;
-            Texture2D texture;
-
-            if(!IOUtil.TryParseImageData(readResult.value, out texture, out parseResult))
-            {
-                return ResultAnd.Create<Texture2D>(parseResult, null);
-            }
-
-            // - success -
-            return ResultAnd.Create(ResultCode.Success, texture);
         }
 
         /// <summary>Attempts to retrieve an image from the temporary cache.</summary>        

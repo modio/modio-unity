@@ -55,6 +55,7 @@ namespace ModIO.Implementation
         }
 
         /// <summary>Parse PNG/JPG data as image.</summary>
+#if UNITY_2019_4_OR_NEWER
         public static bool TryParseImageData(byte[] data, out Texture2D texture, out Result result)
         {
             if(data == null || data.Length == 0)
@@ -86,33 +87,7 @@ namespace ModIO.Implementation
 
             return (result.Succeeded());
         }
-
-        /// <summary>Encodes the texture as PNG data.</summary>
-        public static byte[] GeneratePNGData(Texture2D texture)
-        {
-            byte[] data = null;
-
-            if(texture == null)
-            {
-                data = null;
-
-                Logger.Log(LogLevel.Verbose,
-                           ":INTERNAL: Attempted to generate PNG data for NULL texture.");
-            }
-            else
-            {
-                data = ImageConversion.EncodeToPNG(texture);
-
-                if(data == null)
-                {
-                    Logger.Log(LogLevel.Verbose,
-                               ":INTERNAL: Failed to encode texture as PNG data.");
-                }
-            }
-
-            return data;
-        }
-
+#endif
         /// <summary>Generates an MD5 hash for a given byte array.</summary>
         public static string GenerateMD5(Stream data)
         {

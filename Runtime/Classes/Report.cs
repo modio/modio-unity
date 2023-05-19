@@ -1,5 +1,4 @@
-﻿using JetBrains.Annotations;
-using ModIO.Implementation;
+﻿using ModIO.Implementation;
 
 namespace ModIO
 {
@@ -15,11 +14,11 @@ namespace ModIO
         /// </summary>
         /// <param name="modId">the id of the mod being reported</param>
         /// <param name="type">the type of report</param>
-        /// <param name="summary">explanation of the issue being reported</param>
-        /// <param name="user">user reporting the issue</param>
-        /// <param name="contactEmail">user email address</param>
-        public Report(ModId modId, ReportType type, [NotNull] string summary, [NotNull] string user,
-                      [NotNull] string contactEmail)
+        /// <param name="summary">CANNOT BE NULL explanation of the issue being reported</param>
+        /// <param name="user">CANNOT BE NULL user reporting the issue</param>
+        /// <param name="contactEmail">CANNOT BE NULL user email address</param>
+        public Report(ModId modId, ReportType type, string summary, string user,
+                       string contactEmail)
         {
             id = modId;
             this.type = type;

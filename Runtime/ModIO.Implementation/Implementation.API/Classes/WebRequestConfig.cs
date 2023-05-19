@@ -11,6 +11,12 @@ namespace ModIO.Implementation.API
 
         public bool ShouldRequestTimeout = true;
 
+        /// <summary>
+        /// If set to true, whether or not we have an available auth token, the WebRequestRunner
+        /// will include the api key instead
+        /// </summary>
+        public bool DontUseAuthToken = false;
+
         public List<KeyValuePair<string,string>> StringKvpData = new List<KeyValuePair<string,string>>();
 
         public Stream DownloadStream;

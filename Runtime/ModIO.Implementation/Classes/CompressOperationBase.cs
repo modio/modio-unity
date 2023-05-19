@@ -2,8 +2,6 @@
 using System.IO;
 using System.Threading.Tasks;
 using ICSharpCode.SharpZipLib.Zip;
-using JetBrains.Annotations;
-using UnityEngine;
 
 namespace ModIO.Implementation
 {
@@ -70,7 +68,7 @@ namespace ModIO.Implementation
         }
 
 
-        protected ResultAnd<MemoryStream> Abort(ResultAnd<MemoryStream> resultAnd, [CanBeNull] string details)
+        protected ResultAnd<MemoryStream> Abort(ResultAnd<MemoryStream> resultAnd, string details)
         {
             Logger.Log(LogLevel.Verbose,
                $"FAILED COMPRESSION [{resultAnd.result.code}] {details}");

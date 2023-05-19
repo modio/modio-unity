@@ -142,7 +142,7 @@ namespace ModIOBrowser.Implementation
 			}
 
 			// if no list item was found create a new one
-			Instantiate(prefab, parent);
+			Instantiate(prefab).transform.SetParent(parent);
 			ListItems[type].Add(LastCreatedListItem);
 
 			LastCreatedListItem.SetColorScheme(scheme);

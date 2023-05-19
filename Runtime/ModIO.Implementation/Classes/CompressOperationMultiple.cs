@@ -2,8 +2,6 @@
 using System.IO;
 using System.Threading.Tasks;
 using ICSharpCode.SharpZipLib.Zip;
-using JetBrains.Annotations;
-using UnityEngine;
 
 namespace ModIO.Implementation
 {
@@ -11,7 +9,7 @@ namespace ModIO.Implementation
     {
         public IEnumerable<byte[]> data;
 
-        public CompressOperationMultiple(IEnumerable<byte[]> compressed, [CanBeNull] ProgressHandle progressHandle)
+        public CompressOperationMultiple(IEnumerable<byte[]> compressed, ProgressHandle progressHandle)
             : base(progressHandle)
         {
             this.data = compressed;

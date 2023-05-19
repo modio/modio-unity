@@ -1,6 +1,4 @@
 ﻿using ModIO.Implementation;
-using System;
-using JetBrains.Annotations;
 using UnityEngine;
 using System.Threading.Tasks;
 using ModIO.Implementation.API.Objects;
@@ -196,8 +194,8 @@ namespace ModIO
         /// }
         /// </code>
         public static async Task<Result> AuthenticateUserViaSteam(string steamToken,
-                                                                  [CanBeNull] string emailAddress,
-                                                                  [CanBeNull] TermsHash? hash)
+                                                                  string emailAddress,
+                                                                  TermsHash? hash)
         {
             return await ModIOUnityImplementation.AuthenticateUser(
                 steamToken, AuthenticationServiceProvider.Steam, emailAddress, hash, null, null,
@@ -211,8 +209,8 @@ namespace ModIO
         /// <param name="emailAddress">the user's email address</param>
         /// <seealso cref="ModIOUnity.AuthenticateUserViaEpic"/>
         public static async Task<Result> AuthenticateUserViaEpic(string epicToken,
-                                                                  [CanBeNull] string emailAddress,
-                                                                  [CanBeNull] TermsHash? hash)
+                                                                  string emailAddress,
+                                                                  TermsHash? hash)
         {
             return await ModIOUnityImplementation.AuthenticateUser(
                 epicToken, AuthenticationServiceProvider.Steam, emailAddress, hash, null, null,
@@ -265,8 +263,8 @@ namespace ModIO
         /// }
         /// </code>
         public static async Task<Result> AuthenticateUserViaPlayStation(string authCode,
-                                                                  [CanBeNull] string emailAddress,
-                                                                  [CanBeNull] TermsHash? hash,
+                                                                  string emailAddress,
+                                                                  TermsHash? hash,
                                                                   PlayStationEnvironment environment)
         {
             return await ModIOUnityImplementation.AuthenticateUser(
@@ -319,8 +317,8 @@ namespace ModIO
         ///     }
         /// }
         /// </code>
-        public static async Task<Result> AuthenticateUserViaGOG(string gogToken, [CanBeNull] string emailAddress,
-                                                                [CanBeNull] TermsHash? hash)
+        public static async Task<Result> AuthenticateUserViaGOG(string gogToken, string emailAddress,
+                                                                TermsHash? hash)
         {
             return await ModIOUnityImplementation.AuthenticateUser(gogToken, AuthenticationServiceProvider.GOG,
                 emailAddress, hash, null, null, null, 0);
@@ -372,8 +370,8 @@ namespace ModIO
         /// }
         /// </code>
         public static async Task<Result> AuthenticateUserViaItch(string itchioToken,
-                                                                 [CanBeNull] string emailAddress,
-                                                                 [CanBeNull] TermsHash? hash)
+                                                                 string emailAddress,
+                                                                 TermsHash? hash)
         {
             return await ModIOUnityImplementation.AuthenticateUser(
                 itchioToken, AuthenticationServiceProvider.Itchio, emailAddress, hash, null, null,
@@ -426,8 +424,8 @@ namespace ModIO
         /// }
         /// </code>
         public static async Task<Result> AuthenticateUserViaXbox(string xboxToken,
-                                                                 [CanBeNull] string emailAddress,
-                                                                 [CanBeNull] TermsHash? hash)
+                                                                 string emailAddress,
+                                                                 TermsHash? hash)
         {
             return await ModIOUnityImplementation.AuthenticateUser(xboxToken, AuthenticationServiceProvider.Xbox,
                 emailAddress, hash, null, null, null, 0);
@@ -479,8 +477,8 @@ namespace ModIO
         /// }
         /// </code>
         public static async Task<Result> AuthenticateUserViaSwitch(string switchToken,
-                                                                   [CanBeNull] string emailAddress,
-                                                                   [CanBeNull] TermsHash? hash)
+                                                                   string emailAddress,
+                                                                   TermsHash? hash)
         {
             return await ModIOUnityImplementation.AuthenticateUser(
                 switchToken, AuthenticationServiceProvider.Switch, emailAddress, hash, null, null,
@@ -533,8 +531,8 @@ namespace ModIO
         /// }
         /// </code>
         public static async Task<Result> AuthenticateUserViaDiscord(string discordToken,
-                                                                    [CanBeNull] string emailAddress,
-                                                                    [CanBeNull] TermsHash? hash)
+                                                                    string emailAddress,
+                                                                    TermsHash? hash)
         {
             return await ModIOUnityImplementation.AuthenticateUser(
                 discordToken, AuthenticationServiceProvider.Discord, emailAddress, hash, null, null,
@@ -587,8 +585,8 @@ namespace ModIO
         /// }
         /// </code>
         public static async Task<Result> AuthenticateUserViaGoogle(string googleToken,
-                                                                   [CanBeNull] string emailAddress,
-                                                                   [CanBeNull] TermsHash? hash)
+                                                                   string emailAddress,
+                                                                   TermsHash? hash)
         {
             return await ModIOUnityImplementation.AuthenticateUser(
                 googleToken, AuthenticationServiceProvider.Google, emailAddress, hash, null, null,
@@ -650,8 +648,8 @@ namespace ModIO
         /// </code>
         public static async Task<Result> AuthenticateUserViaOculus(OculusDevice oculusDevice, string nonce,
                                                                    long userId, string oculusToken,
-                                                                   [CanBeNull] string emailAddress,
-                                                                   [CanBeNull] TermsHash? hash)
+                                                                   string emailAddress,
+                                                                   TermsHash? hash)
         {
             return await ModIOUnityImplementation.AuthenticateUser(
                 oculusToken, AuthenticationServiceProvider.Oculus, emailAddress, hash, nonce,
@@ -1372,11 +1370,12 @@ namespace ModIO
         ///     }
         /// }
         /// </code>
+#if UNITY_2019_4_OR_NEWER
         public static async Task<ResultAnd<Texture2D>> DownloadTexture(DownloadReference downloadReference)
         {
             return await ModIOUnityImplementation.DownloadTexture(downloadReference);
         }
-        
+#endif
         public static async Task<ResultAnd<byte[]>> DownloadImage(DownloadReference downloadReference)
         {
             return await ModIOUnityImplementation.GetImage(downloadReference);

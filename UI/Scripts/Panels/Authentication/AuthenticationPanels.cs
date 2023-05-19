@@ -93,7 +93,9 @@ namespace ModIOBrowser.Implementation
             if(Authentication.getSteamAppTicket == null
                 && Authentication.getXboxToken == null
                 && Authentication.getSwitchToken == null
-                && Authentication.getPlayStationAuthCode == null)
+                && Authentication.getPlayStationAuthCode == null
+                && Authentication.getGogAuthCode == null
+                && Authentication.getEpicAuthCode == null)
             {
                 Authentication.Instance.GetTermsOfUse();
                 authenticationMethodAfterAgreeingToTheTOS = OpenPanel_Email;

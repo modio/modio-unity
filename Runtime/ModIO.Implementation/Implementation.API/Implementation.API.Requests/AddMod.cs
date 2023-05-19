@@ -1,5 +1,4 @@
-﻿using UnityEngine;
-
+﻿
 namespace ModIO.Implementation.API.Requests
 {
     static class AddMod
@@ -39,7 +38,7 @@ namespace ModIO.Implementation.API.Requests
             }
 
             if(details.logo != null)
-                request.AddField("logo","logo.png", details.logo.EncodeToPNG());
+                request.AddField("logo","logo.png", details.GetLogo());
 
             return request;
         }

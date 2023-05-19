@@ -1,7 +1,6 @@
 ﻿using System.IO;
 using System.Threading.Tasks;
 using ICSharpCode.SharpZipLib.Zip;
-using JetBrains.Annotations;
 
 namespace ModIO.Implementation
 {
@@ -18,7 +17,7 @@ namespace ModIO.Implementation
         
         private string directory;
 
-        public CompressOperationDirectory(string directory, [CanBeNull] ProgressHandle progressHandle = null)
+        public CompressOperationDirectory(string directory, ProgressHandle progressHandle = null)
             : base(progressHandle)
         {
             this.directory = directory;

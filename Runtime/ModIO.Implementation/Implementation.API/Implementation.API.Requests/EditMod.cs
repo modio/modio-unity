@@ -1,7 +1,4 @@
-﻿using System.Linq;
-using UnityEngine;
-
-namespace ModIO.Implementation.API.Requests
+﻿namespace ModIO.Implementation.API.Requests
 {
 
     internal static class EditMod
@@ -48,7 +45,7 @@ namespace ModIO.Implementation.API.Requests
             request.AddField("metadata_blob", details.metadata);
 
             if(details.logo != null)
-                request.AddField("logo", "logo.png", details.logo.EncodeToPNG());
+                request.AddField("logo", "logo.png", details.GetLogo());
 
             return request;
         }

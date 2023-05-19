@@ -21,7 +21,7 @@ namespace ModIO.Implementation.API.Requests
 
             if(details.images != null)
             {
-                var imageBytes = details.images.Select(x => x.EncodeToPNG());
+                var imageBytes = details.GetGalleryImages();
                 CompressOperationMultiple zipOperation = new CompressOperationMultiple(imageBytes, null);
 
                 ResultAnd<MemoryStream> resultAnd = await zipOperation.Compress();

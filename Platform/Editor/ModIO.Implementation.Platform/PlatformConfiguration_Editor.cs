@@ -1,7 +1,5 @@
 ﻿#if UNITY_EDITOR
 
-using System.Threading.Tasks;
-
 namespace ModIO.Implementation.Platform
 {
     /// <summary>Interface for retrieving platform services.</summary>

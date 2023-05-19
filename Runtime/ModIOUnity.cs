@@ -1,6 +1,5 @@
 ﻿using ModIO.Implementation;
 using System;
-using JetBrains.Annotations;
 using UnityEngine;
 using ModIO.Implementation.API.Objects;
 
@@ -317,8 +316,8 @@ namespace ModIO
         /// method.
         /// </remarks>
         /// <param name="steamToken">the user's steam token</param>
-        /// <param name="emailAddress">the user's email address</param>
-        /// <param name="hash">the TermsHash retrieved from ModIOUnity.GetTermsOfUse()</param>
+        /// <param name="emailAddress">the user's email address (Can be null)</param>
+        /// <param name="hash">the TermsHash retrieved from ModIOUnity.GetTermsOfUse() (Can be null if submitted once before)</param>
         /// <param name="callback">Callback to be invoked when the operation completes</param>
         /// <seealso cref="GetTermsOfUse"/>
         /// <seealso cref="ModIOUnityAsync.AuthenticateUserViaSteam"/>
@@ -363,8 +362,8 @@ namespace ModIO
         /// }
         /// </code>
         public static void AuthenticateUserViaSteam(string steamToken,
-                                                    [CanBeNull] string emailAddress,
-                                                    [CanBeNull] TermsHash? hash,
+                                                    string emailAddress,
+                                                    TermsHash? hash,
                                                     Action<Result> callback)
         {
             ModIOUnityImplementation.AuthenticateUser(
@@ -384,8 +383,8 @@ namespace ModIO
         /// <code>
         /// </code>
         public static void AuthenticateUserViaEpic(string epicToken,
-                                                    [CanBeNull] string emailAddress,
-                                                    [CanBeNull] TermsHash? hash,
+                                                    string emailAddress,
+                                                    TermsHash? hash,
                                                     Action<Result> callback)
         {
             ModIOUnityImplementation.AuthenticateUser(
@@ -446,8 +445,8 @@ namespace ModIO
         ///     }
         /// }
         /// </code>
-        public static void AuthenticateUserViaGOG(string gogToken, [CanBeNull] string emailAddress,
-                                                  [CanBeNull] TermsHash? hash,
+        public static void AuthenticateUserViaGOG(string gogToken, string emailAddress,
+                                                  TermsHash? hash,
                                                   Action<Result> callback)
         {
             ModIOUnityImplementation.AuthenticateUser(gogToken, AuthenticationServiceProvider.GOG,
@@ -508,8 +507,8 @@ namespace ModIO
         ///     }
         /// }
         /// </code>
-        public static void AuthenticateUserViaPlayStation(string authCode, [CanBeNull] string emailAddress,
-                                                  [CanBeNull] TermsHash? hash, PlayStationEnvironment environment,
+        public static void AuthenticateUserViaPlayStation(string authCode, string emailAddress,
+                                                  TermsHash? hash, PlayStationEnvironment environment,
                                                   Action<Result> callback)
         {
             ModIOUnityImplementation.AuthenticateUser(authCode, AuthenticationServiceProvider.PlayStation,
@@ -571,8 +570,8 @@ namespace ModIO
         /// }
         /// </code>
         public static void AuthenticateUserViaItch(string itchioToken,
-                                                   [CanBeNull] string emailAddress,
-                                                   [CanBeNull] TermsHash? hash,
+                                                   string emailAddress,
+                                                   TermsHash? hash,
                                                    Action<Result> callback)
         {
             ModIOUnityImplementation.AuthenticateUser(
@@ -634,8 +633,8 @@ namespace ModIO
         /// }
         /// </code>
         public static void AuthenticateUserViaXbox(string xboxToken,
-                                                   [CanBeNull] string emailAddress,
-                                                   [CanBeNull] TermsHash? hash,
+                                                   string emailAddress,
+                                                   TermsHash? hash,
                                                    Action<Result> callback)
         {
             ModIOUnityImplementation.AuthenticateUser(xboxToken, AuthenticationServiceProvider.Xbox,
@@ -697,8 +696,8 @@ namespace ModIO
         /// }
         /// </code>
         public static void AuthenticateUserViaSwitch(string SwitchNsaId,
-                                                     [CanBeNull] string emailAddress,
-                                                     [CanBeNull] TermsHash? hash,
+                                                     string emailAddress,
+                                                     TermsHash? hash,
                                                      Action<Result> callback)
         {
             ModIOUnityImplementation.AuthenticateUser(
@@ -760,8 +759,8 @@ namespace ModIO
         /// }
         /// </code>
         public static void AuthenticateUserViaDiscord(string discordToken,
-                                                      [CanBeNull] string emailAddress,
-                                                      [CanBeNull] TermsHash? hash,
+                                                      string emailAddress,
+                                                      TermsHash? hash,
                                                       Action<Result> callback)
         {
             ModIOUnityImplementation.AuthenticateUser(
@@ -823,8 +822,8 @@ namespace ModIO
         /// }
         /// </code>
         public static void AuthenticateUserViaGoogle(string googleToken,
-                                                     [CanBeNull] string emailAddress,
-                                                     [CanBeNull] TermsHash? hash,
+                                                     string emailAddress,
+                                                     TermsHash? hash,
                                                      Action<Result> callback)
         {
             ModIOUnityImplementation.AuthenticateUser(
@@ -895,8 +894,8 @@ namespace ModIO
         /// </code>
         public static void AuthenticateUserViaOculus(OculusDevice oculusDevice, string nonce,
                                                      long userId, string oculusToken,
-                                                     [CanBeNull] string emailAddress,
-                                                     [CanBeNull] TermsHash? hash,
+                                                     string emailAddress,
+                                                     TermsHash? hash,
                                                      Action<Result> callback)
         {
             ModIOUnityImplementation.AuthenticateUser(
@@ -1489,7 +1488,7 @@ namespace ModIO
         /// }
         /// </code>
         public static Result EnableModManagement(
-            [CanBeNull] ModManagementEventDelegate modManagementEventDelegate)
+            ModManagementEventDelegate modManagementEventDelegate)
         {
             return ModIOUnityImplementation.EnableModManagement(modManagementEventDelegate);
         }
@@ -2080,12 +2079,13 @@ namespace ModIO
         ///     }
         /// }
         /// </code>
+#if UNITY_2019_4_OR_NEWER
         public static void DownloadTexture(DownloadReference downloadReference,
                                            Action<ResultAnd<Texture2D>> callback)
         {
             ModIOUnityImplementation.DownloadTexture(downloadReference, callback);
         }
-        
+#endif
         public static void DownloadImage(DownloadReference downloadReference,
                                            Action<ResultAnd<byte[]>> callback)
         {

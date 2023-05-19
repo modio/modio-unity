@@ -2,7 +2,6 @@
 using System.IO;
 using System.Threading.Tasks;
 using ICSharpCode.SharpZipLib.Zip;
-using JetBrains.Annotations;
 
 namespace ModIO.Implementation
 {
@@ -20,7 +19,7 @@ namespace ModIO.Implementation
         Task IModIOZipOperation.GetOperation() => null;
 
         public ExtractOperation(long modId, long fileId,
-                                [CanBeNull] ProgressHandle progressHandle = null)
+                                 ProgressHandle progressHandle = null)
         {
             this.modId = modId;
             this.fileId = fileId;

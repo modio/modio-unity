@@ -1,6 +1,4 @@
-﻿using JetBrains.Annotations;
-
-namespace ModIO.Implementation.API.Requests
+﻿namespace ModIO.Implementation.API.Requests
 {
 
     internal static class AuthenticateUser
@@ -20,11 +18,11 @@ namespace ModIO.Implementation.API.Requests
         }
 
         public static WebRequestConfig ExternalRequest(AuthenticationServiceProvider serviceProvider, string data,
-                                         [CanBeNull] TermsHash? hash,
-                                         [CanBeNull] string emailAddress,
-                                         [CanBeNull] string nonce,
-                                         [CanBeNull] OculusDevice? device,
-                                         [CanBeNull] string userId,
+                                         TermsHash? hash,
+                                         string emailAddress,
+                                         string nonce,
+                                         OculusDevice? device,
+                                         string userId,
                                          PlayStationEnvironment environment)
         {
             var tokenFieldName = serviceProvider.GetTokenFieldName();

@@ -1,4 +1,4 @@
-#if UNITY_STANDALONE || UNITY_ANDROID || UNITY_IOS || (MODIO_COMPILE_ALL && UNITY_EDITOR) || UNITY_WSA
+#if UNITY_STANDALONE || UNITY_ANDROID || UNITY_IOS || (MODIO_COMPILE_ALL && UNITY_EDITOR) || UNITY_WSA || !UNITY_2019_4_OR_NEWER
 
 using System;
 using System.Collections.Generic;
@@ -278,4 +278,4 @@ namespace ModIO.Implementation.Platform
 
 #pragma warning restore 1998 // These async functions don't use await!
 
-#endif // UNITY_STANDALONE_WIN || (MODIO_COMPILE_ALL && UNITY_EDITOR)
+#endif // UNITY_STANDALONE || UNITY_ANDROID || UNITY_IOS || (MODIO_COMPILE_ALL && UNITY_EDITOR) || UNITY_WSA || !UNITY_2019_4_OR_NEWER
