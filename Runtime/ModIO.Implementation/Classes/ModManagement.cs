@@ -450,7 +450,7 @@ namespace ModIO.Implementation
             //ResultAnd<ModObject> modResponse =
             //    await RESTAPI.Request<ModObject>(url, GetMod.Template);
 
-            var modResponse = await WebRequestManager.Request<ModObject>(API.Requests.GetMod.Request(modId));            
+            var modResponse = await WebRequestManager.Request<ModObject>(API.Requests.GetMod.Request(modId));
             var result = modResponse.result;
             if(!modResponse.result.Succeeded())
             {
@@ -482,9 +482,9 @@ namespace ModIO.Implementation
             // Get correctMD5 and download location
             string md5 = job.mod.modObject.modfile.filehash.md5;
             string downloadFilepath = DataStorage.GenerateModfileArchiveFilePath(modId, fileId);
-            
+
             Result downloadResult = ResultBuilder.Unknown;
-            
+
             using (ModIOFileStream downloadStream = DataStorage.CreateArchiveDownloadStream(downloadFilepath, out Result openStreamResult))
             {
                 if(!openStreamResult.Succeeded())
@@ -523,7 +523,7 @@ namespace ModIO.Implementation
             {
                 Logger.Log(LogLevel.Error, $"Failed to download modfile[{modId}_{fileId}]");
 
-                result = downloadResult.code == ResultCode.Internal_OperationCancelled 
+                result = downloadResult.code == ResultCode.Internal_OperationCancelled
                     ? downloadResult
                     : ResultBuilder.Create(ResultCode.Internal_ModManagementOperationFailed);
 

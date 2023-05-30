@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using ModIO.Implementation.API.Objects;
 using ModIO.Implementation.Platform;
 using ModIO.Util;
-using UnityEngine;
 
 namespace ModIO.Implementation
 {
@@ -116,7 +115,7 @@ namespace ModIO.Implementation
             }
 
             Result result = temp.DeleteFile(imageURL);
-        
+
             return result;
         }
 
@@ -132,7 +131,7 @@ namespace ModIO.Implementation
             return ResultAnd.Create(result, stream);
         }
 
-        /// <summary>Attempts to retrieve an image from the temporary cache.</summary>        
+        /// <summary>Attempts to retrieve an image from the temporary cache.</summary>
         public static async Task<ResultAnd<byte[]>> TryRetrieveImageBytes(string imageURL)
         {
             // - generate file path -
@@ -290,20 +289,19 @@ namespace ModIO.Implementation
         {
             string filePath = GenerateModfileArchiveFilePath(modId, modfileId);
 
-            ResultAnd<(long fileSize, string fileHash)> sizeAndHashResult =
-                temp.GetFileSizeAndHash(filePath);
+            Result result = temp.GetFileSizeAndHash(filePath, out long fileSize, out string fileHash);
 
-            if(!sizeAndHashResult.result.Succeeded())
+            if(!result.Succeeded())
             {
-                return ResultAnd.Create<string>(sizeAndHashResult.result, null);
+                return ResultAnd.Create<string>(result, null);
             }
 
-            if(expectedSize != sizeAndHashResult.value.fileSize)
+            if(expectedSize != fileSize)
             {
                 return ResultAnd.Create<string>(ResultCode.Internal_FileSizeMismatch, null);
             }
 
-            if(expectedHash != sizeAndHashResult.value.fileHash)
+            if(expectedHash != fileHash)
             {
                 return ResultAnd.Create<string>(ResultCode.Internal_FileHashMismatch, null);
             }
@@ -376,17 +374,7 @@ namespace ModIO.Implementation
             return ResultAnd.Create(result, registry);
         }
 
-        public static async Task<Result> SaveGameTags(GameTagOptionObject[] gameTags)
-        {
-            await Task.Delay(1);
-
-            // TODO @Jackson
-            Logger.Log(LogLevel.Verbose, "Not Implemented Yet");
-            return ResultBuilder.Success;
-        }
-
-        public static ModIOFileStream OpenArchiveReadStream(string filePath,
-                                                            out Result result)
+        public static ModIOFileStream OpenArchiveReadStream(string filePath, out Result result)
         {
             return temp.OpenReadStream(filePath, out result);
         }
@@ -396,6 +384,7 @@ namespace ModIO.Implementation
                                                             out Result result)
         {
             string filePath = GenerateModfileArchiveFilePath(modId, modfileId);
+            
             return OpenArchiveReadStream(filePath, out result);
         }
 
@@ -425,29 +414,6 @@ namespace ModIO.Implementation
         {
             IDataService dataService = persistent;
 
-#if UNITY_EDITOR
-            // // Note from Steve: I dont see what the point of this is?
-            // EditorDataService pds = (EditorDataService)DataStorage.persistent;
-            // EditorDataService tds = (EditorDataService)DataStorage.temp;
-            // EditorDataService uds = (EditorDataService)DataStorage.user;
-            //
-            // if(pds.CanHandlePath(directoryPath))
-            // {
-            //     dataService = pds;
-            // }
-            // else if(tds.CanHandlePath(directoryPath))
-            // {
-            //     dataService = tds;
-            // }
-            // else if(uds.CanHandlePath(directoryPath))
-            // {
-            //     dataService = uds;
-            // }
-            dataService = persistent;
-#elif UNITY_STANDALONE || UNITY_GAMECORE
-            dataService = DataStorage.persistent;
-#endif // UNITY_EDITOR
-
             List<string> fileList = null;
             uint resultCode = (dataService != null ? ResultCode.Success
                                                    : ResultCode.IO_DataServiceForPathNotFound);
@@ -457,8 +423,6 @@ namespace ModIO.Implementation
                 ResultAnd<List<string>> filesResult = dataService.ListAllFiles(directoryPath);
                 resultCode = filesResult.result.code;
                 fileList = filesResult.value;
-                // Logger.Log(LogLevel.Error, $"Failed list all files. Result:
-                // [{filesResult.result.code};{filesResult.result.code_api}]");
             }
 
             if(resultCode == ResultCode.Success)

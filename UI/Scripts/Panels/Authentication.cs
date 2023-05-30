@@ -281,12 +281,18 @@ namespace ModIOBrowser.Implementation
             if(result.Succeeded())
             {
                 AuthenticationPanels.Instance.OpenPanel_Complete();
-                ModIOUnity.FetchUpdates(delegate { });
                 ModIOUnity.EnableModManagement(Mods.ModManagementEvent);
-                if(Details.IsOn())
+                ModIOUnity.FetchUpdates(delegate
                 {
-                    Details.Instance.UpdateSubscribeButtonText();
-                }
+                    if(Details.IsOn())
+                    {
+                        Details.Instance.UpdateSubscribeButtonText();
+                    }
+                    if(Collection.IsOn())
+                    {
+                        Collection.Instance.RefreshList();
+                    }
+                });
             }
             else
             {
@@ -326,12 +332,18 @@ namespace ModIOBrowser.Implementation
             {
                 currentAuthenticationPortal = authenticationPortal;
                 AuthenticationPanels.Instance.OpenPanel_Complete();
-                ModIOUnity.FetchUpdates(delegate { });
                 ModIOUnity.EnableModManagement(Mods.ModManagementEvent);
-                if(Details.IsOn())
+                ModIOUnity.FetchUpdates(delegate 
                 {
-                    Details.Instance.UpdateSubscribeButtonText();
-                }
+                    if(Details.IsOn())
+                    {
+                        Details.Instance.UpdateSubscribeButtonText();
+                    }
+                    if(Collection.IsOn())
+                    {
+                        Collection.Instance.RefreshList();
+                    } 
+                });
             }
             else
             {

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using ModIO;
 using ModIO.Util;
 using TMPro;
@@ -21,7 +22,8 @@ namespace ModIOBrowser.Implementation
         [SerializeField] public Image SearchPanelRightBumperIcon;
 
         public static HashSet<Tag> searchFilterTags = new HashSet<Tag>();
-        TagCategory[] tags;
+        internal TagCategory[] tags;
+        bool gettingTags;
 
         public void Open()
         {
@@ -81,17 +83,52 @@ namespace ModIOBrowser.Implementation
             }
             else
             {
-                ModIOUnity.GetTagCategories(GetTags);
+                UpdateTags();
             }
         }
 
-        void GetTags(ResultAnd<TagCategory[]> resultAndTags)
+        internal async Task WaitForTagsToUpdate()
+        {
+            if(!gettingTags && tags == null)
+            {
+                UpdateTags();
+            }
+            while(gettingTags)
+            {
+                await Task.Yield();
+            }
+        }
+
+        void UpdateTags()
+        {
+            gettingTags = true;
+            ModIOUnity.GetTagCategories(ReceiveTags);
+        }
+
+        void ReceiveTags(ResultAnd<TagCategory[]> resultAndTags)
         {
             if(resultAndTags.result.Succeeded())
             {
-                this.tags = resultAndTags.value;
+                tags = resultAndTags.value;
                 CreateTagCategoryListItems(resultAndTags.value);
             }
+            gettingTags = false;
+        }
+
+        internal List<string> GetHiddenTags()
+        {
+            List<string> hidden = new List<string>();
+            foreach(var category in tags)
+            {
+                if(category.hidden)
+                {
+                    foreach(var tag in category.tags)
+                    {
+                        hidden.Add(tag.name);
+                    }
+                }
+            }
+            return hidden;
         }
 
         void CreateTagCategoryListItems(TagCategory[] tags)
@@ -110,6 +147,11 @@ namespace ModIOBrowser.Implementation
             //this can add the items to a list
             foreach(TagCategory category in tags)
             {
+                if(category.hidden)
+                {
+                    continue;
+                }
+                
                 ListItem categoryListItem = ListItem.GetListItem<TagCategoryListItem>(SearchPanelTagCategoryPrefab, SearchPanelTagParent, SharedUi.colorScheme);
                 categoryListItem.Setup(category.name);
 

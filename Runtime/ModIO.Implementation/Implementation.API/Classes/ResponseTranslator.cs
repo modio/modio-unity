@@ -109,7 +109,7 @@ namespace ModIO.Implementation
             ModPage pageForCache = new ModPage();
             pageForCache.totalSearchResultsFound = schema.result_total;
             pageForCache.modProfiles = profiles;
-            ResponseCache.AddModsToCache(GetMods.UnpaginatedURL(), offset, pageForCache);
+            ResponseCache.AddModsToCache(GetMods.UnpaginatedURL(filter), offset, pageForCache);
 
             return page;
         }

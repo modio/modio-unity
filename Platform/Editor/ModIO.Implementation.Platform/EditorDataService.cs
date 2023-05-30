@@ -152,10 +152,10 @@ namespace ModIO.Implementation.Platform
         }
 
         /// <summary>Gets the size and hash of a file.</summary>
-        public ResultAnd<(long fileSize, string fileHash)> GetFileSizeAndHash(
-            string filePath)
+        public Result GetFileSizeAndHash(
+            string filePath, out long fileSize, out string fileHash)
         {
-            return SystemIOWrapper.GetFileSizeAndHash(filePath);
+            return SystemIOWrapper.GetFileSizeAndHash(filePath, out fileSize, out fileHash);
         }
 
         /// <summary>Determines whether a directory exists.</summary>

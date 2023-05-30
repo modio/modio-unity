@@ -84,7 +84,7 @@ namespace ModIOBrowser
 
         void Start()
         {
-            if (autoInitialize)
+            if (autoInitialize && !ModIOUnity.IsInitialized())
             {
                 Result result = ModIOUnity.InitializeForUser("User");
                 OnInitialize(result);

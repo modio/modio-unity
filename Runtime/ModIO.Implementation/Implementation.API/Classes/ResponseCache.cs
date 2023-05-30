@@ -4,7 +4,6 @@ using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading.Tasks;
 using ModIO.Implementation.API.Objects;
-using UnityEngine;
 
 namespace ModIO.Implementation.API
 {
@@ -90,6 +89,14 @@ namespace ModIO.Implementation.API
 
         public static void AddModsToCache(string url, int offset, ModPage modPage)
         {
+            if(modPage.modProfiles == null)
+            {
+                return;
+            }
+            if(logCacheMessages)
+            {
+                Logger.Log(LogLevel.Verbose, $"[CACHE] adding {modPage.modProfiles.Length} mods to cache with url: {url}\n offset({offset})");
+            }
             if(!modPages.ContainsKey(url))
             {
                 modPages.Add(url, new CachedPageSearch());
@@ -111,18 +118,19 @@ namespace ModIO.Implementation.API
                 if(!modPages[url].mods.ContainsKey(index))
                 {
                     modPages[url].mods.Add(index, mod.id);
-                    modIdsToClearAfterLifeTimeCheck.Add(mod.id);
                 }
 
-                CachedModProfile cachedMod = new CachedModProfile();
-                cachedMod.profile = mod;
                 if(!mods.ContainsKey(mod.id))
                 {
+                    CachedModProfile cachedMod = new CachedModProfile();
+                    cachedMod.profile = mod;
                     mods.Add(mod.id, cachedMod);
+                    modIdsToClearAfterLifeTimeCheck.Add(mod.id);
                 }
                 else
                 {
-                    mods[mod.id] = cachedMod;
+                    mods[mod.id].profile = mod;
+                    mods[mod.id].extendLifetime = true;
                 }
             }
 
@@ -212,6 +220,11 @@ namespace ModIO.Implementation.API
         /// <returns>true if the cache had all of the entries</returns>
         public static bool GetModsFromCache(string url, int offset, int limit, out ModPage modPage)
         {
+            if(logCacheMessages)
+            {
+                Logger.Log(LogLevel.Verbose, $"[CACHE] checking cache for mods for url: {url}\n offset({offset} limit({limit}))");
+            }
+            
             // do we contain this URL in the cache
             if(modPages.ContainsKey(url))
             {
@@ -236,6 +249,10 @@ namespace ModIO.Implementation.API
                             // Continue to next iteration because this one succeeded
                             continue;
                         }
+                    } 
+                    else if(logCacheMessages)
+                    {
+                        Logger.Log(LogLevel.Verbose, $"[CACHE] failed to get one of the mods. {modsRetrievedFromCache.Count} mods found thus far. Failed at {index}. Total mods {modPages[url].mods.Count}");
                     }
 
                     // failed to get one of the mods for this cache request
@@ -246,7 +263,7 @@ namespace ModIO.Implementation.API
                 // SUCCEEDED
                 if(logCacheMessages)
                 {
-                    Logger.Log(LogLevel.Verbose, $"[CACHE] retrieved {modsRetrievedFromCache.Count} mods from cache");
+                    Logger.Log(LogLevel.Verbose, $"[CACHE] retrieved {modsRetrievedFromCache.Count} mods from cache for url: {url}\n offset({offset} limit({limit}))");
                 }
 
                 modPage = new ModPage();
@@ -512,7 +529,7 @@ namespace ModIO.Implementation.API
             long maxSize = maxCacheSize < minCacheSize ? minCacheSize : maxCacheSize;
             maxSize = maxSize > absoluteCacheSizeLimit ? absoluteCacheSizeLimit : maxCacheSize;
 
-            // Get the byte size estimates for th eobject and the current cache
+            // Get the byte size estimates for the object and the current cache
             long cacheSize = GetCacheSizeEstimate();
             long newEntrySize = GetByteSizeForObject(obj);
 

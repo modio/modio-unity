@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using ModIO.Implementation.API;
 using ModIO.Implementation.API.Objects;
 using ModIO.Implementation.API.Requests;
-using GetUserEvents = ModIO.Implementation.API.Requests.GetUserEvents;
 
 namespace ModIO.Implementation
 {
@@ -193,7 +192,9 @@ namespace ModIO.Implementation
             // If failed, cancel the entire update operation
             if(gameTagsResponse.result.Succeeded())
             {
-                await DataStorage.SaveGameTags(gameTagsResponse.value.data);
+                // Put these in the Response Cache
+                var tags = ResponseTranslator.ConvertGameTagOptionsObjectToTagCategories(gameTagsResponse.value.data);
+                ResponseCache.AddTagsToCache(tags);
             }
             else
             {
@@ -207,7 +208,7 @@ namespace ModIO.Implementation
             {
                 //Leaving this in until the new API has finished implementation
                 //// Get URL for unsub request
-                //url = UnsubscribeFromMod.URL(modId);                
+                //url = UnsubscribeFromMod.URL(modId);
                 //// Wait for unsub request
                 //result = await RESTAPI.Request(url, UnsubscribeFromMod.Template);
 
@@ -249,8 +250,7 @@ namespace ModIO.Implementation
             //--------------------------------------------------------------------------------//
             //                         UPDATE MOD SUBSCRIPTIONS                               //
             //--------------------------------------------------------------------------------//
-            result = !hasSyncedBefore ? await RunFirstSyncForTheSession(user)
-                                      : await RunRepeatedSyncForTheSession(user);
+            result = await SyncUsersSubscriptions(user);
 
 
             // Mark as true to change behaviour when re-checking (resets after new Init)
@@ -268,7 +268,7 @@ namespace ModIO.Implementation
         /// </summary>
         /// <param name="user">username of the user</param>
         /// <returns>The Result of all the operations (returns at the first non-success result)</returns>
-        static async Task<Result> RunFirstSyncForTheSession(long user)
+        static async Task<Result> SyncUsersSubscriptions(long user)
         {
             Result result = ResultBuilder.Success;
 
@@ -276,19 +276,19 @@ namespace ModIO.Implementation
             //                           GET SUBSCRIBED MODS                                  //
             //--------------------------------------------------------------------------------//
             //Leaving this in until the new API has finished implementation
-            //string url = GetUserSubscriptions.URL();        
+            //string url = GetUserSubscriptions.URL();
             //ResultAnd<ModObject[]> subscribedResultAnd =
             //    await RESTAPI.TryRequestAllResults<ModObject>(url, GetUserSubscriptions.Template);
-
-            var subscribedResponse = await WebRequestManager.Request<API.Requests.GetUserSubscriptions.ResponseSchema>
-                (API.Requests.GetUserSubscriptions.Request());
+            var config = API.Requests.GetUserSubscriptions.Request();
+            var subscribedResponse = await TryRequestAllResults<
+                ModObject>(config.Url, ()=>config);
 
             if(subscribedResponse.result.Succeeded())
             {
                 // clear user's subscribed mods
                 Registry.existingUsers[user].subscribedMods.Clear();
 
-                foreach(ModObject mod in subscribedResponse.value.data)
+                foreach(ModObject mod in subscribedResponse.value)
                 {
                     Registry.existingUsers[user].subscribedMods.Add(new ModId(mod.id));
 
@@ -298,206 +298,6 @@ namespace ModIO.Implementation
             else
             {
                 return subscribedResponse.result;
-            }
-
-            //--------------------------------------------------------------------------------//
-            //                           GET LAST USER EVENT                                  //
-            //--------------------------------------------------------------------------------//
-            //Leaving this in until the new API has finished implementation
-            //url = GetUserEvents.URL() + FilterUtil.LastEntryPagination();
-            //// Wait for request
-            //ResultAnd<API2.Requests.GetUserEvents.ResponseSchema> userEventResultAnd =
-            //    await RESTAPI.Request<API2.Requests.GetUserEvents.ResponseSchema>(url, GetUserEvents.Template);
-
-            ResultAnd<GetUserEvents.ResponseSchema> userEventResponse = await WebRequestManager.Request<API.Requests.GetUserEvents.ResponseSchema>
-                (API.Requests.GetUserEvents.Request());
-
-            if(userEventResponse.result.Succeeded())
-            {
-                // If exists
-                if(userEventResponse.value.data?.Length > 0)
-                {
-                    // Cache event ID
-                    lastUserEventId = userEventResponse.value.data[0].id;
-                }
-            }
-            else
-            {
-                return userEventResponse.result;
-            }
-
-            //--------------------------------------------------------------------------------//
-            //                            GET LAST MOD EVENT                                  //
-            //--------------------------------------------------------------------------------//
-            //Leaving this in until the new API has finished implementation
-            //url = GetModEvents.URL() + FilterUtil.LastEntryPagination();
-            //// Wait for request
-            //ResultAnd<API2.Requests.GetModEvents.ResponseSchema> modEventResultAnd =
-            //    await RESTAPI.Request<API2.Requests.GetModEvents.ResponseSchema>(url, GetModEvents.Template);
-
-            var modEventConfig = API.Requests.GetModEvents.Request(FilterUtil.LastEntryPagination());
-            var modEventResponse = await WebRequestManager.Request<API.Requests.GetModEvents.ResponseSchema>
-                (modEventConfig);
-
-            if(modEventResponse.result.Succeeded())
-            {
-                // If exists
-                if(modEventResponse.value.data?.Length > 0)
-                {
-                    // Cache event ID
-                    lastModEventId = modEventResponse.value.data[0].id;
-                }
-            }
-            else
-            {
-                return modEventResponse.result;
-            }
-
-            return result;
-        }
-
-        /// <summary>
-        /// Goes through API requests that should be run after the first time a session has been
-        /// synced for an authenticated user.
-        /// </summary>
-        /// <param name="user">username of the user</param>
-        /// <returns>The Result of all the operations (returns at the first non-success result)</returns>
-        static async Task<Result> RunRepeatedSyncForTheSession(long user)
-        {
-            Result result = ResultBuilder.Success;
-
-            //--------------------------------------------------------------------------------//
-            //                        GET LATEST USER EVENTS                                  //
-            //--------------------------------------------------------------------------------//
-            //Leaving this in until the new API has finished implementation            
-            // get user events
-            // Make sure it's ascending so we're iterating over a newer event each time
-            //string url = GetUserEvents.URL();
-            //url += $"&{Filtering.Ascending}id&id{Filtering.Min}{lastUserEventId}"
-            //    + "&event_type-in=USER_SUBSCRIBE,USER_UNSUBSCRIBE";
-            //ResultAnd<UserEventObject[]> userResultAnd =
-            //    await RESTAPI.TryRequestAllResults<UserEventObject>(url, GetUserEvents.Template);
-
-            var config = API.Requests.GetUserEvents.Request(
-                $"&{Filtering.Ascending}id&id{Filtering.Min}{lastUserEventId}"
-                + "&event_type-in=USER_SUBSCRIBE,USER_UNSUBSCRIBE");
-
-            ResultAnd<GetUserEvents.ResponseSchema> userEventResponse = await WebRequestManager.Request<GetUserEvents.ResponseSchema>(config);
-
-            // TODO(@Steve): Consider replacing TryRequestAll with something like this:
-            // ResultAnd<RequestPage> resultPage = await RESTAPI.Request<ModEventObject>(url,
-            // GetModEvents.Template);
-            // if(resultPage.totalResults > resultPage.limit)
-            // {
-            //     // forget this, FetchAllUserSubscriptions and rebase the last event id
-            // }
-            
-            if(userEventResponse.result.Succeeded())
-            {
-                var userEventData = userEventResponse.value.data;
-
-                // Cache the highest value we have
-                lastUserEventId = userEventData?.Length > 0
-                                      ? userEventData[userEventData.Length - 1].id
-                                      : lastUserEventId;
-
-                if(userEventData != null)
-                {
-                    foreach(UserEventObject userEvent in userEventData)
-                    {
-                        if(userEvent.event_type == "USER_SUBSCRIBE")
-                        {
-                            AddModToUserSubscriptions(new ModId(userEvent.mod_id));
-                        }
-                        else if(userEvent.event_type == "USER_UNSUBSCRIBE")
-                        {
-                            RemoveModFromUserSubscriptions(new ModId(userEvent.mod_id), false);
-                        }
-                    }
-                }
-            }
-            else
-            {
-                return userEventResponse.result;
-            }
-
-            //--------------------------------------------------------------------------------//
-            //                         GET LATEST MOD EVENTS                                  //
-            //--------------------------------------------------------------------------------//
-            //Leaving this in until the new API has finished implementation            
-            // get modObject events
-            //url = GetModEvents.URL();
-            //url += $"&{Filtering.Ascending}id&id{Filtering.Min}{lastModEventId}"
-            //       + "&subscribed=true&event_type-in=MODFILE_CHANGED,MOD_EDITED";
-            //// create a placeholder pool for mods we will need in a GetMods request            
-            //ResultAnd<ModEventObject[]> modEventResultAnd =
-            //    await RESTAPI.TryRequestAllResults<ModEventObject>(url, GetModEvents.Template);
-
-            var modEventConfig = API.Requests.GetModEvents.Request(
-                $"&{Filtering.Ascending}id&id{Filtering.Min}{lastModEventId}"
-                + "&subscribed=true&event_type-in=MODFILE_CHANGED,MOD_EDITED");
-            
-            var modEventResult = await WebRequestManager.Request<API.Requests.GetModEvents.ResponseSchema>(modEventConfig);
-
-            // TODO(@Steve): Consider replacing TryRequestAll with something like this:
-            // ResultAnd<RequestPage> resultPage = await RESTAPI.Request<ModEventObject>(url,
-            // GetModEvents.Template); if(resultPage.totalResults > resultPage.limit)
-            // {
-            //     // forget this, FetchAllUserSubscriptions and rebase the last event id
-            // }
-            
-            if(modEventResult.result.Succeeded())
-            {
-                var modsToGet = new List<long>();
-
-                // Cache the highest value we have
-                lastModEventId =
-                    modEventResult.value?.data.Length > 0
-                        ? modEventResult.value.data[modEventResult.value.data.Length - 1].id
-                        : lastModEventId;
-                if(modEventResult.value != null)
-                {
-                    foreach(ModEventObject modEvent in modEventResult.value.data)
-                    {
-                        if(modEvent.event_type == "MODFILE_CHANGED"
-                           || modEvent.event_type == "MOD_EDITED")
-                        {
-                            modsToGet.Add(modEvent.mod_id);
-                        }
-                    }
-                }
-
-                //--------------------------------------------------------------------------------//
-                //                                 GET MODS                                       //
-                //--------------------------------------------------------------------------------//
-                if(modsToGet.Count > 0)
-                {
-                    var modIdsInFilter = string.Empty;
-                    foreach(long id in modsToGet) { modIdsInFilter += $"&id={id}"; }
-
-                    // TODO make sure our url isn't too long
-                    string url = GetMods.UnpaginatedURL() + modIdsInFilter;
-                    
-                    //Leaving this in until the new webrequest manager is complete
-                    //This shouldn't be inside the rest api?
-                    var modsPaginationResult = await TryRequestAllResults<ModObject>(url, ()=> API.Requests.GetMods.RequestUnpaginated());
-                    
-                    if(modsPaginationResult.result.Succeeded())
-                    {
-                        foreach(ModObject mod in modsPaginationResult.value)
-                        {
-                            UpdateModCollectionEntryFromModObject(mod);
-                        }
-                    }
-                    else
-                    {
-                        return modsPaginationResult.result;
-                    }
-                }
-            }
-            else
-            {
-                return modEventResult.result;
             }
 
             return result;
@@ -546,7 +346,7 @@ namespace ModIO.Implementation
                 total = requestResult.result.Succeeded() ? requestResult.value.result_total : 0;
                 collatedData.AddRange(requestResult.value.data);
 
-                //abort if our offset has reached more than the total                 
+                //abort if our offset has reached more than the total
                 if(pageSize * (numberOfRequestsMade + 1) >= total)
                     break;
 
@@ -566,7 +366,7 @@ namespace ModIO.Implementation
 
             return response;
         }
-        
+
         public static void AddModCollectionEntry(ModId modId)
         {
             // Check an entry exists for this modObject, if not create one

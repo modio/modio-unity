@@ -277,7 +277,6 @@ namespace ModIOBrowser.Implementation
 #else
             return Input.GetKeyDown(keyCode);
 #endif
-            return false;
         }
  
         public static bool GetKeyUp(KeyCode keyCode)
@@ -291,7 +290,6 @@ namespace ModIOBrowser.Implementation
 #else
             return Input.GetKeyUp(keyCode);
 #endif
-            return false;
         }
  
         public static bool GetKey(KeyCode keyCode)
@@ -305,7 +303,6 @@ namespace ModIOBrowser.Implementation
 #else
             return Input.GetKey(keyCode);
 #endif
-            return false;
         }
  
         public static float GetAxis(string axis)
@@ -318,7 +315,6 @@ namespace ModIOBrowser.Implementation
 #else
             return Input.GetAxis(axis);
 #endif
-            return 0.0f;
         }
     }
 }

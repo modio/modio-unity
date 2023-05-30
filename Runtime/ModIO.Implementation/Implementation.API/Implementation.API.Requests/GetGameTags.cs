@@ -12,7 +12,7 @@ namespace ModIO.Implementation.API.Requests
         {
             var request = new WebRequestConfig()
             {
-                Url = $"{Settings.server.serverURL}{@"/games/"}{Settings.server.gameId}{@"/tags"}?",
+                Url = $"{Settings.server.serverURL}{@"/games/"}{Settings.server.gameId}{@"/tags"}?show_hidden_tags=true",
                 RequestMethodType = "GET"
             };
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -43,9 +44,10 @@ namespace ModIOBrowser.Implementation
         [SerializeField] TMP_Text ModDetailsDownloadProgressRemaining;
         [SerializeField] TMP_Text ModDetailsDownloadProgressSpeed;
         [SerializeField] TMP_Text ModDetailsDownloadProgressCompleted;
-        [SerializeField]
+        [SerializeField] WrappingHorizontalLayoutGroup ModDetailsTagsGroup;
+        [SerializeField] GameObject ModDetailsTagsPrefab;
+        List<ListItem> _tagsListItems;
         public SubscribedProgressTab ModDetailsProgressTab;
-        [SerializeField]
         public GameObject ModDetailsScrollToggleGameObject;
         bool galleryImageInUse;
         Sprite[] ModDetailsGalleryImages;
@@ -131,7 +133,8 @@ namespace ModIOBrowser.Implementation
             galleryPosition = 0;
             ModDetailsGalleryImages = new Sprite[profile.galleryImages_640x360.Length + 1];
             ModDetailsGalleryImagesFailedToLoad = new bool[ModDetailsGalleryImages.Length];
-
+            
+            RefreshTags(profile);
 
             ListItem.HideListItems<GalleryImageButtonListItem>();
 
@@ -215,6 +218,35 @@ namespace ModIOBrowser.Implementation
             LayoutRebuilder.ForceRebuildLayoutImmediate(ModDetailsName.transform.parent as RectTransform);
             LayoutRebuilder.ForceRebuildLayoutImmediate(ModDetailsDescription.transform.parent as RectTransform);
             LayoutRebuilder.ForceRebuildLayoutImmediate(ModDetailsDescription.transform.parent.transform.parent as RectTransform);
+        }
+
+        public async void RefreshTags(ModProfile profile)
+        {
+            ModDetailsTagsGroup.EmptyLayoutGroup();
+            ListItem.HideListItems<ModDetailsTagListItem>();
+            
+            // get the tag categories so we know which ones to hide or not
+            if(SearchPanel.Instance.tags == null)
+            {
+                await SearchPanel.Instance.WaitForTagsToUpdate();
+                if(currentModProfileBeingViewed.id != profile.id)
+                {
+                    // Since waiting for the tags, the details panel has now changed
+                    return;
+                }
+            }
+            List<string> hiddenTags = SearchPanel.Instance.GetHiddenTags();
+            
+            foreach(var tag in profile.tags)
+            {
+                if(hiddenTags.Contains(tag))
+                {
+                    continue;
+                }
+                ListItem li = ListItem.GetListItem<ModDetailsTagListItem>(ModDetailsTagsPrefab, transform, Browser.Instance.colorScheme);
+                li.Setup(tag);
+                ModDetailsTagsGroup.AddGameObjectToLayout(li.gameObject);
+            }
         }
 
         public void SubscribeButtonPress()

@@ -271,6 +271,8 @@ namespace ModIOBrowser.Implementation
             AuthenticationPanelConnectViaXboxButton.gameObject.SetActive(false);
             AuthenticationPanelConnectViaSwitchButton.gameObject.SetActive(false);
             AuthenticationPanelConnectViaPlayStationButton.gameObject.SetActive(false);
+            AuthenticationPanelConnectViaGOGButton.gameObject.SetActive(false);
+            AuthenticationPanelConnectViaEpicButton.gameObject.SetActive(false);
             AuthenticationPanelCompletedButton.gameObject.SetActive(false);
             AuthenticationPanelLogoutButton.gameObject.SetActive(false);
             AuthenticationPanelLogo.SetActive(false);

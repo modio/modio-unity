@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
@@ -234,23 +235,18 @@ namespace ModIO.Implementation.API
 
             int statusCode = response == null ? 0 : (int)((HttpWebResponse)response).StatusCode;
             
-            string body = "none";
+            Stream stream = null;
             
             if (response != null)
             {
-                using(Stream stream = response.GetResponseStream())
-                using(StreamReader reader = new StreamReader(stream))
-                {
-                    body = await reader.ReadToEndAsync();
-                }
+                stream = response.GetResponseStream();
             }
-            
+
             string completeRequestLog = $"{GenerateLogForStatusCode(statusCode)}"
                                         + $"\n{url}"
                                         + $"\nMETHOD: GET"
                                         + $"\n{GenerateLogForRequestMessage(request)}"
-                                        + $"\n{GenerateLogForResponseMessage(response)}"
-                                        + $"\n\nRAW RESPONSE: {body}";
+                                        + $"\n{GenerateLogForResponseMessage(response)}";
 
             if(IsSuccessStatusCode(statusCode))
             {
@@ -259,10 +255,11 @@ namespace ModIO.Implementation.API
             }
             else
             {
-                finalResult = await HttpStatusCodeError(body, completeRequestLog, statusCode);
+                finalResult = await HttpStatusCodeError(stream, completeRequestLog, statusCode);
                 Logger.Log(LogLevel.Verbose, $"DOWNLOAD FAILED [{completeRequestLog}]");
             }
             
+            stream?.Dispose();
             response?.Close();
             return finalResult;
         }
@@ -272,16 +269,12 @@ namespace ModIO.Implementation.API
             ResultAnd<TResult> finalResult = default;
 
             int statusCode = response == null ? 0 : (int)((HttpWebResponse)response).StatusCode;
+            Stream stream = null;
             
-            string body = "none";
-            
-            if (response != null)
+            // Dont get the stream if there is no content
+            if (response != null && statusCode != 204)
             {
-                using(Stream stream = response.GetResponseStream())
-                using(StreamReader reader = new StreamReader(stream))
-                {
-                    body = await reader.ReadToEndAsync();
-                }
+                stream = response.GetResponseStream();
             }
             
             string completeRequestLog = $"{GenerateLogForStatusCode(statusCode)}"
@@ -289,20 +282,20 @@ namespace ModIO.Implementation.API
                                         + $"\nMETHOD: {config.RequestMethodType}"
                                         + $"\n{GenerateLogForRequestMessage(request)}"
                                         + $"\n{GenerateLogForWebRequestConfig(config)}"
-                                        + $"\n{GenerateLogForResponseMessage(response)}"
-                                        + $"\n\nRAW RESPONSE: {body}";
+                                        + $"\n{GenerateLogForResponseMessage(response)}";
 
             if(IsSuccessStatusCode(statusCode))
             {
                 Logger.Log(LogLevel.Verbose, $"SUCCEEDED {completeRequestLog}");
-
-                finalResult = await FormatResult<TResult>(body);
+                
+                finalResult = await FormatResult<TResult>(stream);
             }
             else
             {
-                finalResult = ResultAnd.Create(await HttpStatusCodeError(body, completeRequestLog, statusCode), default(TResult));
+                finalResult = ResultAnd.Create(await HttpStatusCodeError(stream, completeRequestLog, statusCode), default(TResult));
             }
             
+            stream?.Dispose();
             response?.Close();
             return finalResult;
         }
@@ -536,7 +529,7 @@ namespace ModIO.Implementation.API
 
 #region Processing Response Body
 
-        public async static Task<ResultAnd<T>> FormatResult<T>(string response)
+        public async static Task<ResultAnd<T>> FormatResult<T>(Stream response)
         {
             //int? is used as a nullable type to denote that we are ignoring type in the response
             //ie - some commands are sent without expect any useful response aside from the response code itself
@@ -547,14 +540,14 @@ namespace ModIO.Implementation.API
             }
             
             // If the response is empty it was likely 204: NoContent
-            if(string.IsNullOrEmpty(response))
+            if(response == null)
             {
                 return ResultAnd.Create(ResultBuilder.Success, default(T));
             }
 
             try
             {
-                T deserialized = await Task.Run(()=> JsonConvert.DeserializeObject<T>(response));
+                T deserialized = await Task.Run(()=> Deserialize<T>(response));
                 return ResultAnd.Create(ResultBuilder.Success, deserialized);
             }
             catch(Exception e)
@@ -563,10 +556,20 @@ namespace ModIO.Implementation.API
                     $"UNRECOGNISED RESPONSE"
                     + $"\nFailed to deserialize a response from the mod.io server.\nThe data"
                     + $" may have been corrupted or isnt a valid Json format.\n\n[JsonUtility:"
-                    + $" {e.Message}] - {e.InnerException} - Raw Response:\n{response}");
+                    + $" {e.Message}] - {e.InnerException}");
 
                 return ResultAnd.Create(
                     ResultBuilder.Create(ResultCode.API_FailedToDeserializeResponse), default(T));
+            }
+        }
+
+        static T Deserialize<T>(Stream content)
+        {
+            var serializer = new JsonSerializer();
+            using (StreamReader sr = new StreamReader(content))
+            using(var jsonTextReader = new JsonTextReader(sr))
+            {
+                return serializer.Deserialize<T>(jsonTextReader);
             }
         }
 
@@ -582,13 +585,14 @@ namespace ModIO.Implementation.API
 #endregion
 
 #region Error Handling
-        static async Task<Result> HttpStatusCodeError(string response, string requestLog, int status)
+        static async Task<Result> HttpStatusCodeError(Stream response, string requestLog, int status)
         {
             var result = await FormatResult<ErrorObject>(response);
 
+            string errors = GenerateErrorsIntoSingleLog(result.value.error.errors);
             Logger.Log(LogLevel.Error,
-                $"HTTP ERROR [{status} {(HttpStatusCode)status}]"
-                + $"\n Error ref [{result.value.error.code}] {result.value.error.error_ref} - {result.value.error.message}\n\n{requestLog}");
+                $"HTTP ERROR [{status} {((HttpStatusCode)status).ToString()}]"
+                + $"\n Error ref [{result.value.error.code}] {result.value.error.error_ref} - {result.value.error.message}\n{errors}\n\n{requestLog}");
 
             if(ResultCode.IsInvalidSession(result.value))
             {
@@ -686,7 +690,24 @@ namespace ModIO.Implementation.API
         }
 
         static string GenerateLogForStatusCode(int code) => $"[Http: {code} {(HttpStatusCode)code}]";
-        
+
+        static string GenerateErrorsIntoSingleLog(Dictionary<string, string> errors)
+        {
+            if(errors == null || errors.Count == 0)
+            {
+                return "";
+            }
+            
+            string log = "errors:";
+            int count = 1;
+            foreach(var error in errors)
+            {
+                log += $"\n{count}. {error.Key}: {error.Value}";
+                count++;
+            }
+            
+            return log;
+        }
  #endregion
         
     }

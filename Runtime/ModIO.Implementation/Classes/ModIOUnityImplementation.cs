@@ -38,7 +38,7 @@ namespace ModIO.Implementation
         static Task shutdownOperation;
 
         internal static OpenCallbacks openCallbacks = new OpenCallbacks();
-        
+
 #region Synchronous Requirement Checks - to detect early outs and failures
 
         /// <summary>Has the plugin been initialized.</summary>
@@ -341,7 +341,7 @@ namespace ModIO.Implementation
                     shutdownOperation = ShutdownTask();
 
                     await shutdownOperation;
-            
+
                     await openCallbacks.ShutDown();
 
                     shutdownOperation = null;
@@ -357,7 +357,7 @@ namespace ModIO.Implementation
 
                 Logger.Log(LogLevel.Verbose, "FINISHED SHUTDOWN");
             }
-            
+
             shutdownComplete?.Invoke();
         }
 
@@ -496,7 +496,7 @@ namespace ModIO.Implementation
             {
                 //      Synchronous checks SUCCEEDED
                 WebRequestConfig config = API.Requests.AuthenticateUser.InternalRequest(securityCode);
-                
+
                 Task<ResultAnd<AccessTokenObject>> task = WebRequestManager.Request<AccessTokenObject>(config);
 
                 // We always cache the task while awaiting so we can check IsFaulted externally
@@ -569,7 +569,7 @@ namespace ModIO.Implementation
                 var task = WebRequestManager.Request<TermsObject>(config);
                 var response = await openCallbacks.Run(callbackConfirmation, task);
                 result = response.result;
-                
+
                 if(result.Succeeded())
                 {
                     termsOfUse = ResponseTranslator.ConvertTermsObjectToTermsOfUse(response.value);
@@ -618,7 +618,7 @@ namespace ModIO.Implementation
 
                 WebRequestConfig config = API.Requests.AuthenticateUser.ExternalRequest(
                         serviceProvider, data, hash, emailAddress,nonce, device, userId, environment);
-                
+
                 Task<ResultAnd<AccessTokenObject>> task = WebRequestManager.Request<AccessTokenObject>(config);
 
                 // We always cache the task while awaiting so we can check IsFaulted externally
@@ -696,7 +696,7 @@ namespace ModIO.Implementation
 
             return ResultAnd.Create(result, tags);
         }
-        
+
         public static async void GetGameTags(Action<ResultAnd<TagCategory[]>> callback)
         {
             // Early out
@@ -719,7 +719,7 @@ namespace ModIO.Implementation
             Result result;
             ModPage page = new ModPage();
 
-            string unpaginatedURL = API.Requests.GetMods.UnpaginatedURL();
+            string unpaginatedURL = API.Requests.GetMods.UnpaginatedURL(filter);
             var offset = filter.pageIndex * filter.pageSize;
 
             if(IsInitialized(out result) && IsSearchFilterValid(filter, out result)
@@ -735,9 +735,6 @@ namespace ModIO.Implementation
                 if(result.Succeeded())
                 {
                     page = ResponseTranslator.ConvertResponseSchemaToModPage(task.value, filter);
-                    
-                    // Add this response into the cache
-                    ResponseCache.AddModsToCache(unpaginatedURL, offset, page);
 
                     // Return the exact number of mods that were requested (not more)
                     if(page.modProfiles.Length > filter.pageSize)
@@ -751,7 +748,7 @@ namespace ModIO.Implementation
 
             return ResultAnd.Create(result, page);
         }
-        
+
         public static async void GetMods(SearchFilter filter, Action<ResultAnd<ModPage>> callback)
         {
             // Early out
@@ -766,7 +763,7 @@ namespace ModIO.Implementation
             ResultAnd<ModPage> result = await GetMods(filter);
             callback?.Invoke(result);
         }
-        
+
         public static async Task<ResultAnd<ModProfile>> GetMod(long id)
         {
             var callbackConfirmation = openCallbacks.New();
@@ -848,7 +845,7 @@ namespace ModIO.Implementation
             var result = await GetModDependencies(modId);
             callback?.Invoke(result);
         }
-        
+
         public static async Task<ResultAnd<Rating[]>> GetCurrentUserRatings()
         {
             var callbackConfirmation = openCallbacks.New();
@@ -996,7 +993,7 @@ namespace ModIO.Implementation
             openCallbacks.Complete(callbackConfirmation);
             return result;
         }
-        
+
         public static async Task FetchUpdates(Action<Result> callback)
         {
             if(callback == null)
@@ -1312,7 +1309,7 @@ namespace ModIO.Implementation
             openCallbacks.Complete(callbackConfirmation);
             return ResultAnd.Create(result, page);
         }
-        
+
         public static SubscribedMod[] GetSubscribedMods(out Result result)
         {
             if(IsInitialized(out result) && IsAuthenticatedSessionValid(out result))
@@ -1409,7 +1406,7 @@ namespace ModIO.Implementation
             Result result = await UnmuteUser(userId);
             callback?.Invoke(result);
         }
-        
+
         public static async Task<Result> MuteUser(long userId)
         {
             var callbackConfirmation = openCallbacks.New();
@@ -1441,11 +1438,11 @@ namespace ModIO.Implementation
             openCallbacks.Complete(callbackConfirmation);
             return result;
         }
-        
+
 #endregion // User Management
 
 #region Mod Media
-        
+
 #if UNITY_2019_4_OR_NEWER
         public static async Task<ResultAnd<Texture2D>> DownloadTexture(DownloadReference downloadReference)
         {
@@ -1453,10 +1450,10 @@ namespace ModIO.Implementation
             Result result;
             Texture2D texture = null;
             //-------------------------------------------------------------------------------------
-            
+
             ResultAnd<byte[]> resultAnd = await GetImage(downloadReference);
             result = resultAnd.result;
-            
+
             if(result.Succeeded())
             {
                 IOUtil.TryParseImageData(resultAnd.value, out texture, out result);
@@ -1472,7 +1469,7 @@ namespace ModIO.Implementation
         /// </summary>
         public static async Task<ResultAnd<byte[]>> GetImage(DownloadReference downloadReference)
         {
-            if (!downloadReference.IsValid()) 
+            if (!downloadReference.IsValid())
             {
                 Logger.Log(
                     LogLevel.Warning,
@@ -1544,7 +1541,7 @@ namespace ModIO.Implementation
                                 // We need to re-open the stream because some platforms only allow a Read or Write stream, not both
                                 ResultAnd<ModIOFileStream> openReadStream = DataStorage.GetImageFileReadStream(downloadReference.url);
                                 result = openReadStream.result;
-                                
+
                                 if(result.Succeeded())
                                 {
                                     using (openReadStream.value)
@@ -1560,14 +1557,14 @@ namespace ModIO.Implementation
                                     }
                                 }
                             }
-                            
+
                             // FAILED DOWNLOAD - ERASE THE FILE SO WE DONT CREATE A CORRUPT CACHED IMAGE
                             if(!result.Succeeded())
                             {
                                 Result cleanupResult = DataStorage.DeleteStoredImage(downloadReference.url);
                                 if(!cleanupResult.Succeeded())
                                 {
-                                    Logger.Log(LogLevel.Error, 
+                                    Logger.Log(LogLevel.Error,
                                         $"[Internal] Failed to cleanup downloaded image."
                                         + $" This may result in a corrupt or invalid image being"
                                         + $" loaded for modId {downloadReference.modId}");
@@ -1577,7 +1574,7 @@ namespace ModIO.Implementation
                     }
                     // continue to invoke at the end of this method
                 }
-            
+
 
             callbackConfirmation.SetResult(true);
             openCallbacks_dictionary.Remove(callbackConfirmation);
@@ -1798,11 +1795,11 @@ namespace ModIO.Implementation
                         + " Use the ModIOUnity.AddTags and ModIOUnity.DeleteTags methods instead."
                         + " The 'tags' array in the ModProfileDetails will be ignored.");
                 }
-                
+
                 var config = modDetails.logo != null
                     ? API.Requests.EditMod.RequestPOST(modDetails)
                     : API.Requests.EditMod.RequestPUT(modDetails);
-                
+
                 result = await openCallbacks.Run(callbackConfirmation, WebRequestManager.Request(config));
 
                 if(result.Succeeded())
@@ -1887,7 +1884,7 @@ namespace ModIO.Implementation
 
             return result;
         }
-        
+
         public static async void AddTags(ModId modId, string[] tags,
                                                 Action<Result> callback)
         {
@@ -1983,7 +1980,7 @@ namespace ModIO.Implementation
                 // TODO Add progress handle to the compress method
                 var addModMediaResult = await AddModMedia.Request(modProfileDetails);
                 result = addModMediaResult.result;
-                
+
                 if(result.Succeeded())
                 {
                     WebRequestConfig config = addModMediaResult.value;
@@ -2067,13 +2064,13 @@ namespace ModIO.Implementation
                 {
                     Logger.Log(LogLevel.Verbose, $"Compressed file ({modfile.directory})"
                                                  + $"\nstream length: {compressionTaskResult.value.Length}");
-                    
+
                     callbackConfirmation = openCallbacks.New();
-                    var requestConfig = API.Requests.AddModFile.Request(modfile, compressionTaskResult.value.ToArray());
+                    var requestConfig = await API.Requests.AddModFile.Request(modfile, compressionTaskResult.value);
                     Task<ResultAnd<ModfileObject>> task = WebRequestManager.Request<ModfileObject>(requestConfig, currentUploadHandle);
                     ResultAnd<ModfileObject> uploadResult = await openCallbacks.Run(callbackConfirmation, task);
                     result = uploadResult.result;
-                    
+
                     if(!result.Succeeded())
                     {
                         currentUploadHandle.Failed = true;
@@ -2082,7 +2079,7 @@ namespace ModIO.Implementation
                     {
                         // TODO only remove the mod of the ID that we uploaded modfile.modId - add the modfile object we got back from the server to the cache
                         ResponseCache.ClearCache();
-                        
+
                         Logger.Log(LogLevel.Verbose, $"UPLOAD SUCCEEDED [{modfile.modId}_{uploadResult.value.id}]");
                     }
                 }

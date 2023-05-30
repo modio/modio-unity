@@ -15,7 +15,7 @@ namespace ModIO.Implementation
     {
         //theres a card to fix this
         
-        private string directory;
+        string directory;
 
         public CompressOperationDirectory(string directory, ProgressHandle progressHandle = null)
             : base(progressHandle)
@@ -33,8 +33,8 @@ namespace ModIO.Implementation
 
             using(ZipOutputStream zipStream = new ZipOutputStream(resultAnd.value))
             {
-                zipStream.SetLevel(3);                
-                int folderOffset = directory.Length + (directory.EndsWith("\\") ? 0 : 1);
+                zipStream.SetLevel(3);
+                int folderOffset = directory.TrimEnd('/', '\\').Length;
 
                 //loop this across the directory, and set up the filestream etc
                 var directories = DataStorage.IterateFilesInDirectory(directory);
@@ -76,7 +76,7 @@ namespace ModIO.Implementation
         }
 
 
-        private static string GetEntryName(int folderOffset, ResultAnd<ModIOFileStream> dir)
+        static string GetEntryName(int folderOffset, ResultAnd<ModIOFileStream> dir)
         {
             // Make the name in zip based on the folder
             // eg,
@@ -86,7 +86,7 @@ namespace ModIO.Implementation
             // should become:
 
             // BobsMod/items/entryName
-            return dir.value.FilePath.Substring(folderOffset);
+            return dir.value.FilePath.Substring(folderOffset).Trim('/','\\');
         }
     }
 }

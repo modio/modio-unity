@@ -8,31 +8,17 @@ namespace ModIO.Implementation.API.Requests
 
         public static WebRequestConfig RequestPaginated(SearchFilter searchFilter)
         {
-            string filter = string.Empty;
-            if(searchFilter != null)
+            var request = new WebRequestConfig
             {
-                filter = FilterUtil.ConvertToURL(searchFilter);
-                filter = FilterUtil.AddPagination(searchFilter, filter);
-            }
-
-            var request = RequestUnpaginated();
-            request.Url += filter;
-
-
-            return request;
-        }
-
-        public static WebRequestConfig RequestUnpaginated()
-        {
-            var request = new WebRequestConfig()
-            {
-                Url = UnpaginatedURL(),
+                Url = PaginatedURL(searchFilter),
                 RequestMethodType = "GET"
             };
-
+            
             return request;
         }
 
-        public static string UnpaginatedURL() => $"{Settings.server.serverURL}{@"/games/"}{Settings.server.gameId}{@"/mods"}?";
+        static string Url => $"{Settings.server.serverURL}{@"/games/"}{Settings.server.gameId}{@"/mods"}?";
+        public static string UnpaginatedURL(SearchFilter filter) => $"{Url}{FilterUtil.ConvertToURL(filter)}";
+        public static string PaginatedURL(SearchFilter filter) => FilterUtil.AddPagination(filter, UnpaginatedURL(filter));
     }
 }

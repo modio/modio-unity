@@ -466,17 +466,17 @@ namespace ModIO.Implementation.Platform
         }
 
         /// <summary>Gets the size and hash of a file.</summary>
-        public static ResultAnd<(long fileSize, string fileHash)> GetFileSizeAndHash(
-            string filePath)
+        public static Result GetFileSizeAndHash(
+            string filePath, out long fileSize, out string fileHash)
         {
-            long fileSize = -1;
-            string fileHash = null;
             Result result;
 
             if(!IsPathValid(filePath, out result)
                || !DoesFileExist(filePath, out result))
             {
-                return ResultAnd.Create(result, (fileSize, fileHash));
+                fileSize = -1;
+                fileHash = null;
+                return result;
             }
 
             // get fileSize
@@ -493,15 +493,20 @@ namespace ModIO.Implementation.Platform
                            "UnauthorizedAccessException when attempting to read file size."
                                + $"\n.path={filePath}" + $"\n.Exception:{e.Message}");
 
-                return ResultAnd.Create(ResultCode.IO_AccessDenied, (fileSize, fileHash));
+                result = ResultBuilder.Create(ResultCode.IO_AccessDenied);
+                fileSize = -1;
+                fileHash = null;
+                return result;
             }
             catch(Exception e)
             {
                 Logger.Log(LogLevel.Warning, "Unhandled error when attempting to get file size."
                                                  + $"\n.path={filePath}"
                                                  + $"\n.Exception:{e.Message}");
-
-                return ResultAnd.Create(ResultCode.Unknown, (fileSize, fileHash));
+                fileSize = -1;
+                fileHash = null;
+                result = ResultBuilder.Create(ResultCode.Unknown);
+                return result;
             }
 
             // get hash
@@ -524,7 +529,10 @@ namespace ModIO.Implementation.Platform
                            "UnauthorizedAccessException when attempting to generate MD5 Hash."
                                + $"\n.path={filePath}" + $"\n.Exception:{e.Message}");
 
-                return ResultAnd.Create(ResultCode.IO_AccessDenied, (fileSize, fileHash));
+                fileSize = -1;
+                fileHash = null;
+                result = ResultBuilder.Create(ResultCode.IO_AccessDenied);
+                return result;
             }
             catch(IOException e)
             {
@@ -535,18 +543,26 @@ namespace ModIO.Implementation.Platform
                                                  + $"\n.path={filePath}"
                                                  + $"\n.Exception:{e.Message}");
 
-                return ResultAnd.Create(ResultCode.IO_FileCouldNotBeRead, (fileSize, fileHash));
+
+                fileSize = -1;
+                fileHash = null;
+                result = ResultBuilder.Create(ResultCode.IO_FileCouldNotBeRead);
+                return result;
             }
             catch(Exception e)
             {
                 Logger.Log(LogLevel.Warning, "Unhandled error when attempting to get file hash."
                                                  + $"\n.path={filePath}"
                                                  + $"\n.Exception:{e.Message}");
-                return ResultAnd.Create(ResultCode.Unknown, (fileSize, fileHash));
+
+                fileSize = -1;
+                fileHash = null;
+                result = ResultBuilder.Create(ResultCode.Unknown);
+                return result;
             }
 
             // success!
-            return ResultAnd.Create(ResultCode.Success, (fileSize, fileHash));
+            return ResultBuilder.Create(ResultCode.Success);
         }
 
         /// <summary>Checks for the existence of a directory.</summary>

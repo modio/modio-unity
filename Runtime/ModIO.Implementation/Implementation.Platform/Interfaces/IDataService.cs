@@ -47,7 +47,7 @@ namespace ModIO.Implementation.Platform
         bool FileExists(string filePath);
 
         /// <summary>Gets the size and hash of a file.</summary>
-        ResultAnd<(long fileSize, string fileHash)> GetFileSizeAndHash(string filePath);
+        Result GetFileSizeAndHash(string filePath, out long fileWithSize, out string fileHash);
 
         /// <summary>Determines whether a directory exists.</summary>
         bool DirectoryExists(string directoryPath);

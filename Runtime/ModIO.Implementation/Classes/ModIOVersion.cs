@@ -5,7 +5,7 @@
     {
         // ---------[ Singleton ]---------
         /// <summary>Singleton instance for current version.</summary>
-        public static readonly ModIOVersion Current = new ModIOVersion(2023, 5, 12, "beta");
+        public static readonly ModIOVersion Current = new ModIOVersion(2023, 5, 4, "beta");
 
         // ---------[ Fields ]---------
         /// <summary>Main Version number.</summary>
@@ -25,7 +25,7 @@
         /// Changing between versions of the codebase with a different Y value, will never require
         /// changes to a consumer codebase in order to integrate, but may offer additional
         /// functionality if changes are made.</remarks>
-        public int day;
+        public int patch;
 
         /// <summary>Suffix for the current version.</summary>
         /// <remarks>Represents additional, non-incremental version information about a build.
@@ -37,11 +37,11 @@
 
         // ---------[ Initialization ]---------
         /// <summary>Constructs an object with the given version values.</summary>
-        public ModIOVersion(int year, int month, int day, string suffix = null)
+        public ModIOVersion(int year, int month, int patch, string suffix = null)
         {
             this.year = year;
             this.month = month;
-            this.day = day;
+            this.patch = patch;
 
             if(suffix == null)
             {
@@ -62,7 +62,7 @@
             }
             if(result == 0)
             {
-                result = day.CompareTo(other.day);
+                result = patch.CompareTo(other.patch);
             }
 
             return result;
@@ -97,7 +97,7 @@
 #region Utility
 
         /// <summary>Creates the request header representation of the version.</summary>
-        public string ToHeaderString() => $"modioUnityPlugin-{year.ToString()}.{month.ToString()}.{day.ToString()}-{suffix}";
+        public string ToHeaderString() => $"modioUnityPlugin-{year.ToString()}.{month.ToString()}.{patch.ToString()}-{suffix}";
         
 
 #endregion // Utility
