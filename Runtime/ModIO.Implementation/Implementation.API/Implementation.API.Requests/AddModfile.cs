@@ -17,7 +17,7 @@ namespace ModIO.Implementation.API.Requests
                 ShouldRequestTimeout = false,
             };
 
-            stream.Seek(0, SeekOrigin.Begin);
+            stream.Position = 0;
             var result = new byte[stream.Length];
             var pos = await stream.ReadAsync(result, 0, (int)stream.Length, new CancellationToken());
 

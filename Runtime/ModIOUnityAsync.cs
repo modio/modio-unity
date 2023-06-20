@@ -1,4 +1,5 @@
-﻿using ModIO.Implementation;
+﻿using System.Collections.Generic;
+using ModIO.Implementation;
 using UnityEngine;
 using System.Threading.Tasks;
 using ModIO.Implementation.API.Objects;
@@ -115,9 +116,6 @@ namespace ModIO
         /// TermsHash struct which you will need to provide when calling a third party
         /// authentication method such as ModIOUnity.AuthenticateUserViaSteam()
         /// </remarks>
-        /// <param name="serviceProvider">The provider you intend to use for authentication,
-        /// eg steam, google etc. (You dont need to display terms of use to the user if they are
-        /// authenticating via email security code)</param>
         /// <seealso cref="TermsOfUse"/>
         /// <seealso cref="AuthenticateUserViaDiscord"/>
         /// <seealso cref="AuthenticateUserViaGoogle"/>
@@ -207,7 +205,43 @@ namespace ModIO
         /// </summary>
         /// <param name="epicToken">the user's epic token</param>
         /// <param name="emailAddress">the user's email address</param>
+        /// <param name="hash">the TermsHash retrieved from ModIOUnity.GetTermsOfUse()</param>
+        /// <seealso cref="GetTermsOfUse"/>
         /// <seealso cref="ModIOUnity.AuthenticateUserViaEpic"/>
+        /// <code>
+        /// // First we get the Terms of Use to display to the user and cache the hash
+        /// async void GetTermsOfUse_Example()
+        /// {
+        ///     ResultAnd&#60;TermsOfUser&#62; response = await ModIOUnityAsync.GetTermsOfUse();
+        ///
+        ///     if (response.result.Succeeded())
+        ///     {
+        ///         Debug.Log("Successfully retrieved the terms of use: " + response.value.termsOfUse);
+        ///
+        ///         //  Cache the terms of use (which has the hash for when we attempt to authenticate)
+        ///         modIOTermsOfUse = response.value;
+        ///     }
+        ///     else
+        ///     {
+        ///         Debug.Log("Failed to retrieve the terms of use");
+        ///     }
+        /// }
+        ///
+        /// // Once we have the Terms of Use and hash we can attempt to authenticate
+        /// async void Authenticate_Example()
+        /// {
+        ///     Result result = await ModIOUnityAsync.AuthenticateUserViaEpic(epicToken, "johndoe@gmail.com", modIOTermsOfUse.hash);
+        ///
+        ///     if (result.Succeeded())
+        ///     {
+        ///         Debug.Log("Successfully authenticated user");
+        ///     }
+        ///     else
+        ///     {
+        ///         Debug.Log("Failed to authenticate");
+        ///     }
+        /// }
+        /// </code>
         public static async Task<Result> AuthenticateUserViaEpic(string epicToken,
                                                                   string emailAddress,
                                                                   TermsHash? hash)
@@ -227,6 +261,7 @@ namespace ModIO
         /// <param name="authCode">the user's authcode token</param>
         /// <param name="emailAddress">the user's email address</param>
         /// <param name="hash">the TermsHash retrieved from ModIOUnity.GetTermsOfUse()</param>
+        /// <param name="environment">the PSN account environment</param>
         /// <seealso cref="GetTermsOfUse"/>
         /// <code>
         /// // First we get the Terms of Use to display to the user and cache the hash
@@ -792,6 +827,130 @@ namespace ModIO
             return await ModIOUnityImplementation.GetMod(modId.id);
         }
 
+
+
+        /// <summary>
+        /// Get all comments posted in the mods profile. Successful request will return an array of
+        /// Comment Objects. We recommended reading the filtering documentation to return only the
+        /// records you want.
+        /// </summary>
+        ///  <param name="filter">The filter to apply when searching through comments (can only apply
+        /// pagination parameters, Eg. page size and page index)</param>
+        /// <seealso cref="CommentPage"/>
+        /// <seealso cref="ModComment"/>
+        /// <seealso cref="SearchFilter"/>
+        /// <seealso cref="ModId"/>
+        /// <seealso cref="Result"/>
+        /// <seealso cref="ResultAnd"/>
+        /// <seealso cref="ModIOUnity.GetModComments"/>
+        public static async Task<ResultAnd<CommentPage>> GetModComments(ModId modId, SearchFilter filter)
+        {
+            return await ModIOUnityImplementation.GetModComments(modId, filter);
+        }
+
+        /// <summary>
+        /// Retrieves a list of ModDependenciesObjects that represent mods that depend on a mod.
+        /// </summary>
+        /// <remarks>
+        /// This function returns only immediate mod dependencies, meaning that if you need the dependencies for the dependent
+        /// mods, you will have to make multiple calls and watch for circular dependencies.
+        /// </remarks>
+        /// <seealso cref="ModId"/>
+        /// <seealso cref="Result"/>
+        /// <seealso cref="ResultAnd"/>
+        /// <seealso cref="ModDependenciesObject"/>
+        /// <seealso cref="ModIOUnity.GetModDependencies"/>
+        /// <code>
+        /// async void Example()
+        /// {
+        ///     ModId modId = new ModId(1234);
+        ///     var resultAnd = await ModIOUnityAsync.GetModDependencies(modId);
+        ///
+        ///     if (resultAnd.result.Succeeded())
+        ///     {
+        ///         ModDependenciesObject[] modDependenciesObjects = resultAnd.value;
+        ///         Debug.Log("retrieved mods dependencies");
+        ///     }
+        ///     else
+        ///     {
+        ///         Debug.Log("failed to get mod dependencies");
+        ///     }
+        /// }
+        /// </code>
+        /// <param name="modId"></param>
+        /// <param name="commentDetails"></param>
+        /// <returns></returns>
+        public static async Task<ResultAnd<ModComment>> AddModComment(ModId modId, CommentDetails commentDetails)
+        {
+            return await ModIOUnityImplementation.AddModComment(modId, commentDetails);
+        }
+
+        /// <summary>
+        /// Delete a comment from a mod profile. Successful request will return 204 No Content and fire a MOD_COMMENT_DELETED event.
+        /// </summary>
+        /// <param name="modId">Id of the mod to add the comment to</param>
+        /// <param name="commentId">The id for the comment to be removed</param>
+        /// <seealso cref="Result"/>
+        /// <seealso cref="ModComment"/>
+        /// <seealso cref="CommentDetails"/>
+        /// <seealso cref="DeleteModComment"/>
+        /// <seealso cref="ModIOUnity.DeleteModComment"/>
+        /// <seealso cref="EditModComment"/>
+        /// <code>
+        ///private ModId modId;
+        ///private long commentId;
+        ///
+        ///void Example()
+        ///{
+        ///    var result = await ModIOUnityAsync.DeleteModComment(modId, commentId);
+        ///    if (result.Succeeded())
+        ///    {
+        ///        Debug.Log("deleted comment");
+        ///    }
+        ///    else
+        ///    {
+        ///        Debug.Log("failed to delete comment");
+        ///    }
+        ///}
+        /// </code>
+        public static async Task<Result> DeleteModComment(ModId modId, long commentId)
+        {
+            return await ModIOUnityImplementation.DeleteModComment(modId, commentId);
+        }
+        
+        /// <summary>
+        /// Update a comment for the corresponding mod. Successful request will return the updated Comment Object.
+        /// </summary>
+        /// <param name="modId">Id of the mod the comment is on</param>
+        /// <param name="content">Updated contents of the comment.</param>
+        /// <param name="commentId">The id for the comment you wish to edit</param>
+        /// <seealso cref="ResultAnd"/>
+        /// <seealso cref="ModComment"/>
+        /// <seealso cref="ModIOUnity.UpdateModComment"/>
+        /// <code>
+        /// private string content = "This is a Comment";
+        /// long commentId = 12345;
+        /// ModId modId = (ModId)1234;
+        ///
+        /// async void UpdateMod()
+        /// {
+        ///     var response = await ModIOUnityAsync.UpdateModComment(modId, content, commentId);
+        ///
+        ///     if(response.result.Succeeded())
+        ///     {
+        ///         Debug.Log("Successfully Updated Comment!");
+        ///     }
+        ///     else
+        ///     {
+        ///         Debug.Log("Failed to Update Comment!");
+        ///     }
+        /// }
+        /// </code>
+        public static async Task<ResultAnd<ModComment>> UpdateModComment(ModId modId, string content, long commentId)
+        {
+            return await ModIOUnityImplementation.UpdateModComment(modId, content, commentId);
+        }
+
         /// <summary>
         ///
         /// </summary>
@@ -803,7 +962,6 @@ namespace ModIO
         /// <summary>
         /// Get all mod rating's submitted by the authenticated user. Successful request will return an array of Rating Objects.
         /// </summary>
-        /// <param name="modId">the ModId of the ModProfile to get</param>
         /// <seealso cref="ModId"/>
         /// <seealso cref="Rating"/>
         /// <seealso cref="ResultAnd"/>
@@ -908,8 +1066,8 @@ namespace ModIO
         /// <param name="modId">ModId of the mod you want to subscribe to</param>
         /// <seealso cref="Result"/>
         /// <seealso cref="ModId"/>
-        /// <seealso cref="EnableModManagement(ModIO.ModManagementEventDelegate)"/>
-        /// <seealso cref="GetCurrentModManagementOperation"/>
+        /// <seealso cref="ModIOUnity.EnableModManagement(ModIO.ModManagementEventDelegate)"/>
+        /// <seealso cref="ModIOUnity.GetCurrentModManagementOperation"/>
         /// <code>
         ///
         /// ModProfile mod;
@@ -943,8 +1101,8 @@ namespace ModIO
         /// <param name="modId">ModId of the mod you want to unsubscribe from</param>
         /// <seealso cref="Result"/>
         /// <seealso cref="ModId"/>
-        /// <seealso cref="EnableModManagement(ModIO.ModManagementEventDelegate)"/>
-        /// <seealso cref="GetCurrentModManagementOperation"/>
+        /// <seealso cref="ModIOUnity.EnableModManagement(ModIO.ModManagementEventDelegate)"/>
+        /// <seealso cref="ModIOUnity.GetCurrentModManagementOperation"/>
         /// <code>
         ///
         /// ModProfile mod;
@@ -1034,7 +1192,7 @@ namespace ModIO
         /// Result.IsAuthenticationError() from the Result will equal true.
         /// </remarks>
         /// <seealso cref="Result"/>
-        /// <seealso cref="EnableModManagement(ModIO.ModManagementEventDelegate)"/>
+        /// <seealso cref="ModIOUnity.EnableModManagement(ModIO.ModManagementEventDelegate)"/>
         /// <seealso cref="IsAuthenticated"/>
         /// <seealso cref="RequestAuthenticationEmail"/>
         /// <seealso cref="SubmitEmailSecurityCode"/>
@@ -1066,6 +1224,85 @@ namespace ModIO
             return await ModIOUnityImplementation.FetchUpdates();
         }
 
+        /// <summary>
+        /// Adds the specified mods as dependencies to an existing mod.
+        /// </summary>
+        /// <remarks>
+        /// If the dependencies already exist they will be ignored and the result will return success
+        /// </remarks>
+        /// <param name="modId">ModId of the mod you want to add dependencies to</param>
+        /// <param name="dependencies">The ModIds that you want to add (max 5 at a time)</param>
+        /// <seealso cref="Result"/>
+        /// <seealso cref="ModId"/>
+        /// <seealso cref="ModIOUnity.AddDependenciesToMod"/>
+        /// <seealso cref="ModIOUnity.RemoveDependenciesFromMod"/>
+        /// <seealso cref="ModIOUnityAsync.RemoveDependenciesFromMod"/>
+        /// <code>
+        /// async void Example()
+        /// {
+        ///     var dependencies = new List&#60;ModId&#62;
+        ///     {
+        ///         (ModId)1001,
+        ///         (ModId)1002,
+        ///         (ModId)1003
+        ///     };
+        ///     Result result = await ModIOUnityAsync.AddDependenciesToMod(mod.id, dependencies);
+        ///
+        ///     if (result.Succeeded())
+        ///     {
+        ///         Debug.Log("Successfully added dependencies to mod");
+        ///     }
+        ///     else
+        ///     {
+        ///         Debug.Log("Failed to add dependencies to mod");
+        ///     }
+        /// }
+        /// </code>
+        public static async Task<Result> AddDependenciesToMod(ModId modId, ICollection<ModId> dependencies)
+        {
+            return await ModIOUnityImplementation.AddDependenciesToMod(modId, dependencies);
+        }
+
+        /// <summary>
+        /// Removes the specified mods as dependencies for another existing mod.
+        /// </summary>
+        /// <remarks>
+        /// If the dependencies dont exist they will be ignored and the result will return success
+        /// </remarks>
+        /// <param name="modId">ModId of the mod you want to remove dependencies from</param>
+        /// <param name="dependencies">The ModIds that you want to remove (max 5 at a time)</param>
+        /// <seealso cref="Result"/>
+        /// <seealso cref="ModId"/>
+        /// <seealso cref="dependencies"/>
+        /// <seealso cref="ModIOUnity.AddDependenciesToMod"/>
+        /// <seealso cref="ModIOUnity.RemoveDependenciesFromMod"/>
+        /// <seealso cref="ModIOUnityAsync.AddDependenciesToMod"/>
+        /// <code>
+        /// void Example()
+        /// {
+        ///     var dependencies = new List&#60;ModId&#62;
+        ///     {
+        ///         (ModId)1001,
+        ///         (ModId)1002,
+        ///         (ModId)1003
+        ///     };
+        ///     Result result = await ModIOUnityAsync.RemoveDependenciesFromMod(mod.id, dependencies);
+        ///
+        ///     if (result.Succeeded())
+        ///     {
+        ///         Debug.Log("Successfully removed dependencies from mod");
+        ///     }
+        ///     else
+        ///     {
+        ///         Debug.Log("Failed to removed dependencies from mod");
+        ///     }
+        /// }
+        /// </code>
+        public static async Task<Result> RemoveDependenciesFromMod(ModId modId, ICollection<ModId> dependencies)
+        {
+            return await ModIOUnityImplementation.RemoveDependenciesFromMod(modId, dependencies);
+        }
+
 #endregion // Mod Management
 
 #region Mod Uploading
@@ -1080,7 +1317,7 @@ namespace ModIO
         /// </remarks>
         /// <param name="token">the token allowing a new unique profile to be created from ModIOUnity.GenerateCreationToken()</param>
         /// <param name="modProfileDetails">the mod profile details to apply to the mod profile being created</param>
-        /// <seealso cref="GenerateCreationToken"/>
+        /// <seealso cref="ModIOUnity.GenerateCreationToken"/>
         /// <seealso cref="CreationToken"/>
         /// <seealso cref="ModProfileDetails"/>
         /// <seealso cref="Result"/>
@@ -1125,7 +1362,7 @@ namespace ModIO
         /// You need to assign the ModId of the mod you want to edit inside of the ModProfileDetails
         /// object included in the parameters
         /// </remarks>
-        /// <param name="modProfile">the mod profile details to apply to the mod profile being created</param>
+        /// <param name="modprofile">the mod profile details to apply to the mod profile being created</param>
         /// <seealso cref="ModProfileDetails"/>
         /// <seealso cref="Result"/>
         /// <code>
@@ -1163,7 +1400,7 @@ namespace ModIO
         /// <seealso cref="Result"/>
         /// <seealso cref="ModfileDetails"/>
         /// <seealso cref="ArchiveModProfile"/>
-        /// <seealso cref="GetCurrentUploadHandle"/>
+        /// <seealso cref="ModIOUnity.GetCurrentUploadHandle"/>
         /// <code>
         ///
         /// ModId modId;
@@ -1287,7 +1524,7 @@ namespace ModIO
         /// ModId modId;
         /// string[] tags;
         ///
-        /// void Example()
+        /// async void Example()
         /// {
         ///     Result result = await ModIOUnity.AddTags(modId, tags);
         ///
@@ -1302,7 +1539,7 @@ namespace ModIO
         /// }
         /// </code>
         public static async Task<Result> AddTags(ModId modId, string[] tags)
-        {            
+        {
             return await ModIOUnityImplementation.AddTags(modId, tags);
         }
 

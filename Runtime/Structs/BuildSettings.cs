@@ -1,3 +1,5 @@
+using UnityEngine;
+
 namespace ModIO
 {
     /// <summary>
@@ -17,16 +19,25 @@ namespace ModIO
             this.logLevel = buildSettings.logLevel;
             this.userPortal = buildSettings.userPortal;
             this.requestCacheLimitKB = buildSettings.requestCacheLimitKB;
+            this.defaultPortal = buildSettings.defaultPortal;
         }
-        
+
         /// <summary>Level to log at.</summary>
         public LogLevel logLevel;
 
         /// <summary>Portal the game will be launched through.</summary>
-        public UserPortal userPortal;
+        public UserPortal userPortal = UserPortal.None;
+
+        /// <summary>Default portal.</summary>
+        [HideInInspector] public UserPortal defaultPortal = UserPortal.None;
 
         // TODO Needs to be implemented alongside RequestCache.cs
         /// <summary>Size limit for the request cache.</summary>
         public uint requestCacheLimitKB;
+
+        public void SetDefaultPortal()
+        {
+            this.userPortal = this.defaultPortal;
+        }
     }
 }

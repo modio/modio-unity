@@ -13,10 +13,12 @@ namespace ModIO.Util
         public static T Instance
         {
             get {
+                #if UNITY_EDITOR
                 if(!Application.isPlaying)
                 {
                     throw new UnityException($"Attempted to get singleton when application was not playing (This can happen when exiting Playmode. It's safe to ignore)");
                 }
+                #endif
                 if(_instance == null)
                 {
                     _instance = (T)FindObjectOfType(typeof(T));

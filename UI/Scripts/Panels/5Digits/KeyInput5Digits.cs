@@ -274,6 +274,7 @@ namespace ModIOBrowser.Implementation
             {
                 return Keyboard.current[key].wasPressedThisFrame;
             }
+            return false;
 #else
             return Input.GetKeyDown(keyCode);
 #endif
@@ -287,6 +288,7 @@ namespace ModIOBrowser.Implementation
             {
                 return Keyboard.current[key].wasReleasedThisFrame;
             }
+            return false;
 #else
             return Input.GetKeyUp(keyCode);
 #endif
@@ -300,6 +302,7 @@ namespace ModIOBrowser.Implementation
             {
                 return Keyboard.current[key].isPressed;
             }
+            return false;
 #else
             return Input.GetKey(keyCode);
 #endif
@@ -312,6 +315,7 @@ namespace ModIOBrowser.Implementation
             {
                 return Mouse.current.scroll.ReadValue().y;
             }
+            return 0f;
 #else
             return Input.GetAxis(axis);
 #endif

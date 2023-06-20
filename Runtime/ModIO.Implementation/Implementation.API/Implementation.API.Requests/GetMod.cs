@@ -11,7 +11,6 @@
                 RequestMethodType = "GET"
             };
 
-
             return request;
         }
     }

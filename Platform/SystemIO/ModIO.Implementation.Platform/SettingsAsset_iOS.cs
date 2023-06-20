@@ -10,6 +10,10 @@ namespace ModIO.Implementation
         public BuildSettings iosConfiguration;
 
 #if UNITY_IOS && !UNITY_EDITOR
+        private void Awake()
+        {
+            iosConfiguration.userPortal = UserPortal.Apple;
+        }
 
         /// <summary>Gets the configuration for iOS.</summary>
         public BuildSettings GetBuildSettings()

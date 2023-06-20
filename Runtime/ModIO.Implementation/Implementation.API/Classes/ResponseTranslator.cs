@@ -177,6 +177,41 @@ namespace ModIO.Implementation
             return modDependencies;
         }
 
+        public static CommentPage ConvertModCommentObjectsToCommentPage(PaginatedResponse<ModCommentObject> commentObjects)
+        {
+            ModComment[] modComments = new ModComment[commentObjects.data.Length];
+
+            for(int i = 0; i < commentObjects.data.Length; i++)
+            {
+                modComments[i] = ConvertModCommentObjectsToModComment(commentObjects.data[i]);
+            }
+
+            CommentPage page = new CommentPage
+            {
+                CommentObjects = modComments,
+                totalSearchResultsFound = commentObjects.result_total
+            };
+
+            return page;
+        }
+
+        public static ModComment ConvertModCommentObjectsToModComment(ModCommentObject modCommentObjects)
+        {
+            return new ModComment
+            {
+
+                dateAdded = modCommentObjects.date_added,
+                id = modCommentObjects.id,
+                karma = modCommentObjects.karma,
+                modId = (ModId)modCommentObjects.mod_id,
+                resourceId = modCommentObjects.resource_id,
+                submittedBy = modCommentObjects.submitted_by,
+                threadPosition = modCommentObjects.thread_position,
+                commentDetails = new CommentDetails(modCommentObjects.reply_id, modCommentObjects.content)
+            };
+
+        }
+
         public static ModProfile[] ConvertModObjectsToModProfile(ModObject[] modObjects)
         {
             ModProfile[] profiles = new ModProfile[modObjects.Length];
@@ -199,7 +234,7 @@ namespace ModIO.Implementation
                                            + " error and should not happen.");
                 return default;
             }
-            
+
             ModProfile profile = new ModProfile();
 
             profile.id = new ModId(modObject.id);

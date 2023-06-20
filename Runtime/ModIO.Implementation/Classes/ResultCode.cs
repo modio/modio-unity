@@ -50,6 +50,7 @@ namespace ModIO.Implementation
         public const uint InvalidParameter_ModLogoTooLarge = 20212;
         public const uint InvalidParameter_CantBeNull = 20213;
         public const uint InvalidParameter_MissingModId = 20214;
+        public const uint InvalidParameter_TooMany = 20215;
         
         public const uint InvalidParameter_DownloadReferenceIsntValid = 20220;
 

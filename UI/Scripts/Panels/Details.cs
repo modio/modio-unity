@@ -433,10 +433,10 @@ namespace ModIOBrowser.Implementation
 
                 ModDetailsDownloadProgressRemaining.text = TranslationManager.Instance.Get("{seconds} remaining", $"{ Utility.GenerateHumanReadableTimeStringFromSeconds((int)timeRemainingInSeconds)}");
                 ModDetailsDownloadProgressSpeed.text = TranslationManager.Instance.Get("{BytesPerSecond)}/s", Utility.GenerateHumanReadableStringForBytes(handle.BytesPerSecond));
-
+                
                 if(Collection.Instance.GetSubscribedProfile(handle.modId, out ModProfile profile))
                 {
-                    TranslationManager.Instance.Get("{A} of {B}",
+                    ModDetailsDownloadProgressCompleted.text = TranslationManager.Instance.Get("{A} of {B}",
                         $"{ Utility.GenerateHumanReadableStringForBytes((long)(profile.archiveFileSize * handle.Progress))}",
                         $"{ Utility.GenerateHumanReadableStringForBytes(profile.archiveFileSize)}");
                 }

@@ -320,31 +320,38 @@ namespace ModIO.Implementation.API
                 long bytesDownloaded = 0;
                 long bytesDownloadedForThisSample = 0;
                 int bytesRead = 0;
-                Stopwatch stopwatch = new Stopwatch();
-                stopwatch.Start();
-                    
+                Stopwatch progressMeasure = new Stopwatch();
+                Stopwatch yieldMeasure = new Stopwatch();
+                progressMeasure.Start();
+                yieldMeasure.Start();
+
                 // Read the response stream in chunks and write to file
-                while((bytesRead = await responseStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                while((bytesRead = responseStream.Read(buffer, 0, buffer.Length)) > 0)
                 {
-                    await downloadStream.WriteAsync(buffer, 0, bytesRead);
+                    downloadStream.Write(buffer, 0, bytesRead);
                     bytesDownloaded += bytesRead;
 
                     if(progressHandle != null)
                     {
-                        progressHandle.Progress = (float)((decimal)bytesDownloaded / totalSize);
-                        
                         bytesDownloadedForThisSample += bytesRead;
-                        if(stopwatch.ElapsedMilliseconds >= 1000)
+                        if(progressMeasure.ElapsedMilliseconds >= 1000)
                         {
-                            progressHandle.BytesPerSecond = bytesDownloadedForThisSample;
+                            progressHandle.Progress = (float)((decimal)bytesDownloaded / totalSize);
+                            progressHandle.BytesPerSecond = (long)(bytesDownloadedForThisSample * (progressMeasure.ElapsedMilliseconds / 1000f));
+
                             bytesDownloadedForThisSample = 0;
-                            stopwatch.Restart();
+                            progressMeasure.Restart();
+                        }
+                        if(yieldMeasure.ElapsedMilliseconds >= 16)
+                        {
+                            await Task.Yield();
+                            yieldMeasure.Restart();
                         }
                     }
                 }
-                
-                stopwatch.Stop();
 
+                progressMeasure.Stop();
+                yieldMeasure.Stop();
             }
             return response;
         }

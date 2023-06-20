@@ -64,6 +64,7 @@ namespace ModIO.Implementation.API
             new Dictionary<string, CachedPageSearch>();
 
         static Dictionary<long, CachedModProfile> mods = new Dictionary<long, CachedModProfile>();
+        static Dictionary<string, CommentPage> commentObjectsCache = new Dictionary<string, CommentPage>();
         static Dictionary<long, ModDependencies[]> modsDependencies = new Dictionary<long, ModDependencies[]>();
         static Dictionary<long, Rating> currentUserRatings = new Dictionary<long, Rating>();
         static bool currentRatingsCached = false;
@@ -135,6 +136,19 @@ namespace ModIO.Implementation.API
             }
 
             ClearModsFromCacheAfterDelay(modIdsToClearAfterLifeTimeCheck);
+        }
+
+
+        public static void AddModCommentsToCache(string url, CommentPage commentPage)
+        {
+            if(commentObjectsCache.ContainsKey(url))
+            {
+                commentObjectsCache[url] = commentPage;
+            }
+            else
+            {
+                commentObjectsCache.Add(url, commentPage);
+            }
         }
 
         public static void AddModToCache(ModProfile mod)
@@ -224,7 +238,7 @@ namespace ModIO.Implementation.API
             {
                 Logger.Log(LogLevel.Verbose, $"[CACHE] checking cache for mods for url: {url}\n offset({offset} limit({limit}))");
             }
-            
+
             // do we contain this URL in the cache
             if(modPages.ContainsKey(url))
             {
@@ -249,7 +263,7 @@ namespace ModIO.Implementation.API
                             // Continue to next iteration because this one succeeded
                             continue;
                         }
-                    } 
+                    }
                     else if(logCacheMessages)
                     {
                         Logger.Log(LogLevel.Verbose, $"[CACHE] failed to get one of the mods. {modsRetrievedFromCache.Count} mods found thus far. Failed at {index}. Total mods {modPages[url].mods.Count}");
@@ -322,6 +336,23 @@ namespace ModIO.Implementation.API
             }
 
             tags = null;
+            return false;
+        }
+
+        public static bool GetModCommentsFromCache(string url, out CommentPage commentObjs)
+        {
+            if(commentObjectsCache.ContainsKey(url))
+            {
+                if(logCacheMessages)
+                {
+                    Logger.Log(LogLevel.Verbose, "[CACHE] retrieved mod comments from cache");
+                }
+                commentObjs = commentObjectsCache[url];
+                return true;
+            }
+
+            commentObjs = new CommentPage();
+
             return false;
         }
 

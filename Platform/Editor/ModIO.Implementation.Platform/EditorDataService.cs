@@ -1,5 +1,6 @@
 #if UNITY_EDITOR || (MODIO_COMPILE_ALL && UNITY_EDITOR)
 
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -11,11 +12,18 @@ namespace ModIO.Implementation.Platform
     /// <summary>Editor implementation of the data services.</summary>
     internal class EditorDataService : IUserDataService, IPersistentDataService, ITempDataService
     {
-        /// <summary>Root directory for all data services.</summary>
-        public readonly static string GlobalRootDirectory =
-            $@"{Application.persistentDataPath}/mod.io";
+        /// <summary>Root directory for persistent data.</summary>
+        public static readonly string PersistentDataRootDirectory =
+        $"{Application.persistentDataPath}/mod.io";
 
-#region Data
+        /// <summary>Root directory for User Specific data.</summary>
+        public readonly static string UserRootDirectory =
+            $"{Application.persistentDataPath}/UserData/mod.io";
+
+        /// <summary>Root directory for Temporary data.</summary>
+        public readonly static string TempRootDirectory = Application.temporaryCachePath;
+
+        #region Data
 
         /// <summary>Root directory for the data service.</summary>
         string rootDir;
@@ -37,7 +45,7 @@ namespace ModIO.Implementation.Platform
             long gameId, BuildSettings settings)
         {
             rootDir =
-                $"{GlobalRootDirectory}/{gameId.ToString("00000")}/users/{userProfileIdentifier}";
+                $"{UserRootDirectory}/{gameId.ToString("00000")}/users/{userProfileIdentifier}";
 
             Logger.Log(LogLevel.Verbose, "Initialized EditorUserDataService: " + rootDir);
 
@@ -49,7 +57,7 @@ namespace ModIO.Implementation.Platform
             BuildSettings settings)
         {
             rootDir =
-                $"{GlobalRootDirectory}/{gameId.ToString("00000")}/data";
+                $"{PersistentDataRootDirectory}/{gameId.ToString("00000")}/data";
 
             Logger.Log(LogLevel.Verbose, "Initialized EditorPersistentDataService: " + rootDir);
 
@@ -60,7 +68,7 @@ namespace ModIO.Implementation.Platform
         Result ITempDataService.Initialize(long gameId, BuildSettings settings)
         {
             rootDir =
-                $"{GlobalRootDirectory}/{gameId.ToString("00000")}/temp";
+                $"{TempRootDirectory}/{gameId.ToString("00000")}/temp";
 
             Logger.Log(LogLevel.Verbose, "Initialized EditorTempDataService: " + rootDir);
 

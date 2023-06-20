@@ -9,6 +9,7 @@
             {
                 Url = $"{Settings.server.serverURL}{@"/oauth/emailexchange"}?",                
                 RequestMethodType = "POST",
+                DontUseAuthToken = true
             };
             
             request.AddField("api_key", Settings.server.gameKey);
@@ -32,6 +33,7 @@
             {
                 Url = $"{Settings.server.serverURL}{@"/external/"}{provider}?",
                 RequestMethodType = "POST",
+                DontUseAuthToken = true
             };
 
             var agreedTerms = ResponseCache.termsHash.md5hash == hash?.md5hash;

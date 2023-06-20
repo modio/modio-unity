@@ -210,7 +210,7 @@ namespace ModIO.Implementation.Platform
                 {
                     using(var fileStream = File.Open(filePath, FileMode.Create))
                     {
-                        fileStream.Seek(0, SeekOrigin.End);
+                        fileStream.Position = 0;
                         await fileStream.WriteAsync(data, 0, data.Length);
                     }
 
@@ -264,7 +264,7 @@ namespace ModIO.Implementation.Platform
                 {
                     using(var fileStream = File.Open(filePath, FileMode.Create))
                     {
-                        fileStream.Seek(0, SeekOrigin.End);
+                        fileStream.Position = 0;
                         fileStream.Write(data, 0, data.Length);
                     }
 

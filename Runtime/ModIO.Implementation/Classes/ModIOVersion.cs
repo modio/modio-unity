@@ -5,7 +5,7 @@
     {
         // ---------[ Singleton ]---------
         /// <summary>Singleton instance for current version.</summary>
-        public static readonly ModIOVersion Current = new ModIOVersion(2023, 5, 4, "beta");
+        public static readonly ModIOVersion Current = new ModIOVersion(2023, 6, 1, "beta");
 
         // ---------[ Fields ]---------
         /// <summary>Main Version number.</summary>

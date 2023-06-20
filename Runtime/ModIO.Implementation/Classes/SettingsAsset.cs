@@ -23,14 +23,12 @@ namespace ModIO.Implementation
                 buildSettings = new BuildSettings();
                 return ResultBuilder.Create(ResultCode.Init_FailedToLoadConfig);
             }
-            else
-            {
-                serverSettings = asset.serverSettings;
-                buildSettings = asset.GetBuildSettings();
-                Resources.UnloadAsset(asset);
 
-                return ResultBuilder.Success;
-            }
+            serverSettings = asset.serverSettings;
+            buildSettings = asset.GetBuildSettings();
+            Resources.UnloadAsset(asset);
+
+            return ResultBuilder.Success;
         }
 
         public static Result TryLoad(out bool autoInitializePlugin)
@@ -67,7 +65,7 @@ namespace ModIO.Implementation
 
         //Initializes the ModIO plugin, with default settings, the first time it is used
         public bool autoInitializePlugin = true;
-        
+
 #if UNITY_EDITOR
 
         /// <summary>Gets the configuration for the editor.</summary>

@@ -1,5 +1,6 @@
 ﻿using ModIO.Implementation;
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using ModIO.Implementation.API.Objects;
 
@@ -8,7 +9,10 @@ using ModIO.Implementation.API.Objects;
 namespace ModIO
 {
 
-    /// <summary>Main interface for the mod.io Unity plugin.</summary>
+    /// <summary>Main interface for the mod.io Unity plugin. Every method within
+    /// ModIOUnity.cs that has a callback can also be found in ModIOUnityAsync with an asynchronous
+    /// alternative method (if you'd rather not use callbacks)</summary>
+    /// <seealso cref="ModIOUnityAsync"/>
     public static class ModIOUnity
     {
 #region Initialization and Maintenance
@@ -79,7 +83,6 @@ namespace ModIO
         /// service.</param>
         /// <param name="buildSettings">Data used by the plugin to interact with the
         /// platform.</param>
-        /// <param name="callback">Callback to invoke once the initialization is complete.</param>
         /// <seealso cref="FetchUpdates"/>
         /// <seealso cref="ServerSettings"/>
         /// <seealso cref="BuildSettings"/>
@@ -130,7 +133,6 @@ namespace ModIO
         /// </summary>
         /// <param name="userProfileIdentifier">Name of the directory to store the user's data
         /// in.</param>
-        /// <param name="callback">Callback to invoke once the initialization is complete.</param>
         /// <seealso cref="Result"/>
         /// <seealso cref="Shutdown"/>
         /// <code>
@@ -269,9 +271,6 @@ namespace ModIO
         /// TermsHash struct which you will need to provide when calling a third party
         /// authentication method such as ModIOUnity.AuthenticateUserViaSteam()
         /// </remarks>
-        /// <param name="serviceProvider">The provider you intend to use for authentication,
-        /// eg steam, google etc. (You dont need to display terms of use to the user if they are
-        /// authenticating via email security code)</param>
         /// <param name="callback">Callback to invoke once the operation is complete containing a
         /// result and a hash code to use for authentication via third party providers.</param>
         /// <seealso cref="TermsOfUse"/>
@@ -464,6 +463,7 @@ namespace ModIO
         /// <param name="authCode">the user's auth code</param>
         /// <param name="emailAddress">the user's email address</param>
         /// <param name="hash">the TermsHash retrieved from ModIOUnity.GetTermsOfUse()</param>
+        /// <param name="environment">the PSN account environment</param>
         /// <param name="callback">Callback to be invoked when the operation completes</param>
         /// <seealso cref="GetTermsOfUse"/>
         /// <seealso cref="ModIOUnityAsync.AuthenticateUserViaGOG"/>
@@ -1094,6 +1094,26 @@ namespace ModIO
         }
 
         /// <summary>
+        /// Get all comments posted in the mods profile. Successful request will return an array of
+        /// Comment Objects. We recommended reading the filtering documentation to return only the
+        /// records you want.
+        /// </summary>
+        ///  <param name="filter">The filter to apply when searching through comments (can only apply
+        /// pagination parameters, Eg. page size and page index)</param>
+        /// <param name="callback">callback invoked with the Result and CommentPage</param>
+        /// <seealso cref="CommentPage"/>
+        /// <seealso cref="ModComment"/>
+        /// <seealso cref="SearchFilter"/>
+        /// <seealso cref="ModId"/>
+        /// <seealso cref="Result"/>
+        /// <seealso cref="ResultAnd"/>
+        /// <seealso cref="ModIOUnityAsync.GetModComments"/>
+        public static void GetModComments(ModId modId, SearchFilter filter, Action<ResultAnd<CommentPage>> callback)
+        {
+            ModIOUnityImplementation.GetModComments(modId, filter, callback);
+        }
+
+        /// <summary>
         /// Retrieves a list of ModDependenciesObjects that represent mods that depend on a mod.
         /// </summary>
         /// <remarks>
@@ -1103,7 +1123,10 @@ namespace ModIO
         /// <param name="modId">the ModId of the mod to get dependencies</param>
         /// <param name="callback">callback with the Result and an array of ModDependenciesObjects</param>
         /// <seealso cref="ModId"/>
+        /// <seealso cref="Result"/>
+        /// <seealso cref="ResultAnd"/>
         /// <seealso cref="ModDependenciesObject"/>
+        /// <seealso cref="ModIOUnityAsync.GetModDependencies"/>
         /// <code>
         /// void Example()
         /// {
@@ -1582,8 +1605,11 @@ namespace ModIO
         /// Gets an array of mods that are installed for the current user.
         /// </summary>
         /// <param name="result">an out Result to inform whether or not it was able to get installed mods</param>
+        /// <param name="includeDisabledMods">optional parameter. When true it will include mods that have been marked as disabled via the <see cref="DisableMod"/> method</param>
         /// <seealso cref="UserInstalledMod"/>
         /// <seealso cref="GetSubscribedMods"/>
+        /// <seealso cref="ModIOUnity.DisableMod"/>
+        /// <seealso cref="ModIOUnity.EnableMod"/>
         /// <returns>an array of InstalledModUser for each existing mod installed for the user</returns>
         /// <code>
         /// void Example()
@@ -1682,6 +1708,93 @@ namespace ModIO
         public static bool DisableMod(ModId modId)
         {
             return ModIOUnityImplementation.DisableMod(modId);
+        }
+
+        /// <summary>
+        /// Adds the specified mods as dependencies to an existing mod.
+        /// </summary>
+        /// <remarks>
+        /// If the dependencies already exist they will be ignored and the result will return success
+        /// </remarks>
+        /// <param name="modId">ModId of the mod you want to add dependencies to</param>
+        /// <param name="dependencies">The ModIds that you want to add (max 5 at a time)</param>
+        /// <param name="callback">callback with the result of the request</param>
+        /// <seealso cref="Result"/>
+        /// <seealso cref="ModId"/>
+        /// <seealso cref="ModIOUnity.RemoveDependenciesFromMod"/>
+        /// <seealso cref="ModIOUnityAsync.RemoveDependenciesFromMod"/>
+        /// <seealso cref="ModIOUnityAsync.AddDependenciesToMod"/>
+        /// <code>
+        /// void Example()
+        /// {
+        ///     var dependencies = new List&#60;ModId&#62;
+        ///     {
+        ///         (ModId)1001,
+        ///         (ModId)1002,
+        ///         (ModId)1003
+        ///     };
+        ///     ModIOUnity.AddDependenciesToMod(mod.id, dependencies, AddDependenciesCallback);
+        /// }
+        ///
+        /// void AddDependenciesCallback(Result result)
+        /// {
+        ///     if (result.Succeeded())
+        ///     {
+        ///         Debug.Log("Successfully added dependencies to mod");
+        ///     }
+        ///     else
+        ///     {
+        ///         Debug.Log("Failed to add dependencies to mod");
+        ///     }
+        /// }
+        /// </code>
+        public static void AddDependenciesToMod(ModId modId, ICollection<ModId> dependencies, Action<Result> callback)
+        {
+            ModIOUnityImplementation.AddDependenciesToMod(modId, dependencies, callback);
+        }
+
+        /// <summary>
+        /// Removes the specified mods as dependencies for another existing mod.
+        /// </summary>
+        /// <remarks>
+        /// If the dependencies dont exist they will be ignored and the result will return success
+        /// </remarks>
+        /// <param name="modId">ModId of the mod you want to remove dependencies from</param>
+        /// <param name="dependencies">The ModIds that you want to remove (max 5 at a time)</param>
+        /// <param name="callback">callback with the result of the request</param>
+        /// <seealso cref="Result"/>
+        /// <seealso cref="ModId"/>
+        /// <seealso cref="dependencies"/>
+        /// <seealso cref="ModIOUnity.AddDependenciesToMod"/>
+        /// <seealso cref="ModIOUnityAsync.RemoveDependenciesFromMod"/>
+        /// <seealso cref="ModIOUnityAsync.AddDependenciesToMod"/>
+        /// <code>
+        /// void Example()
+        /// {
+        ///     var dependencies = new List&#60;ModId&#62;
+        ///     {
+        ///         (ModId)1001,
+        ///         (ModId)1002,
+        ///         (ModId)1003
+        ///     };
+        ///     ModIOUnity.RemoveDependenciesFromMod(mod.id, dependencies, RemoveDependenciesCallback);
+        /// }
+        ///
+        /// void RemoveDependenciesCallback(Result result)
+        /// {
+        ///     if (result.Succeeded())
+        ///     {
+        ///         Debug.Log("Successfully removed dependencies from mod");
+        ///     }
+        ///     else
+        ///     {
+        ///         Debug.Log("Failed to removed dependencies from mod");
+        ///     }
+        /// }
+        /// </code>
+        public static void RemoveDependenciesFromMod(ModId modId, ICollection<ModId> dependencies, Action<Result> callback)
+        {
+            ModIOUnityImplementation.RemoveDependenciesFromMod(modId, dependencies, callback);
         }
 
 
@@ -2004,6 +2117,123 @@ namespace ModIO
         public static void AddTags(ModId modId, string[] tags, Action<Result> callback)
         {
             ModIOUnityImplementation.AddTags(modId, tags, callback);
+        }
+
+        /// <summary>
+        /// Adds a comment to a mod profile. Successfully adding a comment returns the Mod Comment
+        /// object back.
+        /// </summary>
+        /// <remarks>Keep in mind you can use mentions in the comment content, such as "Hello there, @&lt;john-doe&gt;"</remarks>
+        /// <param name="modId">Id of the mod to add the comment to</param>
+        /// <param name="commentDetails">the new comment to be added</param>
+        /// <param name="callback">callback with the result of the operation</param>
+        /// <seealso cref="Result"/>
+        /// <seealso cref="ResultAnd"/>
+        /// <seealso cref="ModComment"/>
+        /// <seealso cref="CommentDetails"/>
+        /// <seealso cref="GetModComments"/>
+        /// <seealso cref="DeleteModComment"/>
+        /// <seealso cref="EditModComment"/>
+        /// <seealso cref="ModIOUnityAsync.AddModComment"/>
+        /// <code>
+        /// ModId modId;
+        ///
+        /// void Example()
+        /// {
+        ///     CommentDetails comment = new CommentDetails(0, "Hello world!");
+        ///     ModIOUnity.AddModComment(modId, comment, AddCommentCallback);
+        /// }
+        ///
+        /// void AddCommentCallback(ResultAnd&lt;ModComment&gt; response)
+        /// {
+        ///     if (response.result.Succeeded())
+        ///     {
+        ///         Debug.Log("added comment");
+        ///     }
+        ///     else
+        ///     {
+        ///         Debug.Log("failed to add comment");
+        ///     }
+        /// }
+        /// </code>
+        public static void AddModComment(ModId modId, CommentDetails commentDetails, Action<ResultAnd<ModComment>> callback)
+        {
+            ModIOUnityImplementation.AddModComment(modId, commentDetails, callback);
+        }
+
+        /// <summary>
+        /// Delete a comment from a mod profile. Successful request will return 204 No Content and fire a MOD_COMMENT_DELETED event.
+        /// </summary>
+        /// <param name="modId">Id of the mod to add the comment to</param>
+        /// <param name="commentId">The id for the comment to be removed</param>
+        /// <param name="callback">callback with the result of the operation</param>
+        /// <seealso cref="Result"/>
+        /// <seealso cref="ModComment"/>
+        /// <seealso cref="CommentDetails"/>
+        /// <seealso cref="DeleteModComment"/>
+        /// <seealso cref="EditModComment"/>
+        /// <seealso cref="ModIOUnityAsync.DeleteModComment"/>
+        /// <code>
+        ///private ModId modId;
+        ///private long commentId;
+        ///
+        ///void Example()
+        ///{
+        ///    ModIOUnity.DeleteModComment(modId, commentId, DeleteCommentCallback);
+        ///}
+        ///
+        ///void DeleteCommentCallback(Result result)
+        ///{
+        ///    if (result.Succeeded())
+        ///    {
+        ///         Debug.Log("deleted comment");
+        ///     }
+        ///     else
+        ///    {
+        ///         Debug.Log("failed to delete comment");
+        ///     }
+        /// }
+        /// </code>
+        public static void DeleteModComment(ModId modId, long commentId, Action<Result> callback)
+        {
+            ModIOUnityImplementation.DeleteModComment(modId, commentId, callback);
+        }
+
+        /// <summary>
+        /// Update a comment for the corresponding mod. Successful request will return the updated Comment Object.
+        /// </summary>
+        /// <param name="modId">Id of the mod the comment is on</param>
+        /// <param name="content">Updated contents of the comment.</param>
+        /// <param name="commentId">The id for the comment you wish to edit</param>
+        /// <param name="callback">callback with the result of the operation</param>
+        /// <seealso cref="ResultAnd"/>
+        /// <seealso cref="ModComment"/>
+        /// <seealso cref="ModIOUnityAsync.UpdateModComment"/>
+        /// <code>
+        /// private string content = "This is a Comment";
+        /// long commentId = 12345;
+        /// ModId modId = (ModId)1234;
+        ///
+        /// void UpdateMod()
+        /// {
+        ///     ModIOUnity.UpdateModComment(modId, content, commentId, UpdateCallback);
+        /// }
+        ///
+        /// void UpdateCallback(ResultAnd&#60;ModComment&#62; resultAnd)
+        /// {
+        ///     if(resultAnd.result.Succeeded())
+        ///     {
+        ///         Debug.Log("Successfully Updated Comment!");
+        ///     }
+        ///     else
+        ///     {
+        ///         Debug.Log("Failed to Update Comment!");
+        ///     }
+        /// }
+        /// </code>
+        public static void UpdateModComment(ModId modId, string content, long commentId, Action<ResultAnd<ModComment>> callback)
+        {
+            ModIOUnityImplementation.UpdateModComment(modId, content, commentId, callback);
         }
 
         /// <summary>

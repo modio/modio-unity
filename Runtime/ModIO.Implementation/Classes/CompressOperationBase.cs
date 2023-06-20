@@ -40,10 +40,7 @@ namespace ModIO.Implementation
 
             long max = fileStream.Length;
             byte[] data = new byte[4096];
-            if (fileStream.CanSeek)
-            {
-                fileStream.Seek(0, SeekOrigin.Begin);
-            }
+            fileStream.Position = 0;
             while(fileStream.Position < fileStream.Length)
             {
                 // TODO @Jackson ensure ReadAsync and WriteAsync are

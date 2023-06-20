@@ -70,7 +70,9 @@ namespace ModIO.EditorCode
         public static void ClearStoredData()
         {
             // Only used for the editor
-            SystemIOWrapper.DeleteDirectory(EditorDataService.GlobalRootDirectory);
+            SystemIOWrapper.DeleteDirectory(EditorDataService.TempRootDirectory);
+            SystemIOWrapper.DeleteDirectory(EditorDataService.UserRootDirectory);
+            SystemIOWrapper.DeleteDirectory(EditorDataService.PersistentDataRootDirectory);
         }
     }
 }

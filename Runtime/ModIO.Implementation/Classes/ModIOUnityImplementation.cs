@@ -32,6 +32,7 @@ namespace ModIO.Implementation
             new Dictionary<TaskCompletionSource<bool>, Task>();
 
         static Dictionary<string, Task<ResultAnd<byte[]>>> onGoingImageDownloads = new Dictionary<string, Task<ResultAnd<byte[]>>>();
+
         /// <summary>
         /// cached Task of the shutdown operation so we dont run several shutdowns simultaneously
         /// </summary>
@@ -39,7 +40,7 @@ namespace ModIO.Implementation
 
         internal static OpenCallbacks openCallbacks = new OpenCallbacks();
 
-#region Synchronous Requirement Checks - to detect early outs and failures
+        #region Synchronous Requirement Checks - to detect early outs and failures
 
         /// <summary>Has the plugin been initialized.</summary>
         internal static bool isInitialized;
@@ -57,8 +58,7 @@ namespace ModIO.Implementation
 
         public static bool AutoInitializePlugin
         {
-            get
-            {
+            get {
                 if(!autoInitializePluginSet)
                 {
                     var result = SettingsAsset.TryLoad(out autoInitializePlugin);
@@ -70,8 +70,7 @@ namespace ModIO.Implementation
                 return autoInitializePlugin;
             }
             //Ignore the value in config
-            set
-            {
+            set {
                 autoInitializePluginSet = true;
                 autoInitializePlugin = value;
             }
@@ -174,6 +173,7 @@ namespace ModIO.Implementation
                 result = ResultBuilder.Create(ResultCode.InvalidParameter_CantBeNull);
                 return false;
             }
+
             return filter.IsSearchFilterValid(out result);
         }
 
@@ -187,9 +187,9 @@ namespace ModIO.Implementation
             throw new NotImplementedException();
         }
 
-#endregion // Synchronous Requirement Checks - to detect early outs and failures
+        #endregion // Synchronous Requirement Checks - to detect early outs and failures
 
-#region Initialization and Maintenance
+        #region Initialization and Maintenance
 
         /// <summary>Assigns the logging delegate the plugin uses to output log messages.</summary>
         public static void SetLoggingDelegate(LogMessageDelegate loggingDelegate)
@@ -201,8 +201,8 @@ namespace ModIO.Implementation
         /// state of mods installed on the system as well as the set of mods the
         /// specified user has installed on this device.</summary>
         public static Result InitializeForUser(string userProfileIdentifier,
-                                                                ServerSettings serverSettings,
-                                                                BuildSettings buildSettings)
+            ServerSettings serverSettings,
+            BuildSettings buildSettings)
         {
             TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
             openCallbacks_dictionary.Add(callbackConfirmation, null);
@@ -403,6 +403,7 @@ namespace ModIO.Implementation
                     }
                 }
             }
+
             Logger.Log(LogLevel.Verbose, "Shutdown main handlers");
         }
 
@@ -540,7 +541,7 @@ namespace ModIO.Implementation
         }
 
         public static async void SubmitEmailSecurityCode(string securityCode,
-                                                         Action<Result> callback)
+            Action<Result> callback)
         {
             if(callback == null)
             {
@@ -601,8 +602,8 @@ namespace ModIO.Implementation
 
         public static async Task<Result> AuthenticateUser(
             string data, AuthenticationServiceProvider serviceProvider,
-             string emailAddress,  TermsHash? hash,  string nonce,
-             OculusDevice? device,  string userId, PlayStationEnvironment environment)
+            string emailAddress, TermsHash? hash, string nonce,
+            OculusDevice? device, string userId, PlayStationEnvironment environment)
         {
             TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
             openCallbacks_dictionary.Add(callbackConfirmation, null);
@@ -617,7 +618,7 @@ namespace ModIO.Implementation
                 //      Synchronous checks SUCCEEDED
 
                 WebRequestConfig config = API.Requests.AuthenticateUser.ExternalRequest(
-                        serviceProvider, data, hash, emailAddress,nonce, device, userId, environment);
+                    serviceProvider, data, hash, emailAddress, nonce, device, userId, environment);
 
                 Task<ResultAnd<AccessTokenObject>> task = WebRequestManager.Request<AccessTokenObject>(config);
 
@@ -638,12 +639,54 @@ namespace ModIO.Implementation
                     // TODO @Steve (see other example, same situation in email auth)
                     await GetCurrentUser(delegate { });
                 }
+                else
+                {
+                    Settings.build.SetDefaultPortal();
+                }
             }
 
+            SetUserPortal(serviceProvider);
             callbackConfirmation.SetResult(true);
             openCallbacks_dictionary.Remove(callbackConfirmation);
 
             return result;
+        }
+
+        private static void SetUserPortal(AuthenticationServiceProvider serviceProvider)
+        {
+            switch(serviceProvider)
+            {
+                case AuthenticationServiceProvider.Epic:
+                    Settings.build.userPortal = UserPortal.EpicGamesStore;
+                    break;
+                case AuthenticationServiceProvider.Discord:
+                    Settings.build.userPortal = UserPortal.Discord;
+                    break;
+                case AuthenticationServiceProvider.Google:
+                    Settings.build.userPortal = UserPortal.Google;
+                    break;
+                case AuthenticationServiceProvider.Itchio:
+                    Settings.build.userPortal = UserPortal.itchio;
+                    break;
+                case AuthenticationServiceProvider.Oculus:
+                    Settings.build.userPortal = UserPortal.Oculus;
+                    break;
+                case AuthenticationServiceProvider.Steam:
+                    Settings.build.userPortal = UserPortal.Steam;
+                    break;
+                case AuthenticationServiceProvider.Switch:
+                    Settings.build.userPortal = UserPortal.Nintendo;
+                    break;
+                case AuthenticationServiceProvider.Xbox:
+                    Settings.build.userPortal = UserPortal.XboxLive;
+                    break;
+                case AuthenticationServiceProvider.PlayStation:
+                    Settings.build.userPortal = UserPortal.PlayStationNetwork;
+                    break;
+                case AuthenticationServiceProvider.GOG:
+                    Settings.build.userPortal = UserPortal.GOG;
+                    break;
+            }
         }
 
         public static async void AuthenticateUser(
@@ -728,7 +771,7 @@ namespace ModIO.Implementation
                 var config = API.Requests.GetMods.RequestPaginated(filter);
 
                 var task = await openCallbacks.Run(callbackConfirmation,
-                    WebRequestManager.Request<API.Requests.GetMods.ResponseSchema>(config)); //doesnt outright match with v2 but class is same shape
+                    WebRequestManager.Request<API.Requests.GetMods.ResponseSchema>(config));
 
                 result = task.result;
 
@@ -763,6 +806,57 @@ namespace ModIO.Implementation
             ResultAnd<ModPage> result = await GetMods(filter);
             callback?.Invoke(result);
         }
+
+        public static async Task<ResultAnd<CommentPage>> GetModComments(ModId modId, SearchFilter filter)
+        {
+            var callbackConfirmation = openCallbacks.New();
+
+            CommentPage page = new CommentPage();
+            var config = API.Requests.GetModComments.RequestPaginated(modId, filter);
+
+            if(IsInitialized(out Result result) && IsSearchFilterValid(filter, out result)
+                                                && !ResponseCache.GetModCommentsFromCache(config.Url, out page))
+            {
+                var task = await openCallbacks.Run(callbackConfirmation,
+                    WebRequestManager.Request<API.Requests.GetModComments.ResponseSchema>(config));
+
+                result = task.result;
+
+                if(result.Succeeded())
+                {
+                    page = ResponseTranslator.ConvertModCommentObjectsToCommentPage(task.value);
+
+                    // Add this response into the cache
+                    ResponseCache.AddModCommentsToCache(config.Url, page);
+
+                    // Return the exact number of comments that were requested (not more)
+                    if(page.CommentObjects.Length > filter.pageSize)
+                    {
+                        Array.Copy(page.CommentObjects, page.CommentObjects, filter.pageSize);
+                    }
+                }
+            }
+
+            openCallbacks.Complete(callbackConfirmation);
+
+            return ResultAnd.Create(result, page);
+        }
+
+        public static async void GetModComments(ModId modId, SearchFilter filter, Action<ResultAnd<CommentPage>> callback)
+        {
+            // Early out
+            if(callback == null)
+            {
+                Logger.Log(
+                    LogLevel.Warning,
+                    "No callback was given to the GetModComments method, any response "
+                    + "returned from the server wont be used. This operation  has been cancelled.");
+                return;
+            }
+            ResultAnd<CommentPage> result = await GetModComments(modId, filter);
+            callback?.Invoke(result);
+        }
+
 
         public static async Task<ResultAnd<ModProfile>> GetMod(long id)
         {
@@ -811,8 +905,7 @@ namespace ModIO.Implementation
             Result result;
             ModDependencies[] modDependencies = default;
 
-            if(IsInitialized(out result) && IsAuthenticatedSessionValid(out result)
-                                         && !ResponseCache.GetModDependenciesCache(modId, out modDependencies))
+            if(IsInitialized(out result) && !ResponseCache.GetModDependenciesCache(modId, out modDependencies))
             {
                 var config = API.Requests.GetModDependencies.Request(modId);
                 var task = await openCallbacks.Run(callbackConfirmation, WebRequestManager.Request<API.Requests.GetModDependencies.ResponseSchema>(config));
@@ -1049,6 +1142,98 @@ namespace ModIO.Implementation
             }
 
             return ModCollectionManager.DisableModForCurrentUser(modId);
+        }
+
+        public static async void AddDependenciesToMod(ModId modId, ICollection<ModId> dependencies, Action<Result> callback)
+        {
+            if(callback == null)
+            {
+                Logger.Log(
+                    LogLevel.Warning,
+                    "No callback was given to the AddDependenciesToMod method. It is "
+                    + "possible that this operation will not resolve successfully and should be "
+                    + "checked with a proper callback.");
+            }
+
+            Result result = await AddDependenciesToMod(modId, dependencies);
+            callback?.Invoke(result);
+        }
+
+        public static async Task<Result> AddDependenciesToMod(ModId modId, ICollection<ModId> dependencies)
+        {
+            var callbackConfirmation = openCallbacks.New();
+
+            Result result;
+
+            if(dependencies.Count > 5)
+            {
+                result = ResultBuilder.Create(ResultCode.InvalidParameter_TooMany);
+                Logger.Log(
+                    LogLevel.Warning,
+                    "You can only change a maximum of 5 dependencies in a single request."
+                    + " If you need to add more than 5 dependencies consider doing it over "
+                    + "multiple requests instead.");
+            }
+            else if(IsInitialized(out result) && IsAuthenticatedSessionValid(out result))
+            {
+                var config = API.Requests.AddDependency.Request(modId, dependencies);
+                result = await openCallbacks.Run(callbackConfirmation, WebRequestManager.Request(config));
+
+                if(result.Succeeded())
+                {
+                    // TODO update cache for this mod's dependencies
+                }
+            }
+
+            openCallbacks.Complete(callbackConfirmation);
+
+            return result;
+        }
+
+        public static async void RemoveDependenciesFromMod(ModId modId, ICollection<ModId> dependencies, Action<Result> callback)
+        {
+            if(callback == null)
+            {
+                Logger.Log(
+                    LogLevel.Warning,
+                    "No callback was given to the RemoveDependenciesFromMod method. It is "
+                    + "possible that this operation will not resolve successfully and should be "
+                    + "checked with a proper callback.");
+            }
+
+            Result result = await RemoveDependenciesFromMod(modId, dependencies);
+            callback?.Invoke(result);
+        }
+
+        public static async Task<Result> RemoveDependenciesFromMod(ModId modId, ICollection<ModId> dependencies)
+        {
+            var callbackConfirmation = openCallbacks.New();
+
+            Result result;
+
+            if(dependencies.Count > 5)
+            {
+                result = ResultBuilder.Create(ResultCode.InvalidParameter_TooMany);
+                Logger.Log(
+                    LogLevel.Warning,
+                    "You can only change a maximum of 5 dependencies in a single request."
+                    + " If you need to remove more than 5 dependencies consider doing it over "
+                    + "multiple requests instead.");
+            }
+            else if(IsInitialized(out result) && IsAuthenticatedSessionValid(out result))
+            {
+                var config = API.Requests.DeleteDependency.Request(modId, dependencies);
+                result = await openCallbacks.Run(callbackConfirmation, WebRequestManager.Request(config));
+
+                if(result.Succeeded())
+                {
+                    // TODO update cache for this mod's dependencies
+                }
+            }
+
+            openCallbacks.Complete(callbackConfirmation);
+
+            return result;
         }
 #endregion // Mod Management
 
@@ -1883,6 +2068,101 @@ namespace ModIO.Implementation
             openCallbacks.Complete(callbackConfirmation);
 
             return result;
+        }
+
+        public static async Task<ResultAnd<ModComment>> AddModComment(ModId modId, CommentDetails commentDetails)
+        {
+            var callbackConfirmation = openCallbacks.New();
+            ModComment comment = default;
+
+            if(IsInitialized(out Result result) && IsAuthenticatedSessionValid(out result))
+            {
+                var config = API.Requests.AddModComment.Request(modId, commentDetails);
+                var taskResult = await openCallbacks.Run(callbackConfirmation, WebRequestManager.Request<ModCommentObject>(config));
+                result = taskResult.result;
+                comment = ResponseTranslator.ConvertModCommentObjectsToModComment(taskResult.value);
+            }
+
+            openCallbacks.Complete(callbackConfirmation);
+
+            return ResultAnd.Create(result, comment);
+        }
+
+        public static async void AddModComment(ModId modId, CommentDetails commentDetails, Action<ResultAnd<ModComment>> callback)
+        {
+            // Early out
+            if(callback == null)
+            {
+                Logger.Log(
+                    LogLevel.Warning,
+                    "No callback was given to the AddModComment method, any response "
+                    + "returned from the server wont be used. This operation  has been cancelled.");
+                return;
+            }
+            ResultAnd<ModComment> result = await AddModComment(modId, commentDetails);
+            callback?.Invoke(result);
+        }
+
+        public static async Task<ResultAnd<ModComment>> UpdateModComment(ModId modId, string content, long commentId)
+        {
+            var callbackConfirmation = openCallbacks.New();
+            ModComment comment = default;
+
+            if(IsInitialized(out Result result) && IsAuthenticatedSessionValid(out result))
+            {
+                var config = API.Requests.UpdateModComment.Request(modId, content, commentId);
+                var taskResult = await openCallbacks.Run(callbackConfirmation, WebRequestManager.Request<ModCommentObject>(config));
+                result = taskResult.result;
+                comment = ResponseTranslator.ConvertModCommentObjectsToModComment(taskResult.value);
+            }
+
+            openCallbacks.Complete(callbackConfirmation);
+
+            return ResultAnd.Create(result, comment);
+        }
+
+        public static async void UpdateModComment(ModId modId, string content, long commentId, Action<ResultAnd<ModComment>> callback)
+        {
+            // Early out
+            if(callback == null)
+            {
+                Logger.Log(
+                    LogLevel.Warning,
+                    "No callback was given to the UpdateModComment method, any response "
+                    + "returned from the server wont be used. This operation  has been cancelled.");
+                return;
+            }
+            ResultAnd<ModComment> result = await UpdateModComment(modId, content, commentId);
+            callback?.Invoke(result);
+        }
+
+        public static async Task<Result> DeleteModComment(ModId modId, long commentId)
+        {
+            var callbackConfirmation = openCallbacks.New();
+            if(IsInitialized(out Result result) && IsAuthenticatedSessionValid(out result))
+            {
+                var config = API.Requests.DeleteModComment.Request(modId, commentId);
+                var taskResult = await openCallbacks.Run(callbackConfirmation, WebRequestManager.Request<ModCommentObject>(config));
+                result = taskResult.result;
+            }
+            openCallbacks.Complete(callbackConfirmation);
+
+            return result;
+        }
+
+        public static async void DeleteModComment(ModId modId, long commentId, Action<Result> callback)
+        {
+            // Early out
+            if(callback == null)
+            {
+                Logger.Log(
+                    LogLevel.Warning,
+                    "No callback was given to the DeleteModComment method, any response "
+                    + "returned from the server wont be used. This operation  has been cancelled.");
+                return;
+            }
+            Result result = await DeleteModComment(modId, commentId);
+            callback?.Invoke(result);
         }
 
         public static async void AddTags(ModId modId, string[] tags,

@@ -87,7 +87,8 @@ public class SettingsAssetEditor : Editor
 		// If the gameId has been changed, update the url
 		if(gameId.intValue != previousGameId)
 		{
-			if(myTarget.serverSettings.serverURL != "https://api.test.mod.io/v1")
+			if(myTarget.serverSettings.serverURL != "https://api.test.mod.io/v1"
+			   && myTarget.serverSettings.serverURL != "https://api-staging.moddemo.io/v1")
 			{
 				serverURL.stringValue = $"https://g-{gameId.intValue}.modapi.io/v1";
 			}

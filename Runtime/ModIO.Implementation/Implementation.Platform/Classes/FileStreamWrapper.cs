@@ -585,7 +585,7 @@ namespace ModIO.Implementation.Platform
             {
                 try
                 {
-                    fileStream.Seek(0, SeekOrigin.End);
+                    fileStream.Position = 0;
                     await fileStream.WriteAsync(buffer, 0, buffer.Length);
 
                     writeResult = ResultBuilder.Success;
@@ -616,7 +616,7 @@ namespace ModIO.Implementation.Platform
             {
                 try
                 {
-                    fileStream.Seek(0, SeekOrigin.End);
+                    fileStream.Position = 0;
                     fileStream.Write(buffer, 0, buffer.Length);
 
                     writeResult = ResultBuilder.Success;

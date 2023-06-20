@@ -27,54 +27,28 @@ namespace ModIO.Util
             }
             else
             {
-                actions.Enqueue(action);
+                lock( actions )
+                {
+                    actions.Enqueue(action);
+                }
             }
         }
 
         void Update()
         {
-            while(actions.Count > 0)
+            lock( actions )
             {
-                if(actions.TryDequeue(out var result))
+                while(actions.Count > 0)
                 {
-                    result();
-                }
-                else
-                {
-                    throw new Exception("Failed to dequeue action!");
-                }
-            }
-        }
-
-        //This may lock Unity
-        public Task EnqueueAsync(Action action)
-        {
-            try
-            {
-                var tcs = new TaskCompletionSource<bool>();
-
-                actions.Enqueue(() =>
-                {
-                    try
+                    if(actions.TryDequeue(out var result))
                     {
-                        action();
-                        tcs.SetResult(true);
+                        result();
                     }
-                    catch(Exception e)
+                    else
                     {
-                        tcs.SetException(e);
+                        throw new Exception("Failed to dequeue action!");
                     }
-                    tcs.SetResult(true);
-                });
-                
-                return tcs.Task;
-
-            }
-            catch(Exception ex)
-            {
-
-                Debug.Log("Exception in EnqueueAsync: " + ex.Message);
-                throw;
+                }
             }
         }
     }

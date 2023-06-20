@@ -1,5 +1,5 @@
 <a href="https://mod.io"><img src="https://mod.io/images/branding/modio-logo-bluedark.svg" alt="mod.io" width="360" align="right"/></a>
-# mod.io Unity Plugin v2023.5.12
+# mod.io Unity Plugin v2023.6.1
 [![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)](https://github.com/modio/modio-unity/blob/master/LICENSE)
 [![Discord](https://img.shields.io/discord/389039439487434752.svg?label=Discord&logo=discord&color=7289DA&labelColor=2C2F33)](https://discord.mod.io)
 [![Master docs](https://img.shields.io/badge/docs-master-green.svg)](https://go.mod.io/unity-docs)
@@ -12,16 +12,16 @@ Welcome to the mod.io Unity Engine plugin repository. It allows game developers 
 
 ## Platform Support
 
-|Platform       | Support |
-| ------------- | ------- |
-|Windows        | ✔       |
-|Windows (GDK)  | ✔ [Contact us](#game-studios-and-publishers) |
-|XBox (GDK)     | ✔ [Contact us](#game-studios-and-publishers) |
-|PlayStation 4  | ✔ [Contact us](#game-studios-and-publishers) |
-|PlayStation 5  | ✔ [Contact us](#game-studios-and-publishers) |
-|Nintendo Switch| ✔ [Contact us](#game-studios-and-publishers) |
-|Linux          | ✔       |
-|macOS          | ✔       |
+|Platform       | Support                                        |
+| ------------- |------------------------------------------------|
+|Windows        | Yes                                            |
+|Windows (GDK)  | Yes [Contact us](#game-studios-and-publishers) |
+|XBox (GDK)     | Yes [Contact us](#game-studios-and-publishers) |
+|PlayStation 4  | Yes [Contact us](#game-studios-and-publishers) |
+|PlayStation 5  | Yes [Contact us](#game-studios-and-publishers) |
+|Nintendo Switch| Yes [Contact us](#game-studios-and-publishers) |
+|Linux          | Yes                                            |
+|macOS          | Yes                                            |
 
 ### Git Repository or .unitypackage
 You can import the plugin directly from the [Unity Asset Store](https://assetstore.unity.com/packages/tools/integration/mod-browser-manager-by-mod-io-138866), or by downloading the package directly from the [Releases page](https://github.com/modio/modio-unity/releases). If you have any previous versions of the plugin installed, it is highly recommended to delete them before importing a newer version.
