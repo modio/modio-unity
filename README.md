@@ -73,7 +73,7 @@ void Example()
     else
     {
         Debug.Log("Failed to initialise plugin");
-    {
+    }
 }
 ```
 
