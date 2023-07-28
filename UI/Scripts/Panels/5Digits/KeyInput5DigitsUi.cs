@@ -25,7 +25,7 @@ namespace ModIOBrowser.Implementation
         protected override void Awake()
         {
             base.Awake();
-            keyInput5Digits.Setup();            
+            keyInput5Digits.Setup();
         }
 
         /// <summary>

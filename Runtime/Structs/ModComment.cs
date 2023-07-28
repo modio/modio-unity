@@ -1,4 +1,6 @@
 ﻿
+using ModIO.Implementation.API.Objects;
+
 namespace ModIO
 {
     public struct ModComment
@@ -33,5 +35,7 @@ namespace ModIO
         public long karma;
 
         public CommentDetails commentDetails;
+
+        public UserProfile userProfile;
     }
 }

@@ -18,8 +18,8 @@ namespace ModIOBrowser.Implementation
         internal static Browser.RetrieveAuthenticationCodeDelegate getPlayStationAuthCode;
         internal static Browser.RetrieveAuthenticationCodeDelegate getEpicAuthCode;
         internal static Browser.RetrieveAuthenticationCodeDelegate getGogAuthCode;
-
-
+        
+        public ExternalAuthenticationToken currentAuthToken;
         public UserProfile currentUserProfile;
         public TermsOfUse LastReceivedTermsOfUse;
         public string privacyPolicyURL;
@@ -37,6 +37,47 @@ namespace ModIOBrowser.Implementation
         {
             AuthenticationPanels.Instance.OpenPanel_Waiting();
             ModIOUnity.RequestAuthenticationEmail(AuthenticationPanels.Instance.AuthenticationPanelEmailField.text, EmailSent);
+        }
+        public void SendRequestExternalAuthentication()
+        {
+            AuthenticationPanels.Instance.OpenPanel_Waiting();
+            ModIOUnity.RequestExternalAuthentication(ReceivedExternalAuthenticationToken);
+        }
+        
+        public void ReceivedExternalAuthenticationToken(ResultAnd<ExternalAuthenticationToken> response)
+        {
+            if(response.result.Succeeded())
+            {
+                currentAuthToken = response.value;
+                AuthenticationPanels.Instance.OpenPanel_ExternalAuthentication(response.value);
+            }
+            else
+            {
+                AuthenticationPanels.Instance.OpenPanel_Problem(
+                    null, "could not connect", AuthenticationPanels.Instance.OpenPanel_TermsOfUse);
+            }
+        }
+
+        public void HyperLinkToExternalLogin()
+        {
+            WebBrowser.OpenWebPage($"{currentAuthToken.url}?code={currentAuthToken.code}");
+        }
+        
+        public void CancelExternalAuthenticationRequest()
+        {
+            AuthenticationPanels.Instance.Close();
+            currentAuthToken.Cancel();
+        }
+        
+        public void CopyExternalAuthenticationCodeToClipboard()
+        {
+            GUIUtility.systemCopyBuffer = currentAuthToken.code;
+            Notifications.Instance.AddNotificationToQueue(new Notifications.QueuedNotice()
+            {
+                title = "Copied",
+                description = "Code copied to clipboard",
+                positiveAccent = true,
+            });
         }
 
         public void SubmitAuthenticationCode()

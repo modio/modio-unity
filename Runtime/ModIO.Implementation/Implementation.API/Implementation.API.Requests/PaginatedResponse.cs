@@ -5,6 +5,7 @@
 	/// schema that gets shared across all paging requests (mods, events, subscriptions, comments,
 	/// etc)
 	/// </summary>
+	[System.Serializable]
 	internal class PaginatedResponse<T>
 	{
 		public T[] data;

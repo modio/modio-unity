@@ -89,6 +89,12 @@ namespace ModIO.Implementation
         public const uint Internal_FileHashMismatch = 20505;
         public const uint Internal_OperationCancelled = 20506;
         public const uint Internal_InvalidParameter = 20507;
+        
+        // - WSS handling errors -
+        public const uint WSS_NotConnected = 20600;
+        public const uint WSS_FailedToSend = 20601;
+        public const uint WSS_MessageTimeout = 20602;
+        public const uint WSS_UnexpectedMessage = 20603;
 
         // - REST API Errors -
         // 10000   mod.io is currently experiencing an outage. (rare)

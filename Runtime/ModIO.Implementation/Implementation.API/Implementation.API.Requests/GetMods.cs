@@ -4,6 +4,7 @@ namespace ModIO.Implementation.API.Requests
 {
     internal static class GetMods
     {
+        [System.Serializable]
         public class ResponseSchema : PaginatedResponse<ModObject> { }
 
         public static WebRequestConfig RequestPaginated(SearchFilter searchFilter)

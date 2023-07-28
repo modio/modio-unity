@@ -27,21 +27,21 @@ namespace ModIO.Implementation.API
         static async Task<Result> RunDownload(string url, Stream downloadTo, RequestHandle<Result> handle, ProgressHandle progressHandle)
         {
             Logger.Log(LogLevel.Verbose, $"DOWNLOADING [{url}]");
-            
+
             Result result = ResultBuilder.Success;
-            
+
             // Build request
             WebRequest request = null;
             WebResponse response = default;
-            
+
             // Setup the handle
             handle.progress = progressHandle;
-            
+
             try
             {
                 request = BuildWebRequestForDownload(url);
                 handle.cancel = request.Abort;
-                
+
                 response = await request.GetDownloadResponse(downloadTo, progressHandle);
             }
             catch(WebException e)
@@ -69,24 +69,24 @@ namespace ModIO.Implementation.API
                                                + $"\n{e.Message}\n{e.StackTrace}");
                 }
             }
-            
+
             if (request != null)
             {
                 // unsubscribe the web request from the shutdown event
                 WebRequestManager.ShutdownEvent -= request.Abort;
-                
+
             }
 
             // Process response
             if (result.Succeeded())
             {
                 result = await ProcessDownloadResponse(request, response, url);
-            } 
+            }
             else
             {
                 Logger.Log(LogLevel.Verbose, $"DOWNLOAD FAILED [{url}]");
             }
-            
+
             if (!result.Succeeded())
             {
                 if(progressHandle != null)
@@ -101,7 +101,7 @@ namespace ModIO.Implementation.API
             }
             return result;
         }
-        
+
         public static RequestHandle<ResultAnd<T>> Upload<T>(WebRequestConfig config, ProgressHandle progressHandle)
         {
             RequestHandle<ResultAnd<T>> handle = new RequestHandle<ResultAnd<T>>();
@@ -121,24 +121,24 @@ namespace ModIO.Implementation.API
             {
                 handle.progress = progressHandle;
             }
-            
+
             try
             {
-                request = config.IsUpload 
-                    ? BuildWebRequestForUpload(config, progressHandle) 
+                request = config.IsUpload
+                    ? BuildWebRequestForUpload(config, progressHandle)
                     : await BuildWebRequest(config, progressHandle);
 
                 request.Timeout = config.ShouldRequestTimeout ? 30000 : -1;
-                
+
                 if(handle != null)
                 {
                     handle.cancel = request.Abort;
                 }
-                
+
                 request.LogRequestBeingSent(config);
-                
-                response = config.IsUpload 
-                    ? await request.GetUploadResponse(config, progressHandle) 
+
+                response = config.IsUpload
+                    ? await request.GetUploadResponse(config, progressHandle)
                     : await request.GetResponseAsync();
             }
             catch(Exception e)
@@ -151,7 +151,7 @@ namespace ModIO.Implementation.API
                 if(e is WebException exception)
                 {
                     response = exception.Response;
-                    
+
                     if (exception.Status == WebExceptionStatus.RequestCanceled)
                     {
                         request?.LogRequestBeingAborted(config);
@@ -163,7 +163,7 @@ namespace ModIO.Implementation.API
                     response = default;
                 }
             }
-            
+
             if (progressHandle != null)
             {
                 progressHandle.Progress = 1f;
@@ -193,7 +193,7 @@ namespace ModIO.Implementation.API
                                            + $"Stacktrace: {e.StackTrace}");
                 result = ResultAnd.Create(ResultCode.Unknown, default(TResult));
             }
-            
+
             if(request != null)
             {
                 // this event is added in BuildWebRequest(), we remove it here
@@ -204,12 +204,12 @@ namespace ModIO.Implementation.API
             {
                 progressHandle.Failed = !result.result.Succeeded();
             }
-            
+
             return result;
         }
 #endregion
-        
-        
+
+
 #region Creating WebRequests
         static void LogRequestBeingSent(this WebRequest request, WebRequestConfig config)
         {
@@ -228,15 +228,15 @@ namespace ModIO.Implementation.API
                          + $"\n{GenerateLogForWebRequestConfig(config)}";
             Logger.Log(LogLevel.Verbose, $"ABORTED{log}");
         }
-        
+
         static async Task<Result> ProcessDownloadResponse(WebRequest request, WebResponse response, string url)
         {
             Result finalResult = ResultBuilder.Unknown;
 
             int statusCode = response == null ? 0 : (int)((HttpWebResponse)response).StatusCode;
-            
+
             Stream stream = null;
-            
+
             if (response != null)
             {
                 stream = response.GetResponseStream();
@@ -258,7 +258,7 @@ namespace ModIO.Implementation.API
                 finalResult = await HttpStatusCodeError(stream, completeRequestLog, statusCode);
                 Logger.Log(LogLevel.Verbose, $"DOWNLOAD FAILED [{completeRequestLog}]");
             }
-            
+
             stream?.Dispose();
             response?.Close();
             return finalResult;
@@ -270,13 +270,13 @@ namespace ModIO.Implementation.API
 
             int statusCode = response == null ? 0 : (int)((HttpWebResponse)response).StatusCode;
             Stream stream = null;
-            
+
             // Dont get the stream if there is no content
             if (response != null && statusCode != 204)
             {
                 stream = response.GetResponseStream();
             }
-            
+
             string completeRequestLog = $"{GenerateLogForStatusCode(statusCode)}"
                                         + $"\n{config.Url}"
                                         + $"\nMETHOD: {config.RequestMethodType}"
@@ -287,14 +287,14 @@ namespace ModIO.Implementation.API
             if(IsSuccessStatusCode(statusCode))
             {
                 Logger.Log(LogLevel.Verbose, $"SUCCEEDED {completeRequestLog}");
-                
+
                 finalResult = await FormatResult<TResult>(stream);
             }
             else
             {
                 finalResult = ResultAnd.Create(await HttpStatusCodeError(stream, completeRequestLog, statusCode), default(TResult));
             }
-            
+
             stream?.Dispose();
             response?.Close();
             return finalResult;
@@ -360,9 +360,9 @@ namespace ModIO.Implementation.API
         {
             // Send request
             await request.SetupMultipartRequest(config, progressHandle);
-            
+
             WebResponse response = await request.GetResponseAsync();
-            
+
             return response;
         }
 
@@ -378,13 +378,13 @@ namespace ModIO.Implementation.API
             {
                 config.Url += $"&api_key={Settings.server.gameKey}";
             }
-            
+
             // Create request
             HttpWebRequest request = WebRequest.Create(config.Url) as HttpWebRequest;
             request.Method = config.RequestMethodType;
             request.SetModioHeaders();
             request.SetConfigHeaders(config);
-            
+
             // Add request to shutdown method
             WebRequestManager.ShutdownEvent += request.Abort;
 
@@ -398,7 +398,7 @@ namespace ModIO.Implementation.API
 
             return request;
         }
-        
+
         static WebRequest BuildWebRequestForUpload(WebRequestConfig config, ProgressHandle progressHandle)
         {
             // Create request
@@ -406,7 +406,7 @@ namespace ModIO.Implementation.API
             request.Method = config.RequestMethodType;
             request.SetModioHeaders();
             request.SetConfigHeaders(config);
-            
+
             // Add API key or Access token
             // TODO if we dont have an auth token we should abort early, all uploads require an auth token
             if (UserData.instance.IsOAuthTokenValid())
@@ -416,25 +416,25 @@ namespace ModIO.Implementation.API
 
             // Add request to shutdown method
             WebRequestManager.ShutdownEvent += request.Abort;
-            
+
             return request;
         }
-        
+
         static WebRequest BuildWebRequestForDownload(string url)
         {
-            
+
             // Create request
             HttpWebRequest request = WebRequest.Create(url) as HttpWebRequest;
             request.Method = "GET";
             request.SetModioHeaders();
             request.Timeout = -1;
-            
+
             // Add API key or Access token
             if (UserData.instance.IsOAuthTokenValid())
             {
                 request.Headers.Add("Authorization", $"Bearer {UserData.instance.oAuthToken}");
             }
-            
+
             // Add request to shutdown method
             WebRequestManager.ShutdownEvent += request.Abort;
 
@@ -446,7 +446,7 @@ namespace ModIO.Implementation.API
             // Set default headers for all requests
             HttpWebRequest request = (HttpWebRequest)webRequest;
             request.Accept = "application/json";
-            request.UserAgent = ModIOVersion.Current.ToHeaderString();
+            request.UserAgent = $"unity-{UnityEngine.Application.unityVersion}-{ModIOVersion.Current.ToHeaderString()}";
             // Cloudflare reuses open TCP connections for up to 15 minutes (900 seconds) after the last HTTP request
             request.Connection = "true"; // is set to true by default
             request.Headers.Add(ServerConstants.HeaderKeys.LANGUAGE, Settings.server.languageCode ?? "en");
@@ -470,7 +470,7 @@ namespace ModIO.Implementation.API
                 kvpData += $"{Uri.EscapeDataString(kvp.Key)}={Uri.EscapeDataString(kvp.Value)}&";
             }
             kvpData = kvpData.Trim('&');
-            
+
             using (Stream requestStream = request.GetRequestStream())
             {
                 using(StreamWriter writer = new StreamWriter(requestStream))
@@ -483,9 +483,9 @@ namespace ModIO.Implementation.API
         static async Task SetupMultipartRequest(this WebRequest request, WebRequestConfig config, ProgressHandle progressHandle)
         {
             string boundary = "---------------------------" + DateTime.Now.Ticks.ToString("x");
-            
+
             request.ContentType = "multipart/form-data; boundary=" + boundary;
-            
+
             MultipartFormDataContent multipartContent = new MultipartFormDataContent(boundary);
             foreach(var binary in config.BinaryData)
             {
@@ -497,7 +497,7 @@ namespace ModIO.Implementation.API
                 StringContent stringField = new StringContent(kvp.Value);
                 multipartContent.Add(stringField, kvp.Key);
             }
-            
+
             using (Stream requestStream = request.GetRequestStream())
             {
                 using (Stream content = await multipartContent.ReadAsStreamAsync())
@@ -507,9 +507,9 @@ namespace ModIO.Implementation.API
                     long bytesUploadedForThisSample = 0;
                     Stopwatch stopwatch = new Stopwatch();
                     stopwatch.Start();
-                    
+
                     byte[] buffer = new byte[4096];
-                    
+
                     while((bytesRead = await content.ReadAsync(buffer, 0, buffer.Length)) > 0)
                     {
                         await requestStream.WriteAsync(buffer, 0, bytesRead);
@@ -518,7 +518,7 @@ namespace ModIO.Implementation.API
                         {
                             // We make the length 1% longer so it doesnt get to 100% while we wait for the server response
                             progressHandle.Progress = (float)(totalBytesRead / (content.Length * (decimal)1.01f));
-                            
+
                             bytesUploadedForThisSample += bytesRead;
                             if(stopwatch.ElapsedMilliseconds >= 1000)
                             {
@@ -545,7 +545,7 @@ namespace ModIO.Implementation.API
                 //OnWebrequestResponse
                 return ResultAnd.Create(ResultCode.Success, default(T));
             }
-            
+
             // If the response is empty it was likely 204: NoContent
             if(response == null)
             {
@@ -657,7 +657,7 @@ namespace ModIO.Implementation.API
             }
             return log;
         }
-        
+
         static string GenerateLogForRequestMessage(WebRequest request)
         {
             if(request == null)
@@ -685,7 +685,7 @@ namespace ModIO.Implementation.API
             {
                 return "\n\n------------------------\n WebResponse is null";
             }
-            
+
             string log = "\n\n------------------------";
             string headers = $"\nRESPONSE HEADERS";
             foreach(var key in response.Headers.AllKeys)
@@ -704,7 +704,7 @@ namespace ModIO.Implementation.API
             {
                 return "";
             }
-            
+
             string log = "errors:";
             int count = 1;
             foreach(var error in errors)
@@ -712,10 +712,10 @@ namespace ModIO.Implementation.API
                 log += $"\n{count}. {error.Key}: {error.Value}";
                 count++;
             }
-            
+
             return log;
         }
  #endregion
-        
+
     }
 }

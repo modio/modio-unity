@@ -150,7 +150,7 @@ namespace ModIO.Implementation
             int index = 0;
             foreach(var ratingObj in ratingObjects)
             {
-                ratings[index] =  new Rating
+                ratings[index++] =  new Rating
                 {
                     modId = new ModId(ratingObj.mod_id),
                     rating = (ModRating)ratingObj.rating,
@@ -207,7 +207,9 @@ namespace ModIO.Implementation
                 resourceId = modCommentObjects.resource_id,
                 submittedBy = modCommentObjects.submitted_by,
                 threadPosition = modCommentObjects.thread_position,
-                commentDetails = new CommentDetails(modCommentObjects.reply_id, modCommentObjects.content)
+                commentDetails = new CommentDetails(modCommentObjects.reply_id, modCommentObjects.content),
+                userProfile = ConvertUserObjectToUserProfile(modCommentObjects.user)
+
             };
 
         }
@@ -241,6 +243,7 @@ namespace ModIO.Implementation
             profile.name = modObject.name ?? "";
             profile.summary = modObject.summary ?? "";
             profile.homePageUrl = modObject.homepage_url;
+            profile.profilePageUrl = modObject.profile_url;
             profile.status = (ModStatus)modObject.status;
             profile.visible = modObject.visible == 1;
             profile.contentWarnings = (ContentWarnings)modObject.maturity_option;
@@ -262,9 +265,12 @@ namespace ModIO.Implementation
 
             // set tags
             List<string> tags = new List<string>();
-            foreach(ModTagObject tag in modObject.tags)
+            if (modObject.tags != null)
             {
-                tags.Add(tag.name);
+                foreach(ModTagObject tag in modObject.tags)
+                {
+                    tags.Add(tag.name);
+                }
             }
             profile.tags = tags.ToArray();
 

@@ -2,6 +2,7 @@
 using System.Collections;
 using ModIO;
 using ModIO.Util;
+using QRCoder;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -23,6 +24,7 @@ namespace ModIOBrowser.Implementation
         [SerializeField] public GameObject AuthenticationMainPanel;
         [SerializeField] public GameObject AuthenticationPanelWaitingForResponseAnimation;
         [SerializeField] public GameObject AuthenticationPanelEnterEmail;
+        [SerializeField] public GameObject AuthenticationPanelExternalLogin;
         [SerializeField] public GameObject AuthenticationPanelLogo;
         [SerializeField] public TMP_InputField AuthenticationPanelEmailField;
         [SerializeField] public GameObject AuthenticationPanelEnterCode;
@@ -35,8 +37,14 @@ namespace ModIOBrowser.Implementation
         [SerializeField] public Button AuthenticationPanelConnectViaSwitchButton;
         [SerializeField] public Button AuthenticationPanelConnectViaPlayStationButton;
         [SerializeField] public Button AuthenticationPanelConnectViaEmailButton;
+        [SerializeField] public Button AuthenticationPanelConnectViaExternalButton;
         [SerializeField] public Button AuthenticationPanelBackButton;
         [SerializeField] public TMP_Text AuthenticationPanelBackButtonText;
+        [SerializeField] public TMP_Text AuthenticationPanelExternalCode;
+        [SerializeField] public TMP_Text AuthenticationPanelExternalUrl;
+        [SerializeField] public TMP_Text AuthenticationPanelExternalCodeTimer;
+        [SerializeField] public Image AuthenticationPanelExternalQRCode;
+        [SerializeField] public Button AuthenticationPanelExternalCancelButton;
         [SerializeField] public Button AuthenticationPanelAgreeButton;
         [SerializeField] public Button AuthenticationPanelSendCodeButton;
         [SerializeField] public Button AuthenticationPanelSubmitButton;
@@ -50,8 +58,6 @@ namespace ModIOBrowser.Implementation
         [SerializeField] public TMP_Text AuthenticationPanelInfoText;
 
         Action authenticationMethodAfterAgreeingToTheTOS;
-
-        public Authentication auth;
 
         //Used by buttons
         public void Close()
@@ -82,28 +88,69 @@ namespace ModIOBrowser.Implementation
             AuthenticationMainPanel.SetActive(true);
             SelectionManager.Instance.SelectView(UiViews.AuthPanel);
 
-            if(!SkippedIntoEmailConnectionPanel())
+            if(!SkippedIntoTheOnlyExistingAuthenticationOption())
             {
                 OpenConnectionTypePanel();
             }
         }
 
-        bool SkippedIntoEmailConnectionPanel()
+        /// <summary>
+        /// This method checks all of the enabled auth methods and if there is only one existing
+        /// option it will skip the panel to choose one and instead begin the auth flow immediately
+        /// </summary>
+        /// <returns>true if it found one single option and it has triggered it</returns>
+        bool SkippedIntoTheOnlyExistingAuthenticationOption()
         {
-            if(Authentication.getSteamAppTicket == null
-                && Authentication.getXboxToken == null
-                && Authentication.getSwitchToken == null
-                && Authentication.getPlayStationAuthCode == null
-                && Authentication.getGogAuthCode == null
-                && Authentication.getEpicAuthCode == null)
+            int numAuthOptions = 0;
+            // Add 1 for every enabled auth method
+            numAuthOptions = Browser.allowEmailAuthentication ? numAuthOptions + 1 : numAuthOptions;
+            numAuthOptions = Browser.allowExternalAuthentication ? numAuthOptions + 1 : numAuthOptions;
+            numAuthOptions = Authentication.getSteamAppTicket != null ? numAuthOptions + 1 : numAuthOptions;
+            numAuthOptions = Authentication.getXboxToken != null ? numAuthOptions + 1 : numAuthOptions;
+            numAuthOptions = Authentication.getSwitchToken != null ? numAuthOptions + 1 : numAuthOptions;
+            numAuthOptions = Authentication.getPlayStationAuthCode != null ? numAuthOptions + 1 : numAuthOptions;
+            numAuthOptions = Authentication.getGogAuthCode != null ? numAuthOptions + 1 : numAuthOptions;
+            numAuthOptions = Authentication.getEpicAuthCode != null ? numAuthOptions + 1 : numAuthOptions;
+            // if more than 1, dont skip into the auth flow
+            if(numAuthOptions > 1)
             {
-                Authentication.Instance.GetTermsOfUse();
-                authenticationMethodAfterAgreeingToTheTOS = OpenPanel_Email;
-
-                return true;
+                return false;
             }
 
-            return false;
+            Authentication.Instance.GetTermsOfUse();
+            if(Authentication.getSteamAppTicket == null)
+            {
+                authenticationMethodAfterAgreeingToTheTOS = Authentication.Instance.SubmitSteamAuthenticationRequest;
+            }
+            else if(Authentication.getXboxToken == null)
+            {
+                authenticationMethodAfterAgreeingToTheTOS = Authentication.Instance.SubmitXboxAuthenticationRequest;
+            }
+            else if(Authentication.getSwitchToken == null)
+            {
+                authenticationMethodAfterAgreeingToTheTOS = Authentication.Instance.SubmitSwitchAuthenticationRequest;
+            }
+            else if(Authentication.getPlayStationAuthCode == null)
+            {
+                authenticationMethodAfterAgreeingToTheTOS = Authentication.Instance.SubmitPlayStationAuthenticationRequest;
+            }
+            else if(Authentication.getGogAuthCode == null)
+            {
+                authenticationMethodAfterAgreeingToTheTOS = Authentication.Instance.SubmitGogAuthenticationRequest;
+            }
+            else if(Authentication.getEpicAuthCode == null)
+            {
+                authenticationMethodAfterAgreeingToTheTOS = Authentication.Instance.SubmitEpicAuthenticationRequest;
+            }
+            else if(Browser.allowExternalAuthentication)
+            {
+                authenticationMethodAfterAgreeingToTheTOS = Authentication.Instance.SendRequestExternalAuthentication;
+            }
+            else if(Browser.allowEmailAuthentication)
+            {
+                authenticationMethodAfterAgreeingToTheTOS = OpenPanel_Email;
+            }
+            return true;
         }
 
         void OpenConnectionTypePanel()
@@ -122,21 +169,58 @@ namespace ModIOBrowser.Implementation
             AuthenticationPanelBackButton.onClick.RemoveAllListeners();
             AuthenticationPanelBackButton.onClick.AddListener(Close);
 
-            AuthenticationPanelConnectViaEmailButton.gameObject.SetActive(true);
-            AuthenticationPanelConnectViaEmailButton.onClick.RemoveAllListeners();
-            AuthenticationPanelConnectViaEmailButton.onClick.AddListener(() =>
+            Selectable platformButton = null;
+            Selectable secondLoginButton = null;
+            Selectable loginButton = null;
+            
+            //-----------------------------------------------------------------------------------//
+            //                              EMAIL AUTHENTICATION                                 //
+            //-----------------------------------------------------------------------------------//
+            if(Browser.allowEmailAuthentication)
             {
-                Authentication.Instance.GetTermsOfUse();
-                authenticationMethodAfterAgreeingToTheTOS = OpenPanel_Email;
-            });
+                AuthenticationPanelConnectViaEmailButton.gameObject.SetActive(true);
+                AuthenticationPanelConnectViaEmailButton.onClick.RemoveAllListeners();
+                AuthenticationPanelConnectViaEmailButton.onClick.AddListener(() =>
+                {
+                    Authentication.Instance.GetTermsOfUse();
+                    authenticationMethodAfterAgreeingToTheTOS = OpenPanel_Email;
+                });
 
-            // Selection
-            InputNavigation.Instance.Select(AuthenticationPanelConnectViaEmailButton);
+                // Selection - Default to this if enabled
+                InputNavigation.Instance.Select(AuthenticationPanelConnectViaEmailButton);
+
+                loginButton = AuthenticationPanelConnectViaEmailButton;
+            }
+
+            //-----------------------------------------------------------------------------------//
+            //                          EXTERNAL DEVICE AUTHENTICATION                           //
+            //-----------------------------------------------------------------------------------//
+            if(Browser.allowExternalAuthentication)
+            {
+                AuthenticationPanelConnectViaExternalButton.gameObject.SetActive(true);
+                AuthenticationPanelConnectViaExternalButton.onClick.RemoveAllListeners();
+                AuthenticationPanelConnectViaExternalButton.onClick.AddListener(() =>
+                {
+                    Authentication.Instance.GetTermsOfUse();
+                    authenticationMethodAfterAgreeingToTheTOS = Authentication.Instance.SendRequestExternalAuthentication;
+                });
+                
+                // Selection - Default to this if enabled
+                InputNavigation.Instance.Select(AuthenticationPanelConnectViaExternalButton);
+                
+                if (loginButton == null)
+                {
+                    loginButton = AuthenticationPanelConnectViaExternalButton;
+                }
+                else
+                {
+                    secondLoginButton = AuthenticationPanelConnectViaExternalButton;
+                }
+            }
 
             //-----------------------------------------------------------------------------------//
             //                            THIRD PARTY AUTHENTICATION                             //
             //-----------------------------------------------------------------------------------//
-            Selectable thirdPartyOptionSelectable = null;
 
             if(Authentication.getGogAuthCode != null)
             {
@@ -147,7 +231,7 @@ namespace ModIOBrowser.Implementation
                     Authentication.Instance.GetTermsOfUse();
                     authenticationMethodAfterAgreeingToTheTOS = Authentication.Instance.SubmitGogAuthenticationRequest;
                 });
-                thirdPartyOptionSelectable = AuthenticationPanelConnectViaGOGButton;
+                platformButton = AuthenticationPanelConnectViaGOGButton;
 
                 InputNavigation.Instance.Select(AuthenticationPanelConnectViaGOGButton);
             }
@@ -160,7 +244,7 @@ namespace ModIOBrowser.Implementation
                     Authentication.Instance.GetTermsOfUse();
                     authenticationMethodAfterAgreeingToTheTOS = Authentication.Instance.SubmitEpicAuthenticationRequest;
                 });
-                thirdPartyOptionSelectable = AuthenticationPanelConnectViaEpicButton;
+                platformButton = AuthenticationPanelConnectViaEpicButton;
 
                 InputNavigation.Instance.Select(AuthenticationPanelConnectViaEpicButton);
             }
@@ -173,7 +257,7 @@ namespace ModIOBrowser.Implementation
                     Authentication.Instance.GetTermsOfUse();
                     authenticationMethodAfterAgreeingToTheTOS = Authentication.Instance.SubmitSteamAuthenticationRequest;
                 });
-                thirdPartyOptionSelectable = AuthenticationPanelConnectViaSteamButton;
+                platformButton = AuthenticationPanelConnectViaSteamButton;
 
                 InputNavigation.Instance.Select(AuthenticationPanelConnectViaSteamButton);
             }
@@ -186,7 +270,7 @@ namespace ModIOBrowser.Implementation
                     Authentication.Instance.GetTermsOfUse();
                     authenticationMethodAfterAgreeingToTheTOS = Authentication.Instance.SubmitXboxAuthenticationRequest;
                 });
-                thirdPartyOptionSelectable = AuthenticationPanelConnectViaXboxButton;
+                platformButton = AuthenticationPanelConnectViaXboxButton;
 
                 InputNavigation.Instance.Select(AuthenticationPanelConnectViaXboxButton);
             }
@@ -199,7 +283,7 @@ namespace ModIOBrowser.Implementation
                     Authentication.Instance.GetTermsOfUse();
                     authenticationMethodAfterAgreeingToTheTOS = Authentication.Instance.SubmitSwitchAuthenticationRequest;
                 });
-                thirdPartyOptionSelectable = AuthenticationPanelConnectViaSwitchButton;
+                platformButton = AuthenticationPanelConnectViaSwitchButton;
 
                 InputNavigation.Instance.Select(AuthenticationPanelConnectViaSwitchButton);
             }
@@ -212,7 +296,7 @@ namespace ModIOBrowser.Implementation
                     Authentication.Instance.GetTermsOfUse();
                     authenticationMethodAfterAgreeingToTheTOS = Authentication.Instance.SubmitPlayStationAuthenticationRequest;
                 });
-                thirdPartyOptionSelectable = AuthenticationPanelConnectViaPlayStationButton;
+                platformButton = AuthenticationPanelConnectViaPlayStationButton;
 
                 InputNavigation.Instance.Select(AuthenticationPanelConnectViaPlayStationButton);
             }
@@ -225,28 +309,42 @@ namespace ModIOBrowser.Implementation
             AuthenticationPanelBackButton.navigation = new Navigation
             {
                 mode = Navigation.Mode.Explicit,
-                selectOnRight = thirdPartyOptionSelectable == null
-                    ? AuthenticationPanelConnectViaEmailButton : thirdPartyOptionSelectable
+                selectOnRight = platformButton == null
+                    ? loginButton : platformButton
             };
 
             // Third party Auth button (This button may or may not be present)
-            if(thirdPartyOptionSelectable != null)
+            if(platformButton != null)
             {
-                thirdPartyOptionSelectable.navigation = new Navigation
+                platformButton.navigation = new Navigation
                 {
                     mode = Navigation.Mode.Explicit,
                     selectOnLeft = AuthenticationPanelBackButton,
-                    selectOnRight = AuthenticationPanelConnectViaEmailButton
+                    selectOnRight = loginButton
                 };
             }
 
             // email auth button
-            AuthenticationPanelConnectViaEmailButton.navigation = new Navigation
+            if (loginButton != null)
             {
-                mode = Navigation.Mode.Explicit,
-                selectOnLeft = thirdPartyOptionSelectable == null
-                    ? AuthenticationPanelBackButton : thirdPartyOptionSelectable
-            };
+                loginButton.navigation = new Navigation
+                {
+                    mode = Navigation.Mode.Explicit,
+                    selectOnLeft = platformButton == null
+                        ? AuthenticationPanelBackButton : platformButton,
+                    selectOnRight = secondLoginButton
+                };
+            }
+
+            // email auth button
+            if(secondLoginButton != null)
+            {
+                secondLoginButton.navigation = new Navigation
+                {
+                    mode = Navigation.Mode.Explicit,
+                    selectOnLeft = loginButton
+                };
+            }
 
         }
 
@@ -260,6 +358,7 @@ namespace ModIOBrowser.Implementation
             Translation.Get(AuthenticationPanelBackButtonTextTranslation, "Back", AuthenticationPanelBackButtonText);
             AuthenticationPanelEnterCode.SetActive(false);
             AuthenticationPanelEnterEmail.SetActive(false);
+            AuthenticationPanelExternalLogin.SetActive(false);
             AuthenticationPanelTermsOfUseLinks.SetActive(false);
             AuthenticationPanelWaitingForResponseAnimation.SetActive(false);
             AuthenticationPanelAgreeButton.gameObject.SetActive(false);
@@ -273,6 +372,7 @@ namespace ModIOBrowser.Implementation
             AuthenticationPanelConnectViaPlayStationButton.gameObject.SetActive(false);
             AuthenticationPanelConnectViaGOGButton.gameObject.SetActive(false);
             AuthenticationPanelConnectViaEpicButton.gameObject.SetActive(false);
+            AuthenticationPanelConnectViaExternalButton.gameObject.SetActive(false);
             AuthenticationPanelCompletedButton.gameObject.SetActive(false);
             AuthenticationPanelLogoutButton.gameObject.SetActive(false);
             AuthenticationPanelLogo.SetActive(false);
@@ -452,6 +552,81 @@ namespace ModIOBrowser.Implementation
             };
 
             InputNavigation.Instance.Select(AuthenticationPanelAgreeButton);
+        }
+
+        public void OpenPanel_ExternalAuthentication(ExternalAuthenticationToken token)
+        {
+            HideAllPanels();
+            AuthenticationPanel.SetActive(true);
+            AuthenticationPanelExternalLogin.SetActive(true);
+        
+            AuthenticationPanelExternalCode.text = token.code;
+            AuthenticationPanelExternalUrl.text = token.url.Replace("https://","");
+            
+            InputNavigation.Instance.Select(AuthenticationPanelExternalCancelButton);
+
+            GenerateQRCodeForLogin(token);
+            StartCoroutine(DisplayTimeRemainingForValidCodeAndGetNewCodeWhenExpiredAndCheckIfAuthenticationSucceeded());
+        }
+
+        void GenerateQRCodeForLogin(ExternalAuthenticationToken token)
+        {
+            // Generate the payload for the QR code
+            string url = $"{token.url}?code={token.code}";
+            PayloadGenerator.Url payloadGenerator = new PayloadGenerator.Url(url);
+            
+            // Generate the QR code data
+            QRCodeGenerator generator = new QRCodeGenerator();
+            QRCodeData data = generator.CreateQrCode(payloadGenerator.ToString(), QRCodeGenerator.ECCLevel.Q);
+            PngByteQRCode png = new PngByteQRCode(data);
+            
+            // Convert to Sprite
+            Texture2D texture = new Texture2D(0, 0);
+            texture.LoadImage(png.GetGraphic(10), false);
+            Sprite sprite = Sprite.Create(texture, new Rect(Vector2.zero, new Vector2(texture.width, texture.height)), Vector2.zero);
+
+            AuthenticationPanelExternalQRCode.sprite = sprite;
+        }
+
+        IEnumerator DisplayTimeRemainingForValidCodeAndGetNewCodeWhenExpiredAndCheckIfAuthenticationSucceeded()
+        {
+            while(AuthenticationPanelExternalLogin.activeSelf)
+            {
+                if(Authentication.Instance.currentAuthToken.task.IsCompleted)
+                {
+                    if(Authentication.Instance.currentAuthToken.task.Result.Succeeded())
+                    {
+                        OpenPanel_Complete();
+                        ModIOUnity.EnableModManagement(Mods.ModManagementEvent);
+                    }
+                    else
+                    {
+                        OpenPanel_Problem(  null, "Failed to connect account", Close);
+                    }
+                    yield break;
+                }
+                
+                // calculate time remaining
+                TimeSpan duration = Authentication.Instance.currentAuthToken.expiryTime - DateTime.UtcNow;
+                double remainingSeconds = duration.TotalSeconds;
+                
+                if(remainingSeconds < 1)
+                {
+                    // display 0
+                    AuthenticationPanelExternalCodeTimer.text = "0 secs";
+                    
+                    // get new code
+                    ModIOUnity.RequestExternalAuthentication(Authentication.Instance.ReceivedExternalAuthenticationToken);
+                    
+                    // end this coroutine (it will restart on the callback for the new code)
+                    yield break;
+                }
+                
+                // set timer to remaining seconds
+                AuthenticationPanelExternalCodeTimer.text = $"{remainingSeconds:0} secs";
+                    
+                yield return null;
+            }
         }
 
         public void OpenPanel_Email()

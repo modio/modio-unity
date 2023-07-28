@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using ModIO.Implementation.API.Objects;
+using ModIO.Implementation.Wss.Messages;
+using ModIO.Implementation.Wss.Messages.Objects;
 using Newtonsoft.Json.Utilities;
- 
+using UnityEngine;
+
 namespace ModIO.Implementation.API
 {
 	/// <summary>
@@ -10,7 +13,7 @@ namespace ModIO.Implementation.API
 	/// objects and anything we serialize for the registry gets AOT code generated when using IL2CPP
 	/// compilation.
 	/// </summary>
-	internal class AotTypeEnforcer
+	internal class AotTypeEnforcer : MonoBehaviour
 	{
 		public void Awake()
 		{
@@ -46,6 +49,17 @@ namespace ModIO.Implementation.API
 			AotHelper.EnsureList<DateTime>();
 			AotHelper.EnsureList<RatingObject>();
 			AotHelper.EnsureList<ModDependenciesObject>();
+			
+			// Wss messages
+			AotHelper.EnsureList<WssMessage>();
+			AotHelper.EnsureList<WssMessages>();
+			
+			// Wss objects
+			AotHelper.EnsureList<WssLoginSuccess>();
+			AotHelper.EnsureList<WssErrorObject>();
+			AotHelper.EnsureList<WssDeviceLoginRequest>();
+			AotHelper.EnsureList<WssDeviceLoginResponse>();
+
 		}
 	}
 }

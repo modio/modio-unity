@@ -76,8 +76,12 @@ namespace ModIO.Implementation
             {
                 UserData.instance = userData;
             }
+            else
+            {
+                UserData.instance = new UserData();
+            }
 
-            return userDataRead.result;
+            return ResultBuilder.Success;
         }
 
 #endregion // User IO

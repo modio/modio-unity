@@ -4,6 +4,8 @@
     internal struct ModCommentObject
     {
         public long id;
+        public long game_id;
+        public UserObject user;
         public long mod_id;
         public long resource_id;
         public long submitted_by;

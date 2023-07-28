@@ -44,6 +44,60 @@ namespace ModIO
 #region Authentication
 
         /// <summary>
+        /// This begins listening for an external login attempt. Once successfully connecting to the
+        /// mod.io server, it will return the <see cref="ExternalAuthenticationToken"/> which contains a
+        /// code and url that can be displayed to your user. They can then go to the url on a
+        /// separate device and enter the code. Once they've done that, the <see cref="ExternalAuthenticationToken.task"/>
+        /// will complete.
+        /// </summary>
+        /// <remarks>Once you receive the token you can cancel the request at anytime with <see cref="ExternalAuthenticationToken.Cancel"/>.
+        /// Also, the user has 15 minutes before the request times out and you'll need to start again</remarks>
+        /// <seealso cref="Result"/>
+        /// <seealso cref="ResultAnd"/>
+        /// <seealso cref="ExternalAuthenticationToken"/>
+        /// <seealso cref="ModIOUnity.RequestExternalAuthentication"/>
+        /// <example>
+        ///
+        /// ExternalAuthenticationToken token;
+        /// 
+        /// async void Example()
+        /// {
+        ///     var response = await ModIOUnityAsync.RequestExternalAuthentication(ReceiveToken);
+        /// 
+        ///     if (response.result.Succeeded())
+        ///     {
+        ///         // Cache the token in case we want to cancel it
+        ///         token = response.value;
+        ///
+        ///         // Wait for the user to authenticate externally
+        ///         Result result = await token.task;
+        ///
+        ///         if (result.Succeeded())
+        ///         {
+        ///             Debug.Log("You have successfully authenticated the user");
+        ///         }
+        ///         else
+        ///         {
+        ///             Debug.Log("Failed to authenticate (possibly timed out)");
+        ///         }
+        ///     }
+        ///     else
+        ///     {
+        ///         Debug.Log("Failed to connect to mod.io");
+        ///     }
+        /// }
+        ///
+        /// void StopAuthentication()
+        /// {
+        ///     token.Cancel();
+        /// }
+        /// </example>
+        public static async Task<ResultAnd<ExternalAuthenticationToken>> RequestExternalAuthentication()
+        {
+            return await ModIOUnityImplementation.BeginWssAuthentication();
+        }
+        
+        /// <summary>
         /// Sends an email with a security code to the specified Email Address. The security code
         /// is then used to Authenticate the user session using ModIOUnity.SubmitEmailSecurityCode()
         /// </summary>

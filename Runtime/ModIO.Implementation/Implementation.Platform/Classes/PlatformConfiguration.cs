@@ -3,6 +3,7 @@
     /// <summary>Interface for retrieving platform configurations.</summary>
     internal static partial class PlatformConfiguration
     {
+
 #if false // Never compile the following template
 
         // NOTE(@jackson):

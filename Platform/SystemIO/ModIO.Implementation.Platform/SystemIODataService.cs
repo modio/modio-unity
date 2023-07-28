@@ -14,6 +14,20 @@ namespace ModIO.Implementation.Platform
     internal class SystemIODataService : IUserDataService, IPersistentDataService, ITempDataService
     {
 #region Directories
+#if UNITY_ANDROID
+
+        private string persistentDataPath;
+        public SystemIODataService()
+        {
+            persistentDataPath = Application.persistentDataPath;
+        }
+
+        ~SystemIODataService()
+        {
+            AndroidJNI.DetachCurrentThread();
+        }
+#endif
+
 #if UNITY_STANDALONE_WIN
 
         /// <summary>Root directory for persistent data.</summary>
@@ -41,7 +55,7 @@ namespace ModIO.Implementation.Platform
         public static readonly string GlobalSettingsFilePath =
             $"{UserRootDirectory}/globalsettings.json";
 
-#endregion
+        #endregion
 
 #region Data
         /// <summary>Global Settings data structure.</summary>
@@ -240,10 +254,26 @@ namespace ModIO.Implementation.Platform
 
         public async Task<bool> IsThereEnoughDiskSpaceFor(long bytes)
         {
-            FileInfo f = new FileInfo(UserRootDirectory);
-            string drive = Path.GetPathRoot(f.FullName);
-            var d = new DriveInfo(drive);
-            return bytes < d.AvailableFreeSpace;
+            try
+            {
+#if UNITY_ANDROID
+                //DriveInfo is not supported on iLcpp
+                AndroidJNI.AttachCurrentThread();
+                var statFs = new AndroidJavaObject("android.os.StatFs", persistentDataPath);
+                var freeBytes = statFs.Call<long>("getFreeBytes");
+                return bytes < freeBytes;
+#else
+                FileInfo f = new FileInfo(PersistentDataRootDirectory);
+                string drive = Path.GetPathRoot(f.FullName);
+                var d = new DriveInfo(drive);
+                return bytes < d.AvailableFreeSpace;
+#endif
+            }
+            catch(Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
         }
 
 #endregion // Operations

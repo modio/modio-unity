@@ -128,6 +128,8 @@ namespace ModIO
         internal byte[] GetLogo()
         {
 #if UNITY_2019_4_OR_NEWER
+                // If a Texture2D type is not set to 'Sprite (2D or UI)' it will get flagged
+                // by cloudflare as suspicious and be rejected. This will return a 403
                 return logo.EncodeToPNG();
 #else
                 return logo;

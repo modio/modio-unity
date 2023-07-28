@@ -14,10 +14,7 @@ namespace ModIOBrowser.Implementation
         [Header("Browse Panel")]
         public GameObject BrowserPanel;
         [SerializeField] Transform BrowserPanelContent;
-        [SerializeField] ModListRow BrowserPanelModListRow_HighestRated;
-        [SerializeField] ModListRow BrowserPanelModListRow_Trending;
-        [SerializeField] ModListRow BrowserPanelModListRow_MostPopular;
-        [SerializeField] ModListRow BrowserPanelModListRow_RecentlyAdded;
+        [SerializeField] ModListRow[] BrowserPanelModListRows;
         [SerializeField] Image BrowserPanelHeaderBackground;
         [SerializeField] Scrollbar BrowserPanelContentScrollBar;
         IEnumerator browserHeaderTransition;
@@ -300,72 +297,17 @@ namespace ModIOBrowser.Implementation
             ClearRowListItems();
             ClearModListItemRowDictionary();
 
-            // Setup filter
-            SearchFilter filter = new SearchFilter();
-            filter.SetPageIndex(0);
-            filter.SetPageSize(10);
-            filter.SortBy(SortModsBy.Downloads); // TODO How do we get top ten featured?
-            // Note: this is a mistake on the backend api. Ascending is swapped with descending for this field
-            filter.SetToAscending(true);
-
             // Get Mods for featured row
-            ModIOUnity.GetMods(filter, AddModProfilesToFeaturedCarousel);
+            ModIOUnity.GetMods(Browser.Instance.FeaturedSearchFilter, AddModProfilesToFeaturedCarousel);
 
-            // Edit filter for next row
-            filter = new SearchFilter();
-            filter.SetPageIndex(0);
-            filter.SetPageSize(20);
-            filter.SortBy(SortModsBy.DateSubmitted);
-            filter.SetToAscending(false);
-
-            // Get Mods for Recently Added row
-            BrowserPanelModListRow_RecentlyAdded.AttemptToPopulateRowWithMods(filter);
-            // waitingForCallbacks++;
-            // AddPlaceholdersToList<BrowserModListItem>(BrowserPanelRow_RecentlyAdded,
-            //     BrowserPanelListItem_Regular, 20);
-            // ModIOUnity.GetMods(filter, (result, mods) => { AssignModsToRow(result, mods, BrowserPanelRow_RecentlyAdded);});
-
-            // Edit filter for next row
-            filter = new SearchFilter();
-            filter.SetPageIndex(0);
-            filter.SetPageSize(20);
-            filter.SortBy(SortModsBy.Subscribers);
-            filter.SetToAscending(true);
-
-            // Get Mods for Trending row
-            BrowserPanelModListRow_Trending.AttemptToPopulateRowWithMods(filter);
-            // waitingForCallbacks++;
-            // AddPlaceholdersToList<BrowserModListItem>(BrowserPanelRow_Trending,
-            //     BrowserPanelListItem_Regular, 20);
-            // ModIOUnity.GetMods(filter, (result, mods) => { AssignModsToRow(result, mods, BrowserPanelRow_Trending);});
-
-            // Edit filter for next row
-            filter = new SearchFilter();
-            filter.SetPageIndex(0);
-            filter.SetPageSize(20);
-            filter.SortBy(SortModsBy.Popular);
-            filter.SetToAscending(false);
-
-            // Get Mods for Most Popular row
-            BrowserPanelModListRow_MostPopular.AttemptToPopulateRowWithMods(filter);
-            // waitingForCallbacks++;
-            // AddPlaceholdersToList<BrowserModListItem>(BrowserPanelRow_MostPopular,
-            //     BrowserPanelListItem_Regular, 20);
-            // ModIOUnity.GetMods(filter, (result, mods) => { AssignModsToRow(result, mods, BrowserPanelRow_MostPopular);});
-
-            // Edit filter for next row
-            filter = new SearchFilter();
-            filter.SetPageIndex(0);
-            filter.SetPageSize(20);
-            filter.SortBy(SortModsBy.Rating);
-            filter.SetToAscending(true);
-
-            // Get Mods for highest rated row
-            BrowserPanelModListRow_HighestRated.AttemptToPopulateRowWithMods(filter);
-            // waitingForCallbacks++;
-            // AddPlaceholdersToList<BrowserModListItem>(BrowserPanelRow_HighestRated,
-            //     BrowserPanelListItem_Regular, 20);
-            // ModIOUnity.GetMods(filter, (result, mods) => { AssignModsToRow(result, mods, BrowserPanelRow_HighestRated);});
+            var filters = Browser.Instance.BrowserRowSearchFilters;
+            int i = 0;
+            foreach(var modListRow in BrowserPanelModListRows)
+            {
+                if(i >= filters.Length)
+                    i = filters.Length - 1;
+                modListRow.AttemptToPopulateRowWithMods(filters[i++]);
+            }
         }
 
         /// <summary>
@@ -432,7 +374,7 @@ namespace ModIOBrowser.Implementation
             {
                 return;
             }
-            
+
             if(!response.result.Succeeded())
             {
                 // TODO we need to setup a reattempt option similar to mod list rows

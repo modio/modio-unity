@@ -9,6 +9,7 @@ using ModIO.Implementation.Platform;
 using UnityEngine;
 using System.Linq;
 using ModIO.Implementation.API.Requests;
+using ModIO.Implementation.Wss;
 
 namespace ModIO.Implementation
 {
@@ -369,6 +370,7 @@ namespace ModIO.Implementation
         {
             await WebRequestManager.Shutdown();
             await ModManagement.ShutdownOperations();
+            await WssHandler.Shutdown();
 
             isInitialized = false;
             UserData.instance = null;
@@ -708,6 +710,28 @@ namespace ModIO.Implementation
             callback?.Invoke(result);
         }
 
+        public static async void BeginWssAuthentication(Action<ResultAnd<ExternalAuthenticationToken>> callback)
+        {
+            if(callback == null)
+            {
+                Logger.Log(
+                    LogLevel.Warning,
+                    "No callback was given to the BeginWssAuthentication method, any response "
+                    + "returned from the server wont be used. This operation has been cancelled.");
+                return;
+            }
+            
+            var response = await BeginWssAuthentication();
+            callback?.Invoke(response);
+        }
+        
+        public static async Task<ResultAnd<ExternalAuthenticationToken>> BeginWssAuthentication()
+        {
+            var callbackConfirmation = openCallbacks.New();
+            var result = await openCallbacks.Run(callbackConfirmation, Wss.Wss.BeginAuthenticationProcess());
+            openCallbacks.Complete(callbackConfirmation);
+            return result;
+        }
 
         #endregion // Authentication
 
@@ -2144,6 +2168,10 @@ namespace ModIO.Implementation
                 var config = API.Requests.DeleteModComment.Request(modId, commentId);
                 var taskResult = await openCallbacks.Run(callbackConfirmation, WebRequestManager.Request<ModCommentObject>(config));
                 result = taskResult.result;
+                if(result.Succeeded())
+                {
+                    ResponseCache.RemoveModCommentFromCache(commentId);
+                }
             }
             openCallbacks.Complete(callbackConfirmation);
 

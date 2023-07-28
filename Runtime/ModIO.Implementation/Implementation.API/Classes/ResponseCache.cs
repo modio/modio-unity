@@ -123,8 +123,7 @@ namespace ModIO.Implementation.API
 
                 if(!mods.ContainsKey(mod.id))
                 {
-                    CachedModProfile cachedMod = new CachedModProfile();
-                    cachedMod.profile = mod;
+                    CachedModProfile cachedMod = new CachedModProfile { profile = mod };
                     mods.Add(mod.id, cachedMod);
                     modIdsToClearAfterLifeTimeCheck.Add(mod.id);
                 }
@@ -148,6 +147,26 @@ namespace ModIO.Implementation.API
             else
             {
                 commentObjectsCache.Add(url, commentPage);
+            }
+        }
+
+        public static void RemoveModCommentFromCache(long id)
+        {
+            List<string> urls = new List<string>();
+            foreach(var kvp in commentObjectsCache)
+            {
+                foreach(var commentObject in kvp.Value.CommentObjects)
+                {
+                    if(commentObject.id == id)
+                    {
+                        urls.Add(kvp.Key);
+                    }
+                }
+            }
+
+            foreach(var url in urls)
+            {
+                commentObjectsCache.Remove(url);
             }
         }
 
@@ -538,6 +557,7 @@ namespace ModIO.Implementation.API
             termsHash = default;
             termsOfUse = null;
             gameTags = null;
+            commentObjectsCache.Clear();
             modsDependencies?.Clear();
             currentUserRatings?.Clear();
             currentRatingsCached = false;

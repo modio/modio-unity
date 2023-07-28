@@ -21,6 +21,9 @@ namespace ModIOBrowser
         [Header("Settings")]
         [Tooltip("Setting this to false will stop the Browser from automatically initializing the plugin")]
         [SerializeField] bool autoInitialize = true;
+        internal static bool allowEmailAuthentication = true;
+        internal static bool allowExternalAuthentication = true;
+        
         [SerializeField] public UiSettings uiConfig;
         [SerializeField] public Home homePanel;
         public SingletonAwakener SingletonAwakener;
@@ -73,6 +76,9 @@ namespace ModIOBrowser
 
         public static bool IsOpen = false;
 
+        public SearchFilter FeaturedSearchFilter { get; private set; }
+        public SearchFilter[] BrowserRowSearchFilters { get; private set; }
+
         // Use Awake() to setup the Singleton for Browser.cs and initialize the plugin
         protected override void Awake()
         {
@@ -80,6 +86,8 @@ namespace ModIOBrowser
 
             SharedUi.settings = uiConfig;
             SharedUi.colorScheme = colorScheme;
+
+            SetModRowFilterDefaults();
         }
 
         void Start()
@@ -292,6 +300,69 @@ namespace ModIOBrowser
             });
         }
 
+        public void SetFeaturedFilter(SearchFilter searchFilter)
+        {
+            FeaturedSearchFilter = searchFilter;
+        }
+
+        public void SetBrowserRowSearchFilters(SearchFilter[] searchFilters)
+        {
+            this.BrowserRowSearchFilters = searchFilters;
+        }
+
+        private void SetModRowFilterDefaults()
+        {
+            if(this.FeaturedSearchFilter == null)
+            {
+                this.FeaturedSearchFilter = new SearchFilter();
+                this.FeaturedSearchFilter.SetPageIndex(0);
+                this.FeaturedSearchFilter.SetPageSize(10);
+                this.FeaturedSearchFilter.SortBy(SortModsBy.Downloads);
+                // Note: this is a mistake on the backend api. Ascending is swapped with descending for this field
+                this.FeaturedSearchFilter.SetToAscending(true);
+            }
+
+            if(BrowserRowSearchFilters == null)
+            {
+                BrowserRowSearchFilters = new SearchFilter[4];
+                // Edit filter for next row
+                var filter = new SearchFilter();
+                filter.SetPageIndex(0);
+                filter.SetPageSize(20);
+                filter.SortBy(SortModsBy.DateSubmitted);
+                filter.SetToAscending(false);
+                BrowserRowSearchFilters[0] = filter;
+
+                filter = new SearchFilter();
+                // Edit filter for next row
+                filter = new SearchFilter();
+                filter.SetPageIndex(0);
+                filter.SetPageSize(20);
+                filter.SortBy(SortModsBy.Subscribers);
+                filter.SetToAscending(true);
+                BrowserRowSearchFilters[1] = filter;
+
+                filter = new SearchFilter();
+                // Edit filter for next row
+                filter = new SearchFilter();
+                filter.SetPageIndex(0);
+                filter.SetPageSize(20);
+                filter.SortBy(SortModsBy.Popular);
+                filter.SetToAscending(false);
+                BrowserRowSearchFilters[2] = filter;
+
+                filter = new SearchFilter();
+                // Edit filter for next row
+                filter = new SearchFilter();
+                filter.SetPageIndex(0);
+                filter.SetPageSize(20);
+                filter.SortBy(SortModsBy.Rating);
+                filter.SetToAscending(true);
+                BrowserRowSearchFilters[3] = filter;
+            }
+        }
+
+
 #endregion // Frontend methods
 
 #region Initialization
@@ -336,7 +407,7 @@ namespace ModIOBrowser
 
             //Ensure singletons are initialized
             Instance.SingletonAwakener.AttemptInitilization();
-            
+
             // Activate the Canvas
             if(!Instance.BrowserCanvas.activeSelf)
             {
@@ -346,10 +417,10 @@ namespace ModIOBrowser
 
             Collection.Instance.CacheLocalSubscribedModStatuses();
             Implementation.Avatar.Instance.SetupUser();
-            
+
             // open the browser panel (This will show loading icons etc, but wont load yet)
             Home.Instance.Open();
-            
+
             // wait and check if we're authenticated, we need to know if our access token is still valid
             var isAuthed = await ModIOUnityAsync.IsAuthenticated();
             if(isAuthed.Succeeded())
@@ -361,7 +432,7 @@ namespace ModIOBrowser
             {
                 Authentication.Instance.IsAuthenticated = false;
             }
-            
+
             // refresh the home panel now that we know if our access token will work
             Home.Instance.RefreshHomePanel();
             ModIOUnity.EnableModManagement(Mods.ModManagementEvent);

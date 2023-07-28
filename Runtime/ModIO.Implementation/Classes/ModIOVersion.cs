@@ -5,7 +5,7 @@
     {
         // ---------[ Singleton ]---------
         /// <summary>Singleton instance for current version.</summary>
-        public static readonly ModIOVersion Current = new ModIOVersion(2023, 6, 1, "beta");
+        public static readonly ModIOVersion Current = new ModIOVersion(2023, 7, 1, "beta");
 
         // ---------[ Fields ]---------
         /// <summary>Main Version number.</summary>
@@ -97,7 +97,7 @@
 #region Utility
 
         /// <summary>Creates the request header representation of the version.</summary>
-        public string ToHeaderString() => $"modioUnityPlugin-{year.ToString()}.{month.ToString()}.{patch.ToString()}-{suffix}";
+        public string ToHeaderString() => $"modio-{year.ToString()}.{month.ToString()}.{patch.ToString()}-{suffix}";
         
 
 #endregion // Utility

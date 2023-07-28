@@ -1,11 +1,11 @@
 <a href="https://mod.io"><img src="https://mod.io/images/branding/modio-logo-bluedark.svg" alt="mod.io" width="360" align="right"/></a>
-# mod.io Unity Plugin v2023.6.1
+# mod.io Unity Plugin v2023.7.1
 [![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)](https://github.com/modio/modio-unity/blob/master/LICENSE)
 [![Discord](https://img.shields.io/discord/389039439487434752.svg?label=Discord&logo=discord&color=7289DA&labelColor=2C2F33)](https://discord.mod.io)
 [![Master docs](https://img.shields.io/badge/docs-master-green.svg)](https://go.mod.io/unity-docs)
-[![Unity 3D](https://img.shields.io/badge/Unity-2019.4+-lightgrey.svg)](https://unity3d.com)
+[![Unity 3D](https://img.shields.io/badge/Unity-2020.3+-lightgrey.svg)](https://unity3d.com)
 
-Welcome to the mod.io Unity Engine plugin repository. It allows game developers to host and automatically install user-created mods in their games which use **Unity 2019.4** or newer. It provides a UI for mod discovery, installation and collection management, and a C# interface which connects to the [mod.io REST API](https://docs.mod.io).
+Welcome to the mod.io Unity Engine plugin repository. It allows game developers to host and automatically install user-created mods in their games which use **Unity 2020.3** or newer. It provides a UI for mod discovery, installation and collection management, and a C# interface which connects to the [mod.io REST API](https://docs.mod.io).
 
 ## Watch the video tutorial
 <a href="https://www.youtube.com/watch?v=pmECrkdzHzQ"><img src="https://i.ytimg.com/vi/pmECrkdzHzQ/maxresdefault.jpg" alt="mod.io" width="560"/></a>
@@ -32,11 +32,12 @@ Alternatively, you can download an archive of the code using GitHub's download f
 
 1. Set up your [game profile on mod.io](https://mod.io/g/add) (or our [private test environment](https://test.mod.io/g/add)) to get your game ID and API key.
 2. Add the plugin to your project using the installation instructions above.
-3. Ensure you dont have any conflicting libraries by going to Assets/Plugins/mod.io/ThirdParty to remove any libraries you may already have in your project (such as JsonNet).
-4. Restart unity to ensure it recognises the new assembly definitions.
-5. Go to Tools > mod.io > Edit Settings to locate the config file.
-6. Select the config file and use the inspector to assign your game ID and API key in server settings (Make sure to deselect the config file before using playmode in the editor. A known unity bug can cause the editor to crash in 2019-2021).
-7. Setup complete! Join us [on Discord](https://discord.mod.io) if you have any questions or need help.
+3. Ensure you dont have any conflicting libraries by going to Assets/Plugins/mod.io/ThirdParty to remove any libraries you may already have in your project.
+4. If you dont have Newtonsoft in your project, add it from the Package Manager by clicking the "Add package from git URL" option and enter "com.unity.newtonsoft-json" to add the Newtonsoft package
+5. Restart unity to ensure it recognises the new assembly definitions.
+6. Go to Tools > mod.io > Edit Settings to locate the config file.
+7. Select the config file and use the inspector to assign your game ID and API key in server settings (Make sure to deselect the config file before using playmode in the editor. A known unity bug can cause the editor to crash in 2019-2021).
+8. Setup complete! Join us [on Discord](https://discord.mod.io) if you have any questions or need help.
 
 ## Setting up the Browser UI
 

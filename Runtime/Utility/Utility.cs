@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using ModIO.Implementation.Platform;
 using UnityEngine;
 
 namespace ModIO.Util
@@ -60,7 +61,7 @@ namespace ModIO.Util
                 return (bytes / 1024).ToString("0.0") + "KB";
             }
         }
-        
+
 
         #region Get a mod status in string format
 
@@ -157,6 +158,15 @@ namespace ModIO.Util
                 }
             }
             return results;
+        }
+
+        /// <summary>
+        /// Overrides the current platform setting in rest api calls
+        /// </summary>
+        /// <param name="platform">new rest api platform</param>
+        public static void ForceSetPlatformHeader(RestApiPlatform platform)
+        {
+            PlatformConfiguration.RESTAPI_HEADER = platform.ToString();
         }
     }
 }

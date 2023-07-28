@@ -15,16 +15,14 @@ namespace ModIO.Implementation
         [SerializeField] TextMeshProUGUI currentGameIdText;
         [SerializeField] Button[] buttons;
 
-        Translation gameIdTranslation = null;
-        Translation serverUrlTranslation = null;
         string urlToUse;
 
         public void ActivatePanel(bool isActive)
         {
             SetServerUrl(Settings.server.serverURL);
-            
-            Translation.Get(serverUrlTranslation, "Server Url: {text}", currentServerUrlText, Settings.server.serverURL);
-            Translation.Get(gameIdTranslation, "Game id: {text}", currentGameIdText, Settings.server.gameId.ToString());
+
+            currentServerUrlText.text = $"Server Url: {Settings.server.serverURL}";
+            currentGameIdText.text = $"Game Id: {Settings.server.gameId}";
 
             gameObject.SetActive(isActive);
             
@@ -32,10 +30,22 @@ namespace ModIO.Implementation
             LayoutRebuilder.ForceRebuildLayoutImmediate(transform as RectTransform);
         }
 
+        public void SetProductionUrl()
+        {
+            urlToUse = $"https://g-{Settings.server.gameId}.modapi.io/v1";
+            currentServerUrlText.text = $"Server Url: {urlToUse}";
+        }
+
+        public void SetTestUrl()
+        {
+            urlToUse = "https://api.test.mod.io/v1";
+            currentServerUrlText.text = $"Server Url: {urlToUse}";
+        }
+
         public void SetServerUrl(string url)
         {
             urlToUse = url;
-            Translation.Get(serverUrlTranslation, "Server Url: {text}", currentServerUrlText, urlToUse);
+            currentServerUrlText.text = $"Server Url: {urlToUse}";
         }
 
         public async void SaveSettings()
@@ -53,7 +63,7 @@ namespace ModIO.Implementation
                 }
 
                 var serverSettings = new ServerSettings(Settings.server);
-                var buildSettings = new BuildSettings(Settings.build);
+                var buildSettings = new BuildSettings();
 
                 if(gameIdInputField.text != String.Empty && uint.TryParse(gameIdInputField.text, out uint gameId))
                 {
@@ -70,8 +80,8 @@ namespace ModIO.Implementation
                 string user = string.IsNullOrWhiteSpace(initUserInputField.text) ? "User" : initUserInputField.text;
                 ModIOUnity.InitializeForUser(user, serverSettings, buildSettings);
 
-                Translation.Get(gameIdTranslation, "Game id: {text}", currentGameIdText, Settings.server.gameId.ToString());
-                Translation.Get(serverUrlTranslation, "Server Url: {text}", currentServerUrlText, urlToUse);
+                currentServerUrlText.text = $"Server Url: {urlToUse}";
+                currentGameIdText.text = $"Game Id: {Settings.server.gameId}";
             }
             catch(Exception e)
             {
