@@ -1,0 +1,31 @@
+name: Push docs into modio docs
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "**.md"
+  workflow_dispatch:    
+  
+jobs:
+  push-docs-to-modio-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone repo
+        uses: actions/checkout@v3
+
+      - name: Create docs structure
+        run: |
+          Tools/create-docs.sh
+
+      - name: Push public unity docs into modio 
+        uses: cpina/github-action-push-to-another-repository@main
+        env:
+          API_TOKEN_GITHUB: ${{ secrets.DOCS_ACCESS_TOKEN }}
+        with:
+          source-directory: out/docs/public/unity
+          destination-github-username: "modio"
+          destination-repository-name: "modio-docs"
+          commit-message: "docs: updating public unity docs from modio-unity repo"
+          target-branch: main
+          target-directory: public/unity
