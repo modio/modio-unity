@@ -33,7 +33,7 @@ Alternatively, you can download an archive of the code using GitHub's download f
 1. Set up your [game profile on mod.io](https://mod.io/g/add) (or our [private test environment](https://test.mod.io/g/add)) to get your game ID and API key.
 2. Add the plugin to your project using the installation instructions above.
 3. Ensure you dont have any conflicting libraries by going to Assets/Plugins/mod.io/ThirdParty to remove any libraries you may already have in your project.
-4. If you dont have Newtonsoft in your project, add it from the Package Manager by clicking the "Add package from git URL" option and enter "com.unity.newtonsoft-json" to add the Newtonsoft package
+4. If you dont have Newtonsoft in your project, add it from the Package Manager by clicking the "Add package from git URL" option and enter "com.unity.nuget.newtonsoft-json" to add the Newtonsoft package
 5. Restart unity to ensure it recognises the new assembly definitions.
 6. Go to Tools > mod.io > Edit Settings to locate the config file.
 7. Select the config file and use the inspector to assign your game ID and API key in server settings (Make sure to deselect the config file before using playmode in the editor. A known unity bug can cause the editor to crash in 2019-2021).
