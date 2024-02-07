@@ -1,3 +1,10 @@
+---
+id: unity-introduction
+title: Unity Introduction
+sidebar_label: Unity Introduction
+slug: /unity-plugin
+sidebar_position: 0
+---
 <a href="https://mod.io"><img src="https://mod.io/images/branding/modio-logo-bluedark.svg" alt="mod.io" width="360" align="right"/></a>
 # mod.io Unity Plugin v2023.7.1
 [![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)](https://github.com/modio/modio-unity/blob/master/LICENSE)
@@ -62,7 +69,7 @@ below are a couple examples for some of the common usages of the plugin. Such as
 All of the methods required to use the plugin can be found in ModIOUnity.cs. If you prefer using async methods over callbacks you can alternatively use ModIOUnityAsync.cs to use an async variation of the same methods.
 
 ### Initialise the plugin
-```c#
+```csharp
 void Example()
 {
     Result result ModIOUnity.InitializeForUser("ExampleUser");
@@ -79,7 +86,7 @@ void Example()
 ```
 
 ### Get the user's installed mods
-```c#
+```csharp
 void Example()
 {
     UserInstalledMod[] mods = ModIOUnity.GetInstalledModsForUser(out Result result);
@@ -93,7 +100,7 @@ void Example()
 ```
 
 ### Enable automatic mod downloads and installs
-```c#
+```csharp
 void Example()
 {
     Result result = ModIOUnity.EnableModManagement(ModManagementDelegate);
@@ -117,7 +124,7 @@ void ModManagementDelegate(ModManagementEventType eventType, ModId modId, Result
 
 ### Authenticate a user
 In the current version of the plugin it is required that a user session is authenticated in order to subscribe and download mods. You can accomplish this with an email address or through another third party service, such as Steam or Google. Below is an example of how to do this from an email address provided by the user. A security code will be sent to their email account and can be used to authenticate (The plugin will cache the session token to avoid having to re-authenticate every time they run the application).
-```c#
+```csharp
 async void RequestEmailCode()
 {
     Result result = await ModIOUnityAsync.RequestAuthenticationEmail("johndoe@gmail.com");
@@ -148,7 +155,7 @@ async void SubmitCode(string userSecurityCode)
 ```
 
 ### Get Mod profiles from the mod.io server
-```c#
+```csharp
 async void Example()
 {
     // create a filter to retreive the first ten mods for your game
@@ -176,7 +183,7 @@ Users can also submit mods directly from the mod.io website by going to your gam
 
 ### Adding a mod
 Here we go through the mod addition flow. Generate Token, Create Mod Profile, and Upload Mod File
-```c#
+```csharp
 public async void CreateMod()
 {
    //token used to create mod profile
@@ -213,7 +220,7 @@ public async void CreateMod()
 
 ### Loading mods
 Here is an example that grabs all mods installed for the current user, finds the png files in the mod's directory if they are tagged as a "Texture" and then loads them into a Texture2D asset.
-```c#
+```csharp
 public void LoadModExample()
 {
    UserInstalledMod[] mods = ModIOUnity.GetInstalledModsForUser(out Result result);
