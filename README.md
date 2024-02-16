@@ -81,7 +81,7 @@ void Example()
     else
     {
         Debug.Log("Failed to initialise plugin");
-    {
+    }
 }
 ```
 
@@ -112,7 +112,7 @@ void Example()
     else
     {
         Debug.Log("Failed to enable mod management");
-    {
+    }
 }
  
 // The following method will get invoked whenever an event concerning mod management occurs
