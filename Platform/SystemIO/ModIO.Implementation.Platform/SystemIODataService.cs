@@ -252,6 +252,12 @@ namespace ModIO.Implementation.Platform
             return SystemIOWrapper.TryCreateParentDirectory(path, out Result _);
         }
 
+#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
+        [System.Runtime.InteropServices.DllImport("kernel32.dll", SetLastError = true, CharSet = System.Runtime.InteropServices.CharSet.Auto)]
+        [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
+        static extern bool GetDiskFreeSpaceEx(string lpDirectoryName, out ulong lpFreeBytesAvailable, out ulong lpTotalNumberOfBytes, out ulong lpTotalNumberOfFreeBytes);
+#endif
+
         public async Task<bool> IsThereEnoughDiskSpaceFor(long bytes)
         {
             try
@@ -265,8 +271,15 @@ namespace ModIO.Implementation.Platform
 #else
                 FileInfo f = new FileInfo(PersistentDataRootDirectory);
                 string drive = Path.GetPathRoot(f.FullName);
+#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
+                var success = GetDiskFreeSpaceEx(drive, out var freeBytesAvailable, out _, out _);
+                if (!success)
+                    throw new IOException("Failed to check disk space");
+                return (ulong)bytes < freeBytesAvailable;
+#else
                 var d = new DriveInfo(drive);
                 return bytes < d.AvailableFreeSpace;
+#endif
 #endif
             }
             catch(Exception e)
