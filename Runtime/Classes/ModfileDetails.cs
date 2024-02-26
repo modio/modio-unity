@@ -1,4 +1,6 @@
-﻿namespace ModIO
+﻿using System.IO;
+
+namespace ModIO
 {
     public class ModfileDetails
     {
@@ -12,7 +14,13 @@
         /// its contents will be compressed and uploaded when submitted via
         /// ModIOUnity.UploadModfile.
         /// </summary>
-        public string directory;
+        public string? directory;
+
+        /// <summary>
+        /// Compressed data to send.
+        /// Alternative to <cref>directory</cref> for creating mods in memory.
+        /// </summary>
+        public MemoryStream compressedDirectory
 
         /// <summary>
         /// the changelog for this file version of the mod.
