@@ -35,6 +35,11 @@ namespace ModIO
         /// <seealso cref="ModIOUnity.EditModProfile"/>
 #if UNITY_2019_4_OR_NEWER
         public Texture2D logo;
+        /// <summary>
+        /// Logo encoded in supported format.
+        /// </summary>
+        /// <seealso cref="logo"/>
+        public EncodedImage encodedLogo;
 #else
         public byte[] logo;
 #endif
@@ -45,6 +50,11 @@ namespace ModIO
         /// <remarks>Can be null</remarks>
 #if UNITY_2019_4_OR_NEWER
         public Texture2D[] images;
+        /// <summary>
+        /// Images encoded in supported format.
+        /// </summary>
+        /// <seealso cref="images"/>
+        public IReadOnlyList<EncodedImage> encodedImages;
 #else
         public List<byte[]> images;
 #endif
@@ -125,28 +135,44 @@ namespace ModIO
         /// <remarks>Can be null</remarks>
         public CommunityOptions? communityOptions = CommunityOptions.AllowCommenting;
 
-        internal byte[] GetLogo()
+        internal bool HasLogo()
+        {
+            return logo != null || encodedLogo != null;
+        }
+
+        internal EncodedImage GetLogo()
         {
 #if UNITY_2019_4_OR_NEWER
-                // If a Texture2D type is not set to 'Sprite (2D or UI)' it will get flagged
-                // by cloudflare as suspicious and be rejected. This will return a 403
-                return logo.EncodeToPNG();
+            // If a Texture2D type is not set to 'Sprite (2D or UI)' it will get flagged
+            // by cloudflare as suspicious and be rejected. This will return a 403
+            if (encodedLogo == null)
+                encodedLogo = EncodedImage.PNGFromTexture2D(logo);
+            return encodedLogo;
 #else
-                return logo;
+            return logo;
 #endif
         }
-        
+
+        internal bool HasGalleryImages()
+        {
+            return encodedImages != null || images != null;
+        }
+
         internal List<byte[]> GetGalleryImages()
         {
 #if UNITY_2019_4_OR_NEWER
-            List<byte[]> gallery = new List<byte[]>();
-            foreach(var texture in images)
+            if (encodedImages == null)
             {
-                gallery.Add(texture.EncodeToPNG());
+                List<EncodedImage> gallery = new List<EncodedImage>();
+                foreach(var texture in images)
+                {
+                    gallery.Add(EncodedImage.PNGFromTexture2D(texture));
+                }
+                encodedImages = gallery;
             }
-            return gallery;
+            return encodedImages;
 #else
-                return images;
+            return images;
 #endif
         }
     }

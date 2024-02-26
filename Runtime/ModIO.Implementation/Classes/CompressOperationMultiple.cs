@@ -7,9 +7,9 @@ namespace ModIO.Implementation
 {
     internal class CompressOperationMultiple : CompressOperationBase
     {
-        public IEnumerable<byte[]> data;
+        public IEnumerable<EncodedImage> data;
 
-        public CompressOperationMultiple(IEnumerable<byte[]> compressed, ProgressHandle progressHandle)
+        public CompressOperationMultiple(IEnumerable<EncodedImage> compressed, ProgressHandle progressHandle)
             : base(progressHandle)
         {
             this.data = compressed;
@@ -31,11 +31,12 @@ namespace ModIO.Implementation
             {
                 zipStream.SetLevel(3);
 
-                foreach(var bytes in data)
+                foreach(var encodedImage in data)
                 {
-                    string entryName = $"image_{count}.png";
+                    string entryName = $"image_{count}.{encodedImage.extension}";
                     count++;
 
+                    byte[] bytes = encodedImage.data;
                     using(MemoryStream memoryStream = new MemoryStream())
                     {
                         memoryStream.Write(bytes, 0, bytes.Length);

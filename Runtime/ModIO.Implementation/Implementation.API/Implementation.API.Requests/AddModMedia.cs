@@ -1,6 +1,5 @@
 ﻿using System.IO;
 using System.Threading.Tasks;
-using UnityEngine;
 
 namespace ModIO.Implementation.API.Requests
 {
@@ -15,13 +14,16 @@ namespace ModIO.Implementation.API.Requests
                 ShouldRequestTimeout = false,
             };
 
-            if(details.logo != null)
-                request.AddField("logo", "logo.png", details.logo.EncodeToPNG());
-
-            if(details.images != null)
+            if(details.HasLogo())
             {
-                var imageBytes = details.GetGalleryImages();
-                CompressOperationMultiple zipOperation = new CompressOperationMultiple(imageBytes, null);
+                var logo = details.GetLogo();
+                request.AddField("logo", $"logo.{logo.extension}", logo.data);
+            }
+
+            if(details.HasGalleryImages())
+            {
+                var encodedImages = details.GetGalleryImages();
+                CompressOperationMultiple zipOperation = new CompressOperationMultiple(encodedImages, null);
 
                 ResultAnd<MemoryStream> resultAnd = await zipOperation.Compress();
 

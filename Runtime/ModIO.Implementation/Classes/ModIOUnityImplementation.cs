@@ -2005,7 +2005,7 @@ namespace ModIO.Implementation
                         + " The 'tags' array in the ModProfileDetails will be ignored.");
                 }
 
-                var config = modDetails.logo != null
+                var config = modDetails.HasLogo()
                     ? API.Requests.EditMod.RequestPOST(modDetails)
                     : API.Requests.EditMod.RequestPUT(modDetails);
 
@@ -2353,12 +2353,7 @@ namespace ModIO.Implementation
             if(IsInitialized(out result) && IsAuthenticatedSessionValid(out result)
                                          && IsModfileDetailsValid(modfile, out result))
             {
-                CompressOperationDirectory compressOperation = new CompressOperationDirectory(modfile.directory);
-
-                Task<ResultAnd<MemoryStream>> compressTask = compressOperation.Compress();
-
-
-                var compressionTaskResult = await openCallbacks.Run(callbackConfirmation, compressTask);
+                var compressionTaskResult = await GetCompressedData(modfile, callbackConfirmation);
                 result = compressionTaskResult.result;
 
                 if(!result.Succeeded())
@@ -2370,9 +2365,6 @@ namespace ModIO.Implementation
                 }
                 else
                 {
-                    Logger.Log(LogLevel.Verbose, $"Compressed file ({modfile.directory})"
-                                                 + $"\nstream length: {compressionTaskResult.value.Length}");
-
                     callbackConfirmation = openCallbacks.New();
                     var requestConfig = await API.Requests.AddModFile.Request(modfile, compressionTaskResult.value);
                     Task<ResultAnd<ModfileObject>> task = WebRequestManager.Request<ModfileObject>(requestConfig, currentUploadHandle);
@@ -2399,6 +2391,23 @@ namespace ModIO.Implementation
             openCallbacks.Complete(callbackConfirmation);
 
             return result;
+
+            static async Task<ResultAnd<MemoryStream>> GetCompressedData(ModfileDetails modfile, TaskCompletionSource<bool> callbackConfirmation)
+            {
+                if(modfile.compressedDirectory != null) {
+                    Logger.Log(LogLevel.Verbose, $"Using supplied MemoryStream of length: {modfile.compressedDirectory.Length}");
+                    return ResultAnd.Create(ResultBuilder.Success, modfile.compressedDirectory);
+                }
+
+
+                CompressOperationDirectory compressOperation = new CompressOperationDirectory(modfile.directory);
+                Task<ResultAnd<MemoryStream>> compressTask = compressOperation.Compress();
+
+                var compressionTaskResult = await openCallbacks.Run(callbackConfirmation, compressTask);
+                Logger.Log(LogLevel.Verbose, $"Compressed file ({modfile.directory})"
+                                                 + $"\nstream length: {compressionTaskResult.value.Length}");
+                return compressionTaskResult;
+            }
         }
 
         public static async void UploadModMedia(ModProfileDetails modProfileDetails, Action<Result> callback)
@@ -2467,15 +2476,18 @@ namespace ModIO.Implementation
 
         static bool IsModfileDetailsValid(ModfileDetails modfile, out Result result)
         {
-            // Check directory exists
-            if(!DataStorage.TryGetModfileDetailsDirectory(modfile.directory,
-                out string notbeingusedhere))
+            if(modfile.compressedDirectory == null)
             {
-                Logger.Log(LogLevel.Error,
-                    "The provided directory in ModfileDetails could not be found or"
-                    + $" does not exist ({modfile.directory}).");
-                result = ResultBuilder.Create(ResultCode.IO_DirectoryDoesNotExist);
-                return false;
+                // Check directory exists
+                if(!DataStorage.TryGetModfileDetailsDirectory(modfile.directory,
+                    out string _))
+                {
+                    Logger.Log(LogLevel.Error,
+                        "The provided directory in ModfileDetails could not be found or"
+                        + $" does not exist ({modfile.directory}).");
+                    result = ResultBuilder.Create(ResultCode.IO_DirectoryDoesNotExist);
+                    return false;
+                }
             }
 
             // check metadata isn't too large
@@ -2504,8 +2516,8 @@ namespace ModIO.Implementation
 
         static bool IsModProfileDetailsValid(ModProfileDetails modDetails, out Result result)
         {
-            if(modDetails.logo == null || string.IsNullOrWhiteSpace(modDetails.summary)
-                                       || string.IsNullOrWhiteSpace(modDetails.name))
+            if(!modDetails.HasLogo() || string.IsNullOrWhiteSpace(modDetails.summary)
+                                     || string.IsNullOrWhiteSpace(modDetails.name))
             {
                 Logger.Log(
                     LogLevel.Error,
@@ -2530,9 +2542,9 @@ namespace ModIO.Implementation
                 return false;
             }
 
-            if(modDetails.logo != null)
+            if(modDetails.HasLogo())
             {
-                if(modDetails.logo.EncodeToPNG().Length > 8388608)
+                if(modDetails.GetLogo().data.Length > 8388608)
                 {
                     Logger.Log(LogLevel.Error,
                                "The provided logo in ModProfileDetails exceeds 8 megabytes");

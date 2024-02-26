@@ -44,8 +44,11 @@
 
             request.AddField("metadata_blob", details.metadata);
 
-            if(details.logo != null)
-                request.AddField("logo", "logo.png", details.GetLogo());
+            if(details.HasLogo())
+            {
+                var logo = details.GetLogo();
+                request.AddField("logo", $"logo.{logo.extension}", logo.data);
+            }
 
             return request;
         }
