@@ -3601,6 +3601,7 @@ namespace ICSharpCode.SharpZipLib.Zip
 
 				StreamUtils.ReadFully(baseStream_, buffer, 0, nameLen);
 				string name = ZipStrings.ConvertToStringExt(bitFlags, buffer, nameLen);
+				name = ZipStrings.ReplaceBackslashes(name);
 
 				var entry = new ZipEntry(name, versionToExtract, versionMadeBy, (CompressionMethod)method)
 				{

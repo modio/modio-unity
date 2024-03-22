@@ -190,5 +190,13 @@ namespace ICSharpCode.SharpZipLib.Zip
 			=> (string.IsNullOrEmpty(str))
 				? Empty.Array<byte>()
 				: EncodingFromFlag(flags).GetBytes(str);
+
+		public static string ReplaceBackslashes(string input)
+		{
+			const char BACKSLASH = '\\';
+			if (input.Contains(BACKSLASH))
+				return input.Replace(BACKSLASH, '/');
+			return input;
+		}
 	}
 }
