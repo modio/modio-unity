@@ -1,7 +1,4 @@
-﻿
-using ModIO.Implementation.API.Objects;
-
-namespace ModIO
+﻿namespace ModIO
 {
     public struct ModComment
     {

@@ -6,7 +6,7 @@
 	/// etc)
 	/// </summary>
 	[System.Serializable]
-	internal class PaginatedResponse<T>
+	public class PaginatedResponse<T>
 	{
 		public T[] data;
 

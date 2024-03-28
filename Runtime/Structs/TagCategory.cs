@@ -1,5 +1,4 @@
-﻿
-namespace ModIO
+﻿namespace ModIO
 {
     /// <summary>
     /// Represents a particular category of tags.

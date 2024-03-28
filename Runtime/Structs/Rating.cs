@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ModIO.Implementation.API.Objects
+namespace ModIO
 {
     /// <summary>
     /// A struct representing all of the information available for a Rating.

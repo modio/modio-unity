@@ -5,12 +5,12 @@
     {
         // ---------[ Singleton ]---------
         /// <summary>Singleton instance for current version.</summary>
-        public static readonly ModIOVersion Current = new ModIOVersion(2023, 7, 1, "beta");
+        public static readonly ModIOVersion Current = new ModIOVersion(2024, 3, 1, "beta");
 
         // ---------[ Fields ]---------
         /// <summary>Main Version number.</summary>
         public int year;
-        
+
         // ---------[ Fields ]---------
         /// <summary>Major version number.</summary>
         /// <remarks>Represents the major version number. Increases when there is a breaking change
@@ -55,7 +55,7 @@
         public int CompareTo(ModIOVersion other)
         {
             int result = year.CompareTo(other.year);
-            
+
             if(result == 0)
             {
                 result = month.CompareTo(other.month);
@@ -98,7 +98,7 @@
 
         /// <summary>Creates the request header representation of the version.</summary>
         public string ToHeaderString() => $"modio-{year.ToString()}.{month.ToString()}.{patch.ToString()}-{suffix}";
-        
+
 
 #endregion // Utility
     }

@@ -1,5 +1,4 @@
-﻿
-namespace ModIO
+﻿namespace ModIO
 {
     /// <summary>
     /// Represents a Tag that can be assigned to a mod.

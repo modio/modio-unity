@@ -15,7 +15,7 @@ namespace ModIOBrowser.Implementation
     /// </summary>
     internal class CollectionModListItem : ListItem, ISelectHandler, IDeselectHandler
     {
-        CollectionProfile profile;
+        new CollectionProfile profile;
 
         [SerializeField] Button listItemButton;
         [SerializeField] Image image;
@@ -299,7 +299,7 @@ namespace ModIOBrowser.Implementation
             imageBackground.gameObject.SetActive(false);
             title.text = profile.modProfile.name;
             fileSize.text = Utility.GenerateHumanReadableStringForBytes(profile.modProfile.archiveFileSize);
-            ModIOUnity.DownloadTexture(profile.modProfile.logoImage_320x180, SetIcon);
+            ModIOUnity.DownloadTexture(profile.modProfile.logoImage320x180, SetIcon);
             gameObject.SetActive(true);
             transform.SetAsLastSibling();
             SetDisabledStateOverlay();

@@ -13,6 +13,9 @@ namespace ModIO.Implementation.API
 {
     internal static class WebRequestRunner
     {
+        private static Queue<Func<Task>> liveTasks = new Queue<Func<Task>>();
+        private static object queueLock = new object();
+        private static bool isRunning = false;
 
 #region Main Request Handling
         public static RequestHandle<Result> Download(string url, Stream downloadTo, ProgressHandle progressHandle)
@@ -111,7 +114,8 @@ namespace ModIO.Implementation.API
             return handle;
         }
 
-        public static async Task<ResultAnd<TResult>> Execute<TResult>(WebRequestConfig config, RequestHandle<ResultAnd<TResult>> handle, ProgressHandle progressHandle)
+        public static async Task<ResultAnd<TResult>> Execute<TResult>(WebRequestConfig config,
+            RequestHandle<ResultAnd<TResult>> handle, ProgressHandle progressHandle)
         {
             ResultAnd<TResult> result = default;
             WebResponse response = null;
@@ -135,14 +139,20 @@ namespace ModIO.Implementation.API
                     handle.cancel = request.Abort;
                 }
 
-                request.LogRequestBeingSent(config);
-
-                response = config.IsUpload
-                    ? await request.GetUploadResponse(config, progressHandle)
-                    : await request.GetResponseAsync();
+                if(config.IsUpload)
+                {
+                    response = await request.GetUploadResponse(config, progressHandle);
+                }
+                else
+                {
+                    request.LogRequestBeingSent(config);
+                    response = await request.GetResponseAsync();
+                }
             }
             catch(Exception e)
             {
+                Logger.Log(LogLevel.Error, e.Message);
+
                 if(request != null)
                 {
                     // this event is added in BuildWebRequest(), we remove it here
@@ -160,6 +170,7 @@ namespace ModIO.Implementation.API
                 }
                 else
                 {
+                    Logger.Log(LogLevel.Error, e.Message);
                     response = default;
                 }
             }
@@ -304,66 +315,132 @@ namespace ModIO.Implementation.API
 
         static async Task<WebResponse> GetDownloadResponse(this WebRequest request, Stream downloadStream, ProgressHandle progressHandle)
         {
-            // Send request
             WebResponse response = await request.GetResponseAsync();
+            long bytesTotal = response.ContentLength;
 
-            // Read response
-            using(Stream responseStream = response.GetResponseStream())
+            using Stream responseStream = response.GetResponseStream();
+            if (responseStream == null)
+                return response;
+
+            byte[] buffer = new byte[1024 * 1024]; // 1MB
+            int bytesRead;
+            long bytesDownloadedTotal = 0;
+            long bytesDownloadedSample = 0;
+
+            Stopwatch stopwatchYield = Stopwatch.StartNew();
+            Stopwatch stopwatchSample = Stopwatch.StartNew();
+
+            while ((bytesRead = await responseStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
             {
-                // Get the total size of the file to download
-                long totalSize = response.ContentLength;
-
-                // Create a buffer to read the response stream in chunks
-                byte[] buffer = new byte[4096];
-
-                // Initialize progress tracking
-                long bytesDownloaded = 0;
-                long bytesDownloadedForThisSample = 0;
-                int bytesRead = 0;
-                Stopwatch progressMeasure = new Stopwatch();
-                Stopwatch yieldMeasure = new Stopwatch();
-                progressMeasure.Start();
-                yieldMeasure.Start();
-
-                // Read the response stream in chunks and write to file
-                while((bytesRead = responseStream.Read(buffer, 0, buffer.Length)) > 0)
+                if (stopwatchYield.ElapsedMilliseconds >= 15)
                 {
-                    downloadStream.Write(buffer, 0, bytesRead);
-                    bytesDownloaded += bytesRead;
-
-                    if(progressHandle != null)
-                    {
-                        bytesDownloadedForThisSample += bytesRead;
-                        if(progressMeasure.ElapsedMilliseconds >= 1000)
-                        {
-                            progressHandle.Progress = (float)((decimal)bytesDownloaded / totalSize);
-                            progressHandle.BytesPerSecond = (long)(bytesDownloadedForThisSample * (progressMeasure.ElapsedMilliseconds / 1000f));
-
-                            bytesDownloadedForThisSample = 0;
-                            progressMeasure.Restart();
-                        }
-                        if(yieldMeasure.ElapsedMilliseconds >= 16)
-                        {
-                            await Task.Yield();
-                            yieldMeasure.Restart();
-                        }
-                    }
+                    await Task.Yield();
+                    stopwatchYield.Restart();
                 }
 
-                progressMeasure.Stop();
-                yieldMeasure.Stop();
+                await downloadStream.WriteAsync(buffer, 0, bytesRead);
+
+                if (stopwatchYield.ElapsedMilliseconds >= 15)
+                {
+                    await Task.Yield();
+                    stopwatchYield.Restart();
+                }
+
+                bytesDownloadedTotal += bytesRead;
+                bytesDownloadedSample += bytesRead;
+
+                if (progressHandle == null)
+                    continue;
+
+                progressHandle.Progress = (float)bytesDownloadedTotal / bytesTotal;
+
+                if (stopwatchSample.ElapsedMilliseconds < 1000)
+                    continue;
+
+                progressHandle.BytesPerSecond = (long)(bytesDownloadedSample * (stopwatchSample.ElapsedMilliseconds / 1000f));
+                bytesDownloadedSample = 0;
+                stopwatchSample.Restart();
             }
+
+            if (progressHandle is { BytesPerSecond: 0 })
+                progressHandle.BytesPerSecond = bytesTotal;
+
+            stopwatchYield.Stop();
+            stopwatchSample.Stop();
+
             return response;
         }
 
-        static async Task<WebResponse> GetUploadResponse(this WebRequest request, WebRequestConfig config, ProgressHandle progressHandle)
+        static async Task<WebResponse> GetUploadResponse(this WebRequest request, WebRequestConfig config,
+            ProgressHandle progressHandle)
         {
-            // Send request
-            await request.SetupMultipartRequest(config, progressHandle);
+            if(config.RawBinaryData != null)
+            {
+                Task TaskFunc()
+                {
+                    request.LogRequestBeingSent(config);
+                    return request.SetupOctetRequest(config, progressHandle);
+                }
+
+                await EnqueueTask(TaskFunc);
+            }
+            else
+            {
+                Task TaskFunc()
+                {
+                    request.LogRequestBeingSent(config);
+                    return request.SetupMultipartRequest(config, progressHandle);
+                }
+
+                await EnqueueTask(TaskFunc);
+            }
 
             WebResponse response = await request.GetResponseAsync();
 
             return response;
+        }
+
+        static Task EnqueueTask(Func<Task> taskFunc)
+        {
+            TaskCompletionSource<bool> taskCompletionSource = new TaskCompletionSource<bool>();
+
+            lock (queueLock)
+            {
+                liveTasks.Enqueue(async () =>
+                {
+                    await taskFunc();
+                    taskCompletionSource.SetResult(true);
+                });
+
+                if (!isRunning)
+                {
+                    isRunning = true;
+                    RunTasks();
+                }
+            }
+
+            return taskCompletionSource.Task;
+        }
+
+        static async void RunTasks()
+        {
+            while (true)
+            {
+                Func<Task> taskFunc;
+
+                lock (queueLock)
+                {
+                    if (liveTasks.Count == 0)
+                    {
+                        isRunning = false;
+                        break;
+                    }
+
+                    taskFunc = liveTasks.Dequeue();
+                }
+
+                await taskFunc();
+            }
         }
 
         static async Task<WebRequest> BuildWebRequest(WebRequestConfig config, ProgressHandle progressHandle)
@@ -416,6 +493,16 @@ namespace ModIO.Implementation.API
 
             // Add request to shutdown method
             WebRequestManager.ShutdownEvent += request.Abort;
+
+            if(config.RawBinaryData == null)
+            {
+                // Default form data content type
+                request.ContentType = "multipart/form-data";
+            }
+            else
+            {
+                request.ContentType = "application/octet-stream";
+            }
 
             return request;
         }
@@ -532,6 +619,45 @@ namespace ModIO.Implementation.API
                 }
             }
         }
+
+        static async Task SetupOctetRequest(this WebRequest request, WebRequestConfig config, ProgressHandle progressHandle)
+        {
+            string boundary = "---------------------------" + DateTime.Now.Ticks.ToString("x");
+            request.ContentType = "application/octet-stream; boundary=" + boundary;
+            request.ContentLength = config.RawBinaryData.Length;
+            using(Stream requestStream = request.GetRequestStream())
+            {
+                int totalBytes = 0;
+                int chunkSize = 1048576;
+                long bytesUploadedForThisSample = 0;
+                Stopwatch stopwatch = new Stopwatch();
+                stopwatch.Start();
+
+                while(totalBytes < config.RawBinaryData.Length)
+                {
+                    if(totalBytes + chunkSize > config.RawBinaryData.Length)
+                        chunkSize = config.RawBinaryData.Length - totalBytes;
+
+                    await requestStream.WriteAsync(config.RawBinaryData, totalBytes, chunkSize);
+                    totalBytes += chunkSize;
+                    //UnityEngine.Debug.LogWarning("PROGRESS = " + (float)(totalBytes / (config.RawBinaryData.Length * (decimal)1.01f)));
+                    if(progressHandle != null)
+                    {
+                        // We make the length 1% longer so it doesnt get to 100% while we wait for the server response
+                        progressHandle.Progress = (float)(totalBytes / (config.RawBinaryData.Length * (decimal)1.01f));
+
+                        bytesUploadedForThisSample += totalBytes;
+                        if(stopwatch.ElapsedMilliseconds >= 1000)
+                        {
+                            progressHandle.BytesPerSecond = bytesUploadedForThisSample;
+                            bytesUploadedForThisSample = 0;
+                            stopwatch.Restart();
+                        }
+                    }
+                }
+                stopwatch.Stop();
+            }
+        }
 #endregion
 
 #region Processing Response Body
@@ -572,11 +698,13 @@ namespace ModIO.Implementation.API
 
         static T Deserialize<T>(Stream content)
         {
-            var serializer = new JsonSerializer();
-            using (StreamReader sr = new StreamReader(content))
-            using(var jsonTextReader = new JsonTextReader(sr))
+            using(StreamReader sr = new StreamReader(content))
             {
-                return serializer.Deserialize<T>(jsonTextReader);
+                string json = sr.ReadToEnd();
+#if UNITY_EDITOR
+                Logger.Log(LogLevel.Verbose, $"Attempting to deserialize web response:\n\"{json}\"");
+#endif
+                return JsonConvert.DeserializeObject<T>(json);
             }
         }
 
@@ -643,7 +771,17 @@ namespace ModIO.Implementation.API
             {
                 log += "--No String Data\n";
             }
-            if(config.BinaryData.Count > 0)
+
+            if((config.BinaryData == null || config.BinaryData.Count > 0) && (config.RawBinaryData == null || config.RawBinaryData.Length > 0))
+            {
+                log += "--No Binary Data\n";
+            }
+            else
+            {
+                log += "Binary files\n";
+            }
+
+            if(config.BinaryData != null && config.BinaryData.Count > 0)
             {
                 log += "Binary files\n";
                 foreach(var binData in config.BinaryData)
@@ -651,10 +789,13 @@ namespace ModIO.Implementation.API
                     log += $"{binData.key}: {binData.data.Length} bytes\n";
                 }
             }
-            else
+
+            if(config.RawBinaryData != null && config.RawBinaryData.Length > 0)
             {
-                log += "--No Binary Data\n";
+                log += $"Raw Binary data: {config.RawBinaryData.Length}\n";
             }
+
+
             return log;
         }
 

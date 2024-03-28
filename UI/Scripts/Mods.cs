@@ -1,5 +1,6 @@
 ﻿using System;
 using ModIO;
+using ModIO.Implementation.API.Objects;
 using ModIOBrowser.Implementation;
 
 namespace ModIOBrowser
@@ -10,7 +11,7 @@ namespace ModIOBrowser
         static ModId lastRatedMod;
         static ModRating lastRatingType;
 
-        // globally cached and used to keep track of the current mod management operation progress       
+        // globally cached and used to keep track of the current mod management operation progress
         public static ProgressHandle CurrentModManagementOperationHandle;
 
         public static ModManagementEventDelegate OnModManagementEvent;
@@ -69,6 +70,7 @@ namespace ModIOBrowser
                     callback?.Invoke();
                 });
         }
+
 
         /// <summary>
         /// This works the same as SubscribeToModEvent() but it unsubscribes instead.
@@ -231,7 +233,7 @@ namespace ModIOBrowser
         /// </summary>
         /// <param name="handle">this can be null and will be handled appropriately</param>
         internal static void UpdateProgressState() => UpdateProgressStateInternal(CurrentModManagementOperationHandle);
-        
+
         private static void UpdateProgressStateInternal(ProgressHandle handle)
         {
             if(handle == null)

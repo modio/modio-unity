@@ -1,4 +1,4 @@
-﻿namespace ModIO
+﻿namespace ModIO.Implementation.API.Objects
 {
     [System.Serializable]
     internal struct ImageObject

@@ -49,6 +49,9 @@ namespace ModIO
         public List<byte[]> images;
 #endif
 
+        /// <summary>(Optional) If set, <see cref="images"/> are named according to this array.</summary>
+        public string[] imagesNames;
+
         /// <summary>
         /// Name of your mod
         /// </summary>
@@ -91,14 +94,14 @@ namespace ModIO
         /// for infinite subscribers.
         /// </summary>
         /// <remarks>Can be null</remarks>
-        public int? maxSubscribers;
+        public int? stock;
 
         /// <summary>
         /// This is a Bitwise enum so you can assign multiple values
         /// </summary>
-        /// <seealso cref="ContentWarnings"/>
+        /// <seealso cref="MaturityOptions"/>
         /// <remarks>Can be null</remarks>
-        public ContentWarnings? contentWarning;
+        public MaturityOptions? maturityOptions;
 
         /// <summary>
         /// Your own custom metadata that can be uploaded with the mod profile. (This is for the
@@ -111,7 +114,7 @@ namespace ModIO
 
         /// <summary>
         /// The tags this mod profile has. Only tags that are supported by the parent game can be
-        /// applied. (Invalid tags will be ignored)
+        /// applied. An empty array will clear all tags, use <c>null</c> for no change. (Invalid tags will be ignored)
         /// </summary>
         /// <remarks>Can be null</remarks>
         public string[] tags;
@@ -125,6 +128,26 @@ namespace ModIO
         /// <remarks>Can be null</remarks>
         public CommunityOptions? communityOptions = CommunityOptions.AllowCommenting;
 
+        /// <summary>
+        /// The price of the mod
+        ///
+        /// NOTE: The value of this field will be ignored if the parent game's queue is enabled
+        /// (see CurationOption in Game Object)
+        /// </summary>
+        /// <remarks>Can be null</remarks>
+        public int? price;
+
+        /// <summary>
+        /// Monetization options enabled by the mod creator.
+        /// You must set the team before setting monetization to live.
+        /// In order for a marketplace mod to go live both <see cref="MonetizationOption.Enabled"/> and <see cref="MonetizationOption.Live"/> need to be set.
+        ///
+        /// NOTE: The value of this field will be ignored if the parent game's queue is enabled
+        /// (see CurationOption in Game Object)
+        /// </summary>
+        /// <remarks>Can be null</remarks>
+        public MonetizationOption? monetizationOptions;
+
         internal byte[] GetLogo()
         {
 #if UNITY_2019_4_OR_NEWER
@@ -135,7 +158,7 @@ namespace ModIO
                 return logo;
 #endif
         }
-        
+
         internal List<byte[]> GetGalleryImages()
         {
 #if UNITY_2019_4_OR_NEWER

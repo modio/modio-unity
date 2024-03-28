@@ -14,27 +14,24 @@ namespace ModIO.Implementation
     internal class CompressOperationDirectory : CompressOperationBase
     {
         //theres a card to fix this
-        
-        string directory;
+
+        readonly string directory;
 
         public CompressOperationDirectory(string directory, ProgressHandle progressHandle = null)
             : base(progressHandle)
         {
-            this.directory = directory;
+            this.directory = Path.GetFullPath(directory) + Path.DirectorySeparatorChar;
         }
 
-
-        public override async Task<ResultAnd<MemoryStream>> Compress()
+        public override async Task<Result> Compress(Stream stream)
         {
             Logger.Log(LogLevel.Verbose, $"COMPRESS STARTED [{directory}]");
-            
-            ResultAnd<MemoryStream> resultAnd = new ResultAnd<MemoryStream>();
-            resultAnd.value = new MemoryStream();
 
-            using(ZipOutputStream zipStream = new ZipOutputStream(resultAnd.value))
+            Result result = new Result();
+
+            using(ZipOutputStream zipStream = new ZipOutputStream(stream))
             {
                 zipStream.SetLevel(3);
-                int folderOffset = directory.TrimEnd('/', '\\').Length;
 
                 //loop this across the directory, and set up the filestream etc
                 var directories = DataStorage.IterateFilesInDirectory(directory);
@@ -45,7 +42,7 @@ namespace ModIO.Implementation
                     {
                         using(dir.value)
                         {
-                            string entryName = GetEntryName(folderOffset, dir);
+                            string entryName = Path.GetFullPath(dir.value.FilePath).Substring(directory.Length);
                             await CompressStream(entryName, dir.value, zipStream);
                         }
                     }
@@ -56,37 +53,23 @@ namespace ModIO.Implementation
                                           : $"Failed to compress files at directory: "
                                                 + $"{directory}\nResult[{dir.result.code}])");
 
-                        return Abort(resultAnd, directory);
+                        return Abort(result, directory);
                     }
                 }
 
                 if(cancel || ModIOUnityImplementation.shuttingDown)
                 {
-                    return Abort(resultAnd, directory);
+                    return Abort(result, directory);
                 }
 
-                resultAnd.result = ResultBuilder.Success;
-                zipStream.IsStreamOwner = false; 
+                result = ResultBuilder.Success;
+                zipStream.IsStreamOwner = false;
             }
 
-            Logger.Log(LogLevel.Verbose, $"COMPRESSED [{resultAnd.result.code}] {directory}");
-            resultAnd.result = ResultBuilder.Success;
+            Logger.Log(LogLevel.Verbose, $"COMPRESSED [{result.code}] {directory}");
+            result = ResultBuilder.Success;
 
-            return resultAnd;
-        }
-
-
-        static string GetEntryName(int folderOffset, ResultAnd<ModIOFileStream> dir)
-        {
-            // Make the name in zip based on the folder
-            // eg,
-            // Library/Application
-            // Support/DefaultCompany/Shooter/mods/BobsMod/items/entryName
-
-            // should become:
-
-            // BobsMod/items/entryName
-            return dir.value.FilePath.Substring(folderOffset).Trim('/','\\');
+            return result;
         }
     }
 }

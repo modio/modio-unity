@@ -19,7 +19,6 @@ namespace ModIOBrowser.Implementation
         [SerializeField] GameObject loadingIcon;
         [SerializeField] GameObject failedToLoadIcon;
         [SerializeField] GameObject failedToLoadMod;
-        public ModProfile profile;
 
         public static DownloadQueueListItem currentDownloadQueueListItem;
 
@@ -28,7 +27,7 @@ namespace ModIOBrowser.Implementation
         {
             Details.Instance.Open(profile, delegate { DownloadQueue.Instance.OpenDownloadQueuePanel(); });
         }
-        
+
 #region Overrides
         public override void SetViewportRestraint(RectTransform content, RectTransform viewport)
         {
@@ -46,8 +45,8 @@ namespace ModIOBrowser.Implementation
             gameObject.SetActive(true);
             failedToLoadIcon.SetActive(false);
             loadingIcon.SetActive(true);
-            ModIOUnity.DownloadTexture(mod.modProfile.logoImage_320x180, SetIcon);
-            
+            ModIOUnity.DownloadTexture(mod.modProfile.logoImage320x180, SetIcon);
+
             LayoutRebuilder.ForceRebuildLayoutImmediate(modName.transform.parent as RectTransform);
         }
 #endregion // Overrides
@@ -68,7 +67,7 @@ namespace ModIOBrowser.Implementation
             }
             loadingIcon.SetActive(false);
         }
-        
+
         public void Unsubscribe()
         {
             Mods.UnsubscribeFromEvent(profile);

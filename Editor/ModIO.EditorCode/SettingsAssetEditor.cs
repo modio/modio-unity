@@ -1,4 +1,5 @@
 ﻿#if UNITY_EDITOR
+using System.Text.RegularExpressions;
 using ModIO.Implementation;
 using UnityEditor;
 using UnityEngine;
@@ -39,64 +40,91 @@ public class SettingsAssetEditor : Editor
         labelStyle.normal.textColor = Color.white;
 
 		EditorGUILayout.LabelField("Server Settings", labelStyle);
-		if(myTarget.serverSettings.gameId == 0 || string.IsNullOrWhiteSpace(myTarget.serverSettings.gameKey))
-		{
-			EditorGUILayout.HelpBox("Once you've created a game profile on mod.io (or test.mod.io) "
-			                        + "you can input the game ID and Key below in order for the plugin "
-			                        + "to retrieve mods and information associated to your game.",
-									MessageType.Info);
-		}
-
-        EditorGUILayout.PropertyField(serverURL, new GUIContent("Server URL"));
-        EditorGUILayout.PropertyField(gameId,new GUIContent("Game ID"));
-        gameKey.stringValue = EditorGUILayout.PasswordField("API Key", gameKey.stringValue);
-        EditorGUILayout.PropertyField(languageCode, new GUIContent("Language code"));
-
 
         EditorGUILayout.Space();
-		EditorGUILayout.Space();
 
-		EditorGUILayout.BeginHorizontal();
-		if(GUILayout.Button("Insert URL for Test API"))
-		{
-            serverURL.stringValue = "https://api.test.mod.io/v1";
+        EditorGUILayout.PropertyField(gameId,new GUIContent("Game ID"));
+        gameKey.stringValue = EditorGUILayout.PasswordField("API Key", gameKey.stringValue);
 
-            //remove focus from other fields
-            GUI.FocusControl(null);
+        if(myTarget.serverSettings.gameId == 0 || string.IsNullOrWhiteSpace(myTarget.serverSettings.gameKey))
+        {
+            EditorGUILayout.Space();
+
+            EditorGUILayout.HelpBox(
+                "Once you've created a game profile on mod.io (or test.mod.io), enter your game ID and API key above in order for the plugin to retrieve mods and information associated with your game.",
+                MessageType.Info
+            );
+
+            EditorGUILayout.Space();
+
+            EditorGUILayout.BeginHorizontal();
+
+            EditorGUILayout.PrefixLabel("Locate ID and API Key");
+
+            if (GUILayout.Button("test.mod.io"))
+            {
+                SetURLTest();
+                Application.OpenURL("https://test.mod.io/apikey");
+            }
+
+            if (GUILayout.Button("mod.io"))
+            {
+                SetURLProduction();
+                Application.OpenURL("https://mod.io/apikey");
+            }
+
+            EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.Space();
+        } else {
+            EditorGUILayout.Space();
+
+            EditorGUILayout.PropertyField(serverURL, new GUIContent("Server URL"));
+            EditorGUILayout.PropertyField(languageCode, new GUIContent("Language code"));
+
+            EditorGUILayout.Space();
+
+            EditorGUILayout.BeginHorizontal();
+
+            if (GUILayout.Button("Insert URL for Test API"))
+                SetURLTest();
+
+            if (GUILayout.Button("Insert URL for Production API"))
+                SetURLProduction();
+
+            EditorGUILayout.EndHorizontal();
         }
-		if(GUILayout.Button("Insert URL for Production API"))
-		{
-            serverURL.stringValue = $"https://g-{gameId.intValue}.modapi.io/v1";
-            //remove focus from other fields
-            GUI.FocusControl(null);
-        }
-		EditorGUILayout.EndHorizontal();
 
-		if(GUILayout.Button("Locate ID and API Key"))
-		{
-			if(myTarget.serverSettings.serverURL == "https://api.test.mod.io/v1")
-			{
-				Application.OpenURL("https://test.mod.io/apikey");
-			}
-			else
-			{
-				Application.OpenURL("https://mod.io/apikey");
-			}
-		}
+        // If the gameId has been changed, update the url
+		if (gameId.intValue != previousGameId)
+        {
+            if (IsURLProduction(serverURL.stringValue))
+                serverURL.stringValue = GetURLProduction(gameId.intValue);
 
-		// If the gameId has been changed, update the url
-		if(gameId.intValue != previousGameId)
-		{
-			if(myTarget.serverSettings.serverURL != "https://api.test.mod.io/v1"
-			   && myTarget.serverSettings.serverURL != "https://api-staging.moddemo.io/v1")
-			{
-				serverURL.stringValue = $"https://g-{gameId.intValue}.modapi.io/v1";
-			}
 			previousGameId = gameId.intValue;
 		}
 
         //Save the new values
         serializedObject.ApplyModifiedProperties();
+
+        return;
+
+        void SetURLProduction()
+        {
+            serverURL.stringValue = GetURLProduction(gameId.intValue);
+            GUI.FocusControl(null);
+        }
+
+        void SetURLTest()
+        {
+            serverURL.stringValue = GetURLTest(gameId.intValue);
+            GUI.FocusControl(null);
+        }
     }
+
+    internal static string GetURLProduction(int gameId) => $"https://g-{gameId}.modapi.io/v1";
+    static string GetURLTest(int gameId) => "https://api.test.mod.io/v1";
+
+    static bool IsURLProduction(string url) => Regex.IsMatch(url, @"https:\/\/g-\d*.modapi.io\/v1");
 }
 #endif

@@ -43,6 +43,30 @@ public class ExampleInputCapture : MonoBehaviour
     };
     public string verticalControllerInput = "Vertical";
 
+    [ContextMenu("Set to controller default")]
+    public void SetToControllerDefault()
+    {
+        Cancel = KeyCode.JoystickButton1;
+        Alternate = KeyCode.JoystickButton2;
+        Options = KeyCode.JoystickButton3;
+        TabLeft = KeyCode.JoystickButton4;
+        TabRight = KeyCode.JoystickButton5;
+        Search = KeyCode.JoystickButton9;
+        Menu = KeyCode.JoystickButton7;
+    }
+
+    [ContextMenu("Set to keyboard default")]
+    public void SetToKeyboardDefault()
+    {
+        Cancel = KeyCode.Escape;
+        Alternate = KeyCode.Alpha1;
+        Options = KeyCode.Alpha2;
+        TabLeft = KeyCode.LeftCurlyBracket;
+        TabRight = KeyCode.RightCurlyBracket;
+        Search = KeyCode.Alpha3;
+        Menu = KeyCode.Alpha4;
+    }
+    
     void Update()
     {
         if(!Browser.IsOpen) return;

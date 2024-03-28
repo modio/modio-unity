@@ -6,7 +6,7 @@
     [System.Serializable]
     public struct ModStats
     {
-        public ModId modId;
+        public long modId;
         public long popularityRankPosition;
         public long popularityRankTotalMods;
         public long downloadsToday;
@@ -18,5 +18,6 @@
         public long ratingsPercentagePositive;
         public float ratingsWeightedAggregate;
         public string ratingsDisplayText;
+        public long dateExpires;
     }
 }

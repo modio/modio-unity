@@ -33,8 +33,6 @@ namespace ModIOBrowser.Implementation
 
         public override void Setup(string tagName, string tagCategory)
         {
-            base.Setup();
-
             this.tagName = tagName;
             this.tagCategory = tagCategory;
             
@@ -48,6 +46,39 @@ namespace ModIOBrowser.Implementation
 
             toggle.onValueChanged.AddListener(Toggled);
 
+            if(jumpToComponent != null)
+            {
+                Destroy(jumpToComponent);
+            }
+        }
+
+        // This method is used for setting up the Free / Premium filter options (not connected to actual tags)
+        public override void Setup(RevenueType revenueType)
+        {
+            title.text = revenueType == RevenueType.Free 
+                ? TranslationManager.Instance.Get("Free") 
+                : TranslationManager.Instance.Get("Premium");
+            
+            transform.SetAsLastSibling();
+            gameObject.SetActive(true);
+
+            toggle.onValueChanged.RemoveAllListeners();
+
+            SearchPanel.searchFilterFree = true;
+            SearchPanel.searchFilterPremium = true;
+            toggle.isOn = true;
+
+            toggle.onValueChanged.AddListener(x =>
+            {
+                if (revenueType == RevenueType.Free)
+                    SearchPanel.searchFilterFree = x;
+                
+                if (revenueType == RevenueType.Paid)
+                    SearchPanel.searchFilterPremium = x;
+            });
+
+            // This might exist if we recycled this object.
+            // We destroy it because the other Setup() method gets invoked after this, which will set it up
             if(jumpToComponent != null)
             {
                 Destroy(jumpToComponent);

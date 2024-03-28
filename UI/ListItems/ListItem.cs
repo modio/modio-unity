@@ -30,6 +30,8 @@ namespace ModIOBrowser.Implementation
 
 		public ColorScheme scheme;
 
+        [HideInInspector] public ModProfile profile;
+
 		protected virtual void Awake()
 		{
 			LastCreatedListItem = this;
@@ -92,16 +94,18 @@ namespace ModIOBrowser.Implementation
 		public virtual void PlaceholderSetup() { isPlaceholder = true; }
 		public virtual void Setup() { isPlaceholder = false; }
 		public virtual void Setup(string title) { isPlaceholder = false; }
+		public virtual void Setup(RevenueType revenueType) { isPlaceholder = false; }
 		public virtual void Setup(string tagName, string tagCategory) { isPlaceholder = false; }
-		public virtual void Setup(ModProfile profile) { isPlaceholder = false; }
+		public virtual void Setup(ModProfile modProfile) { isPlaceholder = false; }
 		public virtual void Setup(SubscribedMod mod) { isPlaceholder = false; }
 		public virtual void Setup(InstalledMod profile) { isPlaceholder = false; }
 		public virtual void Setup(CollectionProfile profile) { isPlaceholder = false; }
-		public virtual void Setup(ModProfile profile, bool subscriptionStatus, string progressStatus) { isPlaceholder = false; }
+		public virtual void Setup(ModProfile modProfile, bool subscriptionStatus, string progressStatus) { isPlaceholder = false; }
 		public virtual void Setup(Action onClick) { isPlaceholder = false; }
 		public virtual void Setup(string title, Action onClick) { isPlaceholder = false; }
+        public virtual void Refresh() { this.Setup(profile); }
 
-		public void RedrawRectTransform()
+        public void RedrawRectTransform()
 		{
 			LayoutRebuilder.ForceRebuildLayoutImmediate(transform as RectTransform);
 		}

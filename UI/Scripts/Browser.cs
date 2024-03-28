@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Reflection;
-using JetBrains.Annotations;
+using System.Threading.Tasks;
 using ModIO;
+using ModIO.Implementation;
 using ModIO.Util;
 using ModIOBrowser.Implementation;
 using UnityEngine;
 using UnityEngine.UI;
+using Result = ModIO.Result;
 
 namespace ModIOBrowser
 {
@@ -23,9 +25,10 @@ namespace ModIOBrowser
         [SerializeField] bool autoInitialize = true;
         internal static bool allowEmailAuthentication = true;
         internal static bool allowExternalAuthentication = true;
-        
+
         [SerializeField] public UiSettings uiConfig;
         [SerializeField] public Home homePanel;
+        [SerializeField] private SearchFilter[] browserRowSearchFilters;
         public SingletonAwakener SingletonAwakener;
 
         [Header("Main")]
@@ -77,7 +80,7 @@ namespace ModIOBrowser
         public static bool IsOpen = false;
 
         public SearchFilter FeaturedSearchFilter { get; private set; }
-        public SearchFilter[] BrowserRowSearchFilters { get; private set; }
+        public SearchFilter[] BrowserRowSearchFilters => browserRowSearchFilters;
 
         // Use Awake() to setup the Singleton for Browser.cs and initialize the plugin
         protected override void Awake()
@@ -289,6 +292,7 @@ namespace ModIOBrowser
         /// and the user's email address and the authentication flow for PlayStation will be available.
         /// </summary>
         /// <param name="getPlayStationAuthCodeDelegate">Delegate to get the PlayStation auth code</param>
+        /// <param name="environment"></param>
         /// <param name="userEmail">(Optional) provide the users email address</param>
         public static void SetupPlayStationAuthenticationOption(RetrieveAuthenticationCodeDelegate getPlayStationAuthCodeDelegate, PlayStationEnvironment environment, string userEmail = null)
         {
@@ -307,7 +311,7 @@ namespace ModIOBrowser
 
         public void SetBrowserRowSearchFilters(SearchFilter[] searchFilters)
         {
-            this.BrowserRowSearchFilters = searchFilters;
+            this.browserRowSearchFilters = searchFilters;
         }
 
         private void SetModRowFilterDefaults()
@@ -315,50 +319,62 @@ namespace ModIOBrowser
             if(this.FeaturedSearchFilter == null)
             {
                 this.FeaturedSearchFilter = new SearchFilter();
+                FeaturedSearchFilter.RevenueType = RevenueType.Free;
                 this.FeaturedSearchFilter.SetPageIndex(0);
                 this.FeaturedSearchFilter.SetPageSize(10);
-                this.FeaturedSearchFilter.SortBy(SortModsBy.Downloads);
+                this.FeaturedSearchFilter.SetSortBy(SortModsBy.Downloads);
                 // Note: this is a mistake on the backend api. Ascending is swapped with descending for this field
                 this.FeaturedSearchFilter.SetToAscending(true);
             }
 
-            if(BrowserRowSearchFilters == null)
+            if(browserRowSearchFilters == null || browserRowSearchFilters.Length == 0)
             {
-                BrowserRowSearchFilters = new SearchFilter[4];
-                // Edit filter for next row
+                browserRowSearchFilters = new SearchFilter[4];
+
                 var filter = new SearchFilter();
-                filter.SetPageIndex(0);
-                filter.SetPageSize(20);
-                filter.SortBy(SortModsBy.DateSubmitted);
-                filter.SetToAscending(false);
-                BrowserRowSearchFilters[0] = filter;
-
-                filter = new SearchFilter();
                 // Edit filter for next row
                 filter = new SearchFilter();
                 filter.SetPageIndex(0);
                 filter.SetPageSize(20);
-                filter.SortBy(SortModsBy.Subscribers);
+                filter.SetSortBy(SortModsBy.Rating);
                 filter.SetToAscending(true);
-                BrowserRowSearchFilters[1] = filter;
+                browserRowSearchFilters[0] = filter;
 
                 filter = new SearchFilter();
                 // Edit filter for next row
                 filter = new SearchFilter();
                 filter.SetPageIndex(0);
                 filter.SetPageSize(20);
-                filter.SortBy(SortModsBy.Popular);
-                filter.SetToAscending(false);
-                BrowserRowSearchFilters[2] = filter;
-
-                filter = new SearchFilter();
-                // Edit filter for next row
-                filter = new SearchFilter();
-                filter.SetPageIndex(0);
-                filter.SetPageSize(20);
-                filter.SortBy(SortModsBy.Rating);
+                filter.SetSortBy(SortModsBy.Subscribers);
                 filter.SetToAscending(true);
-                BrowserRowSearchFilters[3] = filter;
+                browserRowSearchFilters[1] = filter;
+
+                filter = new SearchFilter();
+                // Edit filter for next row
+                filter = new SearchFilter();
+                filter.SetPageIndex(0);
+                filter.SetPageSize(20);
+                filter.SetSortBy(SortModsBy.Popular);
+                filter.SetToAscending(false);
+                browserRowSearchFilters[2] = filter;
+
+                // Edit filter for next row
+                filter = new SearchFilter();
+                filter.SetPageIndex(0);
+                filter.SetPageSize(20);
+                filter.SetSortBy(SortModsBy.DateSubmitted);
+                filter.SetToAscending(false);
+                browserRowSearchFilters[3] = filter;
+            }
+            else
+            {
+                foreach(var filter in this.browserRowSearchFilters)
+                {
+                    if(filter.RevenueType == RevenueType.FreeAndPaid || filter.RevenueType == RevenueType.Paid)
+                        filter.RevenueType = RevenueType.Free;
+                    filter.SetPageIndex(0);
+                    filter.SetPageSize(20);
+                }
             }
         }
 
@@ -384,12 +400,7 @@ namespace ModIOBrowser
             else
             {
                 Close();
-                Debug.LogWarning("[mod.io Browser] Failed to Initialize ModIO Plugin. "
-                                 + "Make sure your config file is setup, located in "
-                                 + "Assets/Resources/mod.io\nAlso check you are using the correct "
-                                 + "server address ('https://api.mod.io/v1' for production or "
-                                 + "'https://api.test.mod.io/v1' for the test server) and that "
-                                 + "you've supplied the API Key and game Id for your game.");
+                Debug.LogWarning("[mod.io Browser] Failed to Initialize ModIO Plugin. Make sure your config file (Tools -> mod.io -> Edit Settings) contains the correct server address (test or production) and that you've supplied the game id and API Key for your game.");
             }
         }
 
@@ -416,7 +427,6 @@ namespace ModIOBrowser
             }
 
             Collection.Instance.CacheLocalSubscribedModStatuses();
-            Implementation.Avatar.Instance.SetupUser();
 
             // open the browser panel (This will show loading icons etc, but wont load yet)
             Home.Instance.Open();
@@ -427,11 +437,20 @@ namespace ModIOBrowser
             {
                 Authentication.Instance.IsAuthenticated = true;
                 ModIOUnity.FetchUpdates(delegate { });
+
+                // We may require the new access token before getting mods
+                await Authentication.GetNewAccessToken();
             }
             else
             {
                 Authentication.Instance.IsAuthenticated = false;
+
+                // Attempt to open an authentication option if one exists
+                AuthenticationPanels.Instance.SkippedIntoTheOnlyExistingAuthenticationOption();
             }
+
+            Authentication.Instance.currentAuthenticationPortal = Settings.build.userPortal;
+            Implementation.Avatar.Instance.SetupUser();
 
             // refresh the home panel now that we know if our access token will work
             Home.Instance.RefreshHomePanel();
@@ -445,7 +464,6 @@ namespace ModIOBrowser
         #endregion
 
 #region Editor helpers
-        [ExposeMethodInEditor]
         public void CheckForMissingReferencesInScene()
         {
             Debug.LogWarning("This function may give false positives, mostly in the case of text input fields and dropdowns");

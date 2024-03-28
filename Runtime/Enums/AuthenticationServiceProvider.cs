@@ -11,7 +11,9 @@
         Switch,
         Discord,
         Google,
-        PlayStation
+        PlayStation,
+        OpenId,
+        None,
     }
 
     public static class AuthenticationServiceProviderExtensions
@@ -51,6 +53,12 @@
                     break;
                 case AuthenticationServiceProvider.PlayStation:
                     providerName = "psnauth";
+                    break;
+                case AuthenticationServiceProvider.OpenId:
+                    providerName = "openidauth";
+                    break;
+                case AuthenticationServiceProvider.None:
+                    providerName = "none";
                     break;
             }
 
@@ -92,6 +100,9 @@
                     break;
                 case AuthenticationServiceProvider.PlayStation:
                     tokenFieldName = "auth_code";
+                    break;
+                case AuthenticationServiceProvider.OpenId:
+                    tokenFieldName = "id_token";
                     break;
             }
 

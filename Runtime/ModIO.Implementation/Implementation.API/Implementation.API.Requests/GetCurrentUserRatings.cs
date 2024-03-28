@@ -5,7 +5,7 @@ namespace ModIO.Implementation.API.Requests
     internal static class GetCurrentUserRatings
     {
         [System.Serializable]
-        
+
         internal class ResponseSchema : PaginatedResponse<RatingObject> { }
 
         public static WebRequestConfig Request()
@@ -15,8 +15,6 @@ namespace ModIO.Implementation.API.Requests
                 Url = $"{Settings.server.serverURL}{@"/me/ratings"}?",
                 RequestMethodType = "GET"
             };
-
-            
 
             return request;
         }

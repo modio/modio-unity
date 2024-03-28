@@ -14,6 +14,7 @@ namespace ModIO
     public class BuildSettings
     {
         public BuildSettings() { }
+
         public BuildSettings(BuildSettings buildSettings)
         {
             this.logLevel = buildSettings.logLevel;
@@ -23,7 +24,7 @@ namespace ModIO
         }
 
         /// <summary>Level to log at.</summary>
-        public LogLevel logLevel;
+        [HideInInspector] public LogLevel logLevel;
 
         /// <summary>Portal the game will be launched through.</summary>
         public UserPortal userPortal = UserPortal.None;

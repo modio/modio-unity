@@ -292,7 +292,6 @@ namespace ModIOBrowser
         /// <summary>
         /// For testing purposes, sometimes you need to swap languages on the fly inside the editor.
         /// </summary>
-        [ExposeMethodInEditor]
         public void TestChangeLanguageToSwedishRuntimeOnly()
         {
             Language = TranslatedLanguages.Swedish;
@@ -302,14 +301,12 @@ namespace ModIOBrowser
         /// <summary>
         /// For testing purposes, sometimes you need to swap languages on the fly inside the editor.
         /// </summary>
-        [ExposeMethodInEditor]
         public void TestChangeLanguageToEnglishRuntimeOnly()
         {
             Language = TranslatedLanguages.English;
             ForceChangeLanguage(Language);
         }
 
-        [ExposeMethodInEditor]
         public void AttemptToTranslateInput()
         {
             Debug.Log("Attempting to translate input");
@@ -328,8 +325,7 @@ namespace ModIOBrowser
 
             public override string ToString() => $"[{item.name}] {item.text}\n{item.transform.FullPath()}";
         }
-
-        [ExposeMethodInEditor]
+        
         public void TrackDownUntranslatedStringsRuntime()
         {
             untranslatedStringsRuntime = Utility.FindEverythingInScene<TextMeshProUGUI>().Select(x =>

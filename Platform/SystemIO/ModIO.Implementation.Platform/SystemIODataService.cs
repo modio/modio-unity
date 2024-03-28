@@ -2,9 +2,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading.Tasks;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
+using System.IO;
 
 #pragma warning disable 1998 // These async functions don't use await!
 
@@ -252,28 +253,32 @@ namespace ModIO.Implementation.Platform
             return SystemIOWrapper.TryCreateParentDirectory(path, out Result _);
         }
 
+        //TODO: Write native code to properly check for disk space for ILLCPP builds
         public async Task<bool> IsThereEnoughDiskSpaceFor(long bytes)
         {
-            try
-            {
-#if UNITY_ANDROID
-                //DriveInfo is not supported on iLcpp
-                AndroidJNI.AttachCurrentThread();
-                var statFs = new AndroidJavaObject("android.os.StatFs", persistentDataPath);
-                var freeBytes = statFs.Call<long>("getFreeBytes");
-                return bytes < freeBytes;
+#if !ENABLE_IL2CPP
+    #if UNITY_ANDROID
+            AndroidJNI.AttachCurrentThread();
+            var statFs = new AndroidJavaObject("android.os.StatFs", PersistentDataRootDirectory);
+            var freeBytes = statFs.Call<long>("getFreeBytes");
+            return bytes < freeBytes;
+    #elif UNITY_IOS
+            return true;
+    #elif UNITY_STANDALONE_OSX
+            return true;
+    #elif UNITY_STANDALONE_WIN
+            return true;
+    #elif UNITY_WSA
+            return true;
+    #else
+            return true;
+    #endif
 #else
-                FileInfo f = new FileInfo(PersistentDataRootDirectory);
-                string drive = Path.GetPathRoot(f.FullName);
-                var d = new DriveInfo(drive);
-                return bytes < d.AvailableFreeSpace;
+            FileInfo f = new FileInfo(PersistentDataRootDirectory);
+            string drive = Path.GetPathRoot(f.FullName);
+            DriveInfo d = new DriveInfo(drive);
+            return bytes < d.AvailableFreeSpace;
 #endif
-            }
-            catch(Exception e)
-            {
-                Console.WriteLine(e);
-                throw;
-            }
         }
 
 #endregion // Operations

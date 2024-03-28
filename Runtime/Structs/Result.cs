@@ -83,6 +83,8 @@ namespace ModIO
             return this.code == ResultCode.IO_InsufficientStorage;
         }
 
-        
+        public bool IsRateLimited() =>
+            code == ResultCode.RESTAPI_RateLimitExceededGlobal
+            || code == ResultCode.RESTAPI_RateLimitExceededEndpoint;
     }
 }

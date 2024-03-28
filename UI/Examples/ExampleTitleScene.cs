@@ -10,6 +10,11 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
+#if UNITY_PS5 || UNITY_PS4
+using Sony.NP;
+using PSNSample;
+#endif
+
 namespace Plugins.mod.io.UI.Examples
 {
 
@@ -34,7 +39,7 @@ namespace Plugins.mod.io.UI.Examples
             while(!TranslationManager.SingletonIsInstantiated())
             {
                 yield return new WaitForSeconds(0.1f);
-            }            
+            }
 
             languageSelectionDropdown.gameObject.SetActive(true);
             languageSelectionDropdown.ClearOptions();

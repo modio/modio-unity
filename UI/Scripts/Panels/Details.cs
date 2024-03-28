@@ -131,17 +131,17 @@ namespace ModIOBrowser.Implementation
 
             int position = 0;
             galleryPosition = 0;
-            ModDetailsGalleryImages = new Sprite[profile.galleryImages_640x360.Length + 1];
+            ModDetailsGalleryImages = new Sprite[profile.galleryImages640x360.Length + 1];
             ModDetailsGalleryImagesFailedToLoad = new bool[ModDetailsGalleryImages.Length];
-            
+
             RefreshTags(profile);
 
             ListItem.HideListItems<GalleryImageButtonListItem>();
 
             List<DownloadReference> images = new List<DownloadReference>();
 
-            images.Add(profile.logoImage_640x360);
-            images.AddRange(profile.galleryImages_640x360);
+            images.Add(profile.logoImage640x360);
+            images.AddRange(profile.galleryImages640x360);
 
             ModDetailsGalleryNavBar.SetActive(images.Count > 1);
 
@@ -224,7 +224,7 @@ namespace ModIOBrowser.Implementation
         {
             ModDetailsTagsGroup.EmptyLayoutGroup();
             ListItem.HideListItems<ModDetailsTagListItem>();
-            
+
             // get the tag categories so we know which ones to hide or not
             if(SearchPanel.Instance.tags == null)
             {
@@ -236,7 +236,7 @@ namespace ModIOBrowser.Implementation
                 }
             }
             List<string> hiddenTags = SearchPanel.Instance.GetHiddenTags();
-            
+
             foreach(var tag in profile.tags)
             {
                 if(hiddenTags.Contains(tag))
@@ -253,18 +253,14 @@ namespace ModIOBrowser.Implementation
         {
             if(!Authentication.Instance.IsAuthenticated)
             {
-                Translation.Get(ModDetailsSubscribeButtonTextTranslation, "Log in to Subscribe", ModDetailsSubscribeButtonText);
                 Mods.SubscribeToEvent(currentModProfileBeingViewed, UpdateSubscribeButtonText);
             }
             else if(Collection.Instance.IsSubscribed(currentModProfileBeingViewed.id))
             {
-                // This isnt actually subscribed to 'yet' but we make the UI toggle straight away
-                Translation.Get(ModDetailsSubscribeButtonTextTranslation, "Subscribe", ModDetailsSubscribeButtonText);
                 Mods.UnsubscribeFromEvent(currentModProfileBeingViewed, UpdateSubscribeButtonText);
             }
             else
             {
-                Translation.Get(ModDetailsSubscribeButtonTextTranslation, "Unsubscribe", ModDetailsSubscribeButtonText);
                 Mods.SubscribeToEvent(currentModProfileBeingViewed, UpdateSubscribeButtonText);
             }
 
@@ -370,6 +366,10 @@ namespace ModIOBrowser.Implementation
             {
                 Translation.Get(ModDetailsSubscribeButtonTextTranslation, "Log in to Subscribe", ModDetailsSubscribeButtonText);
             }
+            else if(!Collection.Instance.IsPurchased(currentModProfileBeingViewed))
+            {
+                Translation.Get(ModDetailsSubscribeButtonTextTranslation, "Buy Now", ModDetailsSubscribeButtonText);
+            }
             else if(Collection.Instance.IsSubscribed(currentModProfileBeingViewed.id))
             {
                 Translation.Get(ModDetailsSubscribeButtonTextTranslation, "Unsubscribe", ModDetailsSubscribeButtonText);
@@ -433,7 +433,7 @@ namespace ModIOBrowser.Implementation
 
                 ModDetailsDownloadProgressRemaining.text = TranslationManager.Instance.Get("{seconds} remaining", $"{ Utility.GenerateHumanReadableTimeStringFromSeconds((int)timeRemainingInSeconds)}");
                 ModDetailsDownloadProgressSpeed.text = TranslationManager.Instance.Get("{BytesPerSecond)}/s", Utility.GenerateHumanReadableStringForBytes(handle.BytesPerSecond));
-                
+
                 if(Collection.Instance.GetSubscribedProfile(handle.modId, out ModProfile profile))
                 {
                     ModDetailsDownloadProgressCompleted.text = TranslationManager.Instance.Get("{A} of {B}",
@@ -447,7 +447,7 @@ namespace ModIOBrowser.Implementation
 
                 detailsProgressTimePassed_onLastTextUpdate = detailsProgressTimePassed;
             }
-            detailsProgressTimePassed += Time.deltaTime;
+            detailsProgressTimePassed += Time.unscaledDeltaTime;
         }
 
         public void GalleryImageTransition(bool showNext)
@@ -540,7 +540,7 @@ namespace ModIOBrowser.Implementation
                 current.color = colOut;
 
                 yield return null;
-                timePassed += Time.deltaTime;
+                timePassed += Time.unscaledDeltaTime;
             }
         }
 

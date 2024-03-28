@@ -1,5 +1,4 @@
-﻿
-using ModIO.Implementation.API.Objects;
+﻿using ModIO.Implementation.API.Objects;
 
 namespace ModIO.Implementation
 {
@@ -9,5 +8,6 @@ namespace ModIO.Implementation
         public ModfileObject currentModfile;
         public ModObject modObject;
         public bool uninstallIfNotSubscribedToCurrentSession;
+        public int priority = 100;
     }
 }

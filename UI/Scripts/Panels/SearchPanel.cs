@@ -22,6 +22,8 @@ namespace ModIOBrowser.Implementation
         [SerializeField] public Image SearchPanelRightBumperIcon;
 
         public static HashSet<Tag> searchFilterTags = new HashSet<Tag>();
+        public static bool searchFilterFree = true;
+        public static bool searchFilterPremium = true;
         internal TagCategory[] tags;
         bool gettingTags;
 
@@ -151,7 +153,7 @@ namespace ModIOBrowser.Implementation
                 {
                     continue;
                 }
-                
+
                 ListItem categoryListItem = ListItem.GetListItem<TagCategoryListItem>(SearchPanelTagCategoryPrefab, SearchPanelTagParent, SharedUi.colorScheme);
                 categoryListItem.Setup(category.name);
 

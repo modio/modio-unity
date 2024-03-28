@@ -1,7 +1,7 @@
 ﻿namespace ModIO.Implementation.API.Objects
 {
     [System.Serializable]
-    internal struct ModfileObject 
+    internal struct ModfileObject
     {
         public long id;
         public long mod_id;

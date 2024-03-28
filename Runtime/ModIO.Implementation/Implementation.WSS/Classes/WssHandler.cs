@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using ModIO.Implementation.Wss.Messages;
 using ModIO.Implementation.Wss.Messages.Objects;
@@ -13,11 +14,8 @@ namespace ModIO.Implementation.Wss
     /// </summary>
     internal static class WssHandler
     {
-        //$"wss://g-{Settings.server.gameId}.ws.modapi.io/";            <---- production url
-        //$"wss://g-{Settings.server.gameId}.ws.moddemo.io/staging";    <---- staging url
-        //"ws://localhost:8080/";                                       <---- localhost testing
-        static string GatewayUrl => $"wss://g-{Settings.server.gameId}.ws.modapi.io/";
-        
+        static string GatewayUrl => $"wss://g-{Settings.server.gameId}.ws.{Regex.Match(Settings.server.serverURL, "https://[^.]+.(?<domain>.+).io").Groups["domain"]}.io/";
+
         // TODO set this up in a partial class and duck type it based on platform
         static ISocketConnection Socket = new SocketConnection();
 

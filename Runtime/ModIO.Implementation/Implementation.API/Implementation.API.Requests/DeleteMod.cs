@@ -11,9 +11,7 @@
                 RequestMethodType = "DELETE",
             };
 
-            
-
-            return request;            
+            return request;
         }
     }
 }

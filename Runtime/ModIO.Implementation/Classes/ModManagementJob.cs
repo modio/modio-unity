@@ -9,7 +9,7 @@ namespace ModIO.Implementation
         /// </summary>
         public ProgressHandle progressHandle;
 
-        public ModCollectionEntry mod;
+        public ModCollectionEntry modEntry;
         public ModManagementOperationType type;
 
         public RequestHandle<Result> downloadWebRequest;

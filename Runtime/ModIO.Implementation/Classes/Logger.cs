@@ -10,7 +10,7 @@ namespace ModIO.Implementation
     /// <summary>
     /// This class is responsible for outputting all of the logs that pertain to the ModIO Plugin
     /// </summary>
-    internal static class Logger
+    public static class Logger
     {
         internal const string ModioLogPrefix = "[mod.io]";
 
@@ -33,7 +33,7 @@ namespace ModIO.Implementation
             {
                 return;
             }
-            
+
             switch(logLevel)
             {
 #if UNITY_2019_4_OR_NEWER
@@ -68,11 +68,11 @@ namespace ModIO.Implementation
             {
                 return (int)level > (int)Settings.build.logLevel;
             }
-            
+
             return true;
         }
 
-        internal static void Log(LogLevel logLevel, string logMessage)
+        public static void Log(LogLevel logLevel, string logMessage)
         {
             logMessage = $"{ModioLogPrefix} {logMessage}";
             LogDelegate?.Invoke(logLevel, logMessage);

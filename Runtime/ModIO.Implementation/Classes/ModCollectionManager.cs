@@ -5,6 +5,10 @@ using ModIO.Implementation.API;
 using ModIO.Implementation.API.Objects;
 using ModIO.Implementation.API.Requests;
 
+#if UNITY_GAMECORE
+using Unity.GameCore;
+#endif
+
 namespace ModIO.Implementation
 {
     /// <summary>
@@ -17,17 +21,8 @@ namespace ModIO.Implementation
     {
         public static ModCollectionRegistry Registry;
 
-#region Syncing User Fields
-        static bool hasSyncedBefore;
-        static long lastUserEventId;
-        static long lastModEventId;
-#endregion // Syncing User Fields
-
         public static async Task<Result> LoadRegistryAsync()
         {
-            // Reset syncing in case of re-init
-            hasSyncedBefore = false;
-
             ResultAnd<ModCollectionRegistry> response = await DataStorage.LoadSystemRegistryAsync();
 
             if(response.result.Succeeded())
@@ -48,9 +43,6 @@ namespace ModIO.Implementation
 
         public static Result LoadRegistry()
         {
-            // Reset syncing in case of re-init
-            hasSyncedBefore = false;
-
             ResultAnd<ModCollectionRegistry> response = DataStorage.LoadSystemRegistry();
 
             if(response.result.Succeeded())
@@ -92,9 +84,6 @@ namespace ModIO.Implementation
 
         public static void ClearRegistry()
         {
-            lastUserEventId = 0;
-            lastModEventId = 0;
-            hasSyncedBefore = false;
             Registry?.mods?.Clear();
             Registry?.existingUsers?.Clear();
             Registry = null;
@@ -136,7 +125,6 @@ namespace ModIO.Implementation
         /// Does a fetch for the user's subscriptions and syncs them with the registry.
         /// Also checks for updates for modfiles.
         /// </summary>
-        /// <param name="user">the modObject.io username of the user to sync</param>
         /// <returns>true if the sync was successful</returns>
         public static async Task<Result> FetchUpdates()
         {
@@ -252,9 +240,50 @@ namespace ModIO.Implementation
             //--------------------------------------------------------------------------------//
             result = await SyncUsersSubscriptions(user);
 
+            if ((await ModIOUnityImplementation.IsMarketplaceEnabled(true)).Succeeded())
+            {
+                //--------------------------------------------------------------------------------//
+                //                         UPDATE ENTITLEMENTS                                    //
+                //--------------------------------------------------------------------------------//
 
-            // Mark as true to change behaviour when re-checking (resets after new Init)
-            hasSyncedBefore = true;
+                await ModIOUnityAsync.SyncEntitlements();
+
+
+                //--------------------------------------------------------------------------------//
+                //                         GET PURCHASES                                          //
+                //--------------------------------------------------------------------------------//
+                int pageSize = 100;
+                int pageIndex = 0;
+                bool continueFetching = true;
+
+                while (continueFetching)
+                {
+                    SearchFilter filter = new SearchFilter(pageIndex, pageSize);
+                    ResultAnd<ModPage> r = await ModIOUnityImplementation.GetUserPurchases(filter);
+                    result = r.result;
+
+                    if (r.result.Succeeded())
+                    {
+                        ResponseCache.AddModsToCache(API.Requests.GetUserPurchases.UnpaginatedURL(filter), 0, r.value);
+                        AddModsToUserPurchases(r.value);
+                        long totalResults = r.value.totalSearchResultsFound;
+                        int resultsFetched = (pageIndex + 1) * pageSize;
+                        if (resultsFetched > totalResults)
+                        {
+                            continueFetching = false;
+                        }
+                    }
+                    else
+                    {
+                        continueFetching = false;
+                    }
+
+                    pageIndex++;
+                }
+            }
+            //--------------------------------------------------------------------------------//
+            //                         Finish Fetch                                           //
+            //--------------------------------------------------------------------------------//
 
             ModManagement.WakeUp();
             Logger.Log(LogLevel.Message,
@@ -279,20 +308,18 @@ namespace ModIO.Implementation
             //string url = GetUserSubscriptions.URL();
             //ResultAnd<ModObject[]> subscribedResultAnd =
             //    await RESTAPI.TryRequestAllResults<ModObject>(url, GetUserSubscriptions.Template);
-            var config = API.Requests.GetUserSubscriptions.Request();
-            var subscribedResponse = await TryRequestAllResults<
-                ModObject>(config.Url, ()=>config);
+            WebRequestConfig config = API.Requests.GetUserSubscriptions.Request();
+            ResultAnd<ModObject[]> subscribedResponse = await TryRequestAllResults<ModObject>(config.Url, ()=>config);
 
             if(subscribedResponse.result.Succeeded())
             {
                 // clear user's subscribed mods
                 Registry.existingUsers[user].subscribedMods.Clear();
 
-                foreach(ModObject mod in subscribedResponse.value)
+                foreach(ModObject modObject in subscribedResponse.value)
                 {
-                    Registry.existingUsers[user].subscribedMods.Add(new ModId(mod.id));
-
-                    UpdateModCollectionEntryFromModObject(mod);
+                    Registry.existingUsers[user].subscribedMods.Add(new ModId(modObject.id));
+                    UpdateModCollectionEntryFromModObject(modObject);
                 }
             }
             else
@@ -308,7 +335,7 @@ namespace ModIO.Implementation
         /// at 10 requests (1,000 results).
         /// </summary>
         /// <param name="url">The endpoint with relevant filters (But do not include pagination)</param>
-        /// <param name="requestTemplate">The template of the request</param>
+        /// <param name="webrequestFactory"></param>
         /// <typeparam name="T">The data type of the page response schema (Make sure this is the
         /// correct API Object for the response schema relating to the endpoint being
         /// used)</typeparam>
@@ -367,6 +394,8 @@ namespace ModIO.Implementation
             return response;
         }
 
+        public static bool HasModCollectionEntry(ModId modId) => Registry.mods.ContainsKey(modId);
+
         public static void AddModCollectionEntry(ModId modId)
         {
             // Check an entry exists for this modObject, if not create one
@@ -378,12 +407,12 @@ namespace ModIO.Implementation
             }
         }
 
-        public static void UpdateModCollectionEntry(ModId modId, ModObject modObject)
+        public static void UpdateModCollectionEntry(ModId modId, ModObject modObject, int priority = 0)
         {
             AddModCollectionEntry(modId);
 
             Registry.mods[modId].modObject = modObject;
-
+            Registry.mods[modId].priority = priority;
             // Check this in case of UserData being deleted
             if(DataStorage.TryGetInstallationDirectory(modId, modObject.modfile.id,
                                                        out string notbeingusedhere))
@@ -394,10 +423,68 @@ namespace ModIO.Implementation
             SaveRegistry();
         }
 
+        private static void AddModsToUserPurchases(ModPage modPage)
+        {
+            foreach (ModProfile modProfile in modPage.modProfiles)
+            {
+                AddModToUserPurchases(modProfile.id);
+            }
+        }
+
+        public static void AddModToUserPurchases(ModId modId, bool saveRegistry = true)
+        {
+            long user = GetUserKey();
+
+            // Early out
+            if(!IsRegistryLoaded() || !DoesUserExist(user))
+            {
+                return;
+            }
+
+            user = GetUserKey();
+
+            if(!Registry.existingUsers[user].purchasedMods.Contains(modId))
+            {
+                Registry.existingUsers[user].purchasedMods.Add(modId);
+            }
+
+            // Check an entry exists for this modObject, if not create one
+            AddModCollectionEntry(modId);
+
+            if(saveRegistry)
+            {
+                SaveRegistry();
+            }
+        }
+
+        public static void RemoveModFromUserPurchases(ModId modId, bool saveRegistry = true)
+        {
+            long user = GetUserKey();
+
+            // Early out
+            if(!IsRegistryLoaded() || !DoesUserExist(user))
+            {
+                Logger.Log(LogLevel.Warning, "registry not loaded");
+                return;
+            }
+
+            user = GetUserKey();
+
+            // Remove modId from user collection data
+            if(Registry.existingUsers[user].purchasedMods.Contains(modId))
+            {
+                Registry.existingUsers[user].purchasedMods.Remove(modId);
+            }
+
+            if(saveRegistry)
+            {
+                SaveRegistry();
+            }
+        }
+
         public static void AddModToUserSubscriptions(ModId modId,
                                                      bool saveRegistry = true)
         {
-
             long user = GetUserKey();
 
             // Early out
@@ -457,8 +544,7 @@ namespace ModIO.Implementation
             }
         }
 
-        public static void UpdateModCollectionEntryFromModObject(ModObject modObject,
-                                                                 bool saveRegistry = true)
+        public static void UpdateModCollectionEntryFromModObject(ModObject modObject, bool saveRegistry = true)
         {
             ModId modId = (ModId)modObject.id;
 
@@ -522,6 +608,38 @@ namespace ModIO.Implementation
 
             Logger.Log(LogLevel.Verbose, $"Disabled Mod {((long)modId).ToString()}");
             return true;
+        }
+
+        /// <summary>
+        /// Gets all mods that are purchased regardless of whether or not the user is subscribed to them or not
+        /// </summary>
+        /// <returns></returns>
+        public static ModProfile[] GetPurchasedMods(out Result result)
+        {
+            // early out
+            if(!IsRegistryLoaded())
+            {
+                result = ResultBuilder.Create(ResultCode.Internal_RegistryNotInitialized);
+                return null;
+            }
+
+            List<ModProfile> mods = new List<ModProfile>();
+
+            long currentUser = GetUserKey();
+
+            using(var enumerator = Registry.existingUsers[currentUser].purchasedMods.GetEnumerator())
+            {
+                while(enumerator.MoveNext())
+                {
+                    if(Registry.mods.TryGetValue(enumerator.Current, out ModCollectionEntry entry))
+                    {
+                        mods.Add(ConvertModCollectionEntryToPurchasedMod(entry));
+                    }
+                }
+            }
+
+            result = ResultBuilder.Success;
+            return mods.ToArray();
         }
 
         /// <summary>
@@ -629,16 +747,13 @@ namespace ModIO.Implementation
             return subscribedMods.ToArray();
         }
 
-        public static SubscribedMod ConvertModCollectionEntryToSubscribedMod(
-            ModCollectionEntry entry)
+        static SubscribedMod ConvertModCollectionEntryToSubscribedMod(ModCollectionEntry entry)
         {
-            SubscribedMod mod = new SubscribedMod();
-
-            // generate ModProfile from ModObject
-            mod.modProfile = ResponseTranslator.ConvertModObjectToModProfile(entry.modObject);
-
-            // set the status for this subscribed mod
-            mod.status = ModManagement.GetModCollectionEntrysSubscribedModStatus(entry);
+            SubscribedMod mod = new SubscribedMod
+            {
+                modProfile = ResponseTranslator.ConvertModObjectToModProfile(entry.modObject),
+                status = ModManagement.GetModCollectionEntrysSubscribedModStatus(entry),
+            };
 
             // assign directory field
             DataStorage.TryGetInstallationDirectory(entry.modObject.id, entry.modObject.modfile.id,
@@ -647,18 +762,19 @@ namespace ModIO.Implementation
             return mod;
         }
 
-        public static InstalledMod ConvertModCollectionEntryToInstalledMod(ModCollectionEntry entry,
-                                                                           string directory)
+        static InstalledMod ConvertModCollectionEntryToInstalledMod(ModCollectionEntry entry, string directory)
         {
-            InstalledMod mod = new InstalledMod();
-            mod.modProfile = ResponseTranslator.ConvertModObjectToModProfile(entry.modObject);
-            mod.updatePending = entry.currentModfile.id != entry.modObject.modfile.id;
-            mod.directory = directory;
-            mod.subscribedUsers = new List<long>();
-            mod.metadata = entry.modObject.modfile.metadata_blob;
-            mod.version = entry.currentModfile.version;
-            mod.changeLog = entry.currentModfile.changelog;
-            mod.dateAdded = ResponseTranslator.GetUTCDateTime(entry.currentModfile.date_added);
+            InstalledMod mod = new InstalledMod
+            {
+                modProfile = ResponseTranslator.ConvertModObjectToModProfile(entry.modObject),
+                updatePending = entry.currentModfile.id != entry.modObject.modfile.id,
+                directory = directory,
+                subscribedUsers = new List<long>(),
+                metadata = entry.modObject.modfile.metadata_blob,
+                version = entry.currentModfile.version,
+                changeLog = entry.currentModfile.changelog,
+                dateAdded = ResponseTranslator.GetUTCDateTime(entry.currentModfile.date_added),
+            };
 
             foreach(long user in Registry.existingUsers.Keys)
             {
@@ -669,6 +785,11 @@ namespace ModIO.Implementation
             }
 
             return mod;
+        }
+
+        static ModProfile ConvertModCollectionEntryToPurchasedMod(ModCollectionEntry entry)
+        {
+            return ResponseTranslator.ConvertModObjectToModProfile(entry.modObject);
         }
 
         public static Result MarkModForUninstallIfNotSubscribedToCurrentSession(ModId modId)

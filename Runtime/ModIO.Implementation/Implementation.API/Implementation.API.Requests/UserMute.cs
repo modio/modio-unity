@@ -1,6 +1,5 @@
 ﻿namespace ModIO.Implementation.API.Requests
 {
-
     internal static class UserMute
     {
         public static WebRequestConfig Request(long userId)
@@ -11,7 +10,7 @@
                 RequestMethodType = "POST"
             };
 
-            
+
             return request;
         }
     }

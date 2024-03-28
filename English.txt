@@ -228,13 +228,13 @@ msgid "Are you sure you'd like to log out?"
 msgstr "Are you sure you'd like to log out?"
 
 msgid "LogOutMessage"
-msgstr "This will log you out of your mod.io account. You can still browse the mods but you will need to log back in to subscribe to a mod. Any ongoing downloads/installations will also be stopped.\n\nDo you wish to continue?"
+msgstr "This will log you out of your mod.io account. You can still browse the mods but you will need to log back in to subscribe to a mod. Any ongoing downloads/installations will also be stopped.<br><br>Do you wish to continue?"
 
 msgid "Something went wrong!"
 msgstr "Something went wrong!"
 
 msgid "We were unable to connect to the mod.io server. Check you have a stable internet connection and try again."
-msgstr "We were unable to connect to the mod.io server. Check you have a stable internet connection and try again."
+msgstr "Unfortunately we are unable to connect you to the mod.io server.<br><br>Please check if you have a stable internet connection or try again in a few minutes."
 
 msgid "Terms of use"
 msgstr "Terms of use"
@@ -610,3 +610,51 @@ msgstr "Connect with device"
 
 msgid "Failed to connect account"
 msgstr "Failed to connect account" 
+
+msgid "{tokenCount} {tokenType}"
+msgstr "{tokenCount} {tokenType}"
+
+msgid "Free"
+msgstr "Free"
+
+msgid "Buy Now"
+msgstr "Buy Now"
+
+msgid "Confirm purchase"
+msgstr "Confirm purchase"
+
+msgid "Insufficient tokens"
+msgstr "Insufficient tokens"
+
+msgid "Purchased"
+msgstr "Purchased"
+
+msgid "Premium"
+msgstr "Premium"
+
+msgid "Listing"
+msgstr "Listing"
+
+msgid "InputValidEmail"
+msgstr "Please enter a valid email address."
+
+msgid "InputValidDescription"
+msgstr "Please enter a valid description longer than 20 characters."
+
+msgid "All mods"
+msgstr "All mods"
+
+msgid "Alphabetical"
+msgstr "Alphabetical"
+
+msgid "File size"
+msgstr "File size"
+
+msgid "Most subscribed"
+msgstr "Most subscribed"
+
+msgid "Popularity"
+msgstr "Popularity"
+
+msgid "Rating"
+msgstr "Rating"

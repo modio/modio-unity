@@ -1,4 +1,6 @@
-﻿using ModIO;
+﻿using System;
+using System.Collections.Generic;
+using ModIO;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -19,7 +21,30 @@ namespace ModIOBrowser
         Translation progressBarTextTranslation;
 #pragma warning restore 0649
 
-        public void Setup(ModProfile profile)
+		static List<SubscribedProgressTab> allProgressTabs = new List<SubscribedProgressTab>();
+
+		void Awake()
+		{
+			allProgressTabs.Add(this);
+		}
+
+		public static void UpdateProgressTab(ModManagementEventType eventType, ModId id)
+		{
+			foreach(var tab in allProgressTabs)
+			{
+				if(tab.profile.id == id)
+				{
+					tab.UpdateStatus(eventType, id);
+				}
+			}
+		}
+
+		public static void HideAllTabs()
+		{
+			allProgressTabs.ForEach(x=>x.Hide());
+		}
+
+		public void Setup(ModProfile profile)
 		{
 			this.profile = profile;
 				
@@ -67,15 +92,8 @@ namespace ModIOBrowser
 			}
 			
 			progressBarQueuedOutline.SetActive(false);
-
-			if(Collection.Instance.IsSubscribed(handle.modId))
-			{
-				progressBar.SetActive(true);
-			}
-			else
-			{
-				progressBar.SetActive(false);
-			}
+			
+			progressBar.SetActive(Collection.Instance.IsSubscribed(profile.id));
 
 			progressBarFill.fillAmount = handle.Progress;
             
@@ -104,13 +122,20 @@ namespace ModIOBrowser
 			}
 		}
 		
+		internal void Hide()
+		{
+			progressBar.SetActive(false);
+		}
+		
 		internal void UpdateStatus(ModManagementEventType updatedStatus, ModId id)
         {
 	        if(profile.id != id)
 	        {
 		        return;
 	        }
-	        
+
+	        progressBar.SetActive(Collection.Instance.IsSubscribed(id));
+
 	        // Always turn this off when state changes. It will auto get turned back on if needed
             progressBar.SetActive(false);
             progressBarQueuedOutline.SetActive(false);

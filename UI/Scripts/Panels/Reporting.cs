@@ -1,5 +1,6 @@
 ﻿using ModIO;
 using ModIO.Util;
+using System.Text.RegularExpressions;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -8,6 +9,8 @@ namespace ModIOBrowser.Implementation
 {
     public class Reporting : SelfInstancingMonoSingleton<Reporting>
     {
+        private const int REQUIRED_DESCRIPTION_LENGTH = 20;
+
         [SerializeField] public GameObject Panel;
         [SerializeField] TMP_Text ReportPanelHeader;
         [SerializeField] TMP_Text ReportPanelSubHeader;
@@ -31,6 +34,8 @@ namespace ModIOBrowser.Implementation
         [SerializeField] Button ReportPanelDoneButton;
         [SerializeField] GameObject ReportPanelLoadingAnimation;
 
+        [SerializeField] TMP_Text ReportPanelInvalidEmail;
+        [SerializeField] TMP_Text ReportPanelInvalidDescription;
 
         internal Translation ReportPanelHeaderTranslation = null;
         internal Translation ReportPanelTextTranslation = null;
@@ -84,12 +89,58 @@ namespace ModIOBrowser.Implementation
 
             ReportPanelBackButton.gameObject.SetActive(true);
             ReportPanelBackButton.onClick.RemoveAllListeners();
-            ReportPanelBackButton.onClick.AddListener(delegate { Open(modBeingReported, defaultSelectableOnReportClose); });
+            ReportPanelBackButton.onClick.AddListener(delegate
+            { Open(modBeingReported, defaultSelectableOnReportClose); });
 
             ReportPanelNextButton.gameObject.SetActive(true);
             ReportPanelCancelButton.gameObject.SetActive(true);
 
             InputNavigation.Instance.Select(ReportPanelEmailField);
+        }
+
+        static bool IsValidEmail(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                return false;
+
+            // checks (something@something.), doesn't cover more extreme edge cases.
+            string pattern = @"^\S+@\S+\.\S+$";
+
+            return Regex.IsMatch(email, pattern);
+        }
+
+        public void CheckValidEmailAndOpenDetails()
+        {
+            var isValid = IsValidEmail(ReportPanelEmailField.text);
+
+            ReportPanelInvalidEmail.gameObject.SetActive(!isValid);
+
+            if (isValid)
+            {
+                OpenDetails();
+            }
+        }
+
+        static bool IsValidDescription(string description)
+        {
+            if (string.IsNullOrWhiteSpace(description))
+            {
+                return false;
+            }
+
+            return description.TrimEnd().Length >= REQUIRED_DESCRIPTION_LENGTH;
+        }
+
+        public void CheckValidDescriptionsAndOpenSummary()
+        {
+            var isValid = IsValidDescription(ReportPanelDetailsField.text);
+
+            ReportPanelInvalidDescription.gameObject.SetActive(!isValid);
+
+            if (isValid)
+            {
+                OpenSummary();
+            }
         }
 
         public void OpenDetails()
@@ -115,7 +166,7 @@ namespace ModIOBrowser.Implementation
 
             ReportPanelSubmitButton.gameObject.SetActive(true);
             ReportPanelSubmitButton.onClick.RemoveAllListeners();
-            ReportPanelSubmitButton.onClick.AddListener(OpenSummary);
+            ReportPanelSubmitButton.onClick.AddListener(CheckValidDescriptionsAndOpenSummary);
 
             ReportPanelCancelButton.gameObject.SetActive(true);
 
@@ -220,7 +271,7 @@ namespace ModIOBrowser.Implementation
         }
 
         #endregion //  Report Panel States
-        
+
         public void Send()
         {
             OpenWaiting();
@@ -231,7 +282,7 @@ namespace ModIOBrowser.Implementation
 
         private void Sent(Result result)
         {
-            if(result.Succeeded())
+            if (result.Succeeded())
             {
                 OpenDone();
             }
@@ -239,6 +290,6 @@ namespace ModIOBrowser.Implementation
             {
                 OpenProblem();
             }
-        }        
+        }
     }
 }

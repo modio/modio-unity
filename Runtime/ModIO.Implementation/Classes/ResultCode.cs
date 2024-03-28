@@ -1,6 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using ModIO.Implementation.API.Objects;
+using System.Collections.Generic;
 using System.Linq;
-using ModIO.Implementation.API.Objects;
 
 namespace ModIO.Implementation
 {
@@ -9,7 +9,7 @@ namespace ModIO.Implementation
     {
         // When adding a new value make sure it's also added to the errorCodesClearText dictionary.
 
-#region Value Constants
+        #region Value Constants
 
         // - success -
         public const uint Success = 0;
@@ -29,6 +29,8 @@ namespace ModIO.Implementation
         public const uint Settings_InvalidGameKey = 20052;
         public const uint Settings_InvalidLanguageCode = 20053;
         public const uint Settings_UploadsDisabled = 20054;
+        public const uint Settings_MarketplaceNotEnabled = 20055;
+        public const uint Settings_UnableToRetrieveGameProfile = 20056;
 
         // - auth errors -
         public const uint User_NotAuthenticated = 20100;
@@ -51,7 +53,7 @@ namespace ModIO.Implementation
         public const uint InvalidParameter_CantBeNull = 20213;
         public const uint InvalidParameter_MissingModId = 20214;
         public const uint InvalidParameter_TooMany = 20215;
-        
+
         public const uint InvalidParameter_DownloadReferenceIsntValid = 20220;
 
         // - API handling errors -
@@ -89,7 +91,7 @@ namespace ModIO.Implementation
         public const uint Internal_FileHashMismatch = 20505;
         public const uint Internal_OperationCancelled = 20506;
         public const uint Internal_InvalidParameter = 20507;
-        
+
         // - WSS handling errors -
         public const uint WSS_NotConnected = 20600;
         public const uint WSS_FailedToSend = 20601;
@@ -133,14 +135,20 @@ namespace ModIO.Implementation
         // 11007   Authenticated user account has been banned by mod.io admins.
         public const uint RESTAPI_UserAccountBanned = 11007;
 
-        // 11008   You have been ratelimited for making too many requests. See Rate Limiting.
-        public const uint RESTAPI_RateLimitExceeded = 11008;
+        // 11008   You have been rate limited globally for making too many requests. See Rate Limiting.
+        public const uint RESTAPI_RateLimitExceededGlobal = 11008;
+
+        // 11009   You have been rate limited from calling this endpoint again, for making too many requests. See Rate Limiting.
+        public const uint RESTAPI_RateLimitExceededEndpoint = 11009;
 
         // 11012    Invalid security code.
         public const uint RESTAPI_11012 = 11012;
 
         // 11014    security code has expired. Please request a new code
         public const uint RESTAPI_11014 = 11014;
+
+        // 11069    error.monetization_iap_connected_portal_account_not_found
+        public const uint RESTAPI_PortalAccountNotFound = 11069;
 
         // 13001   The submitted binary file is corrupted.
         public const uint RESTAPI_SubmittedBinaryCorrupt = 13001;
@@ -304,7 +312,8 @@ namespace ModIO.Implementation
         // 11043	mod.io was unable to get account data from the Discord servers.
         public const uint RESTAPI_DiscordUnableToGetAccountData = 11043;
 
-#endregion
+        public const uint FILEUPLOAD_Error = 30033;
+        #endregion
 
         private static HashSet<long> cacheClearingErrorCodes =
             new HashSet<long>() {  RESTAPI_OAuthTokenExpired,
@@ -423,8 +432,10 @@ namespace ModIO.Implementation
             { RESTAPI_UserAccountDeleted, "Authenticated user account has been deleted." },
             { RESTAPI_UserAccountBanned,
               "Authenticated user account has been banned by mod.io admins." },
-            { RESTAPI_RateLimitExceeded,
-              "You have been ratelimited for making too many requests. See Rate Limiting." },
+            { RESTAPI_RateLimitExceededGlobal,
+              "You have been rate limited globally for making too many requests. See Rate Limiting." },
+            { RESTAPI_RateLimitExceededEndpoint,
+              "You have been rate limited from calling this endpoint again, for making too many requests. See Rate Limiting." },
             { RESTAPI_11012, "Invalid security code." },
             { RESTAPI_11014, "Security code has expired. Please request a new code." },
             { RESTAPI_SubmittedBinaryCorrupt, "The submitted binary file is corrupted." },
@@ -511,7 +522,7 @@ namespace ModIO.Implementation
 
         public static string GetErrorCodeMeaning(uint code)
         {
-            if(errorCodesClearText.TryGetValue(code, out var meaning))
+            if (errorCodesClearText.TryGetValue(code, out var meaning))
             {
                 return meaning;
             }

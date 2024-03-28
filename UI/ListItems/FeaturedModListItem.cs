@@ -1,5 +1,7 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using ModIO;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -15,6 +17,7 @@ namespace ModIOBrowser.Implementation
         [SerializeField] Image image;
         [SerializeField] GameObject background;
         [SerializeField] GameObject failedToLoad;
+        [SerializeField] TMP_Text featuredSelectedName;
         public SubscribedProgressTab progressTab;
 
         public int rowIndex;
@@ -26,7 +29,7 @@ namespace ModIOBrowser.Implementation
 
         IEnumerator transition;
         internal static int transitionCount = 0;
-
+        internal Translation featuredSelectedPriceTranslation = null;
 #region Overrides
         public override void PlaceholderSetup()
         {
@@ -36,14 +39,16 @@ namespace ModIOBrowser.Implementation
             failedToLoad.SetActive(false);
         }
 
-        public override void Setup(ModProfile profile)
+        public override void Setup(ModProfile modProfile)
         {
             base.Setup();
-            progressTab.Setup(profile);
+            profile = modProfile;
+            featuredSelectedName.text = modProfile.name;
+            progressTab.Setup(modProfile);
             image.color = Color.clear;
             background.SetActive(false);
             failedToLoad.SetActive(false);
-            ModIOUnity.DownloadTexture(profile.logoImage_640x360, SetIcon);
+            ModIOUnity.DownloadTexture(modProfile.logoImage640x360, SetIcon);
         }
 #endregion // Overrides
 
@@ -122,10 +127,10 @@ namespace ModIOBrowser.Implementation
                 float delta = animationCurve.Evaluate(timePassed / transitionTime);
 
                 Vector3 positionNow = start + distance * delta;
-                
+
                 //preserve the Y position, we are only swiping horizontally
                 positionNow.y = transform.position.y;
-                
+
                 transform.position = positionNow;
                 rectTransform.sizeDelta = startingSize + growth * delta;
 

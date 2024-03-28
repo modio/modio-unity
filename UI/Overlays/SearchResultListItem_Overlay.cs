@@ -33,7 +33,7 @@ namespace ModIOBrowser.Implementation
                 MimicProgressBar();
             }
         }
-        
+
         // Mimics the look of a SearchResultListItem
         public void Setup(SearchResultListItem listItem)
         {
@@ -54,17 +54,17 @@ namespace ModIOBrowser.Implementation
             loadingIcon.SetActive(listItemToReplicate.loadingIcon.activeSelf);
             animator.Play("Inflate");
             SetSubscribeButtonText();
-            
+
             MimicProgressBar();
-            
+
             // Set if the list item is still waiting for the image to download. The action will
             // get invoked when the download finishes.
             listItemToReplicate.imageLoaded = ReloadImage;
-            
+
             image.sprite = listItemToReplicate.image.sprite;
             title.text = listItemToReplicate.title.text;
         }
-        
+
         void MimicProgressBar()
         {
             if (listItemToReplicate != null)
@@ -78,16 +78,16 @@ namespace ModIOBrowser.Implementation
             if(Collection.Instance.IsSubscribed(listItemToReplicate.profile.id))
             {
                 // We are pre-emptively changing the text here to make the UI feel more responsive
-                Translation.Get(subscribeButtonTextTranslation, "Subscribe", subscribeButtonText);
+                Translation.Get(subscribeButtonTextTranslation, "Unsubscribe", subscribeButtonText);
                 Mods.UnsubscribeFromEvent(listItemToReplicate.profile, UpdateSubscribeButton);
             }
             else
             {
                 // We are pre-emptively changing the text here to make the UI feel more responsive
-                Translation.Get(subscribeButtonTextTranslation, "Unsubscribe", subscribeButtonText);
+                Translation.Get(subscribeButtonTextTranslation, "Subscribe", subscribeButtonText);
                 Mods.SubscribeToEvent(listItemToReplicate.profile, UpdateSubscribeButton);
             }
-            
+
             LayoutRebuilder.ForceRebuildLayoutImmediate(subscribeButtonText.transform.parent as RectTransform);
         }
 
@@ -95,12 +95,12 @@ namespace ModIOBrowser.Implementation
         {
             listItemToReplicate?.OpenModDetailsForThisProfile();
         }
-        
+
         public void ShowMoreOptions()
         {
             List<ContextMenuOption> options = new List<ContextMenuOption>();
 
-            //TODO If not subscribed add force uninstall and subscribe options 
+            //TODO If not subscribed add force uninstall and subscribe options
 
             // Add Vote up option to context menu
             options.Add(new ContextMenuOption
@@ -108,7 +108,7 @@ namespace ModIOBrowser.Implementation
                 nameTranslationReference = "Vote up",
                 action = delegate
                 {
-                    ModIOUnity.RateMod(listItemToReplicate.profile.id, ModRating.Positive, delegate { });
+                    Home.RateMod(listItemToReplicate.profile.id, ModRating.Positive);
                     ModioContextMenu.Instance.Close();
                 }
             });
@@ -119,7 +119,7 @@ namespace ModIOBrowser.Implementation
                 nameTranslationReference = "Vote down",
                 action = delegate
                 {
-                    ModIOUnity.RateMod(listItemToReplicate.profile.id, ModRating.Negative, delegate { });
+                    Home.RateMod(listItemToReplicate.profile.id, ModRating.Negative);
                     ModioContextMenu.Instance.Close();
                 }
             });
@@ -148,12 +148,16 @@ namespace ModIOBrowser.Implementation
         public void SetSubscribeButtonText()
         {
             listItemToReplicate?.progressTab?.Setup(listItemToReplicate.profile);
-            
-            if(Collection.Instance.IsSubscribed(listItemToReplicate.profile.id))
+
+            if(!Collection.Instance.IsPurchased(listItemToReplicate.profile))
+            {
+                Translation.Get(subscribeButtonTextTranslation, "Buy Now", subscribeButtonText);
+            }
+            else if(Collection.Instance.IsSubscribed(listItemToReplicate.profile.id))
             {
                 Translation.Get(subscribeButtonTextTranslation, "Unsubscribe", subscribeButtonText);
-            } 
-            else 
+            }
+            else
             {
                 Translation.Get(subscribeButtonTextTranslation, "Subscribe", subscribeButtonText);
             }
@@ -165,7 +169,7 @@ namespace ModIOBrowser.Implementation
             failedToLoadIcon.SetActive(listItemToReplicate.failedToLoadIcon.activeSelf);
             loadingIcon.SetActive(listItemToReplicate.loadingIcon.activeSelf);
         }
-        
+
         public void OnPointerExit(PointerEventData eventData)
         {
             if (!ModioContextMenu.Instance.ContextMenu.activeSelf)

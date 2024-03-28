@@ -24,7 +24,6 @@ namespace ModIOBrowser.Implementation
             });
         }
 
-        [ExposeMethodInEditor]
         public void PokeTranslator()
         {
             SimpleMessageHub.Instance.Publish(new MessageUpdateTranslations());

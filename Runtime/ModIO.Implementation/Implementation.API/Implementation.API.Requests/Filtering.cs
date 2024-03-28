@@ -1,5 +1,4 @@
-﻿
-namespace ModIO.Implementation.API.Requests
+﻿namespace ModIO.Implementation.API.Requests
 {
     internal static class Filtering
     {

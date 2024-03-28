@@ -46,7 +46,7 @@ namespace ModIOBrowser.Implementation
         internal Translation SearchResultsNumberOfOtherTagsTranslation = null;
         internal Translation SearchResultsEndOfResultsHeaderTranslation = null;
         internal Translation SearchResultsEndOfResultsTextTranslation = null;
-        
+
         enum SearchResultsStatus
         {
             GettingFirstResults,
@@ -87,16 +87,16 @@ namespace ModIOBrowser.Implementation
             switch(SearchResultsSortByDropdown.value)
             {
                 case 0:
-                    filter.SortBy(SortModsBy.Popular);
+                    filter.SetSortBy(SortModsBy.Popular);
                     break;
                 case 1:
-                    filter.SortBy(SortModsBy.Downloads);
+                    filter.SetSortBy(SortModsBy.Downloads);
                     break;
                 case 2:
-                    filter.SortBy(SortModsBy.Subscribers);
+                    filter.SetSortBy(SortModsBy.Subscribers);
                     break;
                 case 3:
-                    filter.SortBy(SortModsBy.Rating);
+                    filter.SetSortBy(SortModsBy.Rating);
                     break;
             }
 
@@ -230,7 +230,7 @@ namespace ModIOBrowser.Implementation
         {
             if(response.result.Succeeded())
             {
-                // set the status so we know how to control 
+                // set the status so we know how to control
                 if(searchResultsStatus == SearchResultsStatus.GettingFirstResults)
                 {
                     searchResultsStatus = SearchResultsStatus.RetrievedFirstResults;

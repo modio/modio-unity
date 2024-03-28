@@ -1,13 +1,15 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using ModIO;
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace ModIOBrowser.Implementation
 {
-    public class ModListRow : MonoBehaviour, ISelectHandler
+    public class ModListRow : MonoBehaviour
     {
         [Header("UI Elements")]
         [SerializeField] GameObject ErrorPanel;
@@ -16,16 +18,20 @@ namespace ModIOBrowser.Implementation
         [SerializeField] GameObject MainSelectableHighlights;
         [SerializeField] GameObject ModListItemPrefab;
         [SerializeField] Transform ModListItemContainer;
+        [SerializeField] TMP_Text headerText;
 
         [Header("Selectables")]
-        [SerializeField] Selectable AboveSelection;
-        [SerializeField] Selectable BelowSelection;
+        public Selectable Selectable;
+        public Selectable AboveSelection;
+        public Selectable BelowSelection;
 
         internal static Vector2 currentSelectedPosition = Vector2.zero;
         List<ListItem> items = new List<ListItem>();
         SearchFilter lastUsedFilter;
 
-        public void OnSelect(BaseEventData eventData)
+        Translation headerTextTranslation = null;
+
+        public void OnRowSelected()
         {
             StartCoroutine(OnSelectFrameDelay());
         }
@@ -139,12 +145,47 @@ namespace ModIOBrowser.Implementation
         /// <param name="filter"></param>
         public void AttemptToPopulateRowWithMods(SearchFilter filter)
         {
+            SetHeaderText(filter.SortBy);
             lastUsedFilter = filter;
             ErrorPanel.SetActive(false);
             RowPanel.SetActive(false);
             LoadingPanel.SetActive(true);
             MainSelectableHighlights.SetActive(true);
             ModIOUnity.GetMods(filter, GetModsResponse);
+        }
+
+        private void SetHeaderText(SortModsBy sortModsBy)
+        {
+            string header = String.Empty;
+            switch(sortModsBy)
+            {
+                case SortModsBy.Name:
+                    header = "Alphabetical";
+                    break;
+                case SortModsBy.Price:
+                    header = "Price";
+                    break;
+                case SortModsBy.Rating:
+                    header = "Highest rated";
+                    break;
+                case SortModsBy.Popular:
+                    header = "Most popular";
+                    break;
+                case SortModsBy.Downloads:
+                    header = "Trending";
+                    break;
+                case SortModsBy.Subscribers:
+                    header = "Most Subscribed";
+                    break;
+                case SortModsBy.DateSubmitted:
+                    header = "Recently added";
+                    break;
+                default:
+                    header = "Unknown Sort Parameter";
+                    break;
+            }
+            headerText.text = header;
+            Translation.Get(headerTextTranslation, headerText.text, headerText);
         }
 
         public void RetryGetMods()
@@ -158,9 +199,9 @@ namespace ModIOBrowser.Implementation
             {
                 return;
             }
-            
+
             LoadingPanel.SetActive(false);
-            
+
             if(response.result.Succeeded())
             {
                 PopulateRowFromModPage(response.value);

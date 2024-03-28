@@ -19,6 +19,8 @@
     public struct TermsOfUse
     {
         public string termsOfUse;
+        public string agreeText;
+        public string disagreeText;
         public TermsOfUseLink[] links;
         public TermsHash hash;
     }

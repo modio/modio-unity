@@ -72,6 +72,7 @@ namespace ModIOBrowser.Implementation
             {
                 Avatar.Instance.Avatar_Main.gameObject.SetActive(false);
                 Authentication.Instance.IsAuthenticated = false;
+                SubscribedProgressTab.HideAllTabs();
                 Close();
             }
             else
@@ -99,7 +100,7 @@ namespace ModIOBrowser.Implementation
         /// option it will skip the panel to choose one and instead begin the auth flow immediately
         /// </summary>
         /// <returns>true if it found one single option and it has triggered it</returns>
-        bool SkippedIntoTheOnlyExistingAuthenticationOption()
+        public bool SkippedIntoTheOnlyExistingAuthenticationOption()
         {
             int numAuthOptions = 0;
             // Add 1 for every enabled auth method
@@ -118,27 +119,27 @@ namespace ModIOBrowser.Implementation
             }
 
             Authentication.Instance.GetTermsOfUse();
-            if(Authentication.getSteamAppTicket == null)
+            if(Authentication.getSteamAppTicket != null)
             {
                 authenticationMethodAfterAgreeingToTheTOS = Authentication.Instance.SubmitSteamAuthenticationRequest;
             }
-            else if(Authentication.getXboxToken == null)
+            else if(Authentication.getXboxToken != null)
             {
                 authenticationMethodAfterAgreeingToTheTOS = Authentication.Instance.SubmitXboxAuthenticationRequest;
             }
-            else if(Authentication.getSwitchToken == null)
+            else if(Authentication.getSwitchToken != null)
             {
                 authenticationMethodAfterAgreeingToTheTOS = Authentication.Instance.SubmitSwitchAuthenticationRequest;
             }
-            else if(Authentication.getPlayStationAuthCode == null)
+            else if(Authentication.getPlayStationAuthCode != null)
             {
                 authenticationMethodAfterAgreeingToTheTOS = Authentication.Instance.SubmitPlayStationAuthenticationRequest;
             }
-            else if(Authentication.getGogAuthCode == null)
+            else if(Authentication.getGogAuthCode != null)
             {
                 authenticationMethodAfterAgreeingToTheTOS = Authentication.Instance.SubmitGogAuthenticationRequest;
             }
-            else if(Authentication.getEpicAuthCode == null)
+            else if(Authentication.getEpicAuthCode != null)
             {
                 authenticationMethodAfterAgreeingToTheTOS = Authentication.Instance.SubmitEpicAuthenticationRequest;
             }
@@ -172,7 +173,7 @@ namespace ModIOBrowser.Implementation
             Selectable platformButton = null;
             Selectable secondLoginButton = null;
             Selectable loginButton = null;
-            
+
             //-----------------------------------------------------------------------------------//
             //                              EMAIL AUTHENTICATION                                 //
             //-----------------------------------------------------------------------------------//
@@ -204,10 +205,10 @@ namespace ModIOBrowser.Implementation
                     Authentication.Instance.GetTermsOfUse();
                     authenticationMethodAfterAgreeingToTheTOS = Authentication.Instance.SendRequestExternalAuthentication;
                 });
-                
+
                 // Selection - Default to this if enabled
                 InputNavigation.Instance.Select(AuthenticationPanelConnectViaExternalButton);
-                
+
                 if (loginButton == null)
                 {
                     loginButton = AuthenticationPanelConnectViaExternalButton;
@@ -559,10 +560,10 @@ namespace ModIOBrowser.Implementation
             HideAllPanels();
             AuthenticationPanel.SetActive(true);
             AuthenticationPanelExternalLogin.SetActive(true);
-        
+
             AuthenticationPanelExternalCode.text = token.code;
             AuthenticationPanelExternalUrl.text = token.url.Replace("https://","");
-            
+
             InputNavigation.Instance.Select(AuthenticationPanelExternalCancelButton);
 
             GenerateQRCodeForLogin(token);
@@ -572,14 +573,14 @@ namespace ModIOBrowser.Implementation
         void GenerateQRCodeForLogin(ExternalAuthenticationToken token)
         {
             // Generate the payload for the QR code
-            string url = $"{token.url}?code={token.code}";
+            string url = token.autoUrl;
             PayloadGenerator.Url payloadGenerator = new PayloadGenerator.Url(url);
-            
+
             // Generate the QR code data
             QRCodeGenerator generator = new QRCodeGenerator();
             QRCodeData data = generator.CreateQrCode(payloadGenerator.ToString(), QRCodeGenerator.ECCLevel.Q);
             PngByteQRCode png = new PngByteQRCode(data);
-            
+
             // Convert to Sprite
             Texture2D texture = new Texture2D(0, 0);
             texture.LoadImage(png.GetGraphic(10), false);
@@ -590,6 +591,7 @@ namespace ModIOBrowser.Implementation
 
         IEnumerator DisplayTimeRemainingForValidCodeAndGetNewCodeWhenExpiredAndCheckIfAuthenticationSucceeded()
         {
+            double remainingSeconds = 250;
             while(AuthenticationPanelExternalLogin.activeSelf)
             {
                 if(Authentication.Instance.currentAuthToken.task.IsCompleted)
@@ -597,7 +599,6 @@ namespace ModIOBrowser.Implementation
                     if(Authentication.Instance.currentAuthToken.task.Result.Succeeded())
                     {
                         OpenPanel_Complete();
-                        ModIOUnity.EnableModManagement(Mods.ModManagementEvent);
                     }
                     else
                     {
@@ -605,27 +606,25 @@ namespace ModIOBrowser.Implementation
                     }
                     yield break;
                 }
-                
-                // calculate time remaining
-                TimeSpan duration = Authentication.Instance.currentAuthToken.expiryTime - DateTime.UtcNow;
-                double remainingSeconds = duration.TotalSeconds;
-                
+
                 if(remainingSeconds < 1)
                 {
                     // display 0
                     AuthenticationPanelExternalCodeTimer.text = "0 secs";
-                    
+
                     // get new code
                     ModIOUnity.RequestExternalAuthentication(Authentication.Instance.ReceivedExternalAuthenticationToken);
-                    
+
                     // end this coroutine (it will restart on the callback for the new code)
                     yield break;
                 }
-                
+
+                remainingSeconds--;
+
                 // set timer to remaining seconds
                 AuthenticationPanelExternalCodeTimer.text = $"{remainingSeconds:0} secs";
-                    
-                yield return null;
+
+                yield return new WaitForSeconds(1f);
             }
         }
 
@@ -866,6 +865,22 @@ namespace ModIOBrowser.Implementation
 
         public void OpenPanel_Complete()
         {
+            // Successful Authentication means we need to turn on mod management and fetch updates
+            //-----------------------------------------------------------------------------------
+            ModIOUnity.EnableModManagement(Mods.ModManagementEvent);
+            ModIOUnity.FetchUpdates(delegate
+            {
+                if(Details.IsOn())
+                {
+                    Details.Instance.UpdateSubscribeButtonText();
+                }
+                if(Collection.IsOn())
+                {
+                    Collection.Instance.RefreshList();
+                }
+            });
+            //-----------------------------------------------------------------------------------
+
             Authentication.Instance.IsAuthenticated = true;
 
             HideAllPanels();

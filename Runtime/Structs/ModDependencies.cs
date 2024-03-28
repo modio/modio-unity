@@ -1,13 +1,12 @@
 ﻿using System;
 
-namespace ModIO.Implementation.API.Objects
+namespace ModIO
 {
     /// <summary>
     /// A struct representing all of the information available for a Mod's Dependencies.
     /// </summary>
     /// <seealso cref="ModIOUnity.GetModDependencies"/>
     /// <seealso cref="ModIOUnityAsync.GetModDependencies"/>
-    /// <seealso cref="ModDependenciesObject"/>
     [Serializable]
     public struct ModDependencies
     {

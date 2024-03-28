@@ -1,8 +1,17 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace ModIO.Implementation.API
 {
+    internal class WebRequestConfig<TResponse> : WebRequestConfig
+    {
+        public async Task<ResultAnd<TResponse>> RunViaWebRequestManager()
+        {
+            return await WebRequestManager.Request<TResponse>(this);
+        }
+    }
+
     internal class WebRequestConfig
     {
         public string Url;
@@ -23,10 +32,14 @@ namespace ModIO.Implementation.API
         public List<BinaryDataContainer> BinaryData = new List<BinaryDataContainer>();
         public Dictionary<string, string> HeaderData = new Dictionary<string, string>();
 
-        public bool HasBinaryData => BinaryData.Count > 0;
+        public bool HasBinaryData => BinaryData.Count > 0 || RawBinaryData?.Length > 0;
         public bool HasStringData => StringKvpData.Count > 0;
 
-        public bool IsUpload => HasBinaryData;
+        public bool IsUpload => ForceIsUpload || HasBinaryData;
+
+        public byte[] RawBinaryData { get; set; }
+
+        public bool ForceIsUpload = false;
 
         public void AddField<TInput>(string key, TInput data)
         {

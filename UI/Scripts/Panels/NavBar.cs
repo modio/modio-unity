@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using ModIO;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -15,7 +16,7 @@ namespace ModIOBrowser.Implementation
         [SerializeField] TMP_Text CollectionPanelNavButton;
         [SerializeField] GameObject CollectionPanelNavButtonHighlights;
         IEnumerator browserHeaderTransition;
-        
+
         /// <summary>
         /// This is simply an On/Off state of the collection/browser buttons at the top of the UI
         /// panel to go between the two corresponding menus. The display is based on which menu you
@@ -29,7 +30,7 @@ namespace ModIOBrowser.Implementation
                 col.a = 1f;
                 CollectionPanelNavButton.color = col;
                 CollectionPanelNavButtonHighlights.SetActive(true);
-            
+
                 col = BrowserPanelNavButton.color;
                 col.a = 0.5f;
                 BrowserPanelNavButton.color = col;
@@ -41,7 +42,7 @@ namespace ModIOBrowser.Implementation
                 col.a = 0.5f;
                 CollectionPanelNavButton.color = col;
                 CollectionPanelNavButtonHighlights.SetActive(false);
-            
+
                 col = BrowserPanelNavButton.color;
                 col.a = 1f;
                 BrowserPanelNavButton.color = col;

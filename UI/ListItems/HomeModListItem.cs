@@ -19,12 +19,12 @@ namespace ModIOBrowser.Implementation
     internal class HomeModListItem : ListItem, IDeselectHandler, ISelectHandler, IPointerEnterHandler
     {
         public Image image;
-        public TMP_Text title;
+        public TMP_Text titleTxt;
         public GameObject loadingIcon;
         public GameObject failedToLoadIcon;
         public Action imageLoaded;
-        public ModProfile profile;
         public SubscribedProgressTab progressTab;
+        internal Translation priceTranslation = null;
 
         internal static Dictionary<ModId, HomeModListItem> listItems = new Dictionary<ModId, HomeModListItem>();
 
@@ -57,7 +57,7 @@ namespace ModIOBrowser.Implementation
                 listItems.Remove(profile.id);
             }
         }
-        
+
 #region MonoBehaviour
         void OnDestroy()
         {
@@ -78,7 +78,7 @@ namespace ModIOBrowser.Implementation
         {
             // When using mouse we want to disable the viewport restraint from moving the screen
             InputNavigation.Instance.mouseNavigation = true;
-            
+
             EventSystem.current.SetSelectedGameObject(null);
             InputNavigation.Instance.Select(selectable, true);
         }
@@ -92,23 +92,24 @@ namespace ModIOBrowser.Implementation
             image.color = Color.clear;
             loadingIcon.SetActive(true);
             failedToLoadIcon.SetActive(false);
-            title.text = string.Empty;
+            titleTxt.text = string.Empty;
             //downloads.text = string.Empty;
         }
 
-        public override void Setup(ModProfile profile)
+        public override void Setup(ModProfile modProfile)
         {
             base.Setup();
-            this.profile = profile;
+            profile = modProfile;
             image.color = Color.clear;
             loadingIcon.SetActive(true);
             failedToLoadIcon.SetActive(false);
-            title.text = profile.name;
+            titleTxt.text = modProfile.name;
+
             //downloads.text = GenerateHumanReadableString(profile.stats.downloadsTotal);
-            ModIOUnity.DownloadTexture(profile.logoImage_320x180, SetIcon);
+            ModIOUnity.DownloadTexture(modProfile.logoImage320x180, SetIcon);
             gameObject.SetActive(true);
 
-            progressTab.Setup(profile);
+            progressTab.Setup(modProfile);
 
             AddToStaticDictionaryCache();
         }

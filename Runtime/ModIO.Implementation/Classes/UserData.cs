@@ -19,6 +19,8 @@ namespace ModIO.Implementation
         /// <summary>OAuthToken assigned to the user.</summary>
         public string oAuthToken;
 
+        public AuthenticationServiceProvider currentServiceProvider = AuthenticationServiceProvider.None;
+
         public long oAuthExpiryDate;
 
         /// <summary>Has the token been rejected.</summary>
@@ -58,8 +60,10 @@ namespace ModIO.Implementation
         }
 
         /// <summary>Convenience wrapper that sets OAuthToken and clears rejected flag.</summary>
-        public void SetOAuthToken(AccessTokenObject newToken)
+        public void SetOAuthToken(AccessTokenObject newToken, AuthenticationServiceProvider serviceProvider)
         {
+            ResponseCache.ClearCache();
+            currentServiceProvider = serviceProvider;
             oAuthToken = newToken.access_token;
             oAuthExpiryDate = newToken.date_expires;
             oAuthTokenWasRejected = false;

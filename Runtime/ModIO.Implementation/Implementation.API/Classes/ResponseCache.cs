@@ -41,6 +41,8 @@ namespace ModIO.Implementation.API
         // milliseconds (60,000 being 60 seconds)
         const int modLifetimeInCache = 60000;
 
+        static double lastWalletUpdateTime = 0;
+
         /// <summary>
         /// stores md5 hashes generated after retrieving Terms of Use from the RESTAPI
         /// </summary>
@@ -67,7 +69,10 @@ namespace ModIO.Implementation.API
         static Dictionary<string, CommentPage> commentObjectsCache = new Dictionary<string, CommentPage>();
         static Dictionary<long, ModDependencies[]> modsDependencies = new Dictionary<long, ModDependencies[]>();
         static Dictionary<long, Rating> currentUserRatings = new Dictionary<long, Rating>();
+        static Dictionary<string, Entitlement> entitlementsCache = new Dictionary<string, Entitlement>();
+        static Dictionary<long, MonetizationTeamAccount[]> modsMonetizationTeams = new Dictionary<long, MonetizationTeamAccount[]>();
         static bool currentRatingsCached = false;
+        static WalletObject walletObject;
 
         /// <summary>
         /// the terms of use, cached for the entire session.
@@ -78,6 +83,9 @@ namespace ModIO.Implementation.API
         /// The game tags, cached for the entire session.
         /// </summary>
         static TagCategory[] gameTags;
+
+        /// <summary>The token packs, cached for the entire session.</summary>
+        static TokenPack[] tokenPacks;
 
         /// <summary>
         /// The authenticated user profile, cached for the entire session or until fetch updates.
@@ -194,12 +202,15 @@ namespace ModIO.Implementation.API
         public static void AddUserToCache(UserProfile profile)
         {
             currentUser = profile;
+            lastWalletUpdateTime = DateTime.UtcNow.TimeOfDay.TotalMilliseconds;
         }
 
         public static void AddTagsToCache(TagCategory[] tags)
         {
             gameTags = tags;
         }
+
+        public static void AddTokenPacksToCache(TokenPack[] tokenPacks) => ResponseCache.tokenPacks = tokenPacks;
 
         /// <summary>
         /// This caches the terms of use for the entire session. We only cache the ToS for one
@@ -222,6 +233,10 @@ namespace ModIO.Implementation.API
             else
                 modsDependencies.Add(modId, modDependencies);
         }
+        public static void AddModMonetizationTeamToCache(ModId modId, MonetizationTeamAccount[] modMonetizationTeamAccounts)
+        {
+            modsMonetizationTeams[modId] = modMonetizationTeamAccounts;
+        }
 
         public static void AddCurrentUserRating(long modId, Rating rating)
         {
@@ -233,14 +248,23 @@ namespace ModIO.Implementation.API
                 currentUserRatings.Add(modId, rating);
         }
 
-        public static void ReplaceCurrentUserRatings(Rating[] ratings)
+        private static void AddEntitlement(string transactionId, Entitlement entitlement)
         {
-            currentRatingsCached = true;
-            currentUserRatings.Clear();
-            foreach(var rating in ratings)
-            {
-                AddCurrentUserRating(rating.modId, rating);
-            }
+            if(entitlementsCache.ContainsKey(transactionId))
+                entitlementsCache[transactionId] = entitlement;
+            else
+                entitlementsCache.Add(transactionId, entitlement);
+        }
+
+        public static void UpdateWallet(WalletObject wo)
+        {
+            walletObject = wo;
+        }
+
+        public static void UpdateWallet(int balance)
+        {
+            if (walletObject != null)
+                walletObject.balance = balance;
         }
 
         #endregion // Adding entries to Cache
@@ -358,6 +382,21 @@ namespace ModIO.Implementation.API
             return false;
         }
 
+        public static bool GetTokenPacksFromCache(out TokenPack[] tokenPacks)
+        {
+            if (ResponseCache.tokenPacks != null)
+            {
+                if(logCacheMessages)
+                    Logger.Log(LogLevel.Verbose, "[CACHE] retrieved token packs from cache");
+
+                tokenPacks = ResponseCache.tokenPacks;
+                return true;
+            }
+
+            tokenPacks = null;
+            return false;
+        }
+
         public static bool GetModCommentsFromCache(string url, out CommentPage commentObjs)
         {
             if(commentObjectsCache.ContainsKey(url))
@@ -470,9 +509,54 @@ namespace ModIO.Implementation.API
 
         public static bool HaveRatingsBeenCachedThisSession() => currentRatingsCached;
 
-        #endregion // Getting entries from Cache
+        public static bool GetWalletFromCache(out Wallet wo)
+        {
+            if(walletObject != null && DateTime.UtcNow.TimeOfDay.TotalMilliseconds - lastWalletUpdateTime >= modLifetimeInCache)
+            {
+                wo = ResponseTranslator.ConvertWalletObjectToWallet(walletObject);
+                return true;
+            }
 
+            wo = default;
+            return false;
+        }
+
+        public static bool GetModMonetizationTeamCache(ModId modId, out MonetizationTeamAccount[] teamAccounts)
+        {
+            if(modsMonetizationTeams.TryGetValue(modId, out teamAccounts))
+            {
+                if(logCacheMessages)
+                {
+                    Logger.Log(LogLevel.Verbose, "[CACHE] retrieved mod monetization team from cache");
+                }
+                return true;
+            }
+
+            return false;
+        }
+
+#endregion // Getting entries from Cache
 #region Clearing Cache entries
+        public static void ReplaceCurrentUserRatings(Rating[] ratings)
+        {
+            currentRatingsCached = true;
+            currentUserRatings.Clear();
+            foreach(var rating in ratings)
+            {
+                AddCurrentUserRating(rating.modId, rating);
+            }
+        }
+
+        public static void ReplaceEntitlements(Entitlement[] entitlements)
+        {
+            entitlementsCache.Clear();
+            foreach(var e in entitlements)
+            {
+                AddEntitlement(e.transactionId, e);
+            }
+        }
+
+        internal static void ClearModFromCache(ModId modId) => mods.Remove(modId);
 
         static async void ClearModFromCacheAfterDelay(ModId modId)
         {
@@ -489,7 +573,6 @@ namespace ModIO.Implementation.API
                 mods.Remove(modId);
             }
         }
-
 
         static async void ClearModsFromCacheAfterDelay(List<ModId> modIds)
         {
@@ -547,6 +630,11 @@ namespace ModIO.Implementation.API
             currentUser = null;
         }
 
+        public static void ClearModMonetizationTeamFromCache(ModId modId)
+        {
+            modsMonetizationTeams.Remove(modId);
+        }
+
         /// <summary>
         /// Clears the entire cache, used when performing a shutdown operation.
         /// </summary>
@@ -559,8 +647,10 @@ namespace ModIO.Implementation.API
             gameTags = null;
             commentObjectsCache.Clear();
             modsDependencies?.Clear();
+            modsMonetizationTeams.Clear();
             currentUserRatings?.Clear();
             currentRatingsCached = false;
+            walletObject = null;
             ClearUserFromCache();
         }
 #endregion // Clearing Cache entries

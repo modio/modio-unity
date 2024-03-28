@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using ModIO.Implementation.Platform;
 using UnityEngine;
 
@@ -168,5 +169,39 @@ namespace ModIO.Util
         {
             PlatformConfiguration.RESTAPI_HEADER = platform.ToString();
         }
+
+        /// <summary>Downloads a mod's file archive into <paramref name="archiveStream"/>.<br />Use the returned <see cref="DownloadModToStreamOperation"/> to track status and extract files.</summary>
+        /// <param name="modId">The id of the mod to download.</param>
+        /// <param name="archiveStream">The stream the compressed archive will be downloaded into.</param>
+        /// <param name="closeStream">Should the operation close <paramref name="archiveStream"/> when it is disposed?</param>
+        /// <returns>Operation handle to access status and results.</returns>
+        /// <example><code>
+        /// async void DownloadModToMemory(ModId modId)
+        /// {
+        ///     using MemoryStream archiveStream = new MemoryStream();
+        /// <br /> <br />
+        ///     DownloadModToStreamOperation op = Utility.DownloadModToStream(modId, archiveStream);
+        ///     while (!op.task.IsCompleted)
+        ///     {
+        ///         if (op.IsDownloading)
+        ///             Debug.Log($"Download progress: {op.DownloadProgress}");
+        /// <br /> <br />
+        ///         await Task.Yield();
+        ///     }
+        /// <br /> <br />
+        ///     List&lt;MemoryStream&gt; fileStreams = new List&lt;MemoryStream&gt;();
+        /// <br /> <br />
+        ///     foreach (DownloadModToStreamOperation.ArchiveStreamFile file in op.GetFiles())
+        ///     {
+        ///         MemoryStream fileStream = new MemoryStream();
+        ///         await op.ExtractFileToStream(file, fileStream);
+        ///         fileStreams.Add(fileStream);
+        ///     }
+        /// }
+        /// </code></example>
+        /// <seealso cref="DownloadModToStreamOperation.GetFiles"/>
+        /// <seealso cref="DownloadModToStreamOperation.ArchiveStreamFile"/>
+        /// <seealso cref="DownloadModToStreamOperation.ExtractFileToStream(DownloadModToStreamOperation.ArchiveStreamFile, Stream, bool)"/>
+        public static DownloadModToStreamOperation DownloadModToStream(ModId modId, Stream archiveStream, bool closeStream = true) => new DownloadModToStreamOperation(modId, archiveStream, closeStream);
     }
 }

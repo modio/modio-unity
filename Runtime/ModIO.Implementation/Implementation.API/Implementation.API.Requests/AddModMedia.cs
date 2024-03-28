@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Threading.Tasks;
 using UnityEngine;
 
@@ -23,18 +24,27 @@ namespace ModIO.Implementation.API.Requests
                 var imageBytes = details.GetGalleryImages();
                 CompressOperationMultiple zipOperation = new CompressOperationMultiple(imageBytes, null);
 
-                ResultAnd<MemoryStream> resultAnd = await zipOperation.Compress();
+                Result result;
 
-                if(resultAnd.result.Succeeded())
+                var modId = details.modId.Value.id;
+                using(ModIOFileStream fs = DataStorage.temp.OpenWriteStream(DataStorage.GetUploadFilePath(modId), out result))
                 {
-                    request.AddField("images", "images.zip", resultAnd.value.ToArray());
-                }
-                else
-                {
-                    return ResultAnd.Create<WebRequestConfig>(resultAnd.result, null);
+                    result = await zipOperation.Compress(fs);
+                    fs.Position = 0;
+
+                    if(result.Succeeded())
+                    {
+                        var fileContent = new byte[fs.Length];
+                        var pos = await fs.ReadAsync(fileContent, 0, (int)fs.Length);
+                        request.AddField("images", "images.zip", fileContent);
+                    }
+                    else
+                    {
+                        return ResultAnd.Create<WebRequestConfig>(result, null);
+                    }
                 }
             }
-            
+
             return ResultAnd.Create(ResultBuilder.Success, request);
         }
     }

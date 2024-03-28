@@ -2,12 +2,11 @@
 
 namespace ModIO.Implementation.API.Requests
 {
-
     internal static class GetUserSubscriptions
     {
         [System.Serializable]
         internal class ResponseSchema : PaginatedResponse<ModObject> { }
-        
+
         public static WebRequestConfig Request(SearchFilter searchFilter = null)
         {
             string filter = searchFilter == null ? "" : FilterUtil.ConvertToURL(searchFilter);
@@ -17,8 +16,8 @@ namespace ModIO.Implementation.API.Requests
                 RequestMethodType = "GET"
             };
 
-            
-            
+
+
             return request;
         }
     }

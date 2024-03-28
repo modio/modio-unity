@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using ModIO.Implementation.API.Objects;
 using ModIO.Implementation.Platform;
@@ -33,6 +34,13 @@ namespace ModIO.Implementation
 #region User IO
 
         const string UserDataFilePath = "user.json";
+
+        public static string GetUploadFilePath(long modId)
+        {
+            string fileName = $"{modId}_" + DateTime.UtcNow.ToString("yyyy-MM-dd_HH-mm-ss") + ".zip";
+            const string uploadDirectoryName = "Upload";
+            return Path.Combine(temp.RootDirectory, uploadDirectoryName, fileName);
+        }
 
         /// <summary>Writes the user data to disk.</summary>
         public static async Task<Result> SaveUserDataAsync()
@@ -388,7 +396,7 @@ namespace ModIO.Implementation
                                                             out Result result)
         {
             string filePath = GenerateModfileArchiveFilePath(modId, modfileId);
-            
+
             return OpenArchiveReadStream(filePath, out result);
         }
 

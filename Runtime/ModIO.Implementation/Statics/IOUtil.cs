@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
@@ -109,19 +111,39 @@ namespace ModIO.Implementation
         }
 
         /// <summary>Generates an MD5 hash from a given stream.</summary>
-        public static string GenerateArchiveMD5(string filepath)
+        public static async Task<string> GenerateArchiveMD5(string filepath)
         {
-            string fileHash = string.Empty;
+            using ModIOFileStream stream = DataStorage.OpenArchiveReadStream(filepath, out Result result);
+            return result.Succeeded() ? await GenerateMD5Async(stream) : string.Empty;
+        }
 
-            using(var stream = DataStorage.OpenArchiveReadStream(filepath, out Result result))
+        /// <summary>Asynchronously generates an MD5 hash from a given stream.</summary>
+        public static async Task<string> GenerateMD5Async(Stream stream)
+        {
+            // TODO: Add cancel support
+
+            Stopwatch stopwatch = Stopwatch.StartNew();
+
+            byte[] buffer = new byte[1024 * 1024]; // 1MB
+            int bytesRead;
+
+            using MD5 md5 = MD5.Create();
+
+            while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length)) > 0)
             {
-                if(!result.Succeeded())
-                {
-                    return string.Empty;
-                }
-                fileHash = GenerateMD5(stream);
+                md5.TransformBlock(buffer, 0, bytesRead, null, 0);
+
+                if (stopwatch.ElapsedMilliseconds < 15)
+                    continue;
+
+                await Task.Yield();
+                stopwatch.Restart();
             }
-            return fileHash;
+            md5.TransformFinalBlock(buffer, 0, 0);
+
+            stopwatch.Stop();
+
+            return BitConverter.ToString(md5.Hash).Replace("-", "").ToLowerInvariant();
         }
 
         /// <summary>Generates an MD5 hash for a given stream.</summary>

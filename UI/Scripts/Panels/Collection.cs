@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -28,6 +29,7 @@ namespace ModIOBrowser.Implementation
         [SerializeField] Image CollectionPanelHeaderBackground;
         [SerializeField] Selectable defaultCollectionSelection;
         internal CollectionModListItem currentSelectedCollectionListItem;
+        public ModProfile[] purchasedMods = Array.Empty<ModProfile>();
         public SubscribedMod[] subscribedMods = Array.Empty<SubscribedMod>();
         public InstalledMod[] installedMods = Array.Empty<InstalledMod>();
 
@@ -51,7 +53,7 @@ namespace ModIOBrowser.Implementation
         internal Translation CollectionPanelTitleTranslation = null;
 
         public static bool IsOn() => Instance != null && Instance.CollectionPanel != null && Instance.CollectionPanel.activeSelf;
-        
+
         // TODO This region is for the Uninstall confirmation dialog, and needs to be merged to the reusable dialog instead
 #region Confirm Unsubscibe / Uninstall
         public void CloseUninstallConfirmation()
@@ -65,7 +67,7 @@ namespace ModIOBrowser.Implementation
             uninstallConfirmationPanelModName.text = profile.name;
             uninstallConfirmationPanelFileSize.text = ""; // TODO need to add file size
             currentSelectedModForUninstall = profile;
-            uninstallConfirmationPanel.SetActive(true);            
+            uninstallConfirmationPanel.SetActive(true);
             SelectionManager.Instance.SelectView(UiViews.ConfirmUninstall);
         }
 
@@ -82,9 +84,9 @@ namespace ModIOBrowser.Implementation
             }
             RefreshList();
         }
-        
+
 #endregion
-        
+
         public void Open()
         {
             Navigating.GoToPanel(CollectionPanel);
@@ -98,9 +100,20 @@ namespace ModIOBrowser.Implementation
             Collection.Instance.CacheLocalSubscribedModStatuses();
 
             modStatus.Clear();
+            foreach(var modProfile in this.purchasedMods)
+            {
+                modStatus.Add(modProfile.id, "Purchased");
+            }
             foreach(SubscribedMod mod in subscribedMods)
             {
-                modStatus.Add(mod.modProfile.id, Utility.GetModStatusAsString(mod));
+                if(!modStatus.ContainsKey(mod.modProfile.id))
+                {
+                    modStatus.Add(mod.modProfile.id, Utility.GetModStatusAsString(mod));
+                }
+                else
+                {
+                    modStatus[mod.modProfile.id] = Utility.GetModStatusAsString(mod);
+                }
             }
             foreach(InstalledMod mod in installedMods)
             {
@@ -118,7 +131,7 @@ namespace ModIOBrowser.Implementation
                 if(!modStatus.ContainsKey(mod.id))
                 {
                     modStatus.Add(mod.id, "Pending...");
-                } 
+                }
                 else
                 {
                     modStatus[mod.id] = "Pending...";
@@ -143,29 +156,37 @@ namespace ModIOBrowser.Implementation
             }
 
             Refresh();
-            
+
             //--------------------------------------------------------------------------------//
             //                              GET FILTER SETTINGS                               //
             //--------------------------------------------------------------------------------//
             // check the first dropdown filter to decide if we show/hide subs/unsubs
-            bool showSubscribed = true;
+            bool showSubscribed = false;
             bool showUnsubscribed = false;
+            bool showPurchased = false;
             switch(CollectionPanelFirstDropDownFilter.value)
             {
-                case 1:
-                    showUnsubscribed = true; 
-                    showSubscribed = false;
+                case 0://All Mods
+                    showUnsubscribed = true;
+                    showSubscribed = true;
+                    showPurchased = true;
                     break;
-                case 2:
+                case 1://Subscribed
+                    showSubscribed = true;
+                    break;
+                case 2://Unsubscribed
                     showUnsubscribed = true;
                     break;
+                case 3://Purchased
+                    showPurchased = true;
+                    break;
             }
-            
+
             //--------------------------------------------------------------------------------//
             //                              GET MODS TO DISPLAY                               //
             //--------------------------------------------------------------------------------//
             List<CollectionProfile> allMods = new List<CollectionProfile>();
-            
+
             if (showSubscribed)
             {
                 foreach(SubscribedMod mod in subscribedMods)
@@ -185,7 +206,7 @@ namespace ModIOBrowser.Implementation
             {
                 // cache the pending subs in ModIds for an easier comparison
                 List<ModId> pendingSubs = pendingSubscriptions.Select(mod => mod.id).ToList();
-                
+
                 foreach(InstalledMod mod in installedMods)
                 {
                     // If we have subscribed to this, dont display it as an 'Unsubscribed' mod
@@ -196,6 +217,19 @@ namespace ModIOBrowser.Implementation
                     allMods.Add(new CollectionProfile(mod.modProfile, false, false, mod.subscribedUsers.Count, modStatus[mod.modProfile.id]));
                 }
             }
+            if (showPurchased)
+            {
+                foreach(ModProfile modProfile in this.purchasedMods)
+                {
+                    var collectionProfile = new CollectionProfile(modProfile, true, true, 1, modStatus[modProfile.id]);
+                    int index = allMods.FindIndex(item => item.modProfile.id == modProfile.id);
+                    if(index != -1)
+                        allMods[index] = collectionProfile;
+                    else
+                        allMods.Add(collectionProfile);
+                }
+            }
+
 
             string accentHashColor = ColorUtility.ToHtmlStringRGBA(SharedUi.colorScheme.GetSchemeColor(ColorSetterType.Highlight));
 
@@ -209,12 +243,12 @@ namespace ModIOBrowser.Implementation
                     "Collection <size=20><color=#{accentHashColor}>({subscribedAndPending.Count})</color></size>",
                     CollectionPanelTitle, $"{accentHashColor}", $"{allMods.Count}");
             }
-            
-            
+
+
             //--------------------------------------------------------------------------------//
             //                              SORT AND FILTER                                   //
             //--------------------------------------------------------------------------------//
-            
+
             // Sort the lists of mods according to dropdown filters
             switch(CollectionPanelSecondDropDownFilter.value)
             {
@@ -230,14 +264,14 @@ namespace ModIOBrowser.Implementation
             //--------------------------------------------------------------------------------//
             //                                 DISPLAY MODS                                   //
             //--------------------------------------------------------------------------------//
-            
+
             // Hide the existing collection items
             ListItem.HideListItems<CollectionModListItem>();
 
             bool hasSelection = false;
             string searchPhrase = CollectionPanelSearchField.text;
             CollectionModListItem lastItem = null;
-            
+
             // GET LIST ITEMS TO SETUP
             foreach(var mod in allMods)
             {
@@ -248,7 +282,7 @@ namespace ModIOBrowser.Implementation
                 }
 
                 ListItem li = ListItem.GetListItem<CollectionModListItem>(CollectionPanelModListItem, CollectionPanelModListItemParent, SharedUi.colorScheme);
-                
+
                 if(li is CollectionModListItem item)
                 {
                     li.Setup(mod);
@@ -285,12 +319,12 @@ namespace ModIOBrowser.Implementation
             Navigation updatesButton = CollectionPanelCheckForUpdatesButton.navigation;
             updatesButton.selectOnDown = selectable;
             CollectionPanelCheckForUpdatesButton.navigation = updatesButton;
-            
+
             // first dropdown
             Navigation firstDropdown = CollectionPanelFirstDropDownFilter.navigation;
             firstDropdown.selectOnDown = selectable;
             CollectionPanelFirstDropDownFilter.navigation = firstDropdown;
-            
+
             // second dropdown
             Navigation secondDropdown = CollectionPanelSecondDropDownFilter.navigation;
             secondDropdown.selectOnDown = selectable;
@@ -300,7 +334,7 @@ namespace ModIOBrowser.Implementation
         public void OnScrollValueChange()
         {
             float targetAlpha = -1f;
-            
+
             // Get the target alpha based on what the scrollbar value is
             if(CollectionPanelContentScrollBar.value < 1f)
             {
@@ -334,7 +368,7 @@ namespace ModIOBrowser.Implementation
             ModIOUnity.FetchUpdates(FinishedCheckingForUpdates);
             checkingForUpdates = true;
         }
-        
+
         void FinishedCheckingForUpdates(Result result)
         {
             checkingForUpdates = false;
@@ -368,7 +402,7 @@ namespace ModIOBrowser.Implementation
         }
 
         /// <summary>
-        /// This is used to get the installed and subscribed mods and cache them for use across the UI
+        /// This is used to get the purchased, installed and subscribed mods and cache them for use across the UI
         /// </summary>
         internal void CacheLocalSubscribedModStatuses()
         {
@@ -386,11 +420,36 @@ namespace ModIOBrowser.Implementation
             {
                 installedMods = installs;
             }
+
+            // Get purchased Mods
+            ModProfile[] purchased = ModIOUnity.GetPurchasedMods(out result);
+            if(result.Succeeded())
+            {
+                purchasedMods = purchased;
+            }
+        }
+
+        internal bool IsPurchased(ModProfile modProfile)
+        {
+            if(modProfile.price <= 0)
+                return true;
+
+            foreach(var m in purchasedMods)
+            {
+                if(m.id == modProfile.id)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         internal bool IsSubscribed(ModId id)
         {
-            return IsSubscribed(id, out SubscribedModStatus status);
+            if(!Authentication.Instance.IsAuthenticated)
+                return false;
+            return IsSubscribed(id, out SubscribedModStatus _);
         }
 
         /// <summary>
@@ -480,7 +539,7 @@ namespace ModIOBrowser.Implementation
             profile = default;
             return false;
         }
-        
+
         #region Comparer<T> delegates for sorting a List<ModProfile> via List<T>.Sort()
         static int CompareModProfilesAlphabetically(SubscribedMod A, SubscribedMod B)
         {

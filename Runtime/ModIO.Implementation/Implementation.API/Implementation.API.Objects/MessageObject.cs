@@ -1,5 +1,4 @@
-﻿
-namespace ModIO.Implementation.API.Objects
+﻿namespace ModIO.Implementation.API.Objects
 {
     internal struct MessageObject
     {

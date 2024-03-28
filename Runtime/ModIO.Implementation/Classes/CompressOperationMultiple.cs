@@ -20,14 +20,13 @@ namespace ModIO.Implementation
             cancel = true;
         }
 
-        public override async Task<ResultAnd<MemoryStream>> Compress()
+        public override async Task<Result> Compress(Stream stream)
         {
-            ResultAnd<MemoryStream> resultAnd = new ResultAnd<MemoryStream>();
-            resultAnd.value = new MemoryStream();
+            Result result = ResultBuilder.Unknown;
 
             int count = 0;
 
-            using(ZipOutputStream zipStream = new ZipOutputStream(resultAnd.value))
+            using(ZipOutputStream zipStream = new ZipOutputStream(stream))
             {
                 zipStream.SetLevel(3);
 
@@ -36,23 +35,22 @@ namespace ModIO.Implementation
                     string entryName = $"image_{count}.png";
                     count++;
 
-                    using(MemoryStream memoryStream = new MemoryStream())
+                    using(Stream memoryStream = new MemoryStream())
                     {
-                        memoryStream.Write(bytes, 0, bytes.Length);
+                        await memoryStream.WriteAsync(bytes, 0, bytes.Length);
                         await CompressStream(entryName, memoryStream, zipStream);
                     }
 
                     if(cancel || ModIOUnityImplementation.shuttingDown)
                     {
-                        return Abort(resultAnd, $"Aborting while zipping images.");
+                        return Abort(result, $"Aborting while zipping images.");
                     }
                 }
 
                 zipStream.IsStreamOwner = false;
             }
 
-            resultAnd.result = ResultBuilder.Success;
-            return resultAnd;
+            return ResultBuilder.Success;
         }
     }
 }

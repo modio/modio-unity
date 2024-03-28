@@ -11,6 +11,7 @@ namespace ModIO
     public enum SortModsBy
     {
         Name,
+        Price,
         Rating,
         Popular,
         Downloads,

@@ -19,12 +19,12 @@ All calls into async functions on the new mod.io Unity Plugin provide a single c
 This provides a much clearer calling convention and gives a guarantee of one operation completion - one callback invocation, rather than the two callbacks required by async functions in mod.io Unity V1.
 
 Here is an example of the usage with a callback and an await:
-```c#
+```csharp
 void CallbackExample()
 {
-    ModIOUnity.GetMods(filter, (Result result, ModPage modPage)=>
+    ModIOUnity.GetMods(filter, (ResultAnd<ModPage> response)=>
     {
-        if (result.Succeeded())
+        if (response.result.Succeeded())
         {
             // Success
         }
@@ -47,8 +47,8 @@ async void AsyncExample()
 ## Initializing the plugin
 Initialization in mod.io Unity V1 was handled mostly statically, pulling the details from the `Resources/modio_settings` asset during static initialization.
 Optionally, a developer could set the user data directory by calling `UserDataStorage.SetActiveUser()` as seen in the sample below.
-```c#
-void modioUnityV1Example()
+```csharp
+void ModioUnityV1Example()
 {
     // Optional (Sets the user data directory)
     string userProfileIdentifier = "local_game_user_id"; // Local User Account Identifier
@@ -58,7 +58,7 @@ void modioUnityV1Example()
 Apart from this, there are no initialization possibilities in mod.io Unity V1.
 
 For the new mod.io Unity Plugin, we have kept an automatic initialization option that pulls the data from the `Resources/mod.io/config` asset, similar to the function of mod.io Unity V1. However, there are also explicit initialization methods and shutdown methods that can be utilized if automatic initialization is disabled in the config asset.
-```c#
+```csharp
 void InitializationExample()
 {
     string userProfileIdentifier = "local_game_user_id"; // Local User Account Identifier
@@ -74,8 +74,8 @@ mod.io Unity V1 built the synchronization of an authenticated user's subscriptio
 This has not changed in the new mod.io Unity Plugin, but the process of keeping that data synchronized is much easier, along with fetching the data for the subscribed mods.
 
 Adding, synchronizing, and retrieving subscription data in mod.io Unity V1 involves chaining multiple calls together.
-```c#
-void modioUnityV1Example()
+```csharp
+void ModioUnityV1Example()
 {
     int newSubModId = 123;
     int newUnsubModId = 456;
@@ -102,35 +102,23 @@ void modioUnityV1Example()
 ```
 
 The new mod.io Unity Plugin streamlines this process by reducing the need for callback chaining, synchronizing immediately for local changes, and removing the need to handle the mod ids.
-[FetchUpdates()](https://sdkdocs.mod.io/unity/class_mod_i_o_1_1_mod_i_o_unity.html#aab9e3eb7697f13e4e96273ac50ab79af) is the single synchronization function on the interface, handling all synchronization actions.
-```c#
+[FetchUpdates()](https://sdkdocs.mod.io/unity/class_mod_i_o_1_1_mod_i_o_unity.html#aab9e3eb7697f13e4e96273ac50ab79af) is the single synchronization function on the interface, handling all synchronization actions and only needing to be run generally once per session (Ideally after you Initialize the plugin).
+```csharp
 void Example()
 {
-    int newSubModId = 123;
-    int newUnsubModId = 456;
-
-    // Pushes a subscribe attempt directly to the server, returning an error on failure
-    ModIOUnity.SubscribeToMod(newSubModId,
-        (Result result) => { /* callback code */ });
-    // Pushes an unsubscribe attempt directly to the server, returning an error on failure
-    ModIOUnity.UnsubscribeFromMod(newUnsubModId,
-        (Result result) => { /* callback code */ });
-
     // Synchronizes the local and server data
     ModIOUnity.FetchUpdates(
-        (Result result) => { /* callback code */ };
-    // Get Subscribed mod data
-    SubscribedMod[] subscribedMods = ModIOUnity.GetSubscribedMods(out Result result);
+        (Result result) => { /* callback code */ });
 }
 ```
 Furthermore, the subscribe and unsubscribe operations automatically flag the mod as requiring installation/uninstallation, a responsibility placed on the consumer in mod.io Unity V1. (See below)
 
 ## Listing the User's Installed Mods
-Like in mod.io Unity V1, the new mod.io Unity Plugin allows the sharing of installed mods across multiple users to save network traffic and storage space.
+Likewise in mod.io Unity V1, the new mod.io Unity Plugin allows the sharing of installed mods across multiple users to save network traffic and storage space.
 
 mod.io Unity V1 didn't have a direct method of retrieving the mods installed for the current user. There are a variety of different methods that need to be chained together to retrieve a complete picture of the installed mod data.
-```c#
-void modioUnityV1Example()
+```csharp
+void ModioUnityV1Example()
 {
     // Retrieves a de-identified list of mod directories for mods the user has "enabled"
     bool onlyEnabledMods = true;
@@ -157,7 +145,7 @@ void modioUnityV1Example()
 ```
 
 The new mod.io Unity Plugin makes this much simpler, giving you all the information in a single call, returning a [UserInstalledMod](https://sdkdocs.mod.io/unity/struct_mod_i_o_1_1_user_installed_mod.html) array (and a `Result`).
-```c#
+```csharp
 void Example()
 {
     UserInstalledMod[] mods = ModIOUnity.GetInstalledModsForUser(out Result result);
@@ -168,8 +156,8 @@ void Example()
 The new mod.io Unity Plugin has the business rules of "Subscription = install and update" built into it, such that the download, extract, and uninstall processes are managed automatically by the [Mod Management Loop](https://sdkdocs.mod.io/unity/class_mod_i_o_1_1_mod_i_o_unity.html#aabba78ef1b55e60e2334cc1ba6faf1c3), a process that runs asynchronously to detect changes to the subscriptions and automate mod data management.
 
 mod.io Unity V1 handled the installation and uninstallation of mods in the ModBrowser code, but any developer looking to exclude that code or understand the installation process had a more difficult time.
-```c#
-void modioUnityV1Example()
+```csharp
+void ModioUnityV1Example()
 {
     /// === Add a new subscription and install ===
     int newSubModId = 123;
@@ -228,7 +216,7 @@ This is one of the key processes that has been streamlined in the new mod.io Uni
 
 A call to [ModIOUnity.EnableModManagement](https://sdkdocs.mod.io/unity/class_mod_i_o_1_1_mod_i_o_unity.html#aabba78ef1b55e60e2334cc1ba6faf1c3) starts the background process of monitoring for subscription changes, and takes a (nullable) callback for mod management events. This can be disabled at any point with a call to [ModIOUnity.DisableModManagement](https://sdkdocs.mod.io/unity/class_mod_i_o_1_1_mod_i_o_unity.html#a7eda62ae267aa409b6408fd60ed16429).
 Any changes invoked locally, and any changes retrieved with [ModIOUnity.FetchUpdates](https://sdkdocs.mod.io/unity/class_mod_i_o_1_1_mod_i_o_unity.html#aab9e3eb7697f13e4e96273ac50ab79af) are automatically queued and actioned.
-```c#
+```csharp
 void Example()
 {
     ModManagementEventDelegate eventDelegate = (ModManagementEventType eventType, ModId modId, Result eventResult) => { /* handle event */};
@@ -246,10 +234,6 @@ void Example()
     // Pushes the unsubcribe action to the server and flags it for uninstallation
     ModIOUnity.UnsubscribeFromMod(newUnsubModId, (Result result) => /* callback code */);
 
-    // === Fetch remote data and fix installation state ===
-    // Synchronizes local and server data, flagging install/uninstall operations as required
-    ModIOUnity.FetchUpdates((Result result) => { /* callback code */ });
-
     // Ends monitoring for changes and disables downloading/extracting/deleting of mod data
     ModIOUnity.DisableModManagement();
 }
@@ -263,18 +247,32 @@ methods, such as Steam or Xbox.
 
 ### Email Authentication
 In the V1 Plugin you can authenticate via email in the following way:
-```c#
-// TODO: EXAMPLE OF EMAIL AUTH IN V1
+```csharp
+void modioUnityV1_RequestEmailCode(string playerEmail)
+{
+    ModIO.APIClient.SendSecurityCode(
+        playerEmail, 
+        (APIMessage apiMessage) => { /* callback code */ }, 
+        (WebRequestError error) => { /* callback code */ });
+}
+
+void modioUnityV1_SubmitSecurityCode(string userSecurityCode)
+{
+    ModIO.UserAccountManagement.AuthenticateWithSecurityCode(
+        userSecurityCode, 
+        (UserProfile userProfile) => { /* callback code */ }, 
+        (WebRequestError error) => { /* callback code */ });
+}
 ```
 In the new Plugin you can do it like so:
-```c#
-async void RequestEmailCode()
+```csharp
+async void RequestEmailCode(string playerEmail)
 {
-    Result result = await ModIOUnityAsync.RequestAuthenticationEmail("johndoe@gmail.com");
+    Result result = await ModIOUnityAsync.RequestAuthenticationEmail(playerEmail);
  
     if (result.Succeeded())
     {
-        Debug.Log("Succeeded to send security code");
+        Debug.Log("Succeeded in sending security code");
     }
     else
     {
@@ -282,7 +280,7 @@ async void RequestEmailCode()
     }
 }
 
-async void SubmitCode(string userSecurityCode)
+async void SubmitSecurityCode(string userSecurityCode)
 {
     Result result = await ModIOUnityAsync.SubmitEmailSecurityCode(userSecurityCode);
  
@@ -300,7 +298,7 @@ async void SubmitCode(string userSecurityCode)
 ### Third party Authentication
 In the V1 Plugin you can authenticate a user with a third party service
 like Steam:
-```c#
+```csharp
 UserAccountManagement.AuthenticateWithSteamEncryptedAppTicket(pTicket,
                                                               pcbTicket,
                                                               hasUserAcceptedTerms,
@@ -308,7 +306,7 @@ UserAccountManagement.AuthenticateWithSteamEncryptedAppTicket(pTicket,
                                                               onError);
 ```
 In the new Plugin you can use the following:
-```c#
+```csharp
 ModIOUnity.AuthenticateUserViaSteam(token, email, termsHash, callback);
 ```
 (Note you can use `ModIOUnityAsync` to `await` instead.)
@@ -319,7 +317,7 @@ This is to ensure users view and accept the terms of use.
 
 Here is a complete example getting the TOS hash and Authenticating via Steam:
 
-```c#
+```csharp
 // Use this to cache the TOS we receive
 TermsOfUse termsOfUse;
 

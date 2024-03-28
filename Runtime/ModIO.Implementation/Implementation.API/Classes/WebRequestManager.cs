@@ -12,7 +12,7 @@ namespace ModIO.Implementation.API
     /// </summary>
     static class WebRequestManager
     {
-        static Dictionary<string, object> liveTasks = new Dictionary<string, object>();
+        static Queue<Tuple<string, object>> liveTasks = new Queue<Tuple<string, object>>();
         static HashSet<Task> onGoingRequests = new HashSet<Task>();
 
         internal static event Action ShutdownEvent = () => { };
@@ -23,7 +23,7 @@ namespace ModIO.Implementation.API
             ShutdownEvent.Invoke();
 
             await Task.WhenAll(onGoingRequests);
-            
+
             ShutdownEvent = null;
             ShutdownEvent = () => { };
         }
@@ -44,32 +44,22 @@ namespace ModIO.Implementation.API
                 onGoingRequests.Remove(task);
             }
         }
-        
+
         public static async Task<ResultAnd<TOutput>> Request<TOutput>(WebRequestConfig config, ProgressHandle progressHandle = null)
         {
-            Task<ResultAnd<TOutput>> task = null;
-
-            if(!PreexistingGetRequest(config, out task))
+            if(!PreexistingGetRequest(config, out Task<ResultAnd<TOutput>> task))
             {
                 task = NewRequest<TOutput>(config, progressHandle);
                 onGoingRequests.Add(task);
             }
 
-            if (config.RequestMethodType != "GET")
-            {
-                liveTasks.Add(config.Url, task);
-                await task;
-                liveTasks.Remove(config.Url);
-            }
-            else
-            {
-                await task;
-            }
+            await task;
+            
             if(onGoingRequests.Contains(task))
             {
                 onGoingRequests.Remove(task);
             }
-            
+
             return task.Result;
         }
 
@@ -89,15 +79,20 @@ namespace ModIO.Implementation.API
         static bool PreexistingGetRequest<TOutput>(WebRequestConfig config, out Task<ResultAnd<TOutput>> task)
         {
             task = null;
-            if(config.RequestMethodType == "GET")
+            if(config.RequestMethodType != "GET")
             {
                 return false;
             }
-            if(liveTasks.TryGetValue(config.Url, out var activeTask))
+
+            foreach(var t in liveTasks)
             {
-                task = (Task<ResultAnd<TOutput>>)activeTask;
-                return true;
+                if(t.Item1 == config.Url)
+                {
+                    task = (Task<ResultAnd<TOutput>>)t.Item2;
+                    return true;
+                }
             }
+
             return false;
         }
     }

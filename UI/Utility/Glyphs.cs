@@ -55,10 +55,10 @@ namespace ModIOBrowser.Implementation
             SimpleMessageHub.Instance.Publish(new MessageGlyphUpdate());
         }
 
-        [ExposeMethodInEditor] public void ChangeToPc() => ChangeGlyphs(GlyphPlatforms.PC);
-        [ExposeMethodInEditor] public void ChangeToXbox() => ChangeGlyphs(GlyphPlatforms.XBOX);
-        [ExposeMethodInEditor] public void ChangeToNintendoSwitch() => ChangeGlyphs(GlyphPlatforms.NINTENDO_SWITCH);
-        [ExposeMethodInEditor] public void ChangeToPs4() => ChangeGlyphs(GlyphPlatforms.PLAYSTATION_4);
-        [ExposeMethodInEditor] public void ChangeToPs5() => ChangeGlyphs(GlyphPlatforms.PLAYSTATION_5);
+        public void ChangeToPc() => ChangeGlyphs(GlyphPlatforms.PC);
+        public void ChangeToXbox() => ChangeGlyphs(GlyphPlatforms.XBOX);
+        public void ChangeToNintendoSwitch() => ChangeGlyphs(GlyphPlatforms.NINTENDO_SWITCH);
+        public void ChangeToPs4() => ChangeGlyphs(GlyphPlatforms.PLAYSTATION_4);
+        public void ChangeToPs5() => ChangeGlyphs(GlyphPlatforms.PLAYSTATION_5);
     }
 }

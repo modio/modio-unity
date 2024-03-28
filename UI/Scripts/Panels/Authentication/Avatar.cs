@@ -50,7 +50,7 @@ namespace ModIOBrowser.Implementation
         {
             var sprite = await GetSprite(currentAuthenticationPortal, currentUserProfile);
 
-            if (sprite == null)
+            if (sprite == null || !Authentication.Instance.IsAuthenticated)
             {
                 ShowDefaultAvatar();
                 return;

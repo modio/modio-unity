@@ -11,7 +11,7 @@ namespace ModIO.Implementation.Wss
 	/// </summary>
 	internal static class Wss
 	{
-		
+
 		/// <summary>
 		/// Sends a request to the server to begin a multi device login process. Once it receives
 		/// the 5 digit code from the server it will return the token with said code and url to
@@ -27,13 +27,13 @@ namespace ModIO.Implementation.Wss
 
 			// Wait for first response, sort of like a handshake
 			var handshake = await WssHandler.DoMessageHandshake<WssDeviceLoginResponse>(message);
-            
+
 			if(!handshake.result.Succeeded())
 			{
 				// FAILURE
 				return ResultAnd.Create<ExternalAuthenticationToken>(handshake.result, default);
 			}
-            
+
 			// wait for ongoing message (put this task into the token to be awaited)
 			var task = WaitForAccessToken();
 
@@ -41,17 +41,18 @@ namespace ModIO.Implementation.Wss
 			ExternalAuthenticationToken token = new ExternalAuthenticationToken
 			{
 				code = handshake.value.code,
-				url = handshake.value.login_url,//handshake.value.display_url, // TODO swap when QR url is added
-				autoUrl = handshake.value.login_url,
+				url = handshake.value.login_url,
+				autoUrl = $"{handshake.value.login_url}?code={handshake.value.code}",
 				expiryTime = DateTimeOffset.FromUnixTimeSeconds(handshake.value.date_expires).DateTime,
 				task = task,
 				cancel = ()=> WssHandler.CancelWaitingFor(WssOperationType.Wss_AccessToken)
 			};
-			
+
 			return ResultAnd.Create(ResultBuilder.Success, token);
 		}
 
-		/// <summary>
+        // ReSharper disable Unity.PerformanceAnalysis
+        /// <summary>
 		/// Begins listening for the WssMessage for the multi device authentication attempt.
 		/// This will timeout after 15 minutes.
 		/// </summary>
@@ -59,7 +60,7 @@ namespace ModIO.Implementation.Wss
 		static async Task<Result> WaitForAccessToken()
 		{
 			var response = await WssHandler.WaitForMessage(WssOperationType.Wss_AccessToken);
-			
+
 			Result result = response.result;
 			if(result.Succeeded())
 			{
@@ -68,7 +69,7 @@ namespace ModIO.Implementation.Wss
 					try
 					{
 						UserData.instance.SetOAuthToken(token);
-						
+
 						// HACK this is kind of hacky, but we're not given the user profile, we need
 						// to silently retrieve it
 						await ModIOUnityImplementation.GetCurrentUser(delegate { });
@@ -86,15 +87,17 @@ namespace ModIO.Implementation.Wss
 					result = ResultBuilder.Create(ResultCode.WSS_UnexpectedMessage);
 				}
 			}
-			
+
 			// TODO HACK REMOVE THIS - DISCONNECT THE SOCKET
+#pragma warning disable 4014
 			//----------------------------------------------
 			// currently there are no other events or listeners for the socket to be used for, thus
 			// we can disconnect it when we've finished the authentication flow (For now)
 			// We will need to remove this next line once more features are added to the Wss Socket
 			WssHandler.Shutdown();
 			//----------------------------------------------
-			
+#pragma warning restore 4014
+
 			return result;
 		}
 	}

@@ -14,6 +14,25 @@ namespace ModIOBrowser
         public List<MultiTargetDropdown> childDropdowns = new List<MultiTargetDropdown>();
 
         GameObject border;
+        string[] m_TextCode;
+
+        protected override void OnEnable()
+        {
+            if (m_TextCode == null)
+            {
+                m_TextCode = new string[options.Count];
+
+                for (int i = 0; i < options.Count; ++i)
+                {
+                    m_TextCode[i] = options[i].text;
+                }
+            }
+
+            for (int i = 0; i < options.Count; ++i)
+            {
+                options[i].text = TranslationManager.Instance.Get(m_TextCode[i]);
+            }
+        }
 
         public static MultiTargetDropdown currentMultiTargetDropdown;
 
@@ -34,7 +53,7 @@ namespace ModIOBrowser
             base.OnDeselect(eventData);
             currentMultiTargetDropdown = null;
         }
-        
+
 #if UNITY_EDITOR
         protected override void Reset()
         {
@@ -212,7 +231,7 @@ namespace ModIOBrowser
             this.animator.ResetTrigger(trigger.disabledTrigger);
             this.animator.SetTrigger(triggerName);
         }
-        
+
         protected override TMP_Dropdown.DropdownItem CreateItem(
             TMP_Dropdown.DropdownItem itemTemplate)
         {
