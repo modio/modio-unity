@@ -1,12 +1,4 @@
----
-id: unity-introduction
-title: Unity Introduction
-sidebar_label: Unity Introduction
-slug: /unity-plugin/unity-introduction
-sidebar_position: 0
----
-
-<a href="https://mod.io"><img src="https://mod.io/images/branding/modio-logo-bluewhite.svg" alt="mod.io" width="360" align="right"/></a>
+<p><a href="https://mod.io"><img src="https://mod.io/images/branding/modio-logo-bluewhite.svg" alt="mod.io" width="360" align="right"/></a></p>
 # mod.io Unity Plugin v2024.3.1
 [![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)](https://github.com/modio/modio-unity/blob/master/LICENSE)
 [![Discord](https://img.shields.io/discord/389039439487434752.svg?label=Discord&logo=discord&color=7289DA&labelColor=2C2F33)](https://discord.mod.io)
@@ -30,16 +22,16 @@ A custom built [ready-made UI](#browser-ui) for mod discovery is included, along
 ## Platform Support
 You can view the Monetization Endpoints [here.](./Marketplace.md)
 
-|Platform       | Support                 | Documentation                                                                              |
-| ------------- |-------------------------|--------------------------------------------------------------------------------------------|
-|Windows        | Yes                     |                                                                                            |
-|Windows (GDK)  | Yes ([Contact us](#game-studios-and-publishers)) |                                                                                            |
-|XBox (GDK)     | Yes ([Contact us](#game-studios-and-publishers)) | [Marketplace](./Platform/Gamecore/Gamecore Marketplace.md)                                 |
-|PlayStation 4  | Yes ([Contact us](#game-studios-and-publishers)) | [Marketplace](./Platform/Playstation/ModIO.Implementation.Platform/PS4/PS4 Marketplace.md) |
-|PlayStation 5  | Yes ([Contact us](#game-studios-and-publishers)) | [Marketplace](./Platform/Playstation/ModIO.Implementation.Platform/PS5/PS5 Marketplace.md) |
-|Nintendo Switch| Yes ([Contact us](#game-studios-and-publishers)) |                                                                                            |
-|Linux          | Yes                     |                                                                                            |
-|macOS          | Yes                     |                                                                                            |
+|Platform       | Support                 |
+| ------------- |-------------------------|
+|Windows        | Yes                     |
+|Windows (GDK)  | Yes ([Contact us](#game-studios-and-publishers)) |
+|XBox (GDK)     | Yes ([Contact us](#game-studios-and-publishers)) |
+|PlayStation 4  | Yes ([Contact us](#game-studios-and-publishers)) |
+|PlayStation 5  | Yes ([Contact us](#game-studios-and-publishers)) |
+|Nintendo Switch| Yes ([Contact us](#game-studios-and-publishers)) |
+|Linux          | Yes                     |
+|macOS          | Yes                     |
 
 
 ## Game Studios and Publishers
