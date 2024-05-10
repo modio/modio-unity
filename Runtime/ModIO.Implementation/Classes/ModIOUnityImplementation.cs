@@ -2209,7 +2209,7 @@ namespace ModIO.Implementation
         static async Task<Result> ValidateModProfileMarketplaceTeam(ModProfileDetails modDetails)
         {
             // If not setting monetization to live, we don't need to validate that a marketplace team has been setup
-            if (modDetails.monetizationOptions.HasValue && modDetails.monetizationOptions.Value.HasFlag(MonetizationOption.Live))
+            if (!modDetails.monetizationOptions.HasValue || modDetails.monetizationOptions.Value == MonetizationOption.None)
             {
                 return ResultBuilder.Success;
             }
