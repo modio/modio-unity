@@ -22,16 +22,18 @@ A custom built [ready-made UI](#browser-ui) for mod discovery is included, along
 ## Platform Support
 You can view the Monetization Endpoints [here.](./Marketplace.md)
 
-|Platform       | Support                 |
-| ------------- |-------------------------|
-|Windows        | Yes                     |
-|Windows (GDK)  | Yes ([Contact us](#game-studios-and-publishers)) |
-|XBox (GDK)     | Yes ([Contact us](#game-studios-and-publishers)) |
-|PlayStation 4  | Yes ([Contact us](#game-studios-and-publishers)) |
-|PlayStation 5  | Yes ([Contact us](#game-studios-and-publishers)) |
-|Nintendo Switch| Yes ([Contact us](#game-studios-and-publishers)) |
-|Linux          | Yes                     |
-|macOS          | Yes                     |
+| Platform        | Support                 |
+|-----------------|-------------------------|
+| Windows         | Yes                     |
+| macOS           | Yes                     |
+| Linux           | Yes                     |
+| Xbox One        | Yes ([Contact us](#game-studios-and-publishers)) |
+| Xbox Series X   | Yes ([Contact us](#game-studios-and-publishers)) |
+| PlayStation 4   | Yes ([Contact us](#game-studios-and-publishers)) |
+| PlayStation 5   | Yes ([Contact us](#game-studios-and-publishers)) |
+| Nintendo Switch | Yes ([Contact us](#game-studios-and-publishers)) |
+| iOS             | Yes                     |
+| Android         | Yes                     |
 
 
 ## Game Studios and Publishers
