@@ -20,8 +20,6 @@ The mod.io Unity Engine plugin is the simplest and fastest way to integrate UGC 
 A custom built [ready-made UI](#browser-ui) for mod discovery is included, along with installation and collection management, and a full-featured [C# interface](#getting-started) which connects to the [mod.io REST API](https://docs.mod.io).
 
 ## Platform Support
-You can view the Monetization Endpoints [here.](./Marketplace.md)
-
 | Platform        | Support                 |
 |-----------------|-------------------------|
 | Windows         | Yes                     |
