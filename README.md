@@ -20,18 +20,20 @@ The mod.io Unity Engine plugin is the simplest and fastest way to integrate UGC 
 A custom built [ready-made UI](#browser-ui) for mod discovery is included, along with installation and collection management, and a full-featured [C# interface](#getting-started) which connects to the [mod.io REST API](https://docs.mod.io).
 
 ## Platform Support
-| Platform          | Support                 |
-|-------------------|-------------------------|
-| Windows           | Yes                     |
-| macOS             | Yes                     |
-| Linux             | Yes                     |
-| Xbox One          | Yes ([Contact us](#game-studios-and-publishers)) |
-| Xbox Series X     | Yes ([Contact us](#game-studios-and-publishers)) |
-| PlayStation&reg;4 | Yes ([Contact us](#game-studios-and-publishers)) |
-| PlayStation&reg;5 | Yes ([Contact us](#game-studios-and-publishers)) |
-| Nintendo Switch   | Yes ([Contact us](#game-studios-and-publishers)) |
-| iOS               | Yes                     |
-| Android           | Yes                     |
+To access console platforms and documentation, see [Supporting Console Platforms](https://docs.mod.io/platforms/).
+
+| Platform          | Support |
+|-------------------|:-------:|
+| Windows           | &check; |
+| macOS             | &check; |
+| Linux             | &check; |
+| Xbox One          | &check; |
+| Xbox Series X     | &check; |
+| PlayStation&reg;4 | &check; |
+| PlayStation&reg;5 | &check; |
+| Nintendo Switch   | &check; |
+| iOS               | &check; |
+| Android           | &check; |
 
 
 ## Game Studios and Publishers
