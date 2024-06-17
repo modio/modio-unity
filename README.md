@@ -2,8 +2,8 @@
 # mod.io Unity Plugin v2024.3.1
 [![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)](https://github.com/modio/modio-unity/blob/master/LICENSE)
 [![Discord](https://img.shields.io/discord/389039439487434752.svg?label=Discord&logo=discord&color=7289DA&labelColor=2C2F33)](https://discord.mod.io)
-[![Master docs](https://img.shields.io/badge/docs-master-green.svg)](https://go.mod.io/unity-docs)
-[![Unity 3D](https://img.shields.io/badge/Unity-2020.3+-lightgrey.svg)](https://unity3d.com)
+[![Master docs](https://img.shields.io/badge/docs-master-green.svg)](https://docs.mod.io/unity)
+[![Unity](https://img.shields.io/badge/Unity-2020.3+-lightgrey.svg)](https://assetstore.unity.com/packages/tools/integration/mod-browser-manager-by-mod-io-138866)
 
 Welcome to the mod.io Unity Engine plugin repository!
 
