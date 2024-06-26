@@ -1257,10 +1257,7 @@ features are enabled as part of the onboarding process on your game profile. Onc
 further you need to do for initialization in the SDK.
 
 ### Enable Marketplace in the Plugin
-The first thing you will need to do is enable the marketplace toggle inside your config. This informs the plugin that your game profile has marketplace features enabled and will behave accordingly.
-
-> [!NOTE]
-> You can quickly access your config file by going to Tools > mod.io > Edit Settings 
+The first thing you will need to do is enable the marketplace in the mod.io portal for your game under Admin->Monetization->Settings->Enable Marketplace.
 
 ### Get User Wallet Balance
 Returns the current user's token balance
