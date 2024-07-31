@@ -73,6 +73,8 @@ namespace ModIO.Implementation.Wss
 						// HACK this is kind of hacky, but we're not given the user profile, we need
 						// to silently retrieve it
 						await ModIOUnityImplementation.GetCurrentUser(delegate { });
+
+                        ModIOUnityEvents.OnUserAuthenticated();
 					}
 					catch(Exception e)
 					{

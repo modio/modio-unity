@@ -13,7 +13,8 @@ namespace ModIOBrowser.Implementation
     class Glyphs : SelfInstancingMonoSingleton<Glyphs>
     {
         private ColorScheme colorScheme;
-        public GlyphPlatforms PlatformType { get; internal set; }
+        static GlyphPlatforms _platformType;
+        public GlyphPlatforms PlatformType { get => _platformType; internal set => _platformType = value; }
 
         public Color glyphColorFallback;
         public Sprite fallbackSprite;
@@ -24,7 +25,7 @@ namespace ModIOBrowser.Implementation
         private void Start()
         {
             colorScheme = SharedUi.colorScheme;
-            if(this.PlatformType == default)
+            if(this.PlatformType == default && SharedUi.settings != null)
                 ChangeGlyphs(SharedUi.settings.GlyphPlatform);
         }
 

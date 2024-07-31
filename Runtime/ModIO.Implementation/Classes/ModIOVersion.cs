@@ -5,35 +5,23 @@
     {
         // ---------[ Singleton ]---------
         /// <summary>Singleton instance for current version.</summary>
-        public static readonly ModIOVersion Current = new ModIOVersion(2024, 3, 1, "beta");
+        public static readonly ModIOVersion Current = new ModIOVersion(2024, 8, 1, "");
 
         // ---------[ Fields ]---------
         /// <summary>Main Version number.</summary>
-        public int year;
+        public readonly int year;
 
-        // ---------[ Fields ]---------
         /// <summary>Major version number.</summary>
-        /// <remarks>Represents the major version number. Increases when there is a breaking change
-        /// to the interface.
-        /// Changing between versions of the codebase with a different X value, will require changes
-        /// to a consumer codebase in order to integrate.</remarks>
-        public int month;
+        public readonly int month;
 
         /// <summary>Version build number.</summary>
-        /// <remarks>Represents the build version number. Increases when a new release is created
-        /// for to the Asset Store/GitHub.
-        /// Changing between versions of the codebase with a different Y value, will never require
-        /// changes to a consumer codebase in order to integrate, but may offer additional
-        /// functionality if changes are made.</remarks>
-        public int patch;
+        public readonly int patch;
 
         /// <summary>Suffix for the current version.</summary>
-        /// <remarks>Represents additional, non-incremental version information about a build.
-        /// This will never represent a difference in functionality or behaviour, but instead
-        /// semantic information such as the production-readiness of a build, or the platform it was
-        /// built for. Always written in lower-case, using underscore as a name break as necessary.
-        /// </remarks>
-        public string suffix;
+        public readonly string suffix;
+
+        /// <summary>Header string containing all version information.</summary>
+        readonly string headerString;
 
         // ---------[ Initialization ]---------
         /// <summary>Constructs an object with the given version values.</summary>
@@ -48,6 +36,8 @@
                 suffix = string.Empty;
             }
             this.suffix = suffix;
+
+            headerString = $"modio-{year}.{month}.{patch}{(suffix != string.Empty ? ("-" + suffix) : string.Empty)}";
         }
 
         // ---------[ IComparable Interface ]---------
@@ -97,7 +87,7 @@
 #region Utility
 
         /// <summary>Creates the request header representation of the version.</summary>
-        public string ToHeaderString() => $"modio-{year.ToString()}.{month.ToString()}.{patch.ToString()}-{suffix}";
+        public readonly string ToHeaderString() => headerString;
 
 
 #endregion // Utility

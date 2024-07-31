@@ -26,9 +26,11 @@ namespace ModIO
         public readonly DateTime dateAdded;
         public readonly DateTime dateUpdated;
         public readonly DateTime dateLive;
+        public readonly bool hasDependencies;
         public readonly DownloadReference[] galleryImagesOriginal;
         public readonly DownloadReference[] galleryImages320x180;
         public readonly DownloadReference[] galleryImages640x360;
+        public readonly DownloadReference[] galleryImages1280x720;
         public readonly DownloadReference logoImage320x180;
         public readonly DownloadReference logoImage640x360;
         public readonly DownloadReference logoImage1280x720;
@@ -97,9 +99,11 @@ namespace ModIO
             DateTime dateAdded,
             DateTime dateUpdated,
             DateTime dateLive,
+            bool dependencies,
             DownloadReference[] galleryImagesOriginal,
             DownloadReference[] galleryImages_320x180,
             DownloadReference[] galleryImages_640x360,
+            DownloadReference[] galleryImages_1280x720,
             DownloadReference logoImage_320x180,
             DownloadReference logoImage_640x360,
             DownloadReference logoImage_1280x720,
@@ -141,9 +145,11 @@ namespace ModIO
             this.dateAdded = dateAdded;
             this.dateUpdated = dateUpdated;
             this.dateLive = dateLive;
+            this.hasDependencies = dependencies;
             this.galleryImagesOriginal = galleryImagesOriginal;
             this.galleryImages320x180 = galleryImages_320x180;
             this.galleryImages640x360 = galleryImages_640x360;
+            this.galleryImages1280x720 = galleryImages_1280x720;
             this.logoImage320x180 = logoImage_320x180;
             this.logoImage640x360 = logoImage_640x360;
             this.logoImage1280x720 = logoImage_1280x720;

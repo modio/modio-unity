@@ -499,40 +499,6 @@ namespace ModIO.Implementation.Platform
         }
 
         /// <summary>
-        /// When overridden in a derived class, writes a sequence of bytes to the current stream and
-        /// advances the current position within this stream by the number of bytes written.
-        /// </summary>
-        /// <param name="buffer">Byte[]- An array of bytes. This method copies count bytes from buffer to the current stream.</param>
-        /// <param name="offset">Int32- The zero-based byte offset in buffer at which to begin copying bytes to the current stream.</param>
-        /// <param name="count">Int32- The number of bytes to be written to the current stream.</param>
-        /// <remarks>
-        /// Use the CanWrite property to determine whether the current instance supports writing.
-        /// Use the WriteAsync method to write asynchronously to the current stream.
-        ///
-        /// If the write operation is successful, the position within the stream advances by the
-        /// number of bytes written. If an exception occurs, the position within the stream remains
-        /// unchanged.
-        /// </remarks>
-        public override void Write(byte[] buffer, int offset, int count)
-        {
-            // Exceptions
-            // ArgumentException
-            //  The sum of offset and count is greater than the buffer length.
-            // ArgumentNullException
-            //  buffer is null.
-            // ArgumentOutOfRangeException
-            //  offset or count is negative.
-            // IOException
-            //  An I/O error occurred, such as the specified file cannot be found.
-            // NotSupportedException
-            //  The stream does not support writing.
-            // ObjectDisposedException
-            //  Write(Byte[], Int32, Int32) was called after the stream was closed.
-
-            this.fileStream.Write(buffer, offset, count);
-        }
-
-        /// <summary>
         /// Asynchronously writes a sequence of bytes to the current stream, advances the current
         /// position within this stream by the number of bytes written, and monitors cancellation
         /// requests.
@@ -573,10 +539,10 @@ namespace ModIO.Implementation.Platform
             // InvalidOperationException
             //  The stream is currently in use by a previous write operation.
 
-            return this.fileStream.WriteAsync(buffer, offset, count, cancellationToken);
+            return ManagedFileWriter.WriteToFile(fileStream, buffer, offset, count, cancellationToken);
         }
 
-        public override async Task<Result> WriteAllBytesAsync(byte[] buffer)
+        public override async Task<Result> WriteAllBytesAsync(byte[] buffer, CancellationToken token = new CancellationToken())
         {
             Result writeResult;
 
@@ -586,8 +552,7 @@ namespace ModIO.Implementation.Platform
                 try
                 {
                     fileStream.Position = 0;
-                    await fileStream.WriteAsync(buffer, 0, buffer.Length);
-
+                    await ManagedFileWriter.WriteToFile(fileStream, buffer, token);
                     writeResult = ResultBuilder.Success;
                 }
                 catch(Exception e)
@@ -603,37 +568,6 @@ namespace ModIO.Implementation.Platform
 
             Logger.Log(LogLevel.Verbose,
                        $"Write file: {this.fileStream.Name} - Result: [{writeResult.code}]");
-
-            return writeResult;
-        }
-
-        public override Result WriteAllBytes(byte[] buffer)
-        {
-            Result writeResult;
-
-            if(SystemIOWrapper.IsPathValid(this.fileStream.Name, out writeResult)
-               && SystemIOWrapper.TryCreateParentDirectory(this.fileStream.Name, out writeResult))
-            {
-                try
-                {
-                    fileStream.Position = 0;
-                    fileStream.Write(buffer, 0, buffer.Length);
-
-                    writeResult = ResultBuilder.Success;
-                }
-                catch(Exception e)
-                {
-                    Logger.Log(LogLevel.Warning,
-                        "Unhandled error when attempting to write the file."
-                        + $"\n.path={this.fileStream.Name}"
-                        + $"\n.Exception:{e.Message}");
-
-                    writeResult = ResultBuilder.Create(ResultCode.IO_FileCouldNotBeWritten);
-                }
-            }
-
-            Logger.Log(LogLevel.Verbose,
-                $"Write file: {this.fileStream.Name} - Result: [{writeResult.code}]");
 
             return writeResult;
         }
@@ -662,8 +596,88 @@ namespace ModIO.Implementation.Platform
             //  The stream does not support writing, or the stream is already closed.
             // ObjectDisposedException
             //  Methods were called after the stream was closed.
+            if (ManagedFileWriter.IsOverBudget(1, out _))
+            {
+                Logger.Log(LogLevel.Error, "Write limit has been exceeded. Canceling operation!");
+                return;
+            }
 
             this.fileStream.WriteByte(value);
+        }
+
+        /// <summary>
+        /// When overridden in a derived class, writes a sequence of bytes to the current stream and
+        /// advances the current position within this stream by the number of bytes written.
+        /// </summary>
+        /// <param name="buffer">Byte[]- An array of bytes. This method copies count bytes from buffer to the current stream.</param>
+        /// <param name="offset">Int32- The zero-based byte offset in buffer at which to begin copying bytes to the current stream.</param>
+        /// <param name="count">Int32- The number of bytes to be written to the current stream.</param>
+        /// <remarks>
+        /// Use the CanWrite property to determine whether the current instance supports writing.
+        /// Use the WriteAsync method to write asynchronously to the current stream.
+        ///
+        /// If the write operation is successful, the position within the stream advances by the
+        /// number of bytes written. If an exception occurs, the position within the stream remains
+        /// unchanged.
+        /// </remarks>
+        public override void Write(byte[] buffer, int offset, int count)
+        {
+            // Exceptions
+            // ArgumentException
+            //  The sum of offset and count is greater than the buffer length.
+            // ArgumentNullException
+            //  buffer is null.
+            // ArgumentOutOfRangeException
+            //  offset or count is negative.
+            // IOException
+            //  An I/O error occurred, such as the specified file cannot be found.
+            // NotSupportedException
+            //  The stream does not support writing.
+            // ObjectDisposedException
+            //  Write(Byte[], Int32, Int32) was called after the stream was closed.
+            if (ManagedFileWriter.IsOverBudget((ulong)buffer.Length, out _))
+            {
+                Logger.Log(LogLevel.Error, "Write limit has been exceeded. Canceling operation!");
+                return;
+            }
+
+            this.fileStream.Write(buffer, offset, count);
+        }
+
+        public override Result WriteAllBytes(byte[] buffer)
+        {
+            if (ManagedFileWriter.IsOverBudget((ulong)buffer.Length, out _))
+            {
+                Logger.Log(LogLevel.Error, "Write limit has been exceeded. Canceling operation!");
+                return ResultBuilder.Create(ResultCode.IO_FileCouldNotBeWritten);
+            }
+
+            Result writeResult;
+
+            if(SystemIOWrapper.IsPathValid(this.fileStream.Name, out writeResult)
+               && SystemIOWrapper.TryCreateParentDirectory(this.fileStream.Name, out writeResult))
+            {
+                try
+                {
+                    fileStream.Position = 0;
+                    fileStream.Write(buffer, 0, buffer.Length);
+                    writeResult = ResultBuilder.Success;
+                }
+                catch(Exception e)
+                {
+                    Logger.Log(LogLevel.Warning,
+                        "Unhandled error when attempting to write the file."
+                        + $"\n.path={this.fileStream.Name}"
+                        + $"\n.Exception:{e.Message}");
+
+                    writeResult = ResultBuilder.Create(ResultCode.IO_FileCouldNotBeWritten);
+                }
+            }
+
+            Logger.Log(LogLevel.Verbose,
+                $"Write file: {this.fileStream.Name} - Result: [{writeResult.code}]");
+
+            return writeResult;
         }
 
         /// <summary>

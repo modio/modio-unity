@@ -1,11 +1,19 @@
-<a href="https://mod.io"><img src="https://mod.io/images/branding/modio-logo-bluedark.svg" alt="mod.io" width="360" align="right"/></a>
-# mod.io Unity Plugin v2024.3.1
+---
+id: unity-introduction
+title: Unity Introduction
+sidebar_label: Unity Introduction
+slug: /unity/unity-introduction/
+sidebar_position: 0
+---
+
+<a href="https://mod.io"><img src="https://mod.io/images/branding/modio-logo-bluewhite.svg" alt="mod.io" width="360" align="right"/></a>
+# mod.io Unity Plugin v2024.7.1
 [![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)](https://github.com/modio/modio-unity/blob/master/LICENSE)
 [![Discord](https://img.shields.io/discord/389039439487434752.svg?label=Discord&logo=discord&color=7289DA&labelColor=2C2F33)](https://discord.mod.io)
-[![Master docs](https://img.shields.io/badge/docs-master-green.svg)](https://docs.mod.io/unity)
-[![Unity](https://img.shields.io/badge/Unity-2020.3+-lightgrey.svg)](https://assetstore.unity.com/packages/tools/integration/mod-browser-manager-by-mod-io-138866)
+[![Master docs](https://img.shields.io/badge/docs-master-green.svg)](https://docs.mod.io/unity/)
+[![Unity 3D](https://img.shields.io/badge/Unity-2020.3+-lightgrey.svg)](https://unity3d.com)
 
-Welcome to the mod.io Unity Engine plugin repository!
+Welcome to the mod.io Unity Engine plugin [repository](https://github.com/modio/modio-unity)!
 
 mod.io enables game developers of all sizes to integrate user-generated content directly into their games quickly and easily. This includes hosting, user profiles and subscriptions, moderation tools, file delivery, and *more*: 
 
@@ -22,19 +30,18 @@ A custom built [ready-made UI](#browser-ui) for mod discovery is included, along
 ## Platform Support
 To access console platforms and documentation, see [Supporting Console Platforms](https://docs.mod.io/platforms/).
 
-| Platform          | Support |
-|-------------------|:-------:|
-| Windows           | &check; |
-| macOS             | &check; |
-| Linux             | &check; |
-| Xbox One          | &check; |
-| Xbox Series X     | &check; |
-| PlayStation&reg;4 | &check; |
-| PlayStation&reg;5 | &check; |
-| Nintendo Switch   | &check; |
-| iOS               | &check; |
-| Android           | &check; |
-
+| Platform        | Support |
+|-----------------|:-------:|
+| Windows         |    ✓    |
+| macOS           |    ✓    |
+| Linux           |    ✓    |
+| Xbox One        |    ✓    |
+| Xbox Series X   |    ✓    |
+| PlayStation 4   |    ✓    |
+| PlayStation 5   |    ✓    |
+| Nintendo Switch |    ✓    |
+| iOS             |    ✓    |
+| Android         |    ✓    |
 
 ## Game Studios and Publishers
 If you need assistance with first-party approval, or require a private, white-label UGC solution. [Contact us](mailto:developers@mod.io)!
@@ -1248,93 +1255,225 @@ If you want a fuller understanding of the plugin and its features, we recommend 
   <img src="https://assetstorev1-prd-cdn.unity3d.com/package-screenshot/b37c33d6-aaa1-49c5-a6fd-c4ae18627bd2_orig.png" width="49%" alt="Browser UI screenshot" /> 
 </p>
 
+### Terms of Use Localization and RTL Languages
+
+When a user authenticates, the Browser UI will localize mod.io's terms of use based on the language code set in your config file (`Tools > mod.io > Edit Settings`, or `Settings.server.languageCode`). 
+
+To avoid the plugin conflicting with an existing solution, in the case of right-to-left languages you will need to apply your current implementation for mixed RTL and LTR text to the terms text-elements in the browser. 
+
 # Marketplace
-The mod.io SDK supports full monetization features, allowing you to sell a per-game virtual currency to your players that
-they can use to purchase mods, with a share of the revenue split between creators and your studio. Every platform
-requires specific setup for monetization features to work, with regards to the virtual currency configuration and API
-calls. The following documentation walks you through the setup process and gives example usages. The mod.io monetization
-features are enabled as part of the onboarding process on your game profile. Once that is setup, there is nothing
-further you need to do for initialization in the SDK.
+The mod.io SDK supports full monetization features, allowing you to sell a per-game virtual currency to your players that they can use to purchase mods, with a share of the revenue split between creators and your studio. Every platform requires specific setup for monetization features to work, with regards to the virtual currency configuration and API calls.
+
+The following documentation walks you through the setup process and gives example usages. The mod.io monetization features are enabled as part of the onboarding process on your game profile. Once that is setup, there is nothing further you need to do for initialization in the SDK.
 
 ### Enable Marketplace in the Plugin
 The first thing you will need to do is enable the marketplace in the mod.io portal for your game under Admin->Monetization->Settings->Enable Marketplace.
 
 ### Get User Wallet Balance
-Returns the current user's token balance
+Returns the current user's token balance.
+
+> [!NOTE]
+> This function creates a wallet for the user the first time it is called so this must be called before any sync entitlements calls.
 ```csharp
 async void GetUserWalletBalanceExample()
 {
-   var response = await ModIOUnityAsync.GetUserWalletBalance();
-   if (response.result.Succeeded())
-   {
-       Debug.Log($"User has a balance of {response.value.balance } tokens.");
-   }
-   else
-   {
-       Debug.Log("failed to get balance");
-   }
+    var response = await ModIOUnityAsync.GetUserWalletBalance();
+    if (response.result.Succeeded())
+        Debug.Log($"User has a balance of {response.value.balance} tokens.");
+    else
+        Debug.Log("failed to get balance");
 }
 ```
 
 ### Purchase Item
-Purchases a mod using Tokens
+Purchases a mod using tokens.
 ```csharp
 async void PurchaseItemExample()
 {
-    string idempotent = $"aUniqueKey";//Unique key used to prevent duplicate purchases
-    ModId modId = new ModId(1234);//Mod to purchase
-    int displayAmount = 12;//Price displayed to the player (Must match mod price)
-    var response = await ModIOUnityAsync.PurchaseItem(modId, displayAmount, idempotent);
+    ModId modId = new ModId(1234); // Mod to purchase
+    int displayedAmount = 12; // Price displayed to the player (must match mod price)
+    string idempotent = $"aUniqueKey"; // Unique key used to prevent duplicate purchases
+    
+    var response = await ModIOUnityAsync.PurchaseItem(modId, displayedAmount, idempotent);
     if (response.result.Succeeded())
-    {
         Debug.Log("Completed Purchase");
-    }
     else
-    {
         Debug.Log("failed to complete purchase");
-    }
 }
 ```
 
 ### Get User Purchases
-Returns the current user's purchased Mods
+Returns the current user's purchased mods.
 ```csharp
 async void GetUserPurchases()
 {
-    ModIOUnity.GetPurchasedMods(out Result result);
-
+    ModProfile[] purchased = ModIOUnity.GetPurchasedMods(out Result result);
     if (result.Succeeded())
-    {
-        foreach (var modProfile in response.value.modProfiles)
-        {
-            Debug.Log($"User owns mod with id: {modProfile.id}");
-        }
-    }
+        foreach (ModProfile mod in purchased)
+            Debug.Log($"User owns mod with id: {mod.id}");
     else
-    {
         Debug.Log("Failed to get purchases");
-    }
 }
 ```
 
 ### Syncing Purchases with Steam
-If you setup SKUs for your users to purchase tokens through steam, you can sync these purchases with the mod.io server with the `SyncEntitlments` method. If a user purchases a token pack on steam, you can add the SKU used for that token pack on the Web by going to Admin > Monetization > Manage SKUs. Then when you use SyncEntitlments it will consume the purchased item and add those tokens to the user's wallet. Below is a very simple example of how to use the method.
 > [!NOTE]
-> SyncEntitlements will automatically be run when using ModIOUnity.FetchUpdates as well
+> Setup token pack SKUs from your game's mod.io website dashboard by navigating to `Admin -> Monetization -> Manage SKUs`.
+
+> [!NOTE]
+> > The GetUserWalletBalanceExample function creates a wallet for the user the first time it is called so this must be called before any sync entitlements calls.
+
+Once you have setup SKUs for your users to purchase tokens through Steam, you can sync these purchases with the mod.io server using the `SyncEntitlments()` method. 
+
+After a user purchases a token pack on Steam, calling `SyncEntitlements()` will consume the purchased item, and add those tokens to the user's wallet. Below is a very simple example of how to use the method:
+
+> [!WARNING]  
+> It is highly recommended that you call `SyncEntitlements()` after any successful external purchase.
 
 ```csharp
 async void SyncEntitlements()
-    {
-        Result result = await ModIOUnityAsync.SyncEntitlements();
-        if (response.result.Succeeded())
-        {
-            Debug.Log("Entitlements are synced");
-        }
-        else
-        {
-            Debug.Log("failed to sync");
-        }
-        }
+{
+    Result result = await ModIOUnityAsync.SyncEntitlements();
+    if (response.result.Succeeded())
+        Debug.Log("Entitlements are synced");
+    else
+        Debug.Log("Failed to sync entitlements");
+}
 ```
+
 > [!NOTE]
-> This method will also work with console platforms
+> `SyncEntitlements()` is automatically run during `ModIOUnity.FetchUpdates()`.
+
+> [!NOTE]
+> `SyncEntitlements()` can also be used for consuming purchases on console platforms.
+
+# Service to Service API
+To facilitate HTTP requests to mod.io's Service To Service (S2S) API's, your backend server must first authenticate and generate 
+credentials that your backend service will use. Credentials required by S2S API's are separate from mod.io's public API 
+endpoints and cannot be used interchangeably.
+
+### Requesting a User Delegation Token
+Some service-to-service endpoints require user context to be able to make requests on behalf of a user, such as creating a transaction.
+To facilitate this, mod.io hosts a public endpoint which can be called by an authenticated user with their bearer token which returns 
+what we call a User Delegation Token. This token should then be sent to your secure backend server from your game client, where you 
+can then use it for specific endpoints in conjunction with a valid service token.
+
+> [!NOTE]
+> User must me authenticated to request a User Delegation Token.
+
+```csharp
+async void Example()
+{
+     ResultAnd<UserDelegationToken> response = await ModIOUnityImplementation.RequestUserDelegationToken();
+
+    if (response.result.Succeeded())
+    {
+        Debug.Log("successful.");
+        //TODO: Send response.value.token to server
+    }
+    else
+    {
+        Debug.Log("failed.");
+    }
+ }
+```
+
+# Temp Mod Sets
+
+Temp Mod sets allow users to download mods that they are not subscribed to. This can be helpful in multiplayer situations, when a player might join a game that requires specific mods to be downloaded.
+The intended flow in this situation would be to Create a temp mod set when a player joins the game and Delete the temp mod set when the game is over.
+The following documentation walks you through the setup process and gives example usages.
+
+Creating a temp mod set starts to download mods in the set in a temporary location unassociated with their subscribed mods. 
+
+> [!NOTE]
+> Mods that the user is subscribed to will be not be re-downloaded and will remain in the installed mods location for that user.
+
+```csharp
+ModId[] modIds;
+void Example()
+{
+    Result result = await ModIOUnityAsync.CreateTempModSet(modIds);
+    if (result.Succeeded())
+    {
+        Debug.Log("Successful");
+    }
+    else
+    {
+        Debug.Log("Failed");
+    }
+}
+```
+
+Destroying a temp mod set removes the temporary installed mods in that set and allows for uninstallation of temporary mods.
+
+```csharp
+void Example()
+{
+    Result result = await ModIOUnityAsync.ModIOUnity.DeleteTempModSet();
+    if (result.Succeeded())
+    {
+        Debug.Log("Successful");
+    }
+    else
+    {
+        Debug.Log("Failed");
+    }
+}
+```
+
+Adds mods to an existing Temp mod set and downloads/installs them if needed.
+> [!NOTE]
+> Mods that the user is subscribed to will be not be re-downloaded and will remain in the installed mods location for that user.
+
+```csharp
+ModId[] modIds;
+void Example()
+{
+    Result result = await ModIOUnityAsync.AddModToTempModSet(modIds);
+    if (result.Succeeded())
+    {
+        Debug.Log("Successful");
+    }
+    else
+    {
+        Debug.Log("Failed");
+    }
+}
+```
+
+Removes mods from an existing Temporary Mod Set. This removes them from the list in the set but does not uninstall them, that is done when the set is destroyed.
+```csharp
+ModId[] modIds;
+void Example()
+{
+    Result result = await ModIOUnityAsync.RemoveModsFromTempModSet(modIds);
+    if (result.Succeeded())
+    {
+        Debug.Log("Successful");
+    }
+    else
+    {
+        Debug.Log("Failed");
+    }
+}
+```
+
+Gets an array of temp mods that are installed on the current device. 
+
+> [!NOTE]
+> These will not be subscribed by the current user. If you wish to get all the current user's installed mods use ModIOUnity.GetSubscribedMods() and check the SubscribedMod.status equals SubscribedModStatus.Installed.
+```csharp
+void Example()
+{
+    InstalledMod[] mods = await ModIOUnityAsync.GetTempSystemInstalledMods(out Result result);
+    if (result.Succeeded())
+    {
+        Debug.Log("found " + mods.Length.ToString() + " temp mods installed");
+    }
+    else
+    {
+        Debug.Log("failed to get temp installed mods");
+    }
+}
+```

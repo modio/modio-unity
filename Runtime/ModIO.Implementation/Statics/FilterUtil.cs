@@ -60,16 +60,13 @@ namespace ModIO.Implementation
                 }
                 url = url.Trim(',');
             }
+
             // add users we are looking for
-            if(searchFilter.users != null && searchFilter.users.Count > 0)
-            {
-                url += "&submitted_by=";
-                foreach(long user in searchFilter.users)
-                {
-                    url += $"{user},";
-                }
-                url = url.Trim(',');
-            }
+            int users = searchFilter.users?.Count ?? 0;
+            if (users != 0)
+                url += $"&submitted_by{(users == 1 ? "=" : Filtering.In)}{string.Join(",", searchFilter.users)}";
+
+            // add maturity option
             if(!searchFilter.showMatureContent)
             {
                 url += "&maturity_option=0";

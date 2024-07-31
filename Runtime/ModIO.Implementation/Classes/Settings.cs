@@ -8,5 +8,8 @@
 
         /// <summary>Build settings.</summary>
         public static BuildSettings build;
+
+        /// <summary>UI settings.</summary>
+        public static UISettings ui;
     }
 }

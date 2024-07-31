@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using JetBrains.Annotations;
 
 namespace ModIO.Implementation.API
 {
@@ -17,6 +18,13 @@ namespace ModIO.Implementation.API
 
         internal static event Action ShutdownEvent = () => { };
 
+        static readonly bool UseTestFailureWebRequest = false;
+        static readonly bool UseUnityWebRequest = true;
+        static readonly IWebRequestRunner WebRequestRunner =
+            UseTestFailureWebRequest ? new TestWebRequestRunner():
+            UseUnityWebRequest ? (IWebRequestRunner)new UnityWebRequestRunner()
+                : new WebRequestRunner();
+
         public static async Task Shutdown()
         {
             // Subscribe WebRequests here to abort when the event is called
@@ -31,6 +39,21 @@ namespace ModIO.Implementation.API
         public static RequestHandle<Result> Download(string url, Stream downloadTo, ProgressHandle progressHandle)
         {
             var handle = WebRequestRunner.Download(url, downloadTo, progressHandle);
+            onGoingRequests.Add(handle.task);
+            RemoveTaskFromListWhenComplete(handle.task);
+            return handle;
+        }
+
+        /// <summary>
+        /// Attempt to download directly to a file if the webRequestRunner supports it
+        /// Will return null if we're on a platform that only downloads to streams directly
+        /// </summary>
+        [CanBeNull]
+        public static RequestHandle<Result> DownloadToFile(string url, string filePath, ProgressHandle progressHandle)
+        {
+            if (!(WebRequestRunner is IWebRequestRunnerDownloadToFile downloadToFileRunner))
+                return null;
+            var handle = downloadToFileRunner.Download(url, filePath, progressHandle);
             onGoingRequests.Add(handle.task);
             RemoveTaskFromListWhenComplete(handle.task);
             return handle;
@@ -54,7 +77,7 @@ namespace ModIO.Implementation.API
             }
 
             await task;
-            
+
             if(onGoingRequests.Contains(task))
             {
                 onGoingRequests.Remove(task);

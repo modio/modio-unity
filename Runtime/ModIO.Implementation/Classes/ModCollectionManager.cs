@@ -4,6 +4,11 @@ using System.Threading.Tasks;
 using ModIO.Implementation.API;
 using ModIO.Implementation.API.Objects;
 using ModIO.Implementation.API.Requests;
+using Runtime.Enums;
+
+#if UNITY_IOS || UNITY_ANDROID
+using Plugins.mod.io.Platform.Mobile;
+#endif
 
 #if UNITY_GAMECORE
 using Unity.GameCore;
@@ -20,6 +25,8 @@ namespace ModIO.Implementation
     internal static class ModCollectionManager
     {
         public static ModCollectionRegistry Registry;
+
+        static readonly List<InstalledMod> InstalledTempMods = new List<InstalledMod>();
 
         public static async Task<Result> LoadRegistryAsync()
         {
@@ -102,6 +109,16 @@ namespace ModIO.Implementation
             SaveRegistry();
         }
 
+        public static long? GetModFileId(ModId modId)
+        {
+            if (Registry.mods.TryGetValue(modId, out var mod))
+            {
+                return mod.currentModfile.id;
+            }
+
+            return null;
+        }
+
         public static void AddUserToRegistry(UserObject user)
         {
             // Early out
@@ -180,6 +197,8 @@ namespace ModIO.Implementation
             // If failed, cancel the entire update operation
             if(gameTagsResponse.result.Succeeded())
             {
+                await DataStorage.SaveTags(gameTagsResponse.value.data);
+
                 // Put these in the Response Cache
                 var tags = ResponseTranslator.ConvertGameTagOptionsObjectToTagCategories(gameTagsResponse.value.data);
                 ResponseCache.AddTagsToCache(tags);
@@ -245,9 +264,7 @@ namespace ModIO.Implementation
                 //--------------------------------------------------------------------------------//
                 //                         UPDATE ENTITLEMENTS                                    //
                 //--------------------------------------------------------------------------------//
-
-                await ModIOUnityAsync.SyncEntitlements();
-
+                var resultAnd = await ModIOUnityAsync.SyncEntitlements();
 
                 //--------------------------------------------------------------------------------//
                 //                         GET PURCHASES                                          //
@@ -264,8 +281,8 @@ namespace ModIO.Implementation
 
                     if (r.result.Succeeded())
                     {
-                        ResponseCache.AddModsToCache(API.Requests.GetUserPurchases.UnpaginatedURL(filter), 0, r.value);
-                        AddModsToUserPurchases(r.value);
+                        ResponseCache.AddModsToCache(API.Requests.GetUserPurchases.UnpaginatedURL(filter), pageSize * pageIndex, r.value);
+                        AddModsToUserPurchases(r.value, pageIndex == 0);
                         long totalResults = r.value.totalSearchResultsFound;
                         int resultsFetched = (pageIndex + 1) * pageSize;
                         if (resultsFetched > totalResults)
@@ -396,7 +413,7 @@ namespace ModIO.Implementation
 
         public static bool HasModCollectionEntry(ModId modId) => Registry.mods.ContainsKey(modId);
 
-        public static void AddModCollectionEntry(ModId modId)
+        private static void AddModCollectionEntry(ModId modId)
         {
             // Check an entry exists for this modObject, if not create one
             if(!Registry.mods.ContainsKey(modId))
@@ -407,15 +424,14 @@ namespace ModIO.Implementation
             }
         }
 
-        public static void UpdateModCollectionEntry(ModId modId, ModObject modObject, int priority = 0)
+        public static void UpdateModCollectionEntry(ModId modId, ModObject modObject, ModPriority priority = ModPriority.Normal)
         {
             AddModCollectionEntry(modId);
 
             Registry.mods[modId].modObject = modObject;
             Registry.mods[modId].priority = priority;
             // Check this in case of UserData being deleted
-            if(DataStorage.TryGetInstallationDirectory(modId, modObject.modfile.id,
-                                                       out string notbeingusedhere))
+            if(DataStorage.TryGetInstallationDirectory(modId, modObject.modfile.id, out _))
             {
                 Registry.mods[modId].currentModfile = modObject.modfile;
             }
@@ -423,8 +439,22 @@ namespace ModIO.Implementation
             SaveRegistry();
         }
 
-        private static void AddModsToUserPurchases(ModPage modPage)
+        private static void AddModsToUserPurchases(ModPage modPage, bool clearPreviousPurchases)
         {
+            long user = GetUserKey();
+
+            // Early out
+            if(!IsRegistryLoaded() || !DoesUserExist(user))
+            {
+                return;
+            }
+
+            if(clearPreviousPurchases)
+            {
+                // Clear existing purchases, as otherwise we never remove them (even across multiple sessions)
+                Registry.existingUsers[user].purchasedMods.Clear();
+            }
+
             foreach (ModProfile modProfile in modPage.modProfiles)
             {
                 AddModToUserPurchases(modProfile.id);
@@ -558,8 +588,7 @@ namespace ModIO.Implementation
             Registry.mods[modId].modObject = modObject;
 
             // Check this in case of UserData being deleted
-            if(DataStorage.TryGetInstallationDirectory(modId, modObject.modfile.id,
-                                                       out string notbeingusedhere))
+            if(DataStorage.TryGetInstallationDirectory(modId, modObject.modfile.id, out _))
             {
                 Registry.mods[modId].currentModfile = modObject.modfile;
             }
@@ -584,6 +613,7 @@ namespace ModIO.Implementation
             if (Registry.existingUsers[currentUser].disabledMods.Contains(modId))
             {
                 Registry.existingUsers[currentUser].disabledMods.Remove(modId);
+                SaveRegistry();
             }
 
             Logger.Log(LogLevel.Verbose, $"Enabled Mod {((long)modId).ToString()}");
@@ -604,6 +634,7 @@ namespace ModIO.Implementation
             if (!Registry.existingUsers[currentUser].disabledMods.Contains(modId))
             {
                 Registry.existingUsers[currentUser].disabledMods.Add(modId);
+                SaveRegistry();
             }
 
             Logger.Log(LogLevel.Verbose, $"Disabled Mod {((long)modId).ToString()}");
@@ -656,7 +687,7 @@ namespace ModIO.Implementation
                 return null;
             }
 
-            List<InstalledMod> mods = new List<InstalledMod>();
+            InstalledTempMods.Clear();
 
             long currentUser = GetUserKey();
 
@@ -683,20 +714,39 @@ namespace ModIO.Implementation
                     }
 
                     // check if current modfile is correct
-                    if(DataStorage.TryGetInstallationDirectory(
-                           enumerator.Current.Key.id, enumerator.Current.Value.currentModfile.id,
-                           out string directory))
+                    if(DataStorage.TryGetInstallationDirectory(enumerator.Current.Key.id, enumerator.Current.Value.currentModfile.id, out string directory))
                     {
                         InstalledMod mod = ConvertModCollectionEntryToInstalledMod(enumerator.Current.Value, directory);
                         mod.enabled = Registry.existingUsers.ContainsKey(currentUser)
                                       && !Registry.existingUsers[currentUser].disabledMods.Contains(mod.modProfile.id);
-                        mods.Add(mod);
+                        InstalledTempMods.Add(mod);
                     }
                 }
             }
 
             result = ResultBuilder.Success;
-            return mods.ToArray();
+            return InstalledTempMods.ToArray();
+        }
+
+        public static InstalledMod[] GetTempInstalledMods()
+        {
+            var mods = TempModSetManager.GetMods(true);
+            InstalledTempMods.Clear();
+            foreach (var id in mods)
+            {
+                var modId = new ModId(id);
+                var fileId = GetModFileId(modId);
+                if (fileId == null)
+                    continue;
+                var directoryExists = DataStorage.TryGetInstallationDirectory(modId, fileId.Value, out string directory);
+                if (!directoryExists || !Registry.mods.ContainsKey(modId))
+                    continue;
+
+                InstalledMod mod = ConvertModCollectionEntryToInstalledMod(Registry.mods[modId], directory);
+                mod.enabled = true;
+                InstalledTempMods.Add(mod);
+            }
+            return InstalledTempMods.ToArray();
         }
 
         /// <summary>
@@ -747,7 +797,19 @@ namespace ModIO.Implementation
             return subscribedMods.ToArray();
         }
 
-        static SubscribedMod ConvertModCollectionEntryToSubscribedMod(ModCollectionEntry entry)
+        public static bool TryGetModProfile(ModId modId, out ModProfile modProfile)
+        {
+            if (!IsRegistryLoaded() || !Registry.mods.TryGetValue(modId, out ModCollectionEntry entry))
+            {
+                modProfile = default;
+                return false;
+            }
+
+            modProfile = ResponseTranslator.ConvertModObjectToModProfile(entry.modObject);
+            return true;
+        }
+
+        public static SubscribedMod ConvertModCollectionEntryToSubscribedMod(ModCollectionEntry entry)
         {
             SubscribedMod mod = new SubscribedMod
             {

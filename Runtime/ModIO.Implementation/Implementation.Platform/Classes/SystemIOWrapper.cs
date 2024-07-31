@@ -8,6 +8,7 @@ using UnityEngine;
 
 namespace ModIO.Implementation.Platform
 {
+
     /// <summary>Wrapper for System.IO that handles exceptions and matches our interface.</summary>
     internal static class SystemIOWrapper
     {
@@ -213,7 +214,7 @@ namespace ModIO.Implementation.Platform
             {
                 try
                 {
-                    using (var fileStream = File.Open(filePath, FileMode.Create))
+                    using (var fileStream = new FileStreamWrapper(File.Open(filePath, FileMode.Create)))
                     {
                         fileStream.Position = 0;
                         await fileStream.WriteAsync(data, 0, data.Length);
@@ -269,7 +270,7 @@ namespace ModIO.Implementation.Platform
             {
                 try
                 {
-                    using (var fileStream = File.Open(filePath, FileMode.Create))
+                    using (var fileStream = new FileStreamWrapper(File.Open(filePath, FileMode.Create)))
                     {
                         fileStream.Position = 0;
                         fileStream.Write(data, 0, data.Length);
@@ -715,6 +716,9 @@ namespace ModIO.Implementation.Platform
         /// <summary>Deletes a file.</summary>
         public static Result DeleteFileGetResult(string path)
         {
+            if (!File.Exists(path))
+                return new Result { code = ResultCode.IO_FileDoesNotExist };
+
             return DeleteFile(path)
                 ? ResultBuilder.Success
                 : new Result() { code = ResultCode.IO_FileCouldNotBeDeleted };

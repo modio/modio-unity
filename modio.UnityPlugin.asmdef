@@ -2,9 +2,16 @@
     "name": "modio.UnityPlugin",
     "rootNamespace": "",
     "references": [
-        "NintendoSDK",
         "Unity.PSN.PS5.Runtime",
-        "Unity.GameCore"
+        "Unity.GameCore",
+        "Google.Play.Games",
+        "Apple.GameKit",
+        "Unity.Services.Core",
+        "UnityEngine.Purchasing",
+        "Unity.Services.Core.Environments",
+        "UnityEngine.Purchasing.Stores",
+        "NintendoSDK2020"
+
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

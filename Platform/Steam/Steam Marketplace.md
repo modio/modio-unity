@@ -2,7 +2,7 @@
 id: unity-steam-marketplace-example
 title: Unity Steam Marketplace Example
 sidebar_label: Unity Steam Marketplace Example
-slug: /unity-plugin/unity-steam-marketplace-example
+slug: /unity/unity-steam-marketplace-example/
 sidebar_position: 7
 ---
 

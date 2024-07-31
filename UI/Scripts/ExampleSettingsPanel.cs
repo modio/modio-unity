@@ -1,5 +1,4 @@
 ﻿using System;
-using ModIOBrowser.Implementation;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -9,8 +8,11 @@ namespace ModIO.Implementation
     public class ExampleSettingsPanel : MonoBehaviour
     {
         [SerializeField] TMP_InputField gameIdInputField;
+
         [SerializeField] TMP_InputField apiKeyInputField;
+
         [SerializeField] TMP_InputField initUserInputField;
+
         [SerializeField] TextMeshProUGUI currentServerUrlText;
         [SerializeField] TextMeshProUGUI currentGameIdText;
         [SerializeField] Button[] buttons;
@@ -23,9 +25,11 @@ namespace ModIO.Implementation
 
             currentServerUrlText.text = $"Server Url: {Settings.server.serverURL}";
             currentGameIdText.text = $"Game Id: {Settings.server.gameId}";
+            ((TextMeshProUGUI)gameIdInputField.placeholder).text = $"Game Id: {Settings.server.gameId}";
+            ((TextMeshProUGUI)apiKeyInputField.placeholder).text = $"Api Key: {Settings.server.gameKey}";
 
             gameObject.SetActive(isActive);
-            
+
             LayoutRebuilder.ForceRebuildLayoutImmediate(transform as RectTransform);
             LayoutRebuilder.ForceRebuildLayoutImmediate(transform as RectTransform);
         }
@@ -82,6 +86,9 @@ namespace ModIO.Implementation
 
                 currentServerUrlText.text = $"Server Url: {urlToUse}";
                 currentGameIdText.text = $"Game Id: {Settings.server.gameId}";
+                ((TextMeshProUGUI)gameIdInputField.placeholder).text = $"Game Id: {Settings.server.gameId}";
+                ((TextMeshProUGUI)apiKeyInputField.placeholder).text = $"Api Key: {Settings.server.gameKey}";
+                ((TextMeshProUGUI)initUserInputField.placeholder).text = $"User: {user}";
             }
             catch(Exception e)
             {

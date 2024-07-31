@@ -10,7 +10,20 @@ namespace Plugins.mod.io.UI.Examples
 
         void Awake()
         {
-            StartCoroutine(CheckForControllers());
+            GlyphPlatforms glyphs = Application.platform switch
+            {
+                RuntimePlatform.PS4                => GlyphPlatforms.PLAYSTATION_4,
+                RuntimePlatform.XboxOne            => GlyphPlatforms.XBOX,
+                RuntimePlatform.Switch             => GlyphPlatforms.NINTENDO_SWITCH,
+                RuntimePlatform.GameCoreXboxSeries => GlyphPlatforms.XBOX,
+                RuntimePlatform.GameCoreXboxOne    => GlyphPlatforms.XBOX,
+                RuntimePlatform.PS5                => GlyphPlatforms.PLAYSTATION_5,
+                _                                  => GlyphPlatforms.PC
+            };
+
+            Glyphs.Instance.ChangeGlyphs(glyphs);
+
+            if (glyphs == GlyphPlatforms.PC) StartCoroutine(CheckForControllers());
         }
 
         IEnumerator CheckForControllers()

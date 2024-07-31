@@ -5,10 +5,10 @@ using UnityEngine;
 using UnityEngine.UI;
 
 namespace ModIOBrowser.Implementation
-{   
-    
+{
+
     public class Avatar : SelfInstancingMonoSingleton<Avatar>
-    {       
+    {
         [SerializeField] public Image Avatar_Main;
         [SerializeField] public Image AvatarDownloadBar;
 
@@ -19,30 +19,27 @@ namespace ModIOBrowser.Implementation
         [SerializeField] public Sprite SteamAvatar;
         [SerializeField] public Sprite XboxAvatar;
         [SerializeField] public Sprite PlayStationAvatar;
-        
+
         private async Task<Sprite> GetSprite(UserPortal currentAuthenticationPortal, UserProfile currentUserProfile)
         {
             switch(currentAuthenticationPortal)
             {
                 case UserPortal.Nintendo:
                     return switchAvatar;
-                    
+
                 case UserPortal.Steam:
                     return SteamAvatar;
-                    
+
                 case UserPortal.XboxLive:
                     return XboxAvatar;
-
-                case UserPortal.PlayStationNetwork:
-                    return PlayStationAvatar;
             }
 
             currentUserProfile = await GetCurrentUser(currentUserProfile);
-            var sprite = await DownloadSprite(currentUserProfile.avatar_50x50); 
+            var sprite = await DownloadSprite(currentUserProfile.avatar_50x50);
             return sprite;
         }
-        
-        public void SetupUser() => 
+
+        public void SetupUser() =>
             SetupUser(Authentication.Instance.currentAuthenticationPortal,
                 Authentication.Instance.currentUserProfile);
 
@@ -55,7 +52,7 @@ namespace ModIOBrowser.Implementation
                 ShowDefaultAvatar();
                 return;
             }
-            
+
             if(currentAuthenticationPortal == UserPortal.None)
             {
                 PlatformFree(sprite);
@@ -107,7 +104,7 @@ namespace ModIOBrowser.Implementation
         internal async Task<UserProfile> GetCurrentUser(UserProfile currentUserProfile)
         {
             ResultAnd<UserProfile> resultAnd = await ModIOUnityAsync.GetCurrentUser();
-            
+
             return resultAnd.result.Succeeded() ? resultAnd.value : currentUserProfile;
         }
 
@@ -127,6 +124,6 @@ namespace ModIOBrowser.Implementation
         }
 
         internal void UpdateDownloadProgressBar(ProgressHandle handle)
-            => AvatarDownloadBar.fillAmount = handle == null ? 0f : handle.Progress;        
+            => AvatarDownloadBar.fillAmount = handle == null ? 0f : handle.Progress;
     }
 }

@@ -25,6 +25,35 @@ namespace ModIO.Implementation.API.Requests
 
             return request;
         }
+
+        /// <param name="receipt">Payload's "json" value returned from the Google Play store</param>
+        public static WebRequestConfig GoogleRequest(string receipt)
+        {
+            var request = new WebRequestConfig()
+            {
+                Url = $"{Settings.server.serverURL}{@"/me/iap/google/sync"}?",
+                RequestMethodType = "POST",
+                ShouldRequestTimeout = false,
+            };
+            request.AddField("receipt", receipt);
+
+            return request;
+        }
+
+        /// <param name="receipt">The "Payload" value returned from Apple</param>
+        public static WebRequestConfig AppleRequest(string receipt)
+        {
+            var request = new WebRequestConfig()
+            {
+                Url = $"{Settings.server.serverURL}{@"/me/iap/apple/sync"}?",
+                RequestMethodType = "POST",
+                ShouldRequestTimeout = false,
+            };
+            request.AddField("receipt",  receipt);
+
+            return request;
+        }
+
 #if UNITY_GAMECORE
         /// <param name="xboxToken">The Xbox Live token returned from calling
         /// GetTokenAndSignatureAsync("POST", "https://*.modapi.io")
@@ -45,8 +74,7 @@ namespace ModIO.Implementation.API.Requests
             request.AddField("xbox_token", token);
             return request;
         }
-#endif
-#if UNITY_PS4 || UNITY_PS5
+#elif UNITY_PS4 || UNITY_PS5
         /// <param name="authCode">The auth code returned form the PSN Api</param>
         /// <param name="environment">The PSN environment you are targeting. If
         /// omitted, the request will default to targeting the production environment.</param>

@@ -4,15 +4,17 @@ namespace ModIO.Util
 {
     public class MonoSingleton<T> : MonoBehaviour, ISimpleMonoSingleton where T : MonoBehaviour
     {
-        protected static T _instance;
+        public static bool HasInstance => _instance != null;
+        static T _instance;
         public static T Instance
         {
-            get {
+            get
+            {
                 if(_instance == null)
                 {
                     throw new UnityException("This singleton is not instanced. Maybe you need to initiate this code, perhaps via a prefab?");
                 }
-                
+
                 return _instance;
             }
 
@@ -23,6 +25,11 @@ namespace ModIO.Util
 
         protected virtual void Awake()
         {
+            if (_instance != null)
+            {
+                Debug.LogError($"Attempting to initiate {gameObject.name} as a singleton instance of {typeof(T).ToString()}, when there already exists one.");
+            }
+            
             SetupSingleton();
         }
 

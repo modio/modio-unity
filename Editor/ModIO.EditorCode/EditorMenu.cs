@@ -1,13 +1,12 @@
 ﻿#if UNITY_EDITOR
-using UnityEngine;
-using UnityEditor;
 
 using ModIO.Implementation;
 using ModIO.Implementation.Platform;
+using UnityEditor;
+using UnityEngine;
 
 namespace ModIO.EditorCode
 {
-
     /// <summary>summary</summary>
     public static class EditorMenu
     {
@@ -16,10 +15,11 @@ namespace ModIO.EditorCode
             new MenuItem("Tools/mod.io/Edit Settings", false, 0);
         }
 
+
         [MenuItem("Tools/mod.io/Edit Settings", false, 0)]
         public static void EditSettingsAsset()
         {
-            var settingsAsset = GetConfigAsset();
+            SettingsAsset settingsAsset = GetConfigAsset();
 
             EditorGUIUtility.PingObject(settingsAsset);
             Selection.activeObject = settingsAsset;
@@ -28,23 +28,19 @@ namespace ModIO.EditorCode
 
         internal static SettingsAsset GetConfigAsset()
         {
-            var settingsAsset = Resources.Load<SettingsAsset>(SettingsAsset.FilePath);
+            SettingsAsset settingsAsset = Resources.Load<SettingsAsset>(SettingsAsset.FilePath);
 
             // if it doesnt exist we create one
-            if(settingsAsset == null)
+            if (settingsAsset == null)
             {
                 // create asset
                 settingsAsset = ScriptableObject.CreateInstance<SettingsAsset>();
 
                 // ensure the directories exist before trying to create the asset
-                if(!AssetDatabase.IsValidFolder("Assets/Resources"))
-                {
+                if (!AssetDatabase.IsValidFolder("Assets/Resources"))
                     AssetDatabase.CreateFolder("Assets", "Resources");
-                }
-                if(!AssetDatabase.IsValidFolder("Assets/Resources/mod.io"))
-                {
+                if (!AssetDatabase.IsValidFolder("Assets/Resources/mod.io"))
                     AssetDatabase.CreateFolder("Assets/Resources", "mod.io");
-                }
 
                 AssetDatabase.CreateAsset(settingsAsset, $@"Assets/Resources/{SettingsAsset.FilePath}.asset");
 
