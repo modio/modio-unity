@@ -2,7 +2,7 @@
 namespace ModIO.Implementation
 {
     /// <summary>Convenience wrapper for creating a ResultAnd<T>.</summary>
-    internal static class ResultAnd
+    public static class ResultAnd
     {
         public static ResultAnd<U> Create<U>(Result result, U value)
         {

@@ -35,6 +35,8 @@ namespace ModIOBrowser.Implementation
         [SerializeField] public Button AuthenticationPanelConnectViaGOGButton;
         [SerializeField] public Button AuthenticationPanelConnectViaXboxButton;
         [SerializeField] public Button AuthenticationPanelConnectViaSwitchButton;
+        [SerializeField] public Button AuthenticationPanelConnectViaGoogleButton;
+        [SerializeField] public Button AuthenticationPanelConnectViaAppleButton;
         [SerializeField] public Button AuthenticationPanelConnectViaPlayStationButton;
         [SerializeField] public Button AuthenticationPanelConnectViaEmailButton;
         [SerializeField] public Button AuthenticationPanelConnectViaExternalButton;
@@ -46,17 +48,21 @@ namespace ModIOBrowser.Implementation
         [SerializeField] public Image AuthenticationPanelExternalQRCode;
         [SerializeField] public Button AuthenticationPanelExternalCancelButton;
         [SerializeField] public Button AuthenticationPanelAgreeButton;
+        [SerializeField] public TMP_Text AuthenticationPanelAgreeText;
         [SerializeField] public Button AuthenticationPanelSendCodeButton;
         [SerializeField] public Button AuthenticationPanelSubmitButton;
         [SerializeField] public Button AuthenticationPanelCompletedButton;
         [SerializeField] public Button AuthenticationPanelLogoutButton;
         [SerializeField] public Button AuthenticationPanelTOSButton;
+        [SerializeField] public TMP_Text AuthenticationPanelTOSText;
         [SerializeField] public Button AuthenticationPanelPrivacyPolicyButton;
+        [SerializeField] public TMP_Text AuthenticationPanelPrivacyPolicyText;
         [SerializeField] public Button AuthenticationPanelCancelButton;
         [SerializeField] public GameObject AuthenticationPanelTermsOfUseLinks;
         [SerializeField] public TMP_Text AuthenticationPanelTitleText;
         [SerializeField] public TMP_Text AuthenticationPanelInfoText;
 
+        TermsOfUse? _lastTermsOfUse;
         Action authenticationMethodAfterAgreeingToTheTOS;
 
         //Used by buttons
@@ -130,6 +136,10 @@ namespace ModIOBrowser.Implementation
             else if(Authentication.getSwitchToken != null)
             {
                 authenticationMethodAfterAgreeingToTheTOS = Authentication.Instance.SubmitSwitchAuthenticationRequest;
+            }
+            else if(Authentication.getGoogleToken != null)
+            {
+                authenticationMethodAfterAgreeingToTheTOS = Authentication.Instance.SubmitGoogleAuthenticationRequest;
             }
             else if(Authentication.getPlayStationAuthCode != null)
             {
@@ -223,6 +233,7 @@ namespace ModIOBrowser.Implementation
             //                            THIRD PARTY AUTHENTICATION                             //
             //-----------------------------------------------------------------------------------//
 
+            Debug.Log($"Auth Panel: getGogAuthCode is {Authentication.getGogAuthCode}");
             if(Authentication.getGogAuthCode != null)
             {
                 AuthenticationPanelConnectViaGOGButton.gameObject.SetActive(true);
@@ -287,6 +298,32 @@ namespace ModIOBrowser.Implementation
                 platformButton = AuthenticationPanelConnectViaSwitchButton;
 
                 InputNavigation.Instance.Select(AuthenticationPanelConnectViaSwitchButton);
+            }
+            else if(Authentication.getGoogleToken != null)
+            {
+                AuthenticationPanelConnectViaGoogleButton.gameObject.SetActive(true);
+                AuthenticationPanelConnectViaGoogleButton.onClick.RemoveAllListeners();
+                AuthenticationPanelConnectViaGoogleButton.onClick.AddListener(() =>
+                {
+                    Authentication.Instance.GetTermsOfUse();
+                    authenticationMethodAfterAgreeingToTheTOS = Authentication.Instance.SubmitGoogleAuthenticationRequest;
+                });
+                platformButton = AuthenticationPanelConnectViaGoogleButton;
+
+                InputNavigation.Instance.Select(AuthenticationPanelConnectViaGoogleButton);
+            }
+            else if(Authentication.getAppleToken != null)
+            {
+                AuthenticationPanelConnectViaAppleButton.gameObject.SetActive(true);
+                AuthenticationPanelConnectViaAppleButton.onClick.RemoveAllListeners();
+                AuthenticationPanelConnectViaAppleButton.onClick.AddListener(() =>
+                {
+                    Authentication.Instance.GetTermsOfUse();
+                    authenticationMethodAfterAgreeingToTheTOS = Authentication.Instance.SubmitAppleAuthenticationRequest;
+                });
+                platformButton = AuthenticationPanelConnectViaAppleButton;
+
+                InputNavigation.Instance.Select(AuthenticationPanelConnectViaAppleButton);
             }
             else if(Authentication.getPlayStationAuthCode != null)
             {
@@ -369,6 +406,8 @@ namespace ModIOBrowser.Implementation
             AuthenticationPanelConnectViaEmailButton.gameObject.SetActive(false);
             AuthenticationPanelConnectViaSteamButton.gameObject.SetActive(false);
             AuthenticationPanelConnectViaXboxButton.gameObject.SetActive(false);
+            AuthenticationPanelConnectViaGoogleButton.gameObject.SetActive(false);
+            AuthenticationPanelConnectViaAppleButton.gameObject.SetActive(false);
             AuthenticationPanelConnectViaSwitchButton.gameObject.SetActive(false);
             AuthenticationPanelConnectViaPlayStationButton.gameObject.SetActive(false);
             AuthenticationPanelConnectViaGOGButton.gameObject.SetActive(false);
@@ -511,7 +550,7 @@ namespace ModIOBrowser.Implementation
         public void OpenPanel_TermsOfUse()
             => OpenPanel_TermsOfUse(null);
 
-        public void OpenPanel_TermsOfUse(string TOS = null)
+        public void OpenPanel_TermsOfUse(TermsOfUse? termsOfUse)
         {
             HideAllPanels();
             AuthenticationPanel.SetActive(true);
@@ -524,9 +563,14 @@ namespace ModIOBrowser.Implementation
 
             AuthenticationPanelInfoText.gameObject.SetActive(true);
 
-            if(TOS != null)
+            if (termsOfUse.HasValue) _lastTermsOfUse = termsOfUse;
+            if (_lastTermsOfUse.HasValue)
             {
-                AuthenticationPanelInfoText.text = TOS;
+                AuthenticationPanelInfoText.text = _lastTermsOfUse.Value.termsOfUse;
+                AuthenticationPanelTOSText.text = _lastTermsOfUse.Value.links[1].name;
+                AuthenticationPanelPrivacyPolicyText.text = _lastTermsOfUse.Value.links[2].name;
+                AuthenticationPanelBackButtonText.text = _lastTermsOfUse.Value.disagreeText;
+                AuthenticationPanelAgreeText.text = _lastTermsOfUse.Value.agreeText;
             }
 
             AuthenticationPanelBackButton.gameObject.SetActive(true);

@@ -21,10 +21,21 @@ namespace ModIO
         public string message => ResultCode.GetErrorCodeMeaning(code);
 
         /// <summary>
+        /// A string message explaining the result API error code in more detail (If one exists).
+        /// </summary>
+        public string apiMessage => ResultCode.GetErrorCodeMeaning(code_api);
+
+        /// <summary>
         /// The error code for the result.
         /// 0 = Success
         /// </summary>
         public uint errorCode => code;
+
+        /// <summary>
+        /// The API reference error code for the result.
+        /// 0 = No API error
+        /// </summary>
+        public uint apiCode => code_api;
 
         public bool Succeeded()
         {
@@ -52,7 +63,7 @@ namespace ModIO
 
         public bool IsInvalidSecurityCode()
         {
-            return code_api == ResultCode.RESTAPI_11012 || code_api == ResultCode.RESTAPI_11014;
+            return code_api == ResultCode.RESTAPI_EmailExchangeCodeExpired || code_api == ResultCode.RESTAPI_EmailExchangeInvalidCode;
         }
 
         public bool IsInvalidEmailAddress()
@@ -86,5 +97,15 @@ namespace ModIO
         public bool IsRateLimited() =>
             code == ResultCode.RESTAPI_RateLimitExceededGlobal
             || code == ResultCode.RESTAPI_RateLimitExceededEndpoint;
+
+        public override string ToString()
+        {
+            if (Succeeded()) return "Success";
+
+            if(apiCode != 0)
+                return $"Result({code}:{apiCode}): {message}; {apiMessage}";
+
+            return $"Result({code}): {message}";
+        }
     }
 }

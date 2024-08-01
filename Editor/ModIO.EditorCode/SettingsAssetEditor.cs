@@ -4,49 +4,68 @@ using ModIO.Implementation;
 using UnityEditor;
 using UnityEngine;
 
-[CustomEditor(typeof(SettingsAsset))]
+[CustomEditor(typeof( SettingsAsset ))]
 public class SettingsAssetEditor : Editor
 {
-	SerializedProperty serverURL;
-	SerializedProperty gameId;
-	SerializedProperty gameKey;
-	SerializedProperty languageCode;
-	int previousGameId = 0;
+    SerializedProperty gameId;
+    SerializedProperty gameKey;
+    SerializedProperty languageCode;
+    int previousGameId;
+    SerializedProperty serverURL;
+    SerializedProperty useCommandLineArgumentOverrides;
+    SerializedProperty _showMonetizationUIProperty;
+    SerializedProperty _showEnabledModToggleProperty;
 
-	void OnEnable()
+    void OnEnable()
     {
         //get references to SerializedProperties
-        var serverSettingsProperty = serializedObject.FindProperty("serverSettings");
+        SerializedProperty serverSettingsProperty = serializedObject.FindProperty("serverSettings");
         serverURL = serverSettingsProperty.FindPropertyRelative("serverURL");
         gameId = serverSettingsProperty.FindPropertyRelative("gameId");
         gameKey = serverSettingsProperty.FindPropertyRelative("gameKey");
         languageCode = serverSettingsProperty.FindPropertyRelative("languageCode");
+        useCommandLineArgumentOverrides = serverSettingsProperty.FindPropertyRelative("useCommandLineArgumentOverrides");
+
+        var uiSettingsProperty = serializedObject.FindProperty("uiSettings");
+
+        _showMonetizationUIProperty = uiSettingsProperty.FindPropertyRelative("ShowMonetizationUI");
+        _showEnabledModToggleProperty = uiSettingsProperty.FindPropertyRelative("ShowEnabledModToggle");
     }
 
     public override void OnInspectorGUI()
-	{
+    {
         //Grab any changes to the original object data
         serializedObject.UpdateIfRequiredOrScript();
 
         SettingsAsset myTarget = (SettingsAsset)target;
 
-		base.OnInspectorGUI();
-
-		EditorGUILayout.Space();
-
-		GUIStyle labelStyle = new GUIStyle();
-		labelStyle.alignment = TextAnchor.MiddleCenter;
-		labelStyle.fontStyle = FontStyle.Bold;
-        labelStyle.normal.textColor = Color.white;
-
-		EditorGUILayout.LabelField("Server Settings", labelStyle);
+        DrawPropertiesExcluding(serializedObject, "m_Script");
 
         EditorGUILayout.Space();
 
-        EditorGUILayout.PropertyField(gameId,new GUIContent("Game ID"));
-        gameKey.stringValue = EditorGUILayout.PasswordField("API Key", gameKey.stringValue);
+        GUIStyle labelStyle = new GUIStyle
+        {
+            alignment = TextAnchor.MiddleCenter,
+            fontStyle = FontStyle.Bold,
+            normal =
+            {
+                textColor = Color.white,
+            },
+        };
 
-        if(myTarget.serverSettings.gameId == 0 || string.IsNullOrWhiteSpace(myTarget.serverSettings.gameKey))
+        EditorGUILayout.LabelField("Server Settings", labelStyle);
+
+        EditorGUILayout.Space();
+
+        EditorGUILayout.DelayedIntField(gameId, new GUIContent("Game ID"));
+        using (EditorGUI.ChangeCheckScope passwordChange = new EditorGUI.ChangeCheckScope())
+        {
+            string tempPassword = EditorGUILayout.PasswordField("API Key", gameKey.stringValue);
+            if (passwordChange.changed)
+                gameKey.stringValue = tempPassword;
+        }
+
+        if (myTarget.serverSettings.gameId == 0 || string.IsNullOrWhiteSpace(myTarget.serverSettings.gameKey))
         {
             EditorGUILayout.Space();
 
@@ -76,11 +95,14 @@ public class SettingsAssetEditor : Editor
             EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.Space();
-        } else {
+        }
+        else
+        {
             EditorGUILayout.Space();
 
-            EditorGUILayout.PropertyField(serverURL, new GUIContent("Server URL"));
-            EditorGUILayout.PropertyField(languageCode, new GUIContent("Language code"));
+            EditorGUILayout.DelayedTextField(serverURL, new GUIContent("Server URL"));
+            EditorGUILayout.DelayedTextField(languageCode, new GUIContent("Language code"));
+            EditorGUILayout.PropertyField(useCommandLineArgumentOverrides, new GUIContent("Use Command Line Argument Override"));
 
             EditorGUILayout.Space();
 
@@ -96,16 +118,23 @@ public class SettingsAssetEditor : Editor
         }
 
         // If the gameId has been changed, update the url
-		if (gameId.intValue != previousGameId)
+        if (gameId.intValue != previousGameId)
         {
             if (IsURLProduction(serverURL.stringValue))
                 serverURL.stringValue = GetURLProduction(gameId.intValue);
 
-			previousGameId = gameId.intValue;
-		}
+            previousGameId = gameId.intValue;
+        }
+
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("UI Settings", labelStyle);
+
+        EditorGUILayout.PropertyField(_showMonetizationUIProperty);
+        EditorGUILayout.PropertyField(_showEnabledModToggleProperty);
 
         //Save the new values
         serializedObject.ApplyModifiedProperties();
+        AssetDatabase.SaveAssetIfDirty(serializedObject?.targetObject);
 
         return;
 
@@ -123,6 +152,7 @@ public class SettingsAssetEditor : Editor
     }
 
     internal static string GetURLProduction(int gameId) => $"https://g-{gameId}.modapi.io/v1";
+
     static string GetURLTest(int gameId) => "https://api.test.mod.io/v1";
 
     static bool IsURLProduction(string url) => Regex.IsMatch(url, @"https:\/\/g-\d*.modapi.io\/v1");

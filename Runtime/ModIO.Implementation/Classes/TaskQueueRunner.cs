@@ -118,6 +118,7 @@ namespace ModIO.Implementation
         /// <param name="taskFunc">The function that represents the task to be executed.</param>
         /// <param name="prio">The priority of the task (TaskPriority).</param>
         /// <param name="taskSize">The size of the task.</param>
+        /// <param name="useSeparateThread"></param>
         /// <returns>Returns a Task of type T for awaiting purposes.</returns>
         public Task<T> AddTask<T>(TaskPriority prio, int taskSize, Func<Task<T>> taskFunc, bool useSeparateThread = false)
         {

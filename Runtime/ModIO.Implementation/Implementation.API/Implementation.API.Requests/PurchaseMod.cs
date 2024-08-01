@@ -3,7 +3,7 @@
     internal static class PurchaseMod
     {
         // Idempotent must be alphanumeric and cannot contain unique characters except for -.
-        public static WebRequestConfig Request(ModId modId, int displayAmount, string idempotent)
+        public static WebRequestConfig Request(ModId modId, int displayAmount, string idempotent, bool subscribeOnPurchase)
         {
             var request = new WebRequestConfig()
             {
@@ -15,6 +15,7 @@
 
             request.AddField("display_amount", displayAmount);
             request.AddField("idempotent_key", idempotent);
+            request.AddField("subscribe", subscribeOnPurchase);
 
             return request;
         }

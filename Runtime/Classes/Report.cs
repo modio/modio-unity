@@ -8,6 +8,11 @@ namespace ModIO
     /// </summary>
     public class Report
     {
+        public Report()
+        {
+            resourceType = ReportResourceType.Mods;
+        }
+
         /// <summary>
         /// convenience constructor for making a report. All of the parameters are mandatory to make
         /// a successful report.
@@ -17,12 +22,10 @@ namespace ModIO
         /// <param name="summary">CANNOT BE NULL explanation of the issue being reported</param>
         /// <param name="user">CANNOT BE NULL user reporting the issue</param>
         /// <param name="contactEmail">CANNOT BE NULL user email address</param>
-        public Report(ModId modId, ReportType type, string summary, string user,
-                       string contactEmail)
-        {
+        public Report(ModId modId, ReportType type, string summary, string user, string contactEmail) : base()
+        {            
             id = modId;
-            this.type = type;
-            resourceType = ReportResourceType.Mods;
+            this.type = type;            
             this.summary = summary;
             this.user = user;
             this.contactEmail = contactEmail;
@@ -37,8 +40,7 @@ namespace ModIO
 
         public bool CanSend()
         {
-            if(id == null || summary == null || type == null || resourceType == null || user == null
-               || contactEmail == null)
+            if(id == null || summary == null || type == null || resourceType == null || contactEmail == null)
             {
                 return false;
             }

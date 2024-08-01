@@ -23,7 +23,7 @@ namespace ModIO.Implementation.API
 			AotHelper.EnsureList<LogoObject>();
 			AotHelper.EnsureList<UserObject>();
 			AotHelper.EnsureList<ImageObject>();
-			AotHelper.EnsureList<MetadataKVPObject>();
+			AotHelper.EnsureList<MetadataKvpObject>();
 			AotHelper.EnsureList<ModMediaObject>();
 			AotHelper.EnsureList<ModfileObject>();
 			AotHelper.EnsureList<ModStatsObject>();

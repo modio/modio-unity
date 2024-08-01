@@ -18,6 +18,7 @@
             this.gameKey = serverSettings.gameKey;
             this.disableUploads = serverSettings.disableUploads;
             this.languageCode = serverSettings.languageCode;
+            this.useCommandLineArgumentOverrides = serverSettings.useCommandLineArgumentOverrides;
         }
 
         /// <summary>URL for the mod.io server to connect to.</summary>
@@ -31,11 +32,14 @@
 
         /// <summary>
         /// Language code for the localizing message responses.
-        /// See https://docs.mod.io/#localization for possible values.
+        /// See https://docs.mod.io/restapiref/#localization for possible values.
         /// </summary>
         public string languageCode;
 
         /// <summary>Disables uploading mods and modfiles for this build.</summary>
         public bool disableUploads;
+
+        /// <summary>Enables the use of command line arguments to override server settings.</summary>
+        public bool useCommandLineArgumentOverrides;
     }
 }

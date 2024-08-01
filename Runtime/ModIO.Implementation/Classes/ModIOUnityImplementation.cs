@@ -11,12 +11,19 @@ using System.Net.Mail;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Plugins.mod.io;
+using Plugins.mod.io.Runtime.ModIO.Implementation.Classes;
+using Runtime.Enums;
 using UnityEngine;
 using GameObject = ModIO.Implementation.API.Objects.GameObject;
 
+#if UNITY_IOS || UNITY_ANDROID
+using Plugins.mod.io.Platform.Mobile;
+using Newtonsoft.Json.Linq;
+#endif
+
 namespace ModIO.Implementation
 {
-
     /// <summary>
     /// The actual implementation for methods called from the ModIOUnity interface
     /// </summary>
@@ -87,6 +94,12 @@ namespace ModIO.Implementation
         /// <summary>Has the plugin been initialized.</summary>
         public static bool IsInitialized(out Result result)
         {
+            if (shuttingDown)
+            {
+                result = ResultBuilder.Create(ResultCode.Internal_OperationCancelled);
+                return false;
+            }
+
             if (isInitialized)
             {
                 result = ResultBuilder.Success;
@@ -149,6 +162,7 @@ namespace ModIO.Implementation
             }
 
             Logger.Log(LogLevel.Error, "Unable to retrieve Game Profile from the server.");
+
             return false;
         }
 
@@ -249,7 +263,8 @@ namespace ModIO.Implementation
         /// specified user has installed on this device.</summary>
         public static Result InitializeForUser(string userProfileIdentifier,
                                                ServerSettings serverSettings,
-                                               BuildSettings buildSettings)
+                                               BuildSettings buildSettings,
+                                               UISettings uiSettings = default)
         {
             TaskCompletionSource<bool> callbackConfirmation = new TaskCompletionSource<bool>();
             openCallbacks_dictionary.Add(callbackConfirmation, null);
@@ -257,8 +272,12 @@ namespace ModIO.Implementation
             // clean user profile identifier in case of filename usage
             userProfileIdentifier = IOUtil.CleanFileNameForInvalidCharacters(userProfileIdentifier);
 
+            //clear gameProfile in case we're changing games
+            GameProfile = null;
+
             Settings.server = serverSettings;
             Settings.build = buildSettings;
+            Settings.ui = uiSettings;
 
             // - load data services -
             // NOTE(@jackson):
@@ -313,6 +332,8 @@ namespace ModIO.Implementation
             // Set response cache size limit
             ResponseCache.maxCacheSize = buildSettings.requestCacheLimitKB * 1024;
 
+            DataStorage.DeleteAllTempImages();
+
             // If we fail to load the registry we simply create a new one. It may be corrupted
             // if(!result.Succeeded())
             // {
@@ -330,6 +351,8 @@ namespace ModIO.Implementation
 
             Logger.Log(LogLevel.Message, $"Initialized User[{userProfileIdentifier}]");
 
+            ModIOUnityEvents.OnPluginInitialized();
+
             return result;
         }
 
@@ -343,17 +366,36 @@ namespace ModIO.Implementation
 
             ServerSettings serverSettings;
             BuildSettings buildSettings;
+            UISettings uiSettings;
 
-            Result result = SettingsAsset.TryLoad(out serverSettings, out buildSettings);
+            Result result = SettingsAsset.TryLoad(out serverSettings, out buildSettings, out uiSettings);
+
+            if (serverSettings.useCommandLineArgumentOverrides)
+                ApplyLaunchArguments(ref userProfileIdentifier, ref serverSettings);
 
             if (result.Succeeded())
             {
-                result = InitializeForUser(userProfileIdentifier, serverSettings, buildSettings);
+                result = InitializeForUser(userProfileIdentifier, serverSettings, buildSettings, uiSettings);
             }
 
             callbackConfirmation.SetResult(true);
             openCallbacks_dictionary.Remove(callbackConfirmation);
             return result;
+        }
+
+        static void ApplyLaunchArguments(ref string userProfileIdentifier, ref ServerSettings serverSettings)
+        {
+            if (ModIOCommandLineArgs.TryGet("gameid", out string serializedId))
+                serverSettings.gameId = uint.Parse(serializedId);
+
+            if (ModIOCommandLineArgs.TryGet("apikey", out string apiKey))
+                serverSettings.gameKey = apiKey;
+
+            if (ModIOCommandLineArgs.TryGet("user", out string user))
+                userProfileIdentifier = user;
+
+            if (ModIOCommandLineArgs.TryGet("url", out string url))
+                serverSettings.serverURL = url;
         }
 
         /// <summary>
@@ -424,6 +466,7 @@ namespace ModIO.Implementation
             // Settings.build = default;
             ResponseCache.ClearCache();
             ModCollectionManager.ClearRegistry();
+            DataStorage.DeleteAllTempImages();
 
             // get new instance of dictionary so it's thread safe
             Dictionary<TaskCompletionSource<bool>, Task> tasks =
@@ -474,6 +517,9 @@ namespace ModIO.Implementation
                 {
                     result = task.result;
                     UserData.instance.SetUserObject(task.value);
+
+                    var userProfile = ResponseTranslator.ConvertUserObjectToUserProfile(task.value);
+                    ModIOUnityEvents.OnUserAuthenticated(userProfile);
                 }
             }
 
@@ -575,8 +621,9 @@ namespace ModIO.Implementation
                     // helps to keep track fo what WE are calling and what the user might be
                     // calling, the following line of code is a perfect example of how we'd expect
                     // slightly different behaviour)
-                    await GetCurrentUser(delegate
-                    { });
+                    var resultAnd = await GetCurrentUser();
+
+                    ModIOUnityEvents.OnUserAuthenticated(resultAnd.value);
 
                     // continue to invoke at the end of this method
                 }
@@ -686,8 +733,9 @@ namespace ModIO.Implementation
                     UserData.instance.SetOAuthToken(response.value, serviceProvider);
 
                     // TODO @Steve (see other example, same situation in email auth)
-                    await GetCurrentUser(delegate
-                    { });
+                    var userResultAnd = await GetCurrentUser();
+
+                    ModIOUnityEvents.OnUserAuthenticated(userResultAnd.value);
                 }
                 else
                 {
@@ -790,7 +838,7 @@ namespace ModIO.Implementation
             var callbackConfirmation = openCallbacks.New();
 
             Result result;
-            TagCategory[] tags = new TagCategory[0];
+            TagCategory[] tags = Array.Empty<TagCategory>();
 
             if (IsInitialized(out result) && !ResponseCache.GetTagsFromCache(out tags))
             {
@@ -802,8 +850,24 @@ namespace ModIO.Implementation
                 result = task.result;
                 if (result.Succeeded())
                 {
+                    await DataStorage.SaveTags(task.value.data);
+
                     tags = ResponseTranslator.ConvertGameTagOptionsObjectToTagCategories(task.value.data);
                     ResponseCache.AddTagsToCache(tags);
+                }
+                else if (result.IsCancelled())
+                {
+                    //do nothing; we need to pass this one through as is (the plugin is probably shutting down)
+                }
+                else
+                {
+                    ResultAnd<GameTagOptionObject[]> resultDataStorage = await DataStorage.LoadTags();
+                    result = resultDataStorage.result;
+                    if (result.Succeeded())
+                    {
+                        tags = ResponseTranslator.ConvertGameTagOptionsObjectToTagCategories(resultDataStorage.value);
+                        ResponseCache.AddTagsToCache(tags);
+                    }
                 }
             }
 
@@ -826,6 +890,8 @@ namespace ModIO.Implementation
             ResultAnd<TagCategory[]> result = await GetGameTags();
             callback?.Invoke(result);
         }
+
+        public static string GetTagLocalized(string tag, string languageCode) => ResponseCache.GetTagLocalized(tag, languageCode);
 
         public static async Task<ResultAnd<ModPage>> GetMods(SearchFilter filter)
         {
@@ -877,6 +943,39 @@ namespace ModIO.Implementation
             }
             ResultAnd<ModPage> result = await GetMods(filter);
             callback?.Invoke(result);
+        }
+
+        public static async Task<Result> Ping()
+        {
+            if (!IsInitialized(out Result initializedResult))
+                return initializedResult;
+
+            var callbackConfirmation = openCallbacks.New();
+
+            Result result = await openCallbacks.Run(
+                callbackConfirmation,
+                WebRequestManager.Request(API.Requests.Ping.Request())
+            );
+
+            openCallbacks.Complete(callbackConfirmation);
+
+            return result;
+        }
+
+        public static async void Ping(Action<Result> callback)
+        {
+            //Early out
+            if (callback == null)
+            {
+                Logger.Log(
+                    LogLevel.Error,
+                    "No callback was given to the Ping method."
+                    + " Operation has been cancelled.");
+                return;
+            }
+
+            Result pingResult = await Ping();
+            callback.Invoke(pingResult);
         }
 
         public static async Task<ResultAnd<CommentPage>> GetModComments(ModId modId, SearchFilter filter)
@@ -1117,8 +1216,9 @@ namespace ModIO.Implementation
 
                     if (!response.result.Succeeded())
                     {
-                        result = response.result;
-                        goto End;
+                        callbackConfirmation.SetResult(true);
+                        openCallbacks.Remove(callbackConfirmation);
+                        return ResultAnd.Create(response.result, ModRating.None);
                     }
                 }
 
@@ -1129,12 +1229,9 @@ namespace ModIO.Implementation
                 }
             }
 
-        End:
-
             // FINAL SUCCESS / FAILURE depending on callback params set previously
             callbackConfirmation.SetResult(true);
             openCallbacks.Remove(callbackConfirmation);
-
             return ResultAnd.Create(result, rating);
         }
 
@@ -1158,12 +1255,16 @@ namespace ModIO.Implementation
 
         #region Mod Management
 
-        public static Result EnableModManagement(
-            ModManagementEventDelegate modManagementEventDelegate)
+        public static Result EnableModManagement(ModManagementEventDelegate modManagementEventDelegate)
         {
             if (IsInitialized(out Result result) && IsAuthenticatedSessionValid(out result))
             {
-                ModManagement.modManagementEventDelegate = modManagementEventDelegate;
+                if (modManagementEventDelegate != null)
+                {
+                    ModManagement.modManagementEventDelegate -= modManagementEventDelegate;
+                    ModManagement.modManagementEventDelegate += modManagementEventDelegate;
+                }
+
                 ModManagement.EnableModManagement();
             }
 
@@ -1178,6 +1279,8 @@ namespace ModIO.Implementation
 
                 ModManagement.ShutdownOperations();
             }
+
+            ModManagement.ClearModManagementEventDelegate();
 
             return result;
         }
@@ -1233,6 +1336,14 @@ namespace ModIO.Implementation
             return result;
         }
 
+        public static Result RetryDownload(ModId modId)
+        {
+            if (IsInitialized(out Result result) && IsAuthenticatedSessionValid(out result))
+                ModManagement.RetryFailedDownload(modId);
+
+            return result;
+        }
+
         public static ProgressHandle GetCurrentModManagementOperation()
         {
             return ModManagement.GetCurrentOperationProgress();
@@ -1245,7 +1356,10 @@ namespace ModIO.Implementation
                 return false;
             }
 
-            return ModCollectionManager.EnableModForCurrentUser(modId);
+            var success = ModCollectionManager.EnableModForCurrentUser(modId);
+            if(success)
+                ModIOUnityEvents.InvokeModSubscriptionInfoChanged(modId);
+            return success;
         }
 
         public static bool DisableMod(ModId modId)
@@ -1255,7 +1369,10 @@ namespace ModIO.Implementation
                 return false;
             }
 
-            return ModCollectionManager.DisableModForCurrentUser(modId);
+            var success = ModCollectionManager.DisableModForCurrentUser(modId);
+            if(success)
+                ModIOUnityEvents.InvokeModSubscriptionInfoChanged(modId);
+            return success;
         }
 
         public static async void AddDependenciesToMod(ModId modId, ICollection<ModId> dependencies, Action<Result> callback)
@@ -1350,6 +1467,101 @@ namespace ModIO.Implementation
             return result;
         }
 
+        public static async Task<ResultAnd<Dictionary<string, string>>> GetModKvpMetadata(long modId)
+        {
+            ResultAnd<Dictionary<string, string>> response = ResultAnd.Create<Dictionary<string, string>>(ResultBuilder.Unknown, default);
+
+            var callbackConfirmation = openCallbacks.New();
+            if (IsInitialized(out response.result) && IsAuthenticatedSessionValid(out response.result))
+            {
+                var config = API.Requests.GetModKvpMetadata.Request(modId);
+                var r = await openCallbacks.Run(callbackConfirmation, WebRequestManager.Request<MetadataKvpObjects>(config));
+                response.result = r.result;
+                if (r.result.Succeeded())
+                {
+                    response.value = ResponseTranslator.ConvertMetadataKvpObjects(r.value);
+                }
+            }
+
+            openCallbacks.Complete(callbackConfirmation);
+            return response;
+        }
+
+        public static async void GetModKvpMetadata(long modId, Action<ResultAnd<Dictionary<string, string>>> callback)
+        {
+            if (callback == null)
+            {
+                Logger.Log(
+                    LogLevel.Warning,
+                    "No callback was given to the GetModKvpMetadata method. It is "
+                    + "possible that this operation will not resolve successfully and should be "
+                    + "checked with a proper callback.");
+            }
+
+            ResultAnd<Dictionary<string, string>> result = await GetModKvpMetadata(modId);
+            callback?.Invoke(result);
+        }
+
+        public static async Task<Result> AddModKvpMetadata(long modId, Dictionary<string, string> metadataKvps)
+        {
+            Result result = ResultBuilder.Unknown;
+
+            var callbackConfirmation = openCallbacks.New();
+            if (IsInitialized(out result) && IsAuthenticatedSessionValid(out result))
+            {
+                var config = API.Requests.AddModKvpMetadata.Request(modId, metadataKvps);
+                result = await openCallbacks.Run(callbackConfirmation, WebRequestManager.Request(config));
+            }
+
+            openCallbacks.Complete(callbackConfirmation);
+            return result;
+        }
+
+        public static async void AddModKvpMetadata(long modId, Dictionary<string, string> metadataKvps, Action<Result> callback)
+        {
+            if (callback == null)
+            {
+                Logger.Log(
+                    LogLevel.Warning,
+                    "No callback was given to the AddModKvpMetadata method. It is "
+                    + "possible that this operation will not resolve successfully and should be "
+                    + "checked with a proper callback.");
+            }
+
+            Result result = await AddModKvpMetadata(modId, metadataKvps);
+            callback?.Invoke(result);
+        }
+
+        public static async Task<Result> DeleteModKvpMetadata(long modId, Dictionary<string, string> metadataKvps)
+        {
+            Result result = ResultBuilder.Unknown;
+
+            var callbackConfirmation = openCallbacks.New();
+            if (IsInitialized(out result) && IsAuthenticatedSessionValid(out result))
+            {
+                var config = API.Requests.DeleteModKvpMetadata.Request(modId, metadataKvps);
+                result = await openCallbacks.Run(callbackConfirmation, WebRequestManager.Request(config));
+            }
+
+            openCallbacks.Complete(callbackConfirmation);
+            return result;
+        }
+
+        public static async void DeleteModKvpMetadata(long modId, Dictionary<string, string> metadataKvps, Action<Result> callback)
+        {
+            if (callback == null)
+            {
+                Logger.Log(
+                    LogLevel.Warning,
+                    "No callback was given to the DeleteModKvpMetadata method. It is "
+                    + "possible that this operation will not resolve successfully and should be "
+                    + "checked with a proper callback.");
+            }
+
+            Result result = await DeleteModKvpMetadata(modId, metadataKvps);
+            callback?.Invoke(result);
+        }
+
         #endregion // Mod Management
 
         #region User Management
@@ -1358,9 +1570,7 @@ namespace ModIO.Implementation
         {
             var callbackConfirmation = openCallbacks.New();
 
-            Result result;
-
-            if (IsInitialized(out result) && IsAuthenticatedSessionValid(out result))
+            if (IsInitialized(out Result result) && IsAuthenticatedSessionValid(out result))
             {
 
                 var config = API.Requests.AddModRating.Request(modId, modRating);
@@ -1368,26 +1578,25 @@ namespace ModIO.Implementation
 
                 result = response.result;
 
-                var rating = new Rating
-                {
-                    dateAdded = DateTime.Now,
-                    rating = modRating,
-                    modId = modId
-                };
-                ResponseCache.AddCurrentUserRating(modId, rating);
-
-                if (result.code_api == ResultCode.RESTAPI_ModRatingAlreadyExists
+                if (result.Succeeded()
+                    || result.code_api == ResultCode.RESTAPI_ModRatingAlreadyExists
                     || result.code_api == ResultCode.RESTAPI_ModRatingNotFound)
                 {
                     // SUCCEEDED
                     result = ResultBuilder.Success;
+
+                    ResponseCache.AddCurrentUserRating(modId, new Rating
+                    {
+                        modId = modId,
+                        rating = modRating,
+                        dateAdded = DateTime.Now,
+                    });
                 }
             }
 
             openCallbacks.Complete(callbackConfirmation);
             return result;
         }
-
 
         public static async void AddModRating(ModId modId, ModRating rating,
                                               Action<Result> callback)
@@ -1406,7 +1615,7 @@ namespace ModIO.Implementation
             callback?.Invoke(result);
         }
 
-        public static async Task<ResultAnd<UserProfile>> GetCurrentUser()
+        public static async Task<ResultAnd<UserProfile>> GetCurrentUser(bool allowOfflineUser = false)
         {
             var callbackConfirmation = openCallbacks.New();
 
@@ -1429,6 +1638,10 @@ namespace ModIO.Implementation
                     // Add UserProfile to cache (lasts for the whole session)
                     ResponseCache.AddUserToCache(userProfile);
                 }
+                else if (allowOfflineUser && result.IsNetworkError())
+                {
+                    userProfile = ResponseTranslator.ConvertUserObjectToUserProfile(UserData.instance.userObject);
+                }
             }
 
             callbackConfirmation.SetResult(true);
@@ -1437,7 +1650,7 @@ namespace ModIO.Implementation
             return ResultAnd.Create(result, userProfile);
         }
 
-        public static async Task GetCurrentUser(Action<ResultAnd<UserProfile>> callback)
+        public static async Task GetCurrentUser(Action<ResultAnd<UserProfile>> callback, bool allowOfflineUser = false)
         {
             // Early out
             if (callback == null)
@@ -1449,7 +1662,7 @@ namespace ModIO.Implementation
                 return;
             }
 
-            var result = await GetCurrentUser();
+            var result = await GetCurrentUser(allowOfflineUser);
             callback(result);
         }
 
@@ -1461,6 +1674,8 @@ namespace ModIO.Implementation
 
             if (IsInitialized(out result) && IsAuthenticatedSessionValid(out result))
             {
+                ModIOUnityEvents.InvokeModSubscriptionChanged(modId, false); // Invoke the event immediately, as the plugin will keep attempting to unsubscribe on fail
+
                 var config = API.Requests.UnsubscribeFromMod.Request(modId);
                 var task = await openCallbacks.Run(callbackConfirmation, WebRequestManager.Request<MessageObject>(config));
 
@@ -1485,6 +1700,8 @@ namespace ModIO.Implementation
                 }
 
                 ModCollectionManager.RemoveModFromUserSubscriptions(modId, success);
+
+                ModIOUnityEvents.InvokeModSubscriptionInfoChanged(modId); // We need an event afterwards, so we can grab updated file states and such that have changed in response
             }
 
             openCallbacks.Complete(callbackConfirmation);
@@ -1529,6 +1746,8 @@ namespace ModIO.Implementation
 
             if (IsInitialized(out result) && IsAuthenticatedSessionValid(out result))
             {
+                ModIOUnityEvents.InvokeModSubscriptionChanged(modId, true); // Invoke the event immediately, as the plugin will keep attempting to subscribe on fail
+
                 var config = API.Requests.SubscribeToMod.Request(modId);
                 var taskResult = await openCallbacks.Run(callbackConfirmation, WebRequestManager.Request<ModObject>(config));
 
@@ -1561,6 +1780,8 @@ namespace ModIO.Implementation
 
                     result = getModConfigResult.result;
                 }
+
+                ModIOUnityEvents.InvokeModSubscriptionInfoChanged(modId);
             }
 
             openCallbacks.Complete(callbackConfirmation);
@@ -1582,7 +1803,6 @@ namespace ModIO.Implementation
             Result result = await SubscribeTo(modId);
             callback?.Invoke(result);
         }
-
 
         //Should this be exposed in ModIOUnity/ModIOUnityAsync?
         public static async Task<ResultAnd<ModPage>> GetUserSubscriptions(SearchFilter filter)
@@ -1633,13 +1853,24 @@ namespace ModIO.Implementation
 
         public static InstalledMod[] GetInstalledMods(out Result result)
         {
-            if (IsInitialized(out result) /* && AreCredentialsValid(false, out result)*/)
+            if (IsInitialized(out result))
             {
                 InstalledMod[] mods = ModCollectionManager.GetInstalledMods(out result, true);
                 return mods;
             }
 
             return null;
+        }
+
+        public static InstalledMod[] GetTempInstalledMods(out Result result)
+        {
+            if (IsInitialized(out result))
+            {
+                InstalledMod[] mods = ModCollectionManager.GetTempInstalledMods();
+                return mods;
+            }
+
+            return Array.Empty<InstalledMod>();
         }
 
         public static UserInstalledMod[] GetInstalledModsForUser(out Result result, bool includeDisabledMods)
@@ -1683,6 +1914,8 @@ namespace ModIO.Implementation
             Result result = userExists
                 ? ResultBuilder.Create(ResultCode.User_NotRemoved)
                 : ResultBuilder.Success;
+
+            ModIOUnityEvents.OnUserRemoved();
 
             return result;
         }
@@ -1813,7 +2046,11 @@ namespace ModIO.Implementation
 
             if (result.Succeeded())
             {
-                IOUtil.TryParseImageData(resultAnd.value, out texture, out result);
+                if (!IOUtil.TryParseImageData(resultAnd.value, out texture, out result))
+                {
+                    //If we can't parse the image, clear it off disk
+                    Result cleanupResult = DataStorage.DeleteStoredImage(downloadReference.url);
+                }
             }
 
             return ResultAnd.Create(result, texture);
@@ -1875,8 +2112,22 @@ namespace ModIO.Implementation
                     // CACHE SUCCEEDED
                     result = cacheResponse.result;
                     image = cacheResponse.value;
+
+                    if (image?.Length == 0)
+                    {
+                        Result cleanupResult = DataStorage.DeleteStoredImage(downloadReference.url);
+                        if(!cleanupResult.Succeeded())
+                        {
+                            Logger.Log(LogLevel.Error,
+                                $"[Internal] Failed to clean up zero byte cached image for modId {downloadReference.modId}"
+                                + $" (cleanup result {cleanupResult.code}:{cleanupResult.code_api})");
+                        }
+
+                        image = null;
+                    }
                 }
-                else
+
+                if(image == null)
                 {
                     // GET FILE STREAM TO DOWNLOAD THE IMAGE FILE TO
                     // This stream is a direct write to the file location we will cache the
@@ -2085,7 +2336,6 @@ namespace ModIO.Implementation
                         ResponseCache.ClearCache();
 
                         modDetails.modId = (ModId)response.value.id;
-                        result = await ValidateModProfileMarketplaceTeam(modDetails);
                     }
                 }
             }
@@ -2156,8 +2406,6 @@ namespace ModIO.Implementation
                         + " The 'tags' array in the ModProfileDetails will be ignored.");
                 }
 
-                result = await ValidateModProfileMarketplaceTeam(modDetails);
-
                 var config = modDetails.logo != null
                     ? API.Requests.EditMod.RequestPOST(modDetails)
                     : API.Requests.EditMod.RequestPUT(modDetails);
@@ -2191,50 +2439,6 @@ namespace ModIO.Implementation
 
             var result = await EditModProfile(modDetails);
             callback?.Invoke(result);
-        }
-
-        /// <summary>
-        /// If a user attempts to create or edit a mod's monetization options to 'Live',
-        /// this method will ensure the monetization team and revenue split is set correctly
-        /// by setting the existing user's revenue share to 100%.
-        /// </summary>
-        /// <remarks>
-        /// This first attempts to GET the monetization team before setting it. The reason we dont
-        /// just force it to always be the existing user with 100% revenue share is because the
-        /// revenue split can be edited and set with multiple users elsewhere.
-        /// (It's rare but possible, and we dont want to override an existing team)
-        /// </remarks>
-        /// <param name="modDetails"></param>
-        /// <returns></returns>
-        static async Task<Result> ValidateModProfileMarketplaceTeam(ModProfileDetails modDetails)
-        {
-            // If not setting monetization to live, we don't need to validate that a marketplace team has been setup
-            if (!modDetails.monetizationOptions.HasValue || modDetails.monetizationOptions.Value == MonetizationOption.None)
-            {
-                return ResultBuilder.Success;
-            }
-
-            Result result = ResultBuilder.Unknown;
-
-            if (modDetails.modId == null)
-            {
-                return result;
-            }
-
-            var getResponse = await GetModMonetizationTeam(modDetails.modId.Value);
-
-            if (getResponse.result.Succeeded())
-            {
-                return ResultBuilder.Success;
-            }
-
-            List<ModMonetizationTeamDetails> team = new List<ModMonetizationTeamDetails>
-            {
-                new ModMonetizationTeamDetails(UserData.instance.userObject.id, 100)
-            };
-            result = await AddModMonetizationTeam(modDetails.modId.Value, team);
-
-            return result;
         }
 
         public static async void DeleteTags(ModId modId, string[] tags,
@@ -2840,12 +3044,10 @@ namespace ModIO.Implementation
         static bool IsModfileDetailsValid(ModfileDetails modfile, out Result result)
         {
             // Check directory exists
-            if (modfile.uploadId == null && !DataStorage.TryGetModfileDetailsDirectory(modfile.directory,
-                    out string _))
+            if (modfile.uploadId == null && !DataStorage.IsDirectoryValid(modfile.directory))
             {
                 Logger.Log(LogLevel.Error,
-                    "The provided directory in ModfileDetails could not be found or"
-                    + $" does not exist ({modfile.directory}).");
+                    $"The provided directory does not exist ({modfile.directory}).");
                 result = ResultBuilder.Create(ResultCode.IO_DirectoryDoesNotExist);
                 return false;
             }
@@ -3184,42 +3386,17 @@ namespace ModIO.Implementation
 
         #region Monetization
 
-        public static async Task<ResultAnd<TokenPack[]>> GetTokenPacks(Action<ResultAnd<TokenPack[]>> callback = null)
-        {
-            var callbackConfirmation = openCallbacks.New();
-
-            TokenPack[] tokenPacks = Array.Empty<TokenPack>();
-
-            if (IsInitialized(out Result result) && !ResponseCache.GetTokenPacksFromCache(out tokenPacks))
-            {
-                var config = API.Requests.GetTokenPacks.Request();
-                var task = await openCallbacks.Run(callbackConfirmation, WebRequestManager.Request<GetTokenPacks.ResponseSchema>(config));
-
-                result = task.result;
-                if (result.Succeeded())
-                {
-                    tokenPacks = ResponseTranslator.ConvertTokenPackObjectsToTokenPacks(task.value.data);
-                    ResponseCache.AddTokenPacksToCache(tokenPacks);
-                }
-            }
-
-            openCallbacks.Complete(callbackConfirmation);
-
-            var resultAnd = ResultAnd.Create(result, tokenPacks);
-
-            callback?.Invoke(resultAnd);
-
-            return resultAnd;
-        }
-
         public static async Task<ResultAnd<Entitlement[]>> SyncEntitlements()
         {
+            Logger.Log(LogLevel.Verbose, $"Sync Entitlements called");
             Task<ResultAnd<SyncEntitlements.ResponseSchema>> requestTask = null;
             Entitlement[] entitlements = null;
             WebRequestConfig config = null;
 
 #if UNITY_GAMECORE && !UNITY_EDITOR
             var token = await GamecoreHelper.GetToken();
+            if(token == null)
+                return ResultAnd.Create(ResultCode.RESTAPI_XboxLiveTokenInvalid, entitlements);
             config = API.Requests.SyncEntitlements.XboxRequest(token);
             requestTask = WebRequestManager.Request<SyncEntitlements.ResponseSchema>(config);
 #elif UNITY_PS4 && !UNITY_EDITOR
@@ -3236,8 +3413,20 @@ namespace ModIO.Implementation
                 config = API.Requests.SyncEntitlements.PsnRequest(token.code, token.environment, psb.serviceLabel);
                 requestTask = WebRequestManager.Request<SyncEntitlements.ResponseSchema>(config);
             }
-#elif UNITY_STANDALONE
+#elif UNITY_STANDALONE && !UNITY_EDITOR
             config = API.Requests.SyncEntitlements.SteamRequest();
+            requestTask = WebRequestManager.Request<SyncEntitlements.ResponseSchema>(config);
+#elif (UNITY_ANDROID || UNITY_IOS) && !UNITY_EDITOR
+            var purchaseData = MobilePurchaseHelper.GetNextPurchase();
+            var walletResponse = await ModIOUnityAsync.GetUserWalletBalance();
+            if (!walletResponse.result.Succeeded())
+                Logger.Log(LogLevel.Verbose, "Failed to get wallet balance.");
+
+            if(Application.platform == RuntimePlatform.Android)
+                config = API.Requests.SyncEntitlements.GoogleRequest(purchaseData.PayloadJson);
+            else
+                config = API.Requests.SyncEntitlements.AppleRequest(purchaseData.Payload);
+
             requestTask = WebRequestManager.Request<SyncEntitlements.ResponseSchema>(config);
 #else
             return ResultAnd.Create<Entitlement[]>(ResultBuilder.Create(ResultCode.User_NotAuthenticated), null);
@@ -3253,13 +3442,20 @@ namespace ModIO.Implementation
                     try
                     {
                         var task = await openCallbacks.Run(callbackConfirmation, requestTask);
-
                         result = task.result;
 
                         if (result.Succeeded())
                         {
+                            Logger.Log(LogLevel.Verbose, $"Entitlement Synced. New Balance: {task.value.wallet.balance}");
+                            ResponseCache.UpdateWallet(task.value.wallet.balance);
                             entitlements = ResponseTranslator.ConvertEntitlementObjectsToEntitlements(task.value.data);
                             ResponseCache.ReplaceEntitlements(entitlements);
+                            ResponseCache.ClearWalletFromCache();
+#if (UNITY_ANDROID || UNITY_IOS) && !UNITY_EDITOR
+                            MobilePurchaseHelper.CompleteValidation(entitlements);
+#endif
+
+                            ModIOUnityEvents.OnUserEntitlementsChanged();
                         }
                     }
                     catch (Exception e)
@@ -3292,7 +3488,7 @@ namespace ModIO.Implementation
             callback(result);
         }
 
-        public static async Task<ResultAnd<CheckoutProcess>> PurchaseMod(ModId modId, int displayAmount, string idempotent)
+        public static async Task<ResultAnd<CheckoutProcess>> PurchaseMod(ModId modId, int displayAmount, string idempotent, bool subscribeOnPurchase)
         {
             if (Regex.IsMatch(idempotent, "^[a-zA-Z0-9-]+$"))
             {
@@ -3308,7 +3504,7 @@ namespace ModIO.Implementation
                 checkoutProcess.result = await IsMarketplaceEnabled();
                 if (checkoutProcess.result.Succeeded())
                 {
-                    var config = API.Requests.PurchaseMod.Request(modId, displayAmount, idempotent);
+                    var config = API.Requests.PurchaseMod.Request(modId, displayAmount, idempotent, subscribeOnPurchase);
                     var resultAnd = await openCallbacks.Run(callbackConfirmation, WebRequestManager.Request<CheckoutProcessObject>(config));
 
                     if (resultAnd.result.Succeeded())
@@ -3317,7 +3513,29 @@ namespace ModIO.Implementation
                         ResponseCache.UpdateWallet(resultAnd.value.balance);
                         ModCollectionManager.UpdateModCollectionEntry(modId, resultAnd.value.mod);
                         ModCollectionManager.AddModToUserPurchases(modId);
+                        ModIOUnityEvents.InvokeModPurchasedChanged(modId, true);
+
+                        //Now make sure we reflect that we're subscribed to it
+                        ModCollectionManager.AddModToUserSubscriptions(modId);
+
+                        var getModConfig = API.Requests.GetMod.Request(modId);
+                        var getModConfigResult = await openCallbacks.Run(callbackConfirmation, WebRequestManager.Request<ModObject>(getModConfig));
+
+                        if (getModConfigResult.result.Succeeded())
+                        {
+                            var profile = ResponseTranslator.ConvertModObjectToModProfile(getModConfigResult.value);
+                            ResponseCache.AddModToCache(profile);
+
+                            ModCollectionManager.UpdateModCollectionEntry(modId, getModConfigResult.value);
+                        }
+
+                        ModIOUnityEvents.InvokeModSubscriptionInfoChanged(modId);
+
                         ModManagement.WakeUp();
+                    }
+                    else
+                    {
+                        checkoutProcess.result = resultAnd.result;
                     }
                 }
             }
@@ -3327,7 +3545,7 @@ namespace ModIO.Implementation
             return checkoutProcess;
         }
 
-        public static async void PurchaseMod(ModId modId, int displayAmount, string idempotent, Action<ResultAnd<CheckoutProcess>> callback)
+        public static async void PurchaseMod(ModId modId, int displayAmount, string idempotent, bool subscribeOnPurchase, Action<ResultAnd<CheckoutProcess>> callback)
         {
             // Check for callback
             if (callback == null)
@@ -3339,7 +3557,7 @@ namespace ModIO.Implementation
                     + "provide a valid callback.");
             }
 
-            ResultAnd<CheckoutProcess> result = await PurchaseMod(modId, displayAmount, idempotent);
+            ResultAnd<CheckoutProcess> result = await PurchaseMod(modId, displayAmount, idempotent, subscribeOnPurchase);
             callback?.Invoke(result);
         }
 
@@ -3364,7 +3582,13 @@ namespace ModIO.Implementation
 
                 if (result.Succeeded())
                 {
+                    foreach (ModObject modObject in task.value.data)
+                    {
+                        ModCollectionManager.UpdateModCollectionEntryFromModObject(modObject, false);
+                    }
+
                     page = ResponseTranslator.ConvertResponseSchemaToModPage(task.value, filter);
+                    ResponseCache.AddModsToCache(unpaginatedURL, offset, page);
 
                     // Return the exact number of mods that were requested (not more)
                     if (page.modProfiles.Length > filter.pageSize)
@@ -3412,7 +3636,7 @@ namespace ModIO.Implementation
                     if (resultAnd.result.Succeeded())
                     {
                         wallet = ResponseTranslator.ConvertWalletObjectToWallet(resultAnd.value);
-                        ResponseCache.UpdateWallet(resultAnd.value);
+                        ResponseCache.ReplaceWallet(resultAnd.value);
                     }
                 }
             }
@@ -3437,59 +3661,131 @@ namespace ModIO.Implementation
             callback?.Invoke(result);
         }
 
-        public static async Task<ResultAnd<MonetizationTeamAccount[]>> GetModMonetizationTeam(ModId modId)
+        #endregion //Monetization
+
+        #region TempModSet
+        public static async Task<Result> CreateTempModSet(IEnumerable<ModId> modIds)
         {
-            var callbackConfirmation = openCallbacks.New();
-
-
             Result result;
-            MonetizationTeamAccount[] teamAccounts = default;
 
-            if (IsInitialized(out result) && IsAuthenticatedSessionValid(out result)
-                                          && !ResponseCache.GetModMonetizationTeamCache(modId, out teamAccounts))
+            if (IsInitialized(out result) && IsAuthenticatedSessionValid(out result))
             {
-                var task = await API.Requests.GetModMonetizationTeam.Request(modId).RunViaWebRequestManager();
+                TempModSetManager.CreateTempModSet(modIds);
 
-                result = task.result;
-                if (task.result.Succeeded())
+                foreach (var id in modIds)
                 {
-                    teamAccounts = ResponseTranslator.ConvertGameMonetizationTeamObjectsToGameMonetizationTeams(task.value.data);
-
-                    ResponseCache.AddModMonetizationTeamToCache(modId, teamAccounts);
+                    var r = await GetModObject(id);
+                    if (r.result.Succeeded())
+                    {
+                        ModCollectionManager.UpdateModCollectionEntry(new ModId(id), r.value, ModPriority.High);
+                    }
+                    else
+                    {
+                        Logger.Log(LogLevel.Error, "Failed to get mod.");
+                    }
                 }
+                ModManagement.WakeUp();
             }
 
-            openCallbacks.Complete(callbackConfirmation);
-
-            return ResultAnd.Create(result, teamAccounts);
+            return result;
         }
 
-        public static async void GetModMonetizationTeam(Action<ResultAnd<MonetizationTeamAccount[]>> callback, ModId modId)
+        public static async void CreateTempModSet(IEnumerable<ModId> modIds, Action<Result> callback)
         {
-            // Early out
             if (callback == null)
             {
                 Logger.Log(
                     LogLevel.Warning,
-                    "No callback was given to the GetModMonetizationTeam method, any response "
-                    + "returned from the server wont be used. This operation  has been cancelled.");
-                return;
+                    "No callback was given to the CreateTempModSet method. It is "
+                    + "possible that this operation will not resolve successfully and should be "
+                    + "checked with a proper callback.");
             }
-            ResultAnd<MonetizationTeamAccount[]> result = await GetModMonetizationTeam(modId);
+
+            Result result = await CreateTempModSet(modIds);
             callback?.Invoke(result);
         }
 
-        public static async Task<Result> AddModMonetizationTeam(ModId modId, ICollection<ModMonetizationTeamDetails> team)
+        public static Result DeleteTempModSet()
+        {
+            Result result = ResultBuilder.Unknown;
+            if (TempModSetManager.IsTempModSetActive())
+            {
+                var allTempModSetMods = TempModSetManager.GetMods(true).ToList();
+                var subscribedMods = ModIOUnity.GetSubscribedMods(out result);
+                var moveMods = new List<ModId>();
+                foreach (var subscribedMod in subscribedMods)
+                {
+                    if (allTempModSetMods.Contains(subscribedMod.modProfile.id))
+                    {
+                        moveMods.Add(subscribedMod.modProfile.id);
+                        allTempModSetMods.Remove(subscribedMod.modProfile.id);
+                    }
+                }
+                foreach (var modId in moveMods)
+                {
+                    var fileId = ModCollectionManager.GetModFileId(modId);
+                    if (fileId != null)
+                    {
+                        if (DataStorage.MoveTempModToInstallDirectory(modId, fileId.Value))
+                        {
+                            Logger.Log(LogLevel.Error, $"Could not move mod from temp mod install directory to subscribed mod install directory");
+                        }
+                    }
+                    else
+                    {
+                        Logger.Log(LogLevel.Error, $"Could not file fileId");
+                    }
+                }
+                foreach (var modId in allTempModSetMods)
+                {
+                    var fileId = ModCollectionManager.GetModFileId(new ModId(modId));
+                    if (fileId != null)
+                    {
+                        DataStorage.TryDeleteInstalledMod(modId, fileId.Value, out result);
+                        if (!result.Succeeded())
+                        {
+                            Logger.Log(LogLevel.Error, $"Failed to delete modfile[{modId}_{fileId}]");
+                        }
+                        else
+                        {
+                            Logger.Log(LogLevel.Verbose, $"DELETED MODFILE[{modId}_{fileId}");
+                        }
+                    }
+                    else
+                    {
+                        Logger.Log(LogLevel.Error, $"Could not file fileId for mod id: {modId}");
+                    }
+                }
+
+                TempModSetManager.DeleteTempModSet();
+                ModManagement.WakeUp();
+            }
+
+            return result;
+        }
+
+        public static async Task<Result> AddModsToTempModSet(IEnumerable<ModId> modIds)
         {
             var callbackConfirmation = openCallbacks.New();
 
-            if (IsInitialized(out Result result) && IsAuthenticatedSessionValid(out result))
-            {
-                var config = API.Requests.AddModMonetizationTeam.Request(modId, team);
-                result = await openCallbacks.Run(callbackConfirmation,
-                    WebRequestManager.Request(config));
+            Result result = ResultBuilder.Unknown;
 
-                ResponseCache.ClearModMonetizationTeamFromCache(modId);
+            if (TempModSetManager.IsTempModSetActive())
+            {
+                TempModSetManager.AddMods(modIds);
+                foreach (var id in modIds)
+                {
+                    var r = await GetModObject(id);
+                    if (r.result.Succeeded())
+                    {
+                        ModCollectionManager.UpdateModCollectionEntry(new ModId(id), r.value);
+                    }
+                    else
+                    {
+                        Debug.LogError("Failed to get mod.");
+                    }
+                }
+                ModManagement.WakeUp();
             }
 
             openCallbacks.Complete(callbackConfirmation);
@@ -3497,12 +3793,62 @@ namespace ModIO.Implementation
             return result;
         }
 
-        public static async void AddModMonetizationTeam(Action<Result> callback, ModId modId, ICollection<ModMonetizationTeamDetails> team)
+        public static async void AddModsToTempModSet(IEnumerable<ModId> mods, Action<Result> callback)
         {
-            Result result = await AddModMonetizationTeam(modId, team);
+            if (callback == null)
+            {
+                Logger.Log(
+                    LogLevel.Warning,
+                    "No callback was given to the AddModsToTempModSet method. It is "
+                    + "possible that this operation will not resolve successfully and should be "
+                    + "checked with a proper callback.");
+            }
+
+            Result result = await AddModsToTempModSet(mods);
+            callback?.Invoke(result);
+        }
+        public static Result RemoveModsFromTempModSet(IEnumerable<ModId> mods)
+        {
+            Result result = ResultBuilder.Unknown;
+            if (TempModSetManager.IsTempModSetActive())
+                TempModSetManager.RemoveMods(mods);
+            return result;
+        }
+
+        #endregion //TempModSet
+
+        #region Service to Service
+
+        public static async Task<ResultAnd<UserDelegationToken>> RequestUserDelegationToken()
+        {
+            var callbackConfirmation = openCallbacks.New();
+            ResultAnd<UserDelegationToken> resultAnd = ResultAnd.Create<UserDelegationToken>(ResultBuilder.Unknown, default);
+            if (IsInitialized(out resultAnd.result) && IsAuthenticatedSessionValid(out resultAnd.result))
+            {
+                var config = API.Requests.RequestUserDelegationToken.Request();
+                resultAnd = await openCallbacks.Run(callbackConfirmation, WebRequestManager.Request<UserDelegationToken>(config));
+            }
+
+            openCallbacks.Complete(callbackConfirmation);
+
+            return resultAnd;
+        }
+
+        public static async void RequestUserDelegationToken(Action<ResultAnd<UserDelegationToken>> callback)
+        {
+            // Early out
+            if (callback == null)
+            {
+                Logger.Log(
+                    LogLevel.Warning,
+                    "No callback was given to the RequestUserDelegationToken method, any response "
+                    + "returned from the server wont be used. This operation  has been cancelled.");
+                return;
+            }
+            ResultAnd<UserDelegationToken> result = await RequestUserDelegationToken();
             callback?.Invoke(result);
         }
 
-        #endregion //Monetization
+        #endregion
     }
 }

@@ -37,14 +37,16 @@ namespace ModIO.Implementation
         async Task<Result> ExtractAll()
         {
             Logger.Log(LogLevel.Verbose, $"EXTRACTING [{modId}_{fileId}]");
-            
+
+            DataStorage.DeleteExtractionDirectory(modId);
+
             // First we need to check that we have enough disk space to complete this operation
             Result result = await IsThereEnoughSpaceForExtracting();
             if(!result.Succeeded())
             {
                 return result;
             }
-                
+
             using(Stream fileStream = DataStorage.OpenArchiveReadStream(modId, fileId, out result))
             {
                 if(result.Succeeded())
@@ -78,7 +80,7 @@ namespace ModIO.Implementation
                                     }
 
                                     using(Stream streamWriter =
-                                        DataStorage.OpenArchiveEntryOutputStream(entry.Name,
+                                        DataStorage.OpenArchiveEntryOutputStream(modId, entry.Name,
                                             out result))
                                     {
                                         if(result.Succeeded())
@@ -159,7 +161,8 @@ namespace ModIO.Implementation
 
             //--------------------------------------------------------------------------------------
             // FINISH and/or CLEANUP
-            
+            DataStorage.TryDeleteModfileArchive(modId, fileId, out _);
+
             if(cancel)
             {
                 return CancelAndCleanup(result);
@@ -175,6 +178,8 @@ namespace ModIO.Implementation
             Logger.Log(LogLevel.Verbose,
                 $"FAILED EXTRACTION [{result.code}] MODFILE [{modId}_{fileId}]");
 
+            DataStorage.DeleteExtractionDirectory(modId);
+
             // Delete any files we may have already extracted
             DataStorage.TryDeleteInstalledMod(modId, fileId, out result);
 
@@ -187,7 +192,7 @@ namespace ModIO.Implementation
             return result;
         }
 
-        async Task<Result> IsThereEnoughSpaceForExtracting()
+        internal async Task<Result> IsThereEnoughSpaceForExtracting()
         {
             // Get the extracted size first
             using(Stream fileStream = DataStorage.OpenArchiveReadStream(modId, fileId, out Result result))

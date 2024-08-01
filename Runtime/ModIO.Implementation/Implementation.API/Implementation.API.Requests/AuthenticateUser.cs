@@ -7,11 +7,11 @@
         {
             var request = new WebRequestConfig()
             {
-                Url = $"{Settings.server.serverURL}{@"/oauth/emailexchange"}?",                
+                Url = $"{Settings.server.serverURL}{@"/oauth/emailexchange"}?",
                 RequestMethodType = "POST",
                 DontUseAuthToken = true
             };
-            
+
             request.AddField("api_key", Settings.server.gameKey);
             request.AddField("security_code", securityCode);
 

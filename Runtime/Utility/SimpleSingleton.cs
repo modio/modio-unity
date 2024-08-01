@@ -1,4 +1,6 @@
-﻿using System;
+﻿
+using System;
+using UnityEngine;
 
 namespace ModIO.Util
 {
@@ -26,5 +28,7 @@ namespace ModIO.Util
                 _instance = value;
             }
         }
+
+        public void Instantiate() { }
     }
 }

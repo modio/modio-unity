@@ -256,7 +256,7 @@ namespace ModIO.Implementation.Platform
         //TODO: Write native code to properly check for disk space for ILLCPP builds
         public async Task<bool> IsThereEnoughDiskSpaceFor(long bytes)
         {
-#if !ENABLE_IL2CPP
+#if ENABLE_IL2CPP
     #if UNITY_ANDROID
             AndroidJNI.AttachCurrentThread();
             var statFs = new AndroidJavaObject("android.os.StatFs", PersistentDataRootDirectory);

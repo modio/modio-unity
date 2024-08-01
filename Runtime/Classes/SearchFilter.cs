@@ -65,6 +65,7 @@ namespace ModIO
         }
 
         public void ShowMatureContent(bool value) => showMatureContent = value;
+        public bool GetShowMatureContent() => showMatureContent;
 
         /// <summary>
         /// Adds a phrase into the filter to be used when filtering mods in a request.
@@ -73,39 +74,13 @@ namespace ModIO
         /// <param name="filterType">(Optional) type of filter to be used with the text, defaults to Full text search</param>
         public void AddSearchPhrase(string phrase, FilterType filterType = FilterType.FullTextSearch)
         {
-            string url = string.Empty;
-            switch (filterType)
-            {
-                case FilterType.FullTextSearch:
-                    url += $"&{Filtering.FullTextSearch}{phrase}";
-                    break;
-                case FilterType.NotEqualTo:
-                    url += $"&{Filtering.NotEqualTo}{phrase}";
-                    break;
-                case FilterType.Like:
-                    url += $"&{Filtering.Like}{phrase}";
-                    break;
-                case FilterType.NotLike:
-                    url += $"&{Filtering.NotLike}{phrase}";
-                    break;
-                case FilterType.In:
-                    url += $"&{Filtering.In}{phrase}";
-                    break;
-                case FilterType.NotIn:
-                    url += $"&{Filtering.NotIn}{phrase}";
-                    break;
-                case FilterType.Max:
-                    url += $"&{Filtering.Max}{phrase}";
-                    break;
-                case FilterType.Min:
-                    url += $"&{Filtering.Min}{phrase}";
-                    break;
-                case FilterType.BitwiseAnd:
-                    url += $"&{Filtering.BitwiseAnd}{phrase}";
-                    break;
-                default:
-                    break;
-            }
+            //Don't add a search phrase if it's empty as the server will ignore it anyway
+            if(string.IsNullOrEmpty(phrase))
+                return;
+
+            var filterText = GetFilterPrefix(filterType);
+
+            var url = !string.IsNullOrEmpty(filterText) ? $"{filterText}{phrase}" : string.Empty;
 
             if (searchPhrases.ContainsKey(filterType))
             {
@@ -115,6 +90,44 @@ namespace ModIO
             {
                 searchPhrases.Add(filterType, url);
             }
+        }
+
+        public void ClearSearchPhrases()
+        {
+            searchPhrases.Clear();
+        }
+
+        public void ClearSearchPhrases(FilterType filterType)
+        {
+            searchPhrases.Remove(filterType);
+        }
+
+        public string[] GetSearchPhrase(FilterType filterType)
+        {
+            searchPhrases.TryGetValue(filterType, out var value);
+            if(string.IsNullOrEmpty(value))
+                return Array.Empty<string>();
+
+            var filterText = GetFilterPrefix(filterType);
+            return value.Split(new []{filterText}, StringSplitOptions.RemoveEmptyEntries);
+        }
+
+        static string GetFilterPrefix(FilterType filterType)
+        {
+            string filterText = filterType switch
+            {
+                FilterType.FullTextSearch => Filtering.FullTextSearch,
+                FilterType.NotEqualTo => Filtering.NotEqualTo,
+                FilterType.Like => Filtering.Like,
+                FilterType.NotLike => Filtering.NotLike,
+                FilterType.In => Filtering.In,
+                FilterType.NotIn => Filtering.NotIn,
+                FilterType.Max => Filtering.Max,
+                FilterType.Min => Filtering.Min,
+                FilterType.BitwiseAnd => Filtering.BitwiseAnd,
+                _ => null,
+            };
+            return filterText != null ? $"&{filterText}" : string.Empty;
         }
 
         /// <summary>
@@ -127,6 +140,21 @@ namespace ModIO
         {
             tags.Add(tag);
         }
+
+        /// <summary>
+        /// Adds multiple tags used in filtering mods for a request.
+        /// </summary>
+        /// <param name="tags">the tags to be added to the filter</param>
+        /// <seealso cref="Tag"/>
+        /// <seealso cref="TagCategory"/>
+        public void AddTags(IEnumerable<string> tags) => this.tags.AddRange(tags);
+
+        public void ClearTags()
+        {
+            tags.Clear();
+        }
+
+        public IEnumerable<string> GetTags => tags;
 
         /// <summary>
         /// Determines what category mods should be sorted and returned by. eg if the category
@@ -183,6 +211,11 @@ namespace ModIO
             users.Add(userId);
         }
 
+        public IReadOnlyList<long> GetUserIds()
+        {
+            return users;
+        }
+
         /// <summary>
         /// You can use this method to check if a search filter is setup correctly before using it
         /// in a GetMods request.
@@ -202,5 +235,18 @@ namespace ModIO
 
             return true;
         }
+
+
+        /// <summary>
+        /// Use this method to fetch the page index
+        /// </summary>
+        /// <returns>Returns the current value of the page index</returns>
+        public int GetPageIndex() => pageIndex;
+
+        /// <summary>
+        /// Use this method to fetch the page size
+        /// </summary>
+        /// <returns>Returns the current value of the page size</returns>
+        public int GetPageSize() => pageSize;
     }
 }

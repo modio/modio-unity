@@ -16,9 +16,11 @@ namespace ModIOBrowser.Implementation
         internal static Browser.RetrieveAuthenticationCodeDelegate getSteamAppTicket;
         internal static Browser.RetrieveAuthenticationCodeDelegate getXboxToken;
         internal static Browser.RetrieveAuthenticationCodeDelegate getSwitchToken;
+        internal static Browser.RetrieveAuthenticationCodeDelegate getGoogleToken;
         internal static Browser.RetrieveAuthenticationCodeDelegate getPlayStationAuthCode;
         internal static Browser.RetrieveAuthenticationCodeDelegate getEpicAuthCode;
         internal static Browser.RetrieveAuthenticationCodeDelegate getGogAuthCode;
+        internal static Browser.RetrieveAuthenticationCodeDelegate getAppleToken;
 
         public ExternalAuthenticationToken currentAuthToken;
         public UserProfile currentUserProfile;
@@ -224,6 +226,58 @@ namespace ModIOBrowser.Implementation
                 });
             });
         }
+        public void SubmitAppleAuthenticationRequest()
+        {
+            AuthenticationPanels.Instance.OpenPanel_Waiting();
+
+            getAppleToken((authCode) =>
+            {
+                MonoDispatcher.Instance.Run(() =>
+                {
+                    if(string.IsNullOrEmpty(authCode))
+                    {
+                        currentAuthenticationPortal = UserPortal.None;
+                        AuthenticationPanels.Instance.OpenPanel_Problem("We were unable to validate your credentials with the mod.io server.");
+                        return;
+                    }
+
+                    ModIOUnity.AuthenticateUserViaApple(authCode,
+                        optionalThirdPartyEmailAddressUsedForAuthentication,
+                        LastReceivedTermsOfUse.hash,
+                        delegate (Result result)
+                        {
+                            ThirdPartyAuthenticationSubmitted(result, UserPortal.Apple);
+                        });
+                });
+            });
+        }
+
+        public void SubmitGoogleAuthenticationRequest()
+        {
+            AuthenticationPanels.Instance.OpenPanel_Waiting();
+            Debug.Log($"getGoogleToken is {(getGoogleToken == null ? "Null":"Valid")}");
+            getGoogleToken((authCode) =>
+            {
+                MonoDispatcher.Instance.Run(() =>
+                {
+                    if(string.IsNullOrEmpty(authCode))
+                    {
+                        currentAuthenticationPortal = UserPortal.None;
+                        AuthenticationPanels.Instance.OpenPanel_Problem("We were unable to validate your credentials with the mod.io server.");
+                        return;
+                    }
+
+                    Debug.Log($"AuthenticateUserViaGoogle called");
+                    ModIOUnity.AuthenticateUserViaGoogle(authCode,
+                        optionalThirdPartyEmailAddressUsedForAuthentication,
+                        LastReceivedTermsOfUse.hash,
+                        delegate (Result result)
+                        {
+                            ThirdPartyAuthenticationSubmitted(result, UserPortal.Nintendo);
+                        });
+                });
+            });
+        }
 
         internal void SubmitPlayStationAuthenticationRequest()
         {
@@ -294,7 +348,7 @@ namespace ModIOBrowser.Implementation
             if(resultAndTermsOfUse.result.Succeeded())
             {
                 CacheTermsOfUseAndLinks(resultAndTermsOfUse.value);
-                AuthenticationPanels.Instance.OpenPanel_TermsOfUse(resultAndTermsOfUse.value.termsOfUse);
+                AuthenticationPanels.Instance.OpenPanel_TermsOfUse(resultAndTermsOfUse.value);
             }
             else
             {
@@ -326,7 +380,7 @@ namespace ModIOBrowser.Implementation
                 }
             }
         }
-        
+
         public static async Task GetNewAccessToken()
         {
             //Re-cache the TOS because we need the hash
@@ -461,7 +515,7 @@ namespace ModIOBrowser.Implementation
             if(result.Succeeded())
             {
                 Home.Instance.RefreshHomePanel();
-                
+
                 currentAuthenticationPortal = authenticationPortal;
                 AuthenticationPanels.Instance.OpenPanel_Complete();
             }

@@ -11,6 +11,7 @@
         public int virus_positive;
         public string virustotal_hash;
         public long filesize;
+        public long filesize_uncompressed;
         public FilehashObject filehash;
         public string filename;
         public string version;

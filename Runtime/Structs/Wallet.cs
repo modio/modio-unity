@@ -5,7 +5,7 @@ namespace ModIO
     /// </summary>
     /// <seealso cref="ModIOUnity.GetUserWalletBalance"/>
     /// <seealso cref="ModIOUnityAsync.GetUserWalletBalance"/>;
-    public struct Wallet
+    public class Wallet
     {
         public string type;
         public string currency;

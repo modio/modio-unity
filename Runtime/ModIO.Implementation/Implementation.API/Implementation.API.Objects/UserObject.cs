@@ -12,5 +12,8 @@
         public string timezone;
         public string language;
         public string profile_url;
+
+        public static bool operator ==(UserObject left, UserObject right) => left.id == right.id;
+        public static bool operator !=(UserObject left, UserObject right) => left.id != right.id;
     }
 }

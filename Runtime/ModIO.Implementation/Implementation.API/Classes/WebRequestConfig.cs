@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -38,6 +39,8 @@ namespace ModIO.Implementation.API
         public bool IsUpload => ForceIsUpload || HasBinaryData;
 
         public byte[] RawBinaryData { get; set; }
+
+        public string RawBodyData { get; set; }
 
         public bool ForceIsUpload = false;
 

@@ -11,6 +11,7 @@
         public long date_added;
         public long date_updated;
         public long date_live;
+        public bool dependencies;
         public int maturity_option;
         public int stock;
         public int community_options;
@@ -23,7 +24,7 @@
         public string name_id;
         public ModfileObject modfile;
         public string metadata_blob;
-        public MetadataKVPObject[] metadata_kvp;
+        public MetadataKvpObject[] metadata_kvp;
         public ModTagObject[] tags;
         public string platform_status;
         public RevenueType revenue_type;

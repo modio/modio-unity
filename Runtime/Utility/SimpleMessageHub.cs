@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ModIO.Util
 {
@@ -68,7 +69,7 @@ namespace ModIO.Util
             var t = typeof(T);
             if(dictionary.ContainsKey(t))
             {
-                foreach(var item in dictionary[t])
+                foreach(var item in dictionary[t].ToList())
                 {
                     item(message);
                 }
@@ -100,7 +101,7 @@ namespace ModIO.Util
             dictionary.Clear();
         }
 
-        public void ClearTypeSubscriptions<T>()
+        public void ClearSubscriptionType<T>()
         {
             if(dictionary.ContainsKey(typeof(T)))
             {
