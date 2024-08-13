@@ -13,6 +13,7 @@
         Google,
         PlayStation,
         OpenId,
+        AppleId,
         None,
     }
 
@@ -50,6 +51,9 @@
                     break;
                 case AuthenticationServiceProvider.Google:
                     providerName = "googleauth";
+                    break;
+                case AuthenticationServiceProvider.AppleId:
+                    providerName = "appleauth";
                     break;
                 case AuthenticationServiceProvider.PlayStation:
                     providerName = "psnauth";
@@ -96,6 +100,9 @@
                     tokenFieldName = "discord_token";
                     break;
                 case AuthenticationServiceProvider.Google:
+                    tokenFieldName = "id_token";
+                    break;
+                case AuthenticationServiceProvider.AppleId:
                     tokenFieldName = "id_token";
                     break;
                 case AuthenticationServiceProvider.PlayStation:

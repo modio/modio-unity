@@ -1,13 +1,14 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
-using System.Collections;
 using System.IO;
 using TMPro;
 using System.Linq;
 using System;
+using ModIO;
 using ModIO.Util;
 using Plugins.mod.io.UI.Translations;
 using ModIOBrowser.Implementation;
+using Logger = ModIO.Implementation.Logger;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -230,7 +231,7 @@ namespace ModIOBrowser
                 return ReplaceParameters(translation, values);
             }
 
-            Debug.LogWarning($"Unable to find translation for key: \"{key}\"");
+            Logger.Log(LogLevel.Verbose, $"Unable to find translation for key: \"{key}\"");
             return "<color=red>" + key + "</color>";
         }
 
@@ -245,7 +246,7 @@ namespace ModIOBrowser
 
             try
             {
-                while(indexOfClammer != -1)
+                while(indexOfClammer != -1 && i < values.Length)
                 {
                     int indexOfEndClammer = text.IndexOf('}') + 1;
                     string replacedString = text.Substring(indexOfClammer, indexOfEndClammer - indexOfClammer);
@@ -325,7 +326,7 @@ namespace ModIOBrowser
 
             public override string ToString() => $"[{item.name}] {item.text}\n{item.transform.FullPath()}";
         }
-        
+
         public void TrackDownUntranslatedStringsRuntime()
         {
             untranslatedStringsRuntime = Utility.FindEverythingInScene<TextMeshProUGUI>().Select(x =>

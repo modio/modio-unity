@@ -39,7 +39,10 @@ namespace ModIO.Implementation
                 termsOfUse = termsObject.plaintext,
                 agreeText = termsObject.buttons.agree.text,
                 disagreeText = termsObject.buttons.disagree.text,
-                links = GetLinks(termsObject.links.website, termsObject.links.terms, termsObject.links.privacy, termsObject.links.manage),
+                links = GetLinks((termsObject.links.website, nameof(TermsLinksObject.website)),
+                    (termsObject.links.terms, nameof(TermsLinksObject.terms)),
+                    (termsObject.links.privacy, nameof(TermsLinksObject.privacy)),
+                    (termsObject.links.manage, nameof(TermsLinksObject.manage))),
                 hash = new TermsHash
                 {
                     md5hash = IOUtil.GenerateMD5(termsObject.plaintext),
@@ -48,13 +51,14 @@ namespace ModIO.Implementation
 
             return terms;
 
-            TermsOfUseLink[] GetLinks(params TermsLinkObject[] links)
+            TermsOfUseLink[] GetLinks(params (TermsLinkObject linkObject, string fieldName)[] links)
             {
                 return links.Select(link => new TermsOfUseLink
                 {
-                    name = link.text,
-                    url = link.url,
-                    required = link.required,
+                    apiName = link.fieldName,
+                    name = link.linkObject.text,
+                    url = link.linkObject.url,
+                    required = link.linkObject.required,
                 }).ToArray();
             }
         }
@@ -68,6 +72,7 @@ namespace ModIO.Implementation
             {
                 categories[i] = new TagCategory();
                 categories[i].name = gameTags[i].name ?? "";
+                categories[i].nameLocalized = gameTags[i].name_localization == null ? new Dictionary<string, string>() : new Dictionary<string, string>(gameTags[i].name_localization, StringComparer.OrdinalIgnoreCase);
                 Tag[] tags = new Tag[gameTags[i].tags.Length];
                 for (int ii = 0; ii < tags.Length; ii++)
                 {
@@ -78,6 +83,7 @@ namespace ModIO.Implementation
                 }
 
                 categories[i].tags = tags;
+                categories[i].tagsLocalized = gameTags[i].tags_localization == null ? Array.Empty<Dictionary<string, string>>() : gameTags[i].tags_localization.Select(tagLocalization => new Dictionary<string, string>(tagLocalization.translations, StringComparer.OrdinalIgnoreCase)).ToArray();
                 categories[i].multiSelect = gameTags[i].type == "checkboxes";
                 categories[i].hidden = gameTags[i].hidden;
                 categories[i].locked = gameTags[i].locked;
@@ -172,11 +178,19 @@ namespace ModIO.Implementation
             int index = 0;
             foreach (var modDepObj in modDependenciesObjects)
             {
+                ModId modId = new ModId(modDepObj.mod_id);
                 modDependencies[index] = new ModDependencies
                 {
-                    modId = new ModId(modDepObj.mod_id),
-                    modName = modDepObj.mod_name,
-                    dateAdded = GetUTCDateTime(modDepObj.date_added)
+                    modId = modId,
+                    modName = modDepObj.name,
+                    modNameId = modDepObj.name_id,
+                    dateAdded = GetUTCDateTime(modDepObj.date_added),
+                    dependencyDepth = modDepObj.dependency_depth,
+                    logoImage_320x180 = CreateDownloadReference(modDepObj.logo.filename, modDepObj.logo.thumb_320x180, modId),
+                    logoImage_640x360 = CreateDownloadReference(modDepObj.logo.filename, modDepObj.logo.thumb_640x360, modId),
+                    logoImage_1280x720 = CreateDownloadReference(modDepObj.logo.filename, modDepObj.logo.thumb_1280x720, modId),
+                    logoImageOriginal = CreateDownloadReference(modDepObj.logo.filename, modDepObj.logo.original, modId),
+                    modfile = ConvertModfileObjectToModfile(modDepObj.modfile),
                 };
                 index++;
             }
@@ -292,6 +306,7 @@ namespace ModIO.Implementation
             int galleryImagesCount = modObject.media.images?.Length ?? 0;
             DownloadReference[] galleryImages_320x180 = new DownloadReference[galleryImagesCount];
             DownloadReference[] galleryImages_640x360 = new DownloadReference[galleryImagesCount];
+            DownloadReference[] galleryImages_1280x720 = new DownloadReference[galleryImagesCount];
             DownloadReference[] galleryImages_Original = new DownloadReference[galleryImagesCount];
             for (int i = 0; i < galleryImagesCount; i++)
             {
@@ -301,9 +316,12 @@ namespace ModIO.Implementation
                 galleryImages_640x360[i] = CreateDownloadReference(
                     modObject.media.images[i].filename, modObject.media.images[i].thumb_320x180.Replace("320x180", "640x360"),
                     modId);
-                galleryImages_Original[i] =
-                    CreateDownloadReference(modObject.media.images[i].filename,
-                        modObject.media.images[i].original, modId);
+                galleryImages_1280x720[i] = CreateDownloadReference(
+                    modObject.media.images[i].filename, modObject.media.images[i].thumb_1280x720,
+                    modId);
+                galleryImages_Original[i] = CreateDownloadReference(
+                    modObject.media.images[i].filename, modObject.media.images[i].original,
+                    modId);
             }
 
             KeyValuePair<string, string>[] metaDataKvp = modObject.metadata_kvp == null
@@ -326,9 +344,11 @@ namespace ModIO.Implementation
                 dateAdded: GetUTCDateTime(modObject.date_added),
                 dateUpdated: GetUTCDateTime(modObject.date_updated),
                 dateLive: GetUTCDateTime(modObject.date_live),
+                dependencies: modObject.dependencies,
                 galleryImagesOriginal: galleryImages_Original,
                 galleryImages_320x180: galleryImages_320x180,
                 galleryImages_640x360: galleryImages_640x360,
+                galleryImages_1280x720: galleryImages_1280x720,
                 logoImage_320x180: CreateDownloadReference(modObject.logo.filename, modObject.logo.thumb_320x180, modId),
                 logoImage_640x360: CreateDownloadReference(modObject.logo.filename, modObject.logo.thumb_640x360, modId),
                 logoImage_1280x720: CreateDownloadReference(modObject.logo.filename, modObject.logo.thumb_1280x720, modId),
@@ -362,8 +382,8 @@ namespace ModIO.Implementation
 
         private static ModPlatform[] ConvertModPlatformsObjectsToModPlatforms(ModPlatformsObject[] modPlatformsObjects)
         {
-            ModPlatform[] modPlatforms = new ModPlatform[modPlatformsObjects.Length];
-            for (int i = 0; i < modPlatformsObjects.Length; i++)
+            ModPlatform[] modPlatforms = new ModPlatform[modPlatformsObjects?.Length ?? 0];
+            for (int i = 0; i < modPlatforms.Length; i++)
             {
                 modPlatforms[i] = new ModPlatform()
                 {
@@ -385,7 +405,8 @@ namespace ModIO.Implementation
                 virusStatus = modfileObject.virus_status,
                 virusPositive = modfileObject.virus_positive,
                 virustotalHash = modfileObject.virustotal_hash,
-                filesize = modfileObject.filesize,
+                filesize = modfileObject.filesize_uncompressed,
+                archiveFileSize = modfileObject.filesize,
                 filehashMd5 = modfileObject.filehash.md5,
                 filename = modfileObject.filename,
                 version = modfileObject.version,
@@ -466,6 +487,19 @@ namespace ModIO.Implementation
                 MonetizationOptions = team.monetization_options,
                 SplitPercentage = team.split,
             };
+        }
+
+        public static Dictionary<string, string> ConvertMetadataKvpObjects(MetadataKvpObjects metadataKvpObjects)
+        {
+            if (metadataKvpObjects.data == null)
+                return null;
+
+            Dictionary<string, string> kvps = new Dictionary<string, string>();
+            foreach (var o in metadataKvpObjects.data)
+            {
+                kvps.Add(o.metakey, o.metavalue);
+            }
+            return kvps;
         }
 
         #region Utility

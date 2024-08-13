@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Threading;
 using System.Threading.Tasks;
 using ModIO.Implementation.API.Objects;
 
@@ -41,8 +42,6 @@ namespace ModIO.Implementation.API
         // milliseconds (60,000 being 60 seconds)
         const int modLifetimeInCache = 60000;
 
-        static double lastWalletUpdateTime = 0;
-
         /// <summary>
         /// stores md5 hashes generated after retrieving Terms of Use from the RESTAPI
         /// </summary>
@@ -72,7 +71,7 @@ namespace ModIO.Implementation.API
         static Dictionary<string, Entitlement> entitlementsCache = new Dictionary<string, Entitlement>();
         static Dictionary<long, MonetizationTeamAccount[]> modsMonetizationTeams = new Dictionary<long, MonetizationTeamAccount[]>();
         static bool currentRatingsCached = false;
-        static WalletObject walletObject;
+        static Wallet wallet;
 
         /// <summary>
         /// the terms of use, cached for the entire session.
@@ -83,6 +82,14 @@ namespace ModIO.Implementation.API
         /// The game tags, cached for the entire session.
         /// </summary>
         static TagCategory[] gameTags;
+        /// <summary>
+        /// Tag localizations, keyed by English tags.<br />Value is a second dictionary keyed by language code, with value being the localized tag.
+        /// <example><code>
+        /// string tag = "Hello";
+        /// string french = gameTagToLocalizations[tag]["fr"]; // "Bonjour"
+        /// </code></example>
+        /// </summary>
+        static readonly Dictionary<string, Dictionary<string, string>> GameTagToLocalizations = new Dictionary<string, Dictionary<string, string>>();
 
         /// <summary>The token packs, cached for the entire session.</summary>
         static TokenPack[] tokenPacks;
@@ -202,12 +209,32 @@ namespace ModIO.Implementation.API
         public static void AddUserToCache(UserProfile profile)
         {
             currentUser = profile;
-            lastWalletUpdateTime = DateTime.UtcNow.TimeOfDay.TotalMilliseconds;
         }
 
-        public static void AddTagsToCache(TagCategory[] tags)
+        public static void AddTagsToCache(TagCategory[] tagCategories)
         {
-            gameTags = tags;
+            gameTags = tagCategories;
+
+            foreach (var tagCategory in tagCategories)
+                foreach (var tagLocalized in tagCategory.tagsLocalized)
+                    AddTagLocalizations(tagLocalized["en"], tagLocalized);
+        }
+
+        public static void AddTagLocalization(string tag, string languageCode, string value)
+        {
+            if (!GameTagToLocalizations.TryGetValue(tag, out Dictionary<string, string> languageCodes))
+                languageCodes = GameTagToLocalizations[tag] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+            languageCodes[languageCode] = value;
+        }
+
+        public static void AddTagLocalizations(string tag, Dictionary<string, string> localizations)
+        {
+            if (!GameTagToLocalizations.TryGetValue(tag, out Dictionary<string, string> languageCodes))
+                languageCodes = GameTagToLocalizations[tag] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (KeyValuePair<string,string> localization in localizations)
+                languageCodes[localization.Key] = localization.Value;
         }
 
         public static void AddTokenPacksToCache(TokenPack[] tokenPacks) => ResponseCache.tokenPacks = tokenPacks;
@@ -256,15 +283,18 @@ namespace ModIO.Implementation.API
                 entitlementsCache.Add(transactionId, entitlement);
         }
 
-        public static void UpdateWallet(WalletObject wo)
+        public static void ReplaceWallet(WalletObject wo)
         {
-            walletObject = wo;
+            wallet = ResponseTranslator.ConvertWalletObjectToWallet(wo);
+            ClearWalletFromCacheAfterDelay();
         }
 
         public static void UpdateWallet(int balance)
         {
-            if (walletObject != null)
-                walletObject.balance = balance;
+            if (wallet != null)
+            {
+                wallet.balance = balance;
+            }
         }
 
         #endregion // Adding entries to Cache
@@ -366,9 +396,11 @@ namespace ModIO.Implementation.API
             return false;
         }
 
+        public static bool AreTagsCached() => gameTags != null;
+
         public static bool GetTagsFromCache(out TagCategory[] tags)
         {
-            if(gameTags != null)
+            if(AreTagsCached())
             {
                 if(logCacheMessages)
                 {
@@ -382,19 +414,17 @@ namespace ModIO.Implementation.API
             return false;
         }
 
-        public static bool GetTokenPacksFromCache(out TokenPack[] tokenPacks)
+        public static string GetTagLocalized(string tag, string languageCode)
         {
-            if (ResponseCache.tokenPacks != null)
-            {
-                if(logCacheMessages)
-                    Logger.Log(LogLevel.Verbose, "[CACHE] retrieved token packs from cache");
+            if (
+                GameTagToLocalizations.TryGetValue(tag, out Dictionary<string, string> languageCodes)
+                && languageCodes.TryGetValue(languageCode, out string result)
+            )
+                return result;
 
-                tokenPacks = ResponseCache.tokenPacks;
-                return true;
-            }
+            if (gameTags == null) Logger.Log(LogLevel.Error, $@"A translation for tag ""{tag}"" was not found for language code ""{languageCode}"", though it may exist. Ensure {nameof(ModIOUnityAsync.FetchUpdates)} or {nameof(ModIOUnityAsync.GetTagCategories)} has been called once before attempting to access localization.");
 
-            tokenPacks = null;
-            return false;
+            return tag;
         }
 
         public static bool GetModCommentsFromCache(string url, out CommentPage commentObjs)
@@ -509,18 +539,6 @@ namespace ModIO.Implementation.API
 
         public static bool HaveRatingsBeenCachedThisSession() => currentRatingsCached;
 
-        public static bool GetWalletFromCache(out Wallet wo)
-        {
-            if(walletObject != null && DateTime.UtcNow.TimeOfDay.TotalMilliseconds - lastWalletUpdateTime >= modLifetimeInCache)
-            {
-                wo = ResponseTranslator.ConvertWalletObjectToWallet(walletObject);
-                return true;
-            }
-
-            wo = default;
-            return false;
-        }
-
         public static bool GetModMonetizationTeamCache(ModId modId, out MonetizationTeamAccount[] teamAccounts)
         {
             if(modsMonetizationTeams.TryGetValue(modId, out teamAccounts))
@@ -534,6 +552,7 @@ namespace ModIO.Implementation.API
 
             return false;
         }
+        public static bool GetWalletFromCache(out Wallet w) => (w = wallet) != null;
 
 #endregion // Getting entries from Cache
 #region Clearing Cache entries
@@ -572,6 +591,17 @@ namespace ModIO.Implementation.API
             {
                 mods.Remove(modId);
             }
+        }
+
+        static CancellationTokenSource cancellationTokenSource;
+        static async void ClearWalletFromCacheAfterDelay()
+        {
+            if (cancellationTokenSource != null)
+                cancellationTokenSource.Cancel();
+
+            cancellationTokenSource = new CancellationTokenSource();
+            await Task.Delay(modLifetimeInCache, cancellationTokenSource.Token); // 60 second cache
+            wallet = null;
         }
 
         static async void ClearModsFromCacheAfterDelay(List<ModId> modIds)
@@ -635,6 +665,11 @@ namespace ModIO.Implementation.API
             modsMonetizationTeams.Remove(modId);
         }
 
+        public static void ClearWalletFromCache()
+        {
+            wallet = null;
+        }
+
         /// <summary>
         /// Clears the entire cache, used when performing a shutdown operation.
         /// </summary>
@@ -645,12 +680,13 @@ namespace ModIO.Implementation.API
             termsHash = default;
             termsOfUse = null;
             gameTags = null;
+            GameTagToLocalizations.Clear();
             commentObjectsCache.Clear();
             modsDependencies?.Clear();
             modsMonetizationTeams.Clear();
             currentUserRatings?.Clear();
             currentRatingsCached = false;
-            walletObject = null;
+            wallet = null;
             ClearUserFromCache();
         }
 #endregion // Clearing Cache entries

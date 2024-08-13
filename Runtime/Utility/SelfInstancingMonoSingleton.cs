@@ -27,9 +27,8 @@ namespace ModIO.Util
                     {
                         return _instance;
                     }
-                    var go = new GameObject();
+                    var go = new GameObject(typeof(T).ToString());
                     _instance = go.AddComponent<T>();
-                    go.name = _instance.ToString();
                 }
 
                 return _instance;
@@ -55,7 +54,6 @@ namespace ModIO.Util
             }
 
             _instance = this as T;
-            _instance.name = this.ToString();
         }
 
         protected virtual void OnDestroy()

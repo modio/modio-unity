@@ -6,13 +6,16 @@
     /// <seealso cref="ModIOUnity.GetModDependencies"/>
     /// <seealso cref="ModIOUnityAsync.GetModDependencies"/>
     [System.Serializable]
-    public struct ModDependenciesObject
+    internal struct ModDependenciesObject
     {
-        //Unique id of the mod that is the dependency.
-        public int mod_id;
-        //The name of the dependency (mod name).
-        public string mod_name;
         //Unix timestamp of date the dependency was added.
         public int date_added;
+        public int dependency_depth;
+        public LogoObject logo;
+        public int mod_id;
+        public ModfileObject modfile;
+        public string name;
+        public string name_id;
+
     }
 }

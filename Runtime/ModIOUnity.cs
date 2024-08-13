@@ -4,6 +4,7 @@ using ModIO.Implementation.API.Requests;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Logger = ModIO.Implementation.Logger;
 
 #pragma warning disable 4014 // Ignore warnings about calling async functions from non-async code
 
@@ -17,7 +18,8 @@ namespace ModIO
         #region Initialization and Maintenance
 
         /// <returns><c>true</c> if the plugin has been initialized.</returns>
-        public static bool IsInitialized() => ModIOUnityImplementation.isInitialized;
+        public static bool IsInitialized(bool attemptAutoInitializeIfNeeded = false) =>
+            attemptAutoInitializeIfNeeded ? ModIOUnityImplementation.IsInitialized(out _) : ModIOUnityImplementation.isInitialized;
 
         /// <summary>Use to send log messages to <paramref name="loggingDelegate"/> instead of <c>Unity.Debug.Log(string)</c>.</summary>
         /// <param name="loggingDelegate">The delegate for receiving log messages</param>
@@ -35,6 +37,7 @@ namespace ModIO
         /// <param name="userProfileIdentifier"><inheritdoc cref="InitializeForUser(string)" path="//param[@name='nameOfParameter']/node()" /></param>
         /// <param name="serverSettings">Data used by the plugin to connect with the mod.io service.</param>
         /// <param name="buildSettings">Data used by the plugin to interact with the platform.</param>
+        /// <param name="uiSettings">Data used by the plugin's default UI to decide what features to show</param>
         /// <example><code>
         /// ServerSettings serverSettings = new ServerSettings {
         ///     serverURL = "https://api.test.mod.io/v1",
@@ -60,8 +63,9 @@ namespace ModIO
         /// <seealso cref="Shutdown"/>
         public static Result InitializeForUser(string userProfileIdentifier,
                                                ServerSettings serverSettings,
-                                               BuildSettings buildSettings) =>
-            ModIOUnityImplementation.InitializeForUser(userProfileIdentifier, serverSettings, buildSettings);
+                                               BuildSettings buildSettings,
+                                               UISettings uiSettings = default) =>
+            ModIOUnityImplementation.InitializeForUser(userProfileIdentifier, serverSettings, buildSettings, uiSettings);
 
         /// <summary>Initializes the Plugin for the specified user and loads the state of mods installed on the system, as well as the subscribed mods the user has installed on this device.</summary>
         /// <param name="userProfileIdentifier">
@@ -103,6 +107,12 @@ namespace ModIO
         /// <example><code>ModIOUnity.Shutdown(() => Debug.Log("Plugin shutdown complete"));</code></example>
         /// <seealso cref="Result"/>
         public static void Shutdown(Action shutdownComplete) => ModIOUnityImplementation.Shutdown(shutdownComplete);
+
+        /// <summary>
+        /// <p>Pings the server.</p>
+        /// <p><c>Result.Succeeded()</c> will be <c>true</c> if a response was received.</p>
+        /// </summary>
+        public static void Ping(Action<Result> callback) => ModIOUnityImplementation.Ping(callback);
 
         #endregion // Initialization and Maintenance
 
@@ -721,7 +731,7 @@ namespace ModIO
         /// You will first need to get the terms of use and hash from the ModIOUnity.GetTermsOfUse()
         /// method.
         /// </remarks>
-        /// <param name="googleToken">the user's google token</param>
+        /// <param name="token">google auth code or id token</param>
         /// <param name="emailAddress">the user's email address (Can be null)</param>
         /// <param name="hash">the TermsHash retrieved from ModIOUnity.GetTermsOfUse()</param>
         /// <param name="callback">Callback to be invoked when the operation completes</param>
@@ -752,7 +762,7 @@ namespace ModIO
         /// // Once we have the Terms of Use and hash we can attempt to authenticate
         /// void Authenticate_Example()
         /// {
-        ///     ModIOUnity.AuthenticateUserViaGoogle(googleToken, "johndoe@gmail.com", modIOTermsOfUse.hash, AuthenticationCallback);
+        ///     ModIOUnity.AuthenticateUserViaGoogle(token, "johndoe@gmail.com", modIOTermsOfUse.hash, AuthenticationCallback);
         /// }
         ///
         /// void AuthenticationCallback(Result result)
@@ -767,15 +777,79 @@ namespace ModIO
         ///     }
         /// }
         /// </code></example>
-        public static void AuthenticateUserViaGoogle(string googleToken,
+        public static void AuthenticateUserViaGoogle(string token,
                                                      string emailAddress,
                                                      TermsHash? hash,
                                                      Action<Result> callback)
         {
             ModIOUnityImplementation.AuthenticateUser(
-                googleToken, AuthenticationServiceProvider.Google, emailAddress, hash, null, null,
+                token, AuthenticationServiceProvider.Google,
+                emailAddress, hash, null, null, null, 0, callback);
+        }
+
+        /// <summary>
+        /// Attempts to authenticate a user via the Apple API.
+        /// </summary>
+        /// <remarks>
+        /// You will first need to get the terms of use and hash from the ModIOUnity.GetTermsOfUse()
+        /// method.
+        /// </remarks>
+        /// <param name="authCode">Apple auth code</param>
+        /// <param name="emailAddress">the user's email address (Can be null)</param>
+        /// <param name="hash">the TermsHash retrieved from ModIOUnity.GetTermsOfUse()</param>
+        /// <param name="callback">Callback to be invoked when the operation completes</param>
+        /// <seealso cref="GetTermsOfUse"/>
+        /// <seealso cref="ModIOUnityAsync.AuthenticateUserViaApple"/>
+        /// <example><code>
+        /// // First we get the Terms of Use to display to the user and cache the hash
+        /// void GetTermsOfUse_Example()
+        /// {
+        ///     ModIOUnity.GetTermsOfUse(GetTermsOfUseCallback);
+        /// }
+        ///
+        /// void GetTermsOfUseCallback(ResultAnd&#60;TermsOfUse&#62; response)
+        /// {
+        ///     if (response.result.Succeeded())
+        ///     {
+        ///         Debug.Log("Successfully retrieved the terms of use: " + response.value.termsOfUse);
+        ///
+        ///         //  Cache the terms of use (which has the hash for when we attempt to authenticate)
+        ///         modIOTermsOfUse = response.value;
+        ///     }
+        ///     else
+        ///     {
+        ///         Debug.Log("Failed to retrieve the terms of use");
+        ///     }
+        /// }
+        ///
+        /// // Once we have the Terms of Use and hash we can attempt to authenticate
+        /// void Authenticate_Example()
+        /// {
+        ///     ModIOUnity.AuthenticateUserViaApple(authCode, "johndoe@gmail.com", modIOTermsOfUse.hash, AuthenticationCallback);
+        /// }
+        ///
+        /// void AuthenticationCallback(Result result)
+        /// {
+        ///     if (result.Succeeded())
+        ///     {
+        ///         Debug.Log("Successfully authenticated user");
+        ///     }
+        ///     else
+        ///     {
+        ///         Debug.Log("Failed to authenticate");
+        ///     }
+        /// }
+        /// </code></example>
+        public static void AuthenticateUserViaApple(string authCode,
+                                                    string emailAddress,
+                                                    TermsHash? hash,
+                                                    Action<Result> callback)
+        {
+            ModIOUnityImplementation.AuthenticateUser(
+                authCode, AuthenticationServiceProvider.AppleId, emailAddress, hash, null, null,
                 null, 0, callback);
         }
+
 
         /// <summary>
         /// Attempts to authenticate a user via the Oculus API.
@@ -1026,6 +1100,21 @@ namespace ModIO
         {
             ModIOUnityImplementation.GetGameTags(callback);
         }
+
+        /// <summary>
+        /// <p>Ensure you have called <see cref="ModIOUnityAsync.FetchUpdates"/> or <see cref="ModIOUnityAsync.GetTagCategories"/> before using this method.</p>
+        /// <p><b>Note:</b> All plugin functionality requires English tags. Localized tags can displayed to players.</p>
+        /// </summary>
+        /// <returns><paramref name="tag"/> in the plugin's currently configured language if it exists, otherwise <paramref name="tag"/>.</returns>
+        /// <seealso cref="ServerSettings.languageCode"/>
+        public static string GetTagLocalized(string tag) => GetTagLocalized(tag, Settings.server.languageCode);
+
+        /// <summary>
+        /// <p>Ensure you have called <see cref="ModIOUnityAsync.FetchUpdates"/> or <see cref="ModIOUnityAsync.GetTagCategories"/> before using this method.</p>
+        /// <p><b>Note:</b> All plugin functionality requires English tags. Localized tags can displayed to players.</p>
+        /// </summary>
+        /// <returns><paramref name="tag"/> in the provided <paramref name="languageCode"/> if it exists, otherwise <paramref name="tag"/>.</returns>
+        public static string GetTagLocalized(string tag, string languageCode) => ModIOUnityImplementation.GetTagLocalized(tag, languageCode);
 
         /// <summary>
         /// Uses a SearchFilter to retrieve a specific Mod Page and returns the ModProfiles and
@@ -1401,6 +1490,7 @@ namespace ModIO
         /// Result.IsAuthenticationError() from the Result will equal true.
         /// </remarks>
         /// <param name="callback">callback with the Result and the UserProfile</param>
+        /// <param name="allowOfflineUser">True if we allow the last saved user data if the server cannot be reached. Note that Result will still be a NetworkError</param>
         /// <seealso cref="Result"/>
         /// <seealso cref="UserProfile"/>
         /// <seealso cref="IsAuthenticated"/>
@@ -1423,9 +1513,9 @@ namespace ModIO
         ///     }
         /// }
         /// </code></example>
-        public static void GetCurrentUser(Action<ResultAnd<UserProfile>> callback)
+        public static void GetCurrentUser(Action<ResultAnd<UserProfile>> callback, bool allowOfflineUser = false)
         {
-            ModIOUnityImplementation.GetCurrentUser(callback);
+            ModIOUnityImplementation.GetCurrentUser(callback, allowOfflineUser);
         }
 
         /// <summary>
@@ -1705,6 +1795,16 @@ namespace ModIO
         }
 
         /// <summary>
+        /// Clear the "download failed" state on a mod and allow DownloadManager to try downloading it again
+        /// </summary>
+        /// <param name="modId"></param>
+        /// <returns></returns>
+        public static Result RetryDownload(ModId modId)
+        {
+            return ModIOUnityImplementation.RetryDownload(modId);
+        }
+
+        /// <summary>
         /// Checks if the automatic management process is currently awake and performing a mod
         /// management operation, such as installing, downloading, uninstalling, updating.
         /// </summary>
@@ -1858,6 +1958,97 @@ namespace ModIO
         {
             ModIOUnityImplementation.DownloadNow(modId, callback);
         }
+
+        /// <summary>
+        /// Get all metadata stored by the game developer for this mod as searchable key value pairs. Successful request will return an array of Metadata KVP Objects.
+        /// </summary>
+        /// <seealso cref="MetadataKvpObject"/>
+        /// <seealso cref="ModIOUnity.GetModKvpMetadata"/>
+        /// <seealso cref="ModIOUnityAsync.AddModKvpMetadata"/>
+        /// <seealso cref="ModIOUnityAsync.DeleteModKvpMetadata"/>
+        /// <example><code>
+        /// long modId;
+        /// void Example()
+        /// {
+        ///     ModIOUnityAsync.GetModKvpMetadata(modId, (r)=>
+        ///     {
+        ///         if (r.result.Succeeded())
+        ///         {
+        ///             Debug.Log("Successfully received metadata for modId");
+        ///             foreach(var kvp in r.value)
+        ///             {
+        ///                 Debug.Log($"Key: {kvp.key}, Value: {kvp.value}");
+        ///             }
+        ///         }
+        ///         else
+        ///         {
+        ///             Debug.Log("Failed to get metadata for modId.");
+        ///         }
+        ///     });
+        /// }
+        /// </code></example>
+        public static void GetModKvpMetadata(long modId, Action<ResultAnd<Dictionary<string, string>>> callback) => ModIOUnityImplementation.GetModKvpMetadata(modId, callback);
+
+        /// <summary>
+        /// Add metadata for this mod as searchable key value pairs. Metadata is useful to define how a mod works, or other information you need to display and manage the mod.
+        /// Successful request will return Message Object. For example: A mod might change gravity and the rate of fire of weapons, you could define these properties as key
+        /// value pairs. We recommend the mod upload tool you create defines and submits metadata behind the scenes, because if these settings affect gameplay, invalid
+        /// information may cause problems.
+        /// <remarks>
+        /// Metadata can also be stored as metadata_blob in the Mod Object.
+        /// </remarks>
+        /// </summary>
+        /// <seealso cref="MetadataKvpObject"/>
+        /// <seealso cref="ModIOUnity.AddModKvpMetadata"/>
+        /// <seealso cref="ModIOUnityAsync.GetModKvpMetadata"/>
+        /// <seealso cref="ModIOUnityAsync.DeleteModKvpMetadata"/>
+        /// <example><code>
+        /// long modId;
+        /// Dictionary&#60;string, string&#62; metadata;
+        /// void Example()
+        /// {
+        ///     Result result = await ModIOUnityAsync.AddModKvpMetadata(modId, metadata, (result)=>
+        ///     {
+        ///         if (result.Succeeded())
+        ///         {
+        ///             Debug.Log("Successfully added metadata.");
+        ///         }
+        ///         else
+        ///         {
+        ///             Debug.Log("Failed to add metadata.");
+        ///         }
+        ///     });
+        /// }
+        /// </code></example>
+        public static void AddModKvpMetadata(long modId, Dictionary<string, string> metadata, Action<Result> callback) => ModIOUnityImplementation.AddModKvpMetadata(modId, metadata, callback);
+
+            /// <summary>
+        /// Delete key value pairs metadata defined for this mod. Successful request will return 204 No Content.
+        /// </summary>
+        /// <seealso cref="MetadataKvpObject"/>
+        /// <seealso cref="ModIOUnity.DeleteModKvpMetadata"/>
+        /// <seealso cref="ModIOUnityAsync.AddModKvpMetadata"/>
+        /// <seealso cref="ModIOUnityAsync.GetModKvpMetadata"/>
+        /// <example><code>
+        /// long modId;
+        /// Dictionary&#60;string, string&#62; metadata;
+        /// void Example()
+        /// {
+        ///     ModIOUnityAsync.DeleteModKvpMetadata(modId, metadata, (result)=>
+        ///     {
+        ///         if (result.Succeeded())
+        ///         {
+        ///             Debug.Log("Successfully deleted metadata");
+        ///         }
+        ///         else
+        ///         {
+        ///             Debug.Log("Failed to delete metadata.");
+        ///         }
+        ///     });
+        /// }
+        /// </code></example>
+        public static void DeleteModKvpMetadata(long modId, Dictionary<string, string> metadata, Action<Result> callback) => ModIOUnityImplementation.DeleteModKvpMetadata(modId, metadata, callback);
+
 
         #endregion // Mod Management
 
@@ -2683,8 +2874,6 @@ namespace ModIO
 
         #region Monetization
 
-        public static void GetTokenPacks(Action<ResultAnd<TokenPack[]>> callback) => ModIOUnityImplementation.GetTokenPacks(callback);
-
         /// <summary>
         /// Convert an in-game consumable that a user has purchased on Steam, Xbox, or Psn into a users
         /// mod.io inventory. This endpoint will consume the entitlement on behalf of the user against
@@ -2696,9 +2885,9 @@ namespace ModIO
         /// <seealso cref="ModIOUnityAsync.SyncEntitlements"/>
         /// <code>
         ///
-        /// private void Example(string token)
+        /// private void Example()
         /// {
-        ///     ModIOUnity.SyncEntitlements(token);
+        ///     ModIOUnity.SyncEntitlements();
         /// }
         /// void Callback(ResultAnd&#60;Entitlement[]&#62; response)
         /// {
@@ -2727,6 +2916,7 @@ namespace ModIO
         /// <param name="modId">The id of the mod the user wants to purchase.</param>
         /// <param name="displayAmount">The amount that was shown to the user for the purchase.</param>
         /// <param name="idempotent">A unique string. Must be alphanumeric and cannot contain unique characters except for - </param>
+        /// <param name="subscribeOnPurchase">Automatically subscribe to the mod after purchase</param>
         /// <param name="callback">callback with the result of the operation</param>
         /// <seealso cref="Result"/>
         /// <code>
@@ -2752,9 +2942,9 @@ namespace ModIO
         ///     }
         /// }
         /// </code>
-        public static void PurchaseMod(ModId modId, int displayAmount, string idempotent, Action<ResultAnd<CheckoutProcess>> callback)
+        public static void PurchaseMod(ModId modId, int displayAmount, string idempotent, bool subscribeOnPurchase, Action<ResultAnd<CheckoutProcess>> callback)
         {
-            ModIOUnityImplementation.PurchaseMod(modId, displayAmount, idempotent, callback);
+            ModIOUnityImplementation.PurchaseMod(modId, displayAmount, idempotent, subscribeOnPurchase, callback);
         }
 
         /// <summary>
@@ -2813,29 +3003,173 @@ namespace ModIO
             ModIOUnityImplementation.GetUserWalletBalance(callback);
         }
 
-        /// <summary>
-        /// Get all <see cref="MonetizationTeamAccount"/> for a specific mod
-        /// </summary>
-        /// <param name="modId">The mod to get users for</param>
-        /// <param name="callback">callback with the result of the operation</param>
-        public static void GetModMonetizationTeam(ModId modId, Action<ResultAnd<MonetizationTeamAccount[]>> callback)
-        {
-            ModIOUnityImplementation.GetModMonetizationTeam(callback, modId);
-        }
-
-
-        /// <summary>
-        /// Set all <see cref="ModMonetizationTeamDetails"/> for a specific mod
-        /// </summary>
-        /// <param name="modId">The mod to set users for</param>
-        /// <param name="team">All users and their splits</param>
-        /// <param name="callback">callback with the result of the operation</param>
-        public static void AddModMonetizationTeam(ModId modId, ICollection<ModMonetizationTeamDetails> team, Action<Result> callback)
-        {
-            ModIOUnityImplementation.AddModMonetizationTeam(callback, modId, team);
-        }
         #endregion
 
+#region Service to Service
+
+        /// <summary>
+        /// Requests a User Delegation Token on behalf of a authenticated user.
+        /// This token should then be sent to your secure backend server
+        /// where you can then use it for specific endpoints.
+        /// </summary>
+        /// <param name="callback">callback with the result of the operation</param>
+        public static void RequestUserDelegationToken(Action<ResultAnd<UserDelegationToken>> callback) => ModIOUnityImplementation.RequestUserDelegationToken(callback);
+
+#endregion
+
+        #region TempModSet
+        /// <summary>
+        /// Creates a Temp mod set
+        /// </summary>
+        /// <param name="modIds">Mods used for this set.</param>
+        /// <param name="callback">callback with the result of the operation</param>
+        /// <seealso cref="ModIOUnityAsync.CreateTempModSet"/>
+        /// <seealso cref="ModIOUnity.DeleteTempModSet"/>
+        /// <seealso cref="ModIOUnity.AddModsToTempModSet"/>
+        /// <seealso cref="ModIOUnity.RemoveModsFromTempModSet"/>
+        /// <seealso cref="ModIOUnity.GetTempSystemInstalledMods"/>
+        /// <example><code>
+        /// ModId[] modIds;
+        /// void Example()
+        /// {
+        ///     ModIOUnity.CreateTempModSet(modIds, callback);
+        /// }
+        ///
+        /// void Callback(Result result)
+        /// {
+        ///     if (result.Succeeded())
+        ///     {
+        ///         Debug.Log("Successful");
+        ///     }
+        ///     else
+        ///     {
+        ///         Debug.Log("Failed");
+        ///     }
+        /// }
+        /// </code></example>
+        public static void CreateTempModSet(ModId[] modIds, Action<Result> callback) => ModIOUnityImplementation.CreateTempModSet(modIds, callback);
+
+        /// <summary>
+        /// Removes a Temp mod set
+        /// </summary>
+        /// <example><code>
+        /// <seealso cref="ModIOUnity.CreateTempModSet"/>
+        /// <seealso cref="ModIOUnity.AddModsToTempModSet"/>
+        /// <seealso cref="ModIOUnity.RemoveModsFromTempModSet"/>
+        /// <seealso cref="ModIOUnity.GetTempSystemInstalledMods"/>
+        /// void Example()
+        /// {
+        ///     ModIOUnity.DeleteTempModSet(callback);
+        /// }
+        ///
+        /// void Callback(Result result)
+        /// {
+        ///     if (result.Succeeded())
+        ///     {
+        ///         Debug.Log("Successful");
+        ///     }
+        ///     else
+        ///     {
+        ///         Debug.Log("Failed");
+        ///     }
+        /// }
+        /// </code></example>
+        public static Result DeleteTempModSet() => ModIOUnityImplementation.DeleteTempModSet();
+
+        /// <summary>
+        /// Adds mods to a Temp mod set
+        /// </summary>
+        /// <param name="modIds">Mods used for this set.</param>
+        /// <param name="callback">callback with the result of the operation</param>
+        /// <seealso cref="ModIOUnity.CreateTempModSet"/>
+        /// <seealso cref="ModIOUnity.DeleteTempModSet"/>
+        /// <seealso cref="ModIOUnityAsync.AddModsToTempModSet"/>
+        /// <seealso cref="ModIOUnity.RemoveModsFromTempModSet"/>
+        /// <seealso cref="ModIOUnity.GetTempSystemInstalledMods"/>
+        /// <example><code>
+        /// ModId[] modIds;
+        /// void Example()
+        /// {
+        ///     ModIOUnity.AddModToTempModSet(modIds, callback);
+        /// }
+        ///
+        /// void Callback(Result result)
+        /// {
+        ///     if (result.Succeeded())
+        ///     {
+        ///         Debug.Log("Successful");
+        ///     }
+        ///     else
+        ///     {
+        ///         Debug.Log("Failed");
+        ///     }
+        /// }
+        /// </code></example>
+        public static void AddModsToTempModSet(ModId[] modIds, Action<Result> callback) => ModIOUnityImplementation.AddModsToTempModSet(modIds, callback);
+
+        /// <summary>
+        /// Removes mods from a Temp mod set
+        /// </summary>
+        /// <example><code>
+        /// <param name="modIds">Mods used for this set.</param>
+        /// <seealso cref="ModIOUnity.CreateTempModSet"/>
+        /// <seealso cref="ModIOUnity.DeleteTempModSet"/>
+        /// <seealso cref="ModIOUnity.AddModsToTempModSet"/>
+        /// <seealso cref="ModIOUnity.GetTempSystemInstalledMods"/>
+        /// ModId[] modIds;
+        /// void Example()
+        /// {
+        ///     ModIOUnity.RemoveModsFromTempModSet(modIds, callback);
+        /// }
+        ///
+        /// void Callback(Result result)
+        /// {
+        ///     if (result.Succeeded())
+        ///     {
+        ///         Debug.Log("Successful");
+        ///     }
+        ///     else
+        ///     {
+        ///         Debug.Log("Failed");
+        ///     }
+        /// }
+        /// </code></example>
+        public static Result RemoveModsFromTempModSet(IEnumerable<ModId> modIds) => ModIOUnityImplementation.RemoveModsFromTempModSet(modIds);
+
+        /// <summary>
+        /// Gets an array of temp mods that are installed on the current device.
+        /// </summary>
+        /// <remarks>
+        /// Note that these will not be subscribed by the current user. If you wish to get all
+        /// of the current user's installed mods use ModIOUnity.GetSubscribedMods() and check the
+        /// SubscribedMod.status equals SubscribedModStatus.Installed.
+        /// </remarks>
+        /// <param name="result">an out Result to inform whether or not it was able to get temp installed mods</param>
+        /// <returns>an array of InstalledMod for each existing temp mod installed on the current device (and not subscribed by the current user)</returns>
+        /// <seealso cref="InstalledMod"/>
+        /// <seealso cref="GetSubscribedMods"/>
+        /// <seealso cref="ModIOUnity.CreateTempModSet"/>
+        /// <seealso cref="ModIOUnity.DeleteTempModSet"/>
+        /// <seealso cref="ModIOUnityAsync.AddModsToTempModSet"/>
+        /// <seealso cref="ModIOUnity.RemoveModsFromTempModSet"/>
+        /// <example><code>
+        /// void Example()
+        /// {
+        ///     InstalledMod[] mods = ModIOUnity.GetTempSystemInstalledMods(out Result result);
+        ///
+        ///     if (result.Succeeded())
+        ///     {
+        ///         Debug.Log("found " + mods.Length.ToString() + " temp mods installed");
+        ///     }
+        ///     else
+        ///     {
+        ///         Debug.Log("failed to get temp installed mods");
+        ///     }
+        /// }
+        /// </code></example>
+        public static InstalledMod[] GetTempSystemInstalledMods(out Result result) => ModIOUnityImplementation.GetTempInstalledMods(out result);
+
+        #endregion//TempModSet
     }
 }
 

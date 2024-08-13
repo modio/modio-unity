@@ -13,6 +13,7 @@ namespace ModIO.Implementation.API.Objects
         public int virusPositive;
         public string virustotalHash;
         public long filesize;
+        public long archiveFileSize;
         public string filehashMd5;
         public string filename;
         public string version;

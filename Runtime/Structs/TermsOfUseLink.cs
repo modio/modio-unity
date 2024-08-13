@@ -9,6 +9,7 @@ namespace ModIO
     [Serializable]
     public struct TermsOfUseLink
     {
+        public string apiName;
         public string name;
         public string url;
         public bool required;

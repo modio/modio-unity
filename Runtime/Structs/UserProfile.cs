@@ -16,17 +16,20 @@
         ///  This is the unique Id of the user.
         /// </summary>
         public long userId;
-        
+
         /// <summary>
         /// The display name of the user's account they authenticated with. Eg if they authenticated
         /// with Steam it would be their Steam username.
         /// </summary>
         public string portal_username;
-        
+
         public DownloadReference avatar_original;
         public DownloadReference avatar_50x50;
         public DownloadReference avatar_100x100;
         public string timezone;
         public string language;
+
+        public static bool operator ==(UserProfile left, UserProfile right) => left.userId == right.userId;
+        public static bool operator !=(UserProfile left, UserProfile right) => left.userId != right.userId;
     }
 }

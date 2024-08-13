@@ -3,6 +3,6 @@
     [System.Serializable]
     public struct EntitlementWalletObject
     {
-        public long balance;
+        public int balance;
     }
 }

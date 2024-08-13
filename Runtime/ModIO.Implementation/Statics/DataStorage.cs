@@ -5,18 +5,22 @@ using System.Threading.Tasks;
 using ModIO.Implementation.API.Objects;
 using ModIO.Implementation.Platform;
 using ModIO.Util;
+using Plugins.mod.io;
 
 namespace ModIO.Implementation
 {
     /// <summary>Static interface for reading and writing files.</summary>
     internal static class DataStorage
     {
+
         // TODO Revisit this later, as most of it's benefits are now met with the mutex. Maybe expand this to more generic tasks or for ModManagement
         internal static TaskQueueRunner taskRunner = new TaskQueueRunner(1, true, PlatformConfiguration.SynchronizedDataJobs);
 
         static Mutex FileWriteMutex = new Mutex();
 
         public static Mutex GetFileWriteMutex() => FileWriteMutex;
+
+        static string TempImagesFolderPath => $@"{temp.RootDirectory}/images";
 
 #region Data Services
 
@@ -94,6 +98,37 @@ namespace ModIO.Implementation
 
 #endregion // User IO
 
+#region Tags
+
+        static string GenerateTagsPath() => $"{persistent.RootDirectory}/tags.json";
+
+        public static async Task<Result> SaveTags(GameTagOptionObject[] tags)
+        {
+            string filePath = GenerateTagsPath();
+            byte[] data = IOUtil.GenerateUTF8JSONData(tags);
+
+            return await taskRunner.AddTask(TaskPriority.HIGH, 1, async () => await persistent.WriteFileAsync(filePath, data));
+        }
+
+        public static async Task<ResultAnd<GameTagOptionObject[]>> LoadTags()
+        {
+            string filePath = GenerateTagsPath();
+            GameTagOptionObject[] tags = Array.Empty<GameTagOptionObject>();
+
+            if (!persistent.FileExists(filePath))
+                return ResultAnd.Create(ResultBuilder.Create(ResultCode.IO_FileDoesNotExist), tags);
+
+            ResultAnd<byte[]> readResult = await persistent.ReadFileAsync(filePath);
+            Result result = readResult.result;
+
+            if (result.Succeeded())
+                IOUtil.TryParseUTF8JSONData(readResult.value, out tags, out result);
+
+            return ResultAnd.Create(result, tags);
+        }
+
+#endregion // Tags
+
 #region Mod Browsing
 
         /// <summary>Generates the file path for an image URL.</summary>
@@ -113,10 +148,9 @@ namespace ModIO.Implementation
             // URL: https://blog.codinghorror.com/url-shortening-hashes-in-practice/
 
             string filename = IOUtil.GenerateMD5(imageURL);
-            return $@"{temp.RootDirectory}/images/{filename}.png";
+            return Path.Combine(TempImagesFolderPath, $"{filename}.png");
         }
 
-        /// <summary>Stores an image to the temporary cache.</summary>
         public static Result DeleteStoredImage(string imageURL)
         {
             // - generate file path -
@@ -126,9 +160,17 @@ namespace ModIO.Implementation
                 return ResultBuilder.Create(ResultCode.Internal_InvalidParameter);
             }
 
-            Result result = temp.DeleteFile(imageURL);
+            Result result = temp.DeleteFile(filePath);
 
             return result;
+        }
+
+        public static void DeleteAllTempImages()
+        {
+            if (temp.DirectoryExists(TempImagesFolderPath))
+            {
+                temp.DeleteDirectory(TempImagesFolderPath);
+            }
         }
 
         public static ResultAnd<ModIOFileStream> GetImageFileReadStream(string imageURL)
@@ -170,24 +212,15 @@ namespace ModIO.Implementation
 
 #region Mod Management
 
-        /// <summary>Generates the path for the extraction directory.</summary>
-        public static string GenerateExtractionDirectoryPath()
-        {
-            return $@"{persistent.RootDirectory}/installation";
-        }
-
         /// <summary>Generates the path for an installation directory.</summary>
-        public static string GenerateInstallationDirectoryPath(long modId, long modfileId)
+        private static string GeneratePersistentInstallationDirectoryPath(long modId, long modfileId)
         {
             return $@"{persistent.RootDirectory}/mods/{modId}_{modfileId}";
         }
 
-        // REVIEW @Jackson TODO Please implement (if this is how you'd use it)
-        /// <summary>Generates the path for an installation directory.</summary>
-        public static string GenerateModfileDetailsDirectoryPath(string directory)
+        private static string GenerateTemporaryInstallationDirectoryPath(long modId, long modfileId)
         {
-            Logger.Log(LogLevel.Verbose, "Not Implemented Yet");
-            return directory;
+            return $@"{temp.RootDirectory}/mods/temp/{modId}_{modfileId}";
         }
 
         /// <summary>Generates the path for a modfile archive.</summary>
@@ -196,20 +229,29 @@ namespace ModIO.Implementation
             return $@"{temp.RootDirectory}/{modId}_{modfileId}.zip";
         }
 
-        /// <summary>Tests if a mod installation directory exists.</summary>
-        public static bool TryGetInstallationDirectory(long modId, long modfileId,
-                                                       out string directoryPath)
+        public static bool TryGetInstallationDirectory(long modId, long modfileId, out string directoryPath)
         {
-            directoryPath = GenerateInstallationDirectoryPath(modId, modfileId);
+            if (TempModSetManager.IsUnsubscribedTempMod(new ModId(modId)))
+                return TryGetTempInstallationDirectory(modId, modfileId, out directoryPath);
+            else
+                return TryGetSubscribedInstallationDirectory(modId, modfileId, out directoryPath);
+        }
+
+        /// <summary>Tests if a mod installation directory exists.</summary>
+        private static bool TryGetSubscribedInstallationDirectory(long modId, long modfileId, out string directoryPath)
+        {
+            directoryPath = GeneratePersistentInstallationDirectoryPath(modId, modfileId);
             return persistent.DirectoryExists(directoryPath);
         }
 
-        // REVIEW @Jackson TODO Please implement
-        /// <summary>Tests if a modfile details directory exists.</summary>
-        public static bool TryGetModfileDetailsDirectory(string directoryPath,
-                                                         out string properDirectory)
+        private static bool TryGetTempInstallationDirectory(long modId, long modfileId, out string directoryPath)
         {
-            properDirectory = GenerateModfileDetailsDirectoryPath(directoryPath);
+            directoryPath = GenerateTemporaryInstallationDirectoryPath(modId, modfileId);
+            return persistent.DirectoryExists(directoryPath);
+        }
+
+        public static bool IsDirectoryValid(string directoryPath)
+        {
             return persistent.DirectoryExists(directoryPath);
         }
 
@@ -235,28 +277,74 @@ namespace ModIO.Implementation
             return true;
         }
 
-        /// <summary>Deletes the installation directory matching the given mod-modfile
-        /// pair.</summary>
         public static bool TryDeleteInstalledMod(long modId, long modfileId, out Result result)
         {
-            string directory = GenerateInstallationDirectoryPath(modId, modfileId);
+            if(TempModSetManager.IsUnsubscribedTempMod(new ModId(modId)))
+                return TryDeleteInstalledTempMod(modId, modfileId, out result);
+            else
+                return TryDeleteInstalledPersistentMod(modId, modfileId, out result);
+        }
+
+        /// <summary>Deletes the installation directory matching the given mod-modfile
+        /// pair.</summary>
+        private static bool TryDeleteInstalledPersistentMod(long modId, long modfileId, out Result result)
+        {
+            string directory = GeneratePersistentInstallationDirectoryPath(modId, modfileId);
 
             result = persistent.DeleteDirectory(directory);
 
             return (result.Succeeded());
         }
 
-        /// <summary>Deletes the extraction directory.</summary>
-        public static void DeleteExtractionDirectory()
+        /// <summary>Deletes the temp installation directory matching the given mod-modfile
+        /// pair.</summary>
+        private static bool TryDeleteInstalledTempMod(long modId, long modfileId, out Result result)
         {
-            persistent.DeleteDirectory(GenerateExtractionDirectoryPath());
+            string directory = GenerateTemporaryInstallationDirectoryPath(modId, modfileId);
+
+            result = persistent.DeleteDirectory(directory);
+
+            return (result.Succeeded());
+        }
+
+        /// <summary>Deletes the temp installation directory</summary>
+        private static void DeleteInstalledTempModDirectory()
+        {
+            string directory = $@"{temp.RootDirectory}/mods/temp/";
+            persistent.DeleteDirectory(directory);
+        }
+
+        public static bool MoveTempModToInstallDirectory(ModId modId, long fileId)
+        {
+            var tempModDir = GenerateTemporaryInstallationDirectoryPath(modId, fileId);
+            if (persistent.DirectoryExists(tempModDir))
+            {
+                persistent.MoveDirectory(tempModDir, GeneratePersistentInstallationDirectoryPath(modId, fileId));
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>Generates the path for the extraction directory.</summary>
+        private static string GenerateExtractionDirectoryPath(long modId)
+        {
+            if(TempModSetManager.IsUnsubscribedTempMod(new ModId(modId)))
+                return $@"{temp.RootDirectory}/installation";
+            else
+                return $@"{persistent.RootDirectory}/installation";
+        }
+
+        /// <summary>Deletes the extraction directory.</summary>
+        public static void DeleteExtractionDirectory(long modId)
+        {
+            persistent.DeleteDirectory(GenerateExtractionDirectoryPath(modId));
         }
 
         /// <summary>Moves extraction directory to the given installation location.</summary>
         public static Result MakeInstallationFromExtractionDirectory(long modId, long modfileId)
         {
-            string extractionDirPath = GenerateExtractionDirectoryPath();
-            string installDirPath = GenerateInstallationDirectoryPath(modId, modfileId);
+            string extractionDirPath = GenerateExtractionDirectoryPath(modId);
+            TryGetInstallationDirectory(modId, modfileId, out string installDirPath);
             Result result;
 
             try
@@ -401,10 +489,10 @@ namespace ModIO.Implementation
         }
 
         /// <summary>Opens an archive output stream.</summary>
-        public static ModIOFileStream OpenArchiveEntryOutputStream(string relativePath,
+        public static ModIOFileStream OpenArchiveEntryOutputStream(long modId, string relativePath,
                                                                    out Result result)
         {
-            string absPath = $@"{GenerateExtractionDirectoryPath()}/{relativePath}";
+            string absPath = $@"{GenerateExtractionDirectoryPath(modId)}/{relativePath}";
             return persistent.OpenWriteStream(absPath, out result);
         }
 

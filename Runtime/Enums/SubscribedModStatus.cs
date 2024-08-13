@@ -1,4 +1,6 @@
-﻿namespace ModIO
+﻿using System;
+
+namespace ModIO
 {
     /// <summary>
     /// The current state of a subscribed mod. Useful for checking whether or not a mod has been
@@ -18,5 +20,34 @@
         Updating,
         ProblemOccurred,
         None,
+    }
+
+    public static class SubscribedModStatusExtensions
+    {
+        public static bool IsSubscribed(this SubscribedModStatus value)
+        {
+            switch(value)
+            {
+                case SubscribedModStatus.Installed:
+                case SubscribedModStatus.WaitingToDownload:
+                case SubscribedModStatus.WaitingToInstall:
+                case SubscribedModStatus.WaitingToUpdate:
+                case SubscribedModStatus.Downloading:
+                case SubscribedModStatus.Installing:
+                case SubscribedModStatus.Updating:
+                case SubscribedModStatus.None:
+                    return true;
+
+                case SubscribedModStatus.WaitingToUninstall:
+                case SubscribedModStatus.Uninstalling:
+                case SubscribedModStatus.ProblemOccurred:
+                    return false;
+
+                default:
+                    break;
+            }
+
+            throw new NotImplementedException($"Unable to translate {value} of SubscribedMod");
+        }
     }
 }

@@ -38,7 +38,7 @@ namespace ModIO.Implementation
 
         /// <summary>Loads the settings asset at the default path.</summary>
         public static Result TryLoad(out ServerSettings serverSettings,
-                                     out BuildSettings buildSettings)
+                                     out BuildSettings buildSettings, out UISettings uiSettings)
         {
             SettingsAsset asset = Resources.Load<SettingsAsset>(FilePath);
 
@@ -46,11 +46,13 @@ namespace ModIO.Implementation
             {
                 serverSettings = new ServerSettings();
                 buildSettings = new BuildSettings();
+                uiSettings = new UISettings();
                 return ResultBuilder.Create(ResultCode.Init_FailedToLoadConfig);
             }
 
             serverSettings = asset.serverSettings;
             buildSettings = asset.GetBuildSettings();
+            uiSettings = asset.uiSettings;
             Resources.UnloadAsset(asset);
 
             return ResultBuilder.Success;
@@ -67,6 +69,23 @@ namespace ModIO.Implementation
             }
 
             autoInitializePlugin = asset.autoInitializePlugin;
+
+            Resources.UnloadAsset(asset);
+            return ResultBuilder.Success;
+        }
+
+        public static Result TryLoad(out string analyticsPrivateKey)
+        {
+            SettingsAsset asset = Resources.Load<SettingsAsset>(FilePath);
+
+            if(asset == null)
+            {
+                analyticsPrivateKey = String.Empty;
+                return ResultBuilder.Create(ResultCode.Init_FailedToLoadConfig);
+            }
+
+            analyticsPrivateKey = asset.analyticsPrivateKey;
+
             Resources.UnloadAsset(asset);
             return ResultBuilder.Success;
         }
@@ -79,6 +98,9 @@ namespace ModIO.Implementation
         [HideInInspector]
         public ServerSettings serverSettings;
 
+        [HideInInspector]
+        public UISettings uiSettings;
+
         // NOTE(@jackson):
         //  The following section is the template for what a platform-specific implementation
         //  should look like. The platform partial will include a BuildSettings field
@@ -87,7 +109,8 @@ namespace ModIO.Implementation
 
         //Initializes the ModIO plugin, with default settings, the first time it is used
         [SerializeField] private bool autoInitializePlugin = true;
-
+        //Private key used to generate analytics hash
+        [SerializeField, Delayed] private string analyticsPrivateKey;
         /// <summary>Level to log at.</summary>
         [SerializeField] private LogLevel playerLogLevel;
         /// <summary>Level to log at.</summary>

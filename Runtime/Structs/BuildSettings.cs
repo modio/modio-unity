@@ -21,6 +21,9 @@ namespace ModIO
             this.userPortal = buildSettings.userPortal;
             this.requestCacheLimitKB = buildSettings.requestCacheLimitKB;
             this.defaultPortal = buildSettings.defaultPortal;
+            writeSpeedInKbPerSecond = buildSettings.writeSpeedInKbPerSecond;
+            bytesPerWrite = buildSettings.bytesPerWrite;
+            writeSpeedReductionThreshold = buildSettings.writeSpeedReductionThreshold;
         }
 
         /// <summary>Level to log at.</summary>
@@ -34,7 +37,16 @@ namespace ModIO
 
         // TODO Needs to be implemented alongside RequestCache.cs
         /// <summary>Size limit for the request cache.</summary>
-        public uint requestCacheLimitKB;
+        [Delayed] public uint requestCacheLimitKB;
+
+        /// <summary>The speed at which will be maintained when performing write operations</summary>
+        public int writeSpeedInKbPerSecond = 0;
+
+        /// <summary>The max number of bytes that will be written in one write operation</summary>
+        public int bytesPerWrite = 0;
+
+        /// <summary>The threshold as a percentage of the total budget of one interval, at which write operations will start to slow down.</summary>
+        public float writeSpeedReductionThreshold = .75f;
 
         public void SetDefaultPortal()
         {

@@ -1,5 +1,4 @@
-﻿
-namespace ModIO
+﻿namespace ModIO
 {
 
     /// <summary>
@@ -16,7 +15,7 @@ namespace ModIO
         /// The ModId of the mod that this operation pertains to.
         /// </summary>
         public ModId modId { get; internal set; }
-        
+
         /// <summary>
         /// The type of operation being performed, eg. Download, Upload, Install
         /// </summary>
@@ -26,7 +25,7 @@ namespace ModIO
         /// The progress of the operation being performed, float range from 0.0f - 1.0f
         /// </summary>
 
-        public float Progress { get; internal set; }        
+        public float Progress { get; internal set; }
 
         /// <summary>
         /// The average number of bytes being processed per second by the operation
@@ -47,5 +46,9 @@ namespace ModIO
         /// </summary>
         public bool Failed { get; internal set; }
 
+        public int UiHashCode()
+        {
+            return modId.id.GetHashCode() + OperationType.GetHashCode() + Progress.GetHashCode() + BytesPerSecond.GetHashCode() + Completed.GetHashCode() + Failed.GetHashCode();
+        }
     }
 }

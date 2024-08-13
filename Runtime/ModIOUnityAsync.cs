@@ -4,6 +4,7 @@ using ModIO.Implementation.API.Requests;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
+using Logger = ModIO.Implementation.Logger;
 
 #pragma warning disable 4014 // Ignore warnings about calling async functions from non-async code
 
@@ -24,6 +25,12 @@ namespace ModIO
         /// </code></example>
         /// <seealso cref="Result"/>
         public static async Task Shutdown() => await ModIOUnityImplementation.Shutdown(() => { });
+
+        /// <summary>
+        /// <p>Pings the server.</p>
+        /// <p><c>Result.Succeeded()</c> will be <c>true</c> if a response was received.</p>
+        /// </summary>
+        public static Task<Result> Ping() => ModIOUnityImplementation.Ping();
 
         #endregion // Initialization and Maintenance
 
@@ -253,8 +260,8 @@ namespace ModIO
         /// }
         /// </code></example>
         public static async Task<Result> AuthenticateUserViaEpic(string epicToken,
-                                                                  string emailAddress,
-                                                                  TermsHash? hash)
+                                                                 string emailAddress,
+                                                                 TermsHash? hash)
         {
             return await ModIOUnityImplementation.AuthenticateUser(
                 epicToken, AuthenticationServiceProvider.Steam, emailAddress, hash, null, null,
@@ -308,9 +315,9 @@ namespace ModIO
         /// }
         /// </code></example>
         public static async Task<Result> AuthenticateUserViaPlayStation(string authCode,
-                                                                  string emailAddress,
-                                                                  TermsHash? hash,
-                                                                  PlayStationEnvironment environment)
+                                                                        string emailAddress,
+                                                                        TermsHash? hash,
+                                                                        PlayStationEnvironment environment)
         {
             return await ModIOUnityImplementation.AuthenticateUser(
                 authCode, AuthenticationServiceProvider.PlayStation, emailAddress, hash, null, null,
@@ -591,7 +598,7 @@ namespace ModIO
         /// You will first need to get the terms of use and hash from the ModIOUnity.GetTermsOfUse()
         /// method.
         /// </remarks>
-        /// <param name="googleToken">the user's steam token</param>
+        /// <param name="token">google auth code or id token</param>
         /// <param name="emailAddress">the user's email address (Can be null)</param>
         /// <param name="hash">the TermsHash retrieved from ModIOUnity.GetTermsOfUse()</param>
         /// <seealso cref="GetTermsOfUse"/>
@@ -617,7 +624,7 @@ namespace ModIO
         /// // Once we have the Terms of Use and hash we can attempt to authenticate
         /// async void Authenticate_Example()
         /// {
-        ///     Result result = await ModIOUnityAsync.AuthenticateUserViaGoogle(googleToken, "johndoe@gmail.com", modIOTermsOfUse.hash);
+        ///     Result result = await ModIOUnityAsync.AuthenticateUserViaGoogle(token, "johndoe@gmail.com", modIOTermsOfUse.hash);
         ///
         ///     if (result.Succeeded())
         ///     {
@@ -629,14 +636,69 @@ namespace ModIO
         ///     }
         /// }
         /// </code></example>
-        public static async Task<Result> AuthenticateUserViaGoogle(string googleToken,
+        public static async Task<Result> AuthenticateUserViaGoogle(string token,
                                                                    string emailAddress,
                                                                    TermsHash? hash)
         {
             return await ModIOUnityImplementation.AuthenticateUser(
-                googleToken, AuthenticationServiceProvider.Google, emailAddress, hash, null, null,
+                token, AuthenticationServiceProvider.Google,
+                emailAddress, hash, null, null, null, 0);
+        }
+
+        /// <summary>
+        /// Attempts to authenticate a user via the Apple API.
+        /// </summary>
+        /// <remarks>
+        /// You will first need to get the terms of use and hash from the ModIOUnity.GetTermsOfUse()
+        /// method.
+        /// </remarks>
+        /// <param name="authCode">Apple auth code</param>
+        /// <param name="emailAddress">the user's email address (Can be null)</param>
+        /// <param name="hash">the TermsHash retrieved from ModIOUnity.GetTermsOfUse()</param>
+        /// <seealso cref="GetTermsOfUse"/>
+        /// <example><code>
+        /// // First we get the Terms of Use to display to the user and cache the hash
+        /// async void GetTermsOfUse_Example()
+        /// {
+        ///     ResultAnd&#60;TermsOfUser&#62; response = await ModIOUnityAsync.GetTermsOfUse();
+        ///
+        ///     if (response.result.Succeeded())
+        ///     {
+        ///         Debug.Log("Successfully retrieved the terms of use: " + response.value.termsOfUse);
+        ///
+        ///         //  Cache the terms of use (which has the hash for when we attempt to authenticate)
+        ///         modIOTermsOfUse = response.value;
+        ///     }
+        ///     else
+        ///     {
+        ///         Debug.Log("Failed to retrieve the terms of use");
+        ///     }
+        /// }
+        ///
+        /// // Once we have the Terms of Use and hash we can attempt to authenticate
+        /// async void Authenticate_Example()
+        /// {
+        ///     Result result = await ModIOUnityAsync.AuthenticateUserViaApple(authCode, "johndoe@gmail.com", modIOTermsOfUse.hash);
+        ///
+        ///     if (result.Succeeded())
+        ///     {
+        ///         Debug.Log("Successfully authenticated user");
+        ///     }
+        ///     else
+        ///     {
+        ///         Debug.Log("Failed to authenticate");
+        ///     }
+        /// }
+        /// </code></example>
+        public static async Task<Result> AuthenticateUserViaApple(string authCode,
+                                                                  string emailAddress,
+                                                                  TermsHash? hash)
+        {
+            return await ModIOUnityImplementation.AuthenticateUser(
+                authCode, AuthenticationServiceProvider.AppleId, emailAddress, hash, null, null,
                 null, 0);
         }
+
 
         /// <summary>
         /// Attempts to authenticate a user via the oculus API.
@@ -1094,6 +1156,7 @@ namespace ModIO
         #endregion // Mod Browsing
 
         #region User Management
+
         /// <summary>
         /// Used to submit a rating for a specified mod.
         /// </summary>
@@ -1206,6 +1269,7 @@ namespace ModIO
         /// This requires the current session to have an authenticated user, otherwise
         /// Result.IsAuthenticationError() from the Result will equal true.
         /// </remarks>
+        /// <param name="allowOfflineUser">True if we allow the last saved user data if the server cannot be reached. Note that Result will still be a NetworkError</param>
         /// <seealso cref="Result"/>
         /// <seealso cref="UserProfile"/>
         /// <seealso cref="IsAuthenticated"/>
@@ -1224,9 +1288,9 @@ namespace ModIO
         ///     }
         /// }
         /// </code></example>
-        public static async Task<ResultAnd<UserProfile>> GetCurrentUser()
+        public static async Task<ResultAnd<UserProfile>> GetCurrentUser(bool allowOfflineUser = false)
         {
-            return await ModIOUnityImplementation.GetCurrentUser();
+            return await ModIOUnityImplementation.GetCurrentUser(allowOfflineUser);
         }
 
         /// <summary>
@@ -1287,6 +1351,7 @@ namespace ModIO
         {
             return await ModIOUnityImplementation.GetMutedUsers();
         }
+
         #endregion
 
         #region Mod Management
@@ -1414,9 +1479,97 @@ namespace ModIO
             return await ModIOUnityImplementation.RemoveDependenciesFromMod(modId, dependencies);
         }
 
+        /// <summary>
+        /// Get all metadata stored by the game developer for this mod as searchable key value pairs. Successful request will return an array of Metadata KVP Objects.
+        /// </summary>
+        /// <seealso cref="MetadataKvpObject"/>
+        /// <seealso cref="ModIOUnity.GetModKvpMetadata"/>
+        /// <seealso cref="ModIOUnityAsync.AddModKvpMetadata"/>
+        /// <seealso cref="ModIOUnityAsync.DeleteModKvpMetadata"/>
+        /// <example><code>
+        /// long modId;
+        /// void Example()
+        /// {
+        ///     ResultAnd&#60;MetadataKvp[]&#62; r = await ModIOUnityAsync.GetModKvpMetadata(modId);
+        ///
+        ///     if (r.result.Succeeded())
+        ///     {
+        ///         Debug.Log("Successfully received metadata for modId");
+        ///         foreach(var kvp in r.value)
+        ///         {
+        ///             Debug.Log($"Key: {kvp.key}, Value: {kvp.value}");
+        ///         }
+        ///     }
+        ///     else
+        ///     {
+        ///         Debug.Log("Failed to get metadata for modId.");
+        ///     }
+        /// }
+        /// </code></example>
+        public static async Task<ResultAnd<Dictionary<string, string>>> GetModKvpMetadata(long modId) => await ModIOUnityImplementation.GetModKvpMetadata(modId);
+
+        /// <summary>
+        /// Add metadata for this mod as searchable key value pairs. Metadata is useful to define how a mod works, or other information you need to display and manage the mod.
+        /// Successful request will return Message Object. For example: A mod might change gravity and the rate of fire of weapons, you could define these properties as key
+        /// value pairs. We recommend the mod upload tool you create defines and submits metadata behind the scenes, because if these settings affect gameplay, invalid
+        /// information may cause problems.
+        /// <remarks>
+        /// Metadata can also be stored as metadata_blob in the Mod Object.
+        /// </remarks>
+        /// </summary>
+        /// <seealso cref="MetadataKvpObject"/>
+        /// <seealso cref="ModIOUnity.AddModKvpMetadata"/>
+        /// <seealso cref="ModIOUnityAsync.GetModKvpMetadata"/>
+        /// <seealso cref="ModIOUnityAsync.DeleteModKvpMetadata"/>
+        /// <example><code>
+        /// long modId;
+        /// Dictionary&#60;string, string&#62; metadata
+        /// void Example()
+        /// {
+        ///     Result result = await ModIOUnityAsync.AddModKvpMetadata(modId, metadata);
+        ///
+        ///     if (result.Succeeded())
+        ///     {
+        ///         Debug.Log("Successfully added metadata.");
+        ///     }
+        ///     else
+        ///     {
+        ///         Debug.Log("Failed to add metadata.");
+        ///     }
+        /// }
+        /// </code></example>
+        public static async Task<Result> AddModKvpMetadata(long modId, Dictionary<string, string> metadata) => await ModIOUnityImplementation.AddModKvpMetadata(modId, metadata);
+
+        /// <summary>
+        /// Delete key value pairs metadata defined for this mod. Successful request will return 204 No Content.
+        /// </summary>
+        /// <seealso cref="MetadataKvpObject"/>
+        /// <seealso cref="ModIOUnity.DeleteModKvpMetadata"/>
+        /// <seealso cref="ModIOUnityAsync.AddModKvpMetadata"/>
+        /// <seealso cref="ModIOUnityAsync.GetModKvpMetadata"/>
+        /// <example><code>
+        /// long modId;
+        /// Dictionary&#60;string, string&#62; metadata;
+        /// void Example()
+        /// {
+        ///     Result result = await ModIOUnityAsync.DeleteModKvpMetadata(modId, metadata);
+        ///
+        ///     if (result.Succeeded())
+        ///     {
+        ///         Debug.Log("Successfully deleted metadata");
+        ///     }
+        ///     else
+        ///     {
+        ///         Debug.Log("Failed to delete metadata.");
+        ///     }
+        /// }
+        /// </code></example>
+        public static async Task<Result> DeleteModKvpMetadata(long modId, Dictionary<string, string> metadata) => await ModIOUnityImplementation.DeleteModKvpMetadata(modId, metadata);
+
         #endregion // Mod Management
 
         #region Mod Uploading
+
         /// <summary>
         /// Creates a new mod profile on the mod.io server based on the details provided from the
         /// ModProfileDetails object provided. Note that you must have a logo, name and summary
@@ -1704,6 +1857,7 @@ namespace ModIO
         {
             return await ModIOUnityImplementation.DeleteTags(modId, tags);
         }
+
         #endregion // Mod Uploading
 
         #region Multipart
@@ -1915,7 +2069,6 @@ namespace ModIO
             return await ModIOUnityImplementation.CompleteMultipartUploadSession(modId, uploadId);
         }
 
-
         #endregion
 
         #region Media Download
@@ -1999,8 +2152,6 @@ namespace ModIO
 
         #region Monetization
 
-        public static async Task<ResultAnd<TokenPack[]>> GetTokenPacks() => await ModIOUnityImplementation.GetTokenPacks();
-
         /// <summary>
         /// Convert an in-game consumable that a user has purchased on Steam, Xbox, or Psn into a users
         /// mod.io inventory. This endpoint will consume the entitlement on behalf of the user against
@@ -2011,9 +2162,9 @@ namespace ModIO
         /// <seealso cref="ModIOUnity.SyncEntitlements"/>
         /// <code>
         ///
-        /// private async void Example(string token)
+        /// private async void Example()
         /// {
-        ///     var response = await ModIOUnity.SyncEntitlements(token);
+        ///     var response = await ModIOUnity.SyncEntitlements();
         ///     if (response.result.Succeeded())
         ///     {
         ///         Debug.Log("Sync Entitlements Success");
@@ -2024,29 +2175,7 @@ namespace ModIO
         ///     }
         /// }
         /// </code>
-        public static async Task<ResultAnd<Entitlement[]>> SyncEntitlements()
-        {
-            return await ModIOUnityImplementation.SyncEntitlements();
-        }
-
-        /// <summary>
-        /// Get users in a monetization team <see cref="MonetizationTeamAccount"/> for a specific mod
-        /// </summary>
-        /// <param name="modId">The mod to get users for</param>
-        public static async Task<ResultAnd<MonetizationTeamAccount[]>> GetModMonetizationTeam(ModId modId)
-        {
-            return await ModIOUnityImplementation.GetModMonetizationTeam(modId);
-        }
-
-        /// <summary>
-        /// Set all <see cref="ModMonetizationTeamDetails"/> for a specific mod
-        /// </summary>
-        /// <param name="modId">The mod to set users for</param>
-        /// <param name="team">All users and their splits</param>
-        public static async Task<Result> AddModMonetizationTeam(ModId modId, ICollection<ModMonetizationTeamDetails> team)
-        {
-            return await ModIOUnityImplementation.AddModMonetizationTeam(modId, team);
-        }
+        public static async Task<ResultAnd<Entitlement[]>> SyncEntitlements() => await ModIOUnityImplementation.SyncEntitlements();
 
         /// <summary>
         /// Complete a marketplace purchase. A Successful request will return the newly created Checkout
@@ -2058,6 +2187,7 @@ namespace ModIO
         /// <param name="modId">The id of the mod the user wants to purchase.</param>
         /// <param name="displayAmount">The amount that was shown to the user for the purchase.</param>
         /// <param name="idempotent">A unique string. Must be alphanumeric and cannot contain unique characters except for -.</param>
+        /// <param name="subscribeOnPurchase">Automatically subscribe to the mod after purchase</param>
         /// <seealso cref="Result"/>
         /// <code>
         /// string idempotent = $"aUniqueKey";
@@ -2076,9 +2206,9 @@ namespace ModIO
         ///     }
         /// }
         /// </code>
-        public static async Task<ResultAnd<CheckoutProcess>> PurchaseMod(ModId modId, int displayAmount, string idempotent)
+        public static async Task<ResultAnd<CheckoutProcess>> PurchaseMod(ModId modId, int displayAmount, string idempotent, bool subscribeOnPurchase)
         {
-            return await ModIOUnityImplementation.PurchaseMod(modId, displayAmount, idempotent);
+            return await ModIOUnityImplementation.PurchaseMod(modId, displayAmount, idempotent, subscribeOnPurchase);
         }
 
         /// <summary>
@@ -2104,7 +2234,75 @@ namespace ModIO
         {
             return await ModIOUnityImplementation.GetUserWalletBalance();
         }
-        #endregion
+
+#endregion
+
+#region Service to Service
+
+        /// <summary>
+        /// Requests a User Delegation Token on behalf of a authenticated user.
+        /// This token should then be sent to your secure backend server
+        /// where you can then use it for specific endpoints.
+        /// </summary>
+        public static async Task<ResultAnd<UserDelegationToken>> RequestUserDelegationToken() => await ModIOUnityImplementation.RequestUserDelegationToken();
+
+#endregion
+
+#region TempModSet
+
+        /// <summary>
+        /// Creates a Temp mod set
+        /// </summary>
+        /// <param name="modIds">Mods used for this set.</param>
+        /// <seealso cref="ModIOUnity.CreateTempModSet"/>
+        /// <seealso cref="ModIOUnityAsync.AddModsToTempModSet"/>
+        /// <seealso cref="ModIOUnity.DeleteTempModSet"/>
+        /// <seealso cref="ModIOUnity.RemoveModsFromTempModSet"/>
+        /// <seealso cref="ModIOUnity.GetTempSystemInstalledMods"/>
+        /// <example><code>
+        /// ModId[] modIds;
+        /// void Example()
+        /// {
+        ///     Result result = await ModIOUnity.CreateTempModSet(modIds);
+        ///     if (result.Succeeded())
+        ///     {
+        ///         Debug.Log("Successful");
+        ///     }
+        ///     else
+        ///     {
+        ///         Debug.Log("Failed");
+        ///     }
+        /// }
+        /// </code></example>
+        public static async Task<Result> CreateTempModSet(ModId[] modIds) => await ModIOUnityImplementation.CreateTempModSet(modIds);
+
+        /// <summary>
+        /// Adds mods to a Temp mod set
+        /// </summary>
+        /// <param name="modIds">Mods used for this set.</param>
+        /// <seealso cref="ModIOUnityAsync.CreateTempModSet"/>
+        /// <seealso cref="ModIOUnity.AddModsToTempModSet"/>
+        /// <seealso cref="ModIOUnity.DeleteTempModSet"/>
+        /// <seealso cref="ModIOUnity.RemoveModsFromTempModSet"/>
+        /// <seealso cref="ModIOUnity.GetTempSystemInstalledMods"/>
+        /// <example><code>
+        /// ModId[] modIds;
+        /// void Example()
+        /// {
+        ///     Result result = await ModIOUnity.AddModToTempModSet(modIds);
+        ///     if (result.Succeeded())
+        ///     {
+        ///         Debug.Log("Successful");
+        ///     }
+        ///     else
+        ///     {
+        ///         Debug.Log("Failed");
+        ///     }
+        /// }
+        /// </code></example>
+        public static async Task<Result> AddModsToTempModSet(ModId[] modIds) => await ModIOUnityImplementation.AddModsToTempModSet(modIds);
+
+#endregion //TempModSet
     }
 }
 

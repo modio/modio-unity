@@ -141,11 +141,20 @@ namespace ModIO.Implementation
         // 11009   You have been rate limited from calling this endpoint again, for making too many requests. See Rate Limiting.
         public const uint RESTAPI_RateLimitExceededEndpoint = 11009;
 
-        // 11012    Invalid security code.
-        public const uint RESTAPI_11012 = 11012;
+        // 11011   You have already redeemed this security code.
+        public const uint RESTAPI_EmailExchangeCodeAlreadyRedeemed = 11011;
 
-        // 11014    security code has expired. Please request a new code
-        public const uint RESTAPI_11014 = 11014;
+        // 11012   This security code has expired. Please request a new code.
+        public const uint RESTAPI_EmailExchangeCodeExpired = 11012;
+
+        // 11013    This security code is for a different API Key. Please contact support.
+        public const uint RESTAPI_EmailExchangeDifferentApiKey = 11013;
+
+        // 11014    Invalid security code. Please request a new code.
+        public const uint RESTAPI_EmailExchangeInvalidCode = 11014;
+
+        // 11015    Email link already used to auth.
+        public const uint RESTAPI_AuthLinkEmailAlreadyUsed = 11015;
 
         // 11069    error.monetization_iap_connected_portal_account_not_found
         public const uint RESTAPI_PortalAccountNotFound = 11069;
@@ -155,7 +164,6 @@ namespace ModIO.Implementation
 
         // 13002   The submitted binary file is unreadable.
         public const uint RESTAPI_SubmittedBinaryUnreadable = 13002;
-
         // 13004   You have used the input_json parameter with semantically incorrect JSON.
         public const uint RESTAPI_JSONMalformed = 13004;
 
@@ -209,6 +217,9 @@ namespace ModIO.Implementation
         // 15028   The mod rating is already positive/negative
         public const uint RESTAPI_ModRatingAlreadyExists = 15028;
 
+        // 15030   The reported mod is currently unauthorized or deleted and not eligible for reporting.
+        public const uint REPORT_RESOURCE_NOT_AVAILABLE_FOR_REPORT	 = 15030;
+
         // 15043   The mod rating is already removed
         public const uint RESTAPI_ModRatingNotFound = 15043;
 
@@ -218,14 +229,10 @@ namespace ModIO.Implementation
 
         // Codes I need to to do for auth/response cache:
         // from
-        // https://docs.mod.io/#authenticate-via-steam
+        // https://docs.mod.io/restapiref/#authenticate-via-steam
 
         // 11018    The steam encrypted app ticket was invalid.
         public const uint RESTAPI_InvalidSteamEncryptedAppTicket = 11018;
-
-        // 11032    mod.io was unable to verify the credentials against the external service
-        // provider.
-        public const uint RESTAPI_CantVerifyCredentialsExternally = 11032;
 
         // 11016    The api_key supplied in the request must be associated with a game.
         public const uint RESTAPI_KeyNotAssociatedWithGame = 11016;
@@ -237,10 +244,10 @@ namespace ModIO.Implementation
         // 11019    The secret steam app ticket associated with this game has not been configured.
         public const uint RESTAPI_SecretSteamAppTicketNotConfigured = 11019;
 
-        // 11051    The user has not agreed to the mod.io Terms of Use.
-        // Please see terms_agreed parameter description and the Terms endpoint for more
-        // information.
-        public const uint RESTAPI_UserMustAgreeToModIoTerms = 11051;
+        // 11020    Unable to get steam account data.
+        public const uint RESTAPI_SteamUnableToGetAccountData = 11020;
+
+            /* GOG  */
 
         // 11021   The GOG Galaxy encrypted app ticket was invalid.
         public const uint RESTAPI_GogInvalidAppTicket = 11021;
@@ -249,8 +256,10 @@ namespace ModIO.Implementation
         // configured.
         public const uint RESTAPI_GogGameNotConfigured = 11022;
 
-        // 11031	mod.io was unable to get account data from itch.io servers.
-        public const uint RESTAPI_UnableToFetchAccountDataFromItchIo = 11031;
+        // 11023    Unable to get GOG account data.
+        public const uint RESTAPI_GogUnableToGetAccountData = 11023;
+
+            /*  Oculus  */
 
         // 11024	The secret Oculus Rift app ticket associated with this game has not been
         // configured.
@@ -260,18 +269,39 @@ namespace ModIO.Implementation
         // configured.
         public const uint RESTAPI_OculusQuestAppTicketNotConfigured = 11025;
 
+        // 11026    Unable to get Oculus account data.
+        public const uint RESTAPI_OculusUnableToGetAccountData = 11026;
+
+            /*  XBOX    */
+
         // 11027	The Xbox Live token supplied in the request is invalid.
         public const uint RESTAPI_XboxLiveTokenInvalid = 11027;
-
-        // 11029	The Xbox Live token supplied has expired.
-        public const uint RESTAPI_XboxLiveTokenExpired = 11029;
 
         // 11028	The user is not permitted to interact with UGC. This can be modified in the
         // user's Xbox Live profile.
         public const uint RESTAPI_XboxNotAllowedToInteractWithUGC = 11028;
 
+        // 11029	The Xbox Live token supplied has expired.
+        public const uint RESTAPI_XboxLiveTokenExpired = 11029;
+
         // 11030	Xbox Live users with 'Child' accounts are not permitted to use mod.io.
         public const uint RESTAPI_XboxLiveChildAccountNotPermitted = 11030;
+
+        // 11042    Unable to get Json Web key signature from Xbox Live.
+        public const uint RESTAPI_XboxLiveUnableToGetJwkSignature = 11042;
+
+
+        // 11031	mod.io was unable to get account data from itch.io servers.
+        public const uint RESTAPI_UnableToFetchAccountDataFromItchIo = 11031;
+
+        // 11032    mod.io was unable to verify the credentials against the external service
+        // provider.
+        public const uint RESTAPI_CantVerifyCredentialsExternally = 11032;
+
+        // 11034    User is already verified by mod.io servers.
+        public const uint RESTAPI_UserAlreadyVerified = 11034;
+
+            /*  Nintendo Switch */
 
         // 11035	The NSA ID token was invalid/malformed.
         public const uint RESTAPI_NsaIdTokenInvalid = 11035;
@@ -296,6 +326,58 @@ namespace ModIO.Implementation
         // authentication request.
         public const uint RESTAPI_NintendoSwitchNotPermittedToAuthUsers = 11041;
 
+            /*   Epic Games */
+
+        // 11044    Invalid Epic Games token.
+        public const uint RESTAPI_EpicGamesInvalidToken = 11044;
+
+        // 11045    Attempted to redeem Epic Games token before it's valid.
+        // Expired.
+        public const uint RESTAPI_EpicGamesInvalidTokenNotValidBefore = 11045;
+
+        // 11046    Attempted to redeem Epic Games token after it's valid.
+        // Expired.
+
+        public const uint RESTAPI_EpicGamesINvalidTokenNotValidAFter = 11046;
+
+        // 11048    Unable to get Epic Games json web key Signature
+        public const uint RESTAPI_EpicGamesUnableToGetJwkSignature = 11048;
+
+        // 11049    Unable to get Epic Games account data
+        public const uint RESTAPI_EpicGamesUnableToGetAccountData = 11049;
+
+            /* PSN  */
+
+        // 11080    Invalid PSN Token
+        public const uint RESTAPI_PsnInavalidToken = 11080;
+
+        // 11081    Attempting to redeem PSN token before it's valid.
+        // Expired.
+        public const uint RESTAPI_PsnInvalidTokenNotValidBefore = 11081;
+
+        // 11082 Attempted to redeem PSN token after it's expired.
+        // Expired.
+        public const uint RESTAPI_PsnInvalidTokenNotValidAfter = 11082;
+
+        // 11083    Unable to get Json Web Key from PSN servers
+        public const uint RESTAPI_PsnUnableToGetJwkSignature = 11083;
+
+        // 11084    Unable to get account data from PSN servers
+        public const uint RESTAPI_PsnUnableToGetAccountData = 11084;
+
+        // 11085    PSN child profile is not permitted to access this service
+        public const uint RESTAPI_PsnChildProfileNotPermitted = 11085;
+
+        // 11096    The user is not permitted to interact with UGC. This can be modified in the
+        // user's PSN profile.
+        public const uint RESTAPI_PsnUgcInteractionNotPermitted = 11096;
+
+
+        // 11051    The user has not agreed to the mod.io Terms of Use.
+        // Please see terms_agreed parameter description and the Terms endpoint for more
+        // information.
+        public const uint RESTAPI_UserMustAgreeToModIoTerms = 11051;
+
         // 11052	The access token was invalid/malformed.
         public const uint RESTAPI_AccessTokenInvalid = 11052;
 
@@ -311,6 +393,15 @@ namespace ModIO.Implementation
 
         // 11043	mod.io was unable to get account data from the Discord servers.
         public const uint RESTAPI_DiscordUnableToGetAccountData = 11043;
+
+        // 11058    The Facebook access token is invalid.
+        public const uint RESTAPI_FacebookInvalidToken = 11058;
+
+        // 11067    Unable to get Facebook account data.
+        public const uint RESTAPI_FacebookUnableToGetAccountData = 11067;
+
+        // 11059    User must be logged in before making requests.
+        public const uint RESTAPI_UserMustBeLoggedIn = 11059;
 
         public const uint FILEUPLOAD_Error = 30033;
         #endregion
@@ -436,8 +527,12 @@ namespace ModIO.Implementation
               "You have been rate limited globally for making too many requests. See Rate Limiting." },
             { RESTAPI_RateLimitExceededEndpoint,
               "You have been rate limited from calling this endpoint again, for making too many requests. See Rate Limiting." },
-            { RESTAPI_11012, "Invalid security code." },
-            { RESTAPI_11014, "Security code has expired. Please request a new code." },
+
+            //      EMAIL CODES
+            { RESTAPI_EmailExchangeCodeAlreadyRedeemed, "Security code already redeemed. Please request a new code."},
+            { RESTAPI_EmailExchangeCodeExpired, "Security code has expired. Please request a new code." },
+            { RESTAPI_EmailExchangeDifferentApiKey, "Security code is for a different API Key. Please contact support." },
+            { RESTAPI_EmailExchangeInvalidCode, "Invalid security code. Please request a new code." },
             { RESTAPI_SubmittedBinaryCorrupt, "The submitted binary file is corrupted." },
             { RESTAPI_SubmittedBinaryUnreadable, "The submitted binary file is unreadable." },
             { RESTAPI_JSONMalformed,
@@ -466,46 +561,102 @@ namespace ModIO.Implementation
             { RESTAPI_ModRatingAlreadyExists, "The mod rating is already positive/negative" },
             { RESTAPI_ModRatingNotFound, "The mod rating is already removed" },
             { RESTAPI_UserIdNotFound, "The requested user could not be found." },
+            { RESTAPI_UserAlreadyVerified, "User is already verified with mod.io servers." },
+            { RESTAPI_UserMustBeLoggedIn, "User is not logged in yet. Please log in to complete requests." },
 
-            { RESTAPI_InvalidSteamEncryptedAppTicket,
-              "The steam encrypted app ticket was invalid." },
+
             { RESTAPI_CantVerifyCredentialsExternally,
               "mod.io was unable to verify the credentials against the external service provider." },
             { RESTAPI_KeyNotAssociatedWithGame,
               "The api_key supplied in the request must be associated with a game." },
             { RESTAPI_TestKeyForTestEnvOnly,
               "The api_key supplied in the request is for test environment purposes only and cannot be used for this functionality." },
+            { RESTAPI_UserMustAgreeToModIoTerms,
+                "The user has not agreed to the mod.io Terms of Use. Please see terms_agreed parameter description and the Terms endpoint for more information." },
+
+            /*  Steam   */
+            { RESTAPI_InvalidSteamEncryptedAppTicket,
+                "The steam encrypted app ticket was invalid." },
             { RESTAPI_SecretSteamAppTicketNotConfigured,
               "The secret steam app ticket associated with this game has not been configured." },
-            { RESTAPI_UserMustAgreeToModIoTerms,
-              "The user has not agreed to the mod.io Terms of Use. Please see terms_agreed parameter description and the Terms endpoint for more information." },
-            { RESTAPI_GogInvalidAppTicket, "The GOG Galaxy encrypted app ticket was invalid." },
+            { RESTAPI_SteamUnableToGetAccountData,
+                "Unable to get account data from Steam, please try again later." },
+
+            /*  GOG */
+            { RESTAPI_GogInvalidAppTicket,
+                "The GOG Galaxy encrypted app ticket was invalid." },
+            { RESTAPI_GogUnableToGetAccountData,
+                "Unable to get account data from GOG, please try again later." },
             { RESTAPI_GogGameNotConfigured,
               "The secret GOG Galaxy app ticket associated with this game has not been configured." },
+
             { RESTAPI_UnableToFetchAccountDataFromItchIo,
               "mod.io was unable to get account data from itch.io servers." },
+
+            /*  Oculus */
             { RESTAPI_OculusRiftAppTicketNotConfigured,
               "The secret Oculus Rift app ticket associated with this game has not been configured." },
             { RESTAPI_OculusQuestAppTicketNotConfigured,
               "The secret Oculus Quest app ticket associated with this game has not been configured." },
+            { RESTAPI_OculusUnableToGetAccountData,
+                "Unable to get account data from Oculus. Please try again later." },
+
+            /*  XBOX    */
             { RESTAPI_XboxLiveTokenInvalid,
               "The Xbox Live token supplied in the request is invalid." },
-            { RESTAPI_XboxLiveTokenExpired, "The Xbox Live token supplied has expired." },
+            { RESTAPI_XboxLiveTokenExpired,
+                "The Xbox Live token supplied has expired." },
             { RESTAPI_XboxNotAllowedToInteractWithUGC,
               "The user is not permitted to interact with UGC. This can be modified in the user's Xbox Live profile." },
             { RESTAPI_XboxLiveChildAccountNotPermitted,
               "Xbox Live users with 'Child' accounts are not permitted to use mod.io." },
-            { RESTAPI_NsaIdTokenInvalid, "The NSA ID token was invalid/malformed." },
+            { RESTAPI_XboxLiveUnableToGetJwkSignature,
+                "Unable to get the JSON Web Key from Xbox Live. Please try again later." },
+
+            /*  PSN */
+            { RESTAPI_PsnInavalidToken,
+                "The PSN token supplied in the request is invalid." },
+            { RESTAPI_PsnInvalidTokenNotValidAfter,
+                "The PSN token has expired. Please request a new token and ensure it is delivered to mod.io before it expires." },
+            { RESTAPI_PsnInvalidTokenNotValidBefore,
+                "The PSN token is not valid yet." },
+            { RESTAPI_PsnUnableToGetAccountData,
+                "Unable to get account data from PSN. Please try again later." },
+            { RESTAPI_PsnUnableToGetJwkSignature,
+                "Unable to get JSON Web Key from PSN. Please try again later." },
+            { RESTAPI_PsnChildProfileNotPermitted,
+                "Child accounts are not permitted to use external services such as mod.io." },
+            { RESTAPI_PsnUgcInteractionNotPermitted,
+                "This user is not permitted to interact with UGC. This can be modified in the user's PSN profile." },
+
+            /*  Nintendo Switch  */
+            { RESTAPI_NsaIdTokenInvalid,
+                "The NSA ID token was invalid/malformed." },
             { RESTAPI_UnableToVerifyNintendoCredentials,
               "mod.io was unable to validate the credentials with Nintendo Servers." },
-            { RESTAPI_NsaIdTokenNotValidYet, "The NSA ID token is not valid yet." },
+            { RESTAPI_NsaIdTokenNotValidYet,
+                "The NSA ID token is not valid yet." },
             { RESTAPI_NsaIdTokenExpired,
               "The NSA ID token has expired. You should request another token from the Switch SDK and ensure it is delivered to mod.io before it expires." },
             { RESTAPI_NintendoSwitchAppIdNotConfigured,
               "The application ID for the Nintendo Switch title has not been configured, this can be setup in the 'Options' tab within your game profile." },
             { RESTAPI_NintendoSwitchNotPermittedToAuthUsers,
               "The application ID of the originating Switch title is not permitted to authenticate users. Please check the Switch application id submitted on your games' 'Options' tab and ensure it is the same application id of the Switch title making the authentication request." },
-            { RESTAPI_AccessTokenInvalid, "//11052 The access token was invalid/malformed." },
+
+            /*  Epic Games  */
+            { RESTAPI_EpicGamesInvalidToken,
+                "The Epic Games token supplied in the request is invalid." },
+            { RESTAPI_EpicGamesINvalidTokenNotValidAFter,
+                "The Epic Games token has expired. Please request a new token and ensure it is delivered to mod.io before it expires." },
+            { RESTAPI_EpicGamesInvalidTokenNotValidBefore,
+                "The Epic Games token is not valid yet." },
+            { RESTAPI_EpicGamesUnableToGetAccountData,
+                "Unable to get account data from Epic Games. Please try again later." },
+            { RESTAPI_EpicGamesUnableToGetJwkSignature,
+                "Unable to get JSON Web Key from Epic Games. Please try again later." },
+
+            { RESTAPI_AccessTokenInvalid,
+                "//11052 The access token was invalid/malformed." },
             { RESTAPI_UnableToValidateCredentialsWithGoogle,
               "mod.io was unable to validate the credentials with Google's servers." },
             { RESTAPI_GoogleAccessTokenNotValidYet, "The Google access token is not valid yet." },
@@ -513,6 +664,10 @@ namespace ModIO.Implementation
               "The Google access token has expired. You should request another token from the Google SDK and ensure it is delivered to mod.io before it expires." },
             { RESTAPI_DiscordUnableToGetAccountData,
               "mod.io was unable to get account data from the Discord servers." },
+            { RESTAPI_FacebookInvalidToken,
+                "The Facebook access token is invalid." },
+            { RESTAPI_FacebookUnableToGetAccountData,
+                "Unable to get account data from Facebook. Please try again later." },
         };
 
         public static bool IsInvalidSession(ErrorObject errorObject)

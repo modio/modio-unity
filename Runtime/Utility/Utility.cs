@@ -124,14 +124,10 @@ namespace ModIO.Util
         /// <returns>base 64 encoded string from the provided steam app ticket</returns>
         public static string EncodeEncryptedSteamAppTicket(byte[] ticketData, uint ticketSize)
         {
-            //------------------------------- Trim the app ticket --------------------------------//
-            byte[] trimmedTicket = new byte[ticketSize];
-            Array.Copy(ticketData, trimmedTicket, ticketSize);
-
             string base64Ticket = null;
             try
             {
-                base64Ticket = Convert.ToBase64String(trimmedTicket);
+                base64Ticket = Convert.ToBase64String(ticketData, 0, (int)ticketSize);
             }
             catch(Exception exception)
             {

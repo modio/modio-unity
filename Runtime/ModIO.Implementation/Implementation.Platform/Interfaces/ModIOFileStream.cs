@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ModIO.Implementation
@@ -10,7 +11,7 @@ namespace ModIO.Implementation
 
         public abstract Task<ResultAnd<byte[]>> ReadAllBytesAsync();
         public abstract ResultAnd<byte[]> ReadAllBytes();
-        public abstract Task<Result> WriteAllBytesAsync(byte[] buffer);
+        public abstract Task<Result> WriteAllBytesAsync(byte[] buffer, CancellationToken token = new CancellationToken());
         public abstract Result WriteAllBytes(byte[] buffer);
     }
 }

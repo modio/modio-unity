@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Reflection;
-using System.Threading.Tasks;
 using ModIO;
 using ModIO.Implementation;
 using ModIO.Util;
@@ -11,7 +10,6 @@ using Result = ModIO.Result;
 
 namespace ModIOBrowser
 {
-
     /// <summary>
     /// The main handler for opening and closing the mod IO Browser.
     /// Use Browser.Open() to open and Browser.Close() to close.
@@ -106,9 +104,9 @@ namespace ModIOBrowser
         {
             // If the user has indicated that they wish to open the Browser but we haven't been
             // initialized yet, keep checking until we have been initialized
-            if(openOnInitialize)
+            if (openOnInitialize)
             {
-                if(ModIOUnity.IsInitialized())
+                if (ModIOUnity.IsInitialized())
                 {
                     openOnInitialize = false;
                     IsInitialized();
@@ -120,7 +118,7 @@ namespace ModIOBrowser
         // mod management operation to be run via the UpdateProgressState() method
         void LateUpdate()
         {
-            if(BrowserCanvas.activeSelf)
+            if (BrowserCanvas.activeSelf)
             {
                 Mods.UpdateProgressState();
             }
@@ -151,14 +149,14 @@ namespace ModIOBrowser
         {
             OnClose = onClose;
 
-            if(!ModIOUnity.IsInitialized())
+            if (!ModIOUnity.IsInitialized())
             {
                 openOnInitialize = true;
             }
             else
             {
                 IsInitialized();
-                //Turn on selection manager and exampleinpute capture?
+                //Turn on selection manager and exampleinput capture?
             }
         }
 
@@ -203,7 +201,7 @@ namespace ModIOBrowser
             {
                 base64Ticket = Convert.ToBase64String(trimmedTicket);
             }
-            catch(Exception exception)
+            catch (Exception exception)
             {
                 Debug.LogError($"[mod.io Browser] Unable to convert the app ticket to a "
                                + $"base64 string, caught exception: {exception.Message} - "
@@ -241,6 +239,46 @@ namespace ModIOBrowser
             MonoDispatcher.Instance.Run(() =>
             {
                 Authentication.getSwitchToken = getSwitchNsaIdDelegate;
+                Authentication.optionalThirdPartyEmailAddressUsedForAuthentication = userEmail;
+            });
+        }
+
+        /// <summary>
+        /// Using this method will enable an option in the Authentication modal for a user to
+        /// log in with their Google credentials. Simply provide the token and the user's email
+        /// address and the authentication flow for Google will be available.
+        /// </summary>
+        /// <param name="getGoogleTokenDelegate">delegate for retrieving the google token</param>
+        /// <param name="userEmail">(Optional) provide the users email address</param>
+        public static void SetupGoogleAuthenticationOption(RetrieveAuthenticationCodeDelegate getGoogleTokenDelegate, string userEmail = null)
+        {
+            try
+            {
+                MonoDispatcher.Instance.Run(() =>
+                {
+                    Authentication.getGoogleToken = getGoogleTokenDelegate;
+                    Authentication.optionalThirdPartyEmailAddressUsedForAuthentication = userEmail;
+                });
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Using this method will enable an option in the Authentication modal for a user to
+        /// log in with their Apple credentials. Simply provide the token and the user's email
+        /// address and the authentication flow for Apple will be available.
+        /// </summary>
+        /// <param name="getAppleTokenDelegate">delegate for retrieving the Apple token</param>
+        /// <param name="userEmail">(Optional) provide the users email address</param>
+        public static void SetupAppleAuthenticationOption(RetrieveAuthenticationCodeDelegate getAppleTokenDelegate, string userEmail = null)
+        {
+            MonoDispatcher.Instance.Run(() =>
+            {
+                Authentication.getAppleToken = getAppleTokenDelegate;
                 Authentication.optionalThirdPartyEmailAddressUsedForAuthentication = userEmail;
             });
         }
@@ -316,7 +354,7 @@ namespace ModIOBrowser
 
         private void SetModRowFilterDefaults()
         {
-            if(this.FeaturedSearchFilter == null)
+            if (this.FeaturedSearchFilter == null)
             {
                 this.FeaturedSearchFilter = new SearchFilter();
                 FeaturedSearchFilter.RevenueType = RevenueType.Free;
@@ -327,7 +365,7 @@ namespace ModIOBrowser
                 this.FeaturedSearchFilter.SetToAscending(true);
             }
 
-            if(browserRowSearchFilters == null || browserRowSearchFilters.Length == 0)
+            if (browserRowSearchFilters == null || browserRowSearchFilters.Length == 0)
             {
                 browserRowSearchFilters = new SearchFilter[4];
 
@@ -368,9 +406,9 @@ namespace ModIOBrowser
             }
             else
             {
-                foreach(var filter in this.browserRowSearchFilters)
+                foreach (var filter in this.browserRowSearchFilters)
                 {
-                    if(filter.RevenueType == RevenueType.FreeAndPaid || filter.RevenueType == RevenueType.Paid)
+                    if (filter.RevenueType == RevenueType.FreeAndPaid || filter.RevenueType == RevenueType.Paid)
                         filter.RevenueType = RevenueType.Free;
                     filter.SetPageIndex(0);
                     filter.SetPageSize(20);
@@ -378,10 +416,10 @@ namespace ModIOBrowser
             }
         }
 
-
 #endregion // Frontend methods
 
 #region Initialization
+
         /// <summary>
         /// We use this to check initialization if the plugin hasn't been initialized we will first
         /// attempt to initialize it ourselves, based on the current config file.
@@ -389,9 +427,9 @@ namespace ModIOBrowser
         /// <param name="result"></param>
         static void OnInitialize(Result result)
         {
-            if(result.Succeeded())
+            if (result.Succeeded())
             {
-                if(openOnInitialize)
+                if (openOnInitialize)
                 {
                     IsInitialized();
                 }
@@ -408,7 +446,7 @@ namespace ModIOBrowser
         {
             openOnInitialize = false;
 
-            if(Instance == null)
+            if (Instance == null)
             {
                 Debug.LogWarning("[mod.io Browser] Could not open because the Browser.cs"
                                  + " singleton hasn't been set yet. (Check the gameObject holding"
@@ -420,7 +458,7 @@ namespace ModIOBrowser
             Instance.SingletonAwakener.AttemptInitilization();
 
             // Activate the Canvas
-            if(!Instance.BrowserCanvas.activeSelf)
+            if (!Instance.BrowserCanvas.activeSelf)
             {
                 Instance.BrowserCanvas.SetActive(true);
                 IsOpen = true;
@@ -433,7 +471,7 @@ namespace ModIOBrowser
 
             // wait and check if we're authenticated, we need to know if our access token is still valid
             var isAuthed = await ModIOUnityAsync.IsAuthenticated();
-            if(isAuthed.Succeeded())
+            if (isAuthed.Succeeded())
             {
                 Authentication.Instance.IsAuthenticated = true;
                 ModIOUnity.FetchUpdates(delegate { });
@@ -461,19 +499,20 @@ namespace ModIOBrowser
 
         public void OpenMenuProfile() => Navigating.OpenMenuProfile();
 
-        #endregion
+#endregion
 
 #region Editor helpers
+
         public void CheckForMissingReferencesInScene()
         {
             Debug.LogWarning("This function may give false positives, mostly in the case of text input fields and dropdowns");
             MonoBehaviour[] components = Resources.FindObjectsOfTypeAll<MonoBehaviour>();
-            foreach(MonoBehaviour component in components)
+            foreach (MonoBehaviour component in components)
             {
                 var fields = component.GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                foreach(var field in fields)
+                foreach (var field in fields)
                 {
-                    if(field.FieldType == typeof(GameObject) && field.GetValue(component) == null)
+                    if (field.FieldType == typeof( GameObject ) && field.GetValue(component) == null)
                     {
                         //Debug.LogError("Missing reference on " + component.name + " of object: " + component.gameObject.name);
                         Debug.LogError("Missing reference at: " + component.transform.FullPath());
@@ -481,6 +520,7 @@ namespace ModIOBrowser
                 }
             }
         }
+
 #endregion
     }
 }

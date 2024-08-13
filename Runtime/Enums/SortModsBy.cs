@@ -16,6 +16,6 @@ namespace ModIO
         Popular,
         Downloads,
         Subscribers,
-        DateSubmitted
+        DateSubmitted,
     }
 }
