@@ -18,8 +18,10 @@ using UnityEngine;
 using GameObject = ModIO.Implementation.API.Objects.GameObject;
 
 #if UNITY_IOS || UNITY_ANDROID
+#if MODIO_IN_APP_PURCHASING
 using Plugins.mod.io.Platform.Mobile;
 using Newtonsoft.Json.Linq;
+#endif
 #endif
 
 namespace ModIO.Implementation
@@ -3417,6 +3419,7 @@ namespace ModIO.Implementation
             config = API.Requests.SyncEntitlements.SteamRequest();
             requestTask = WebRequestManager.Request<SyncEntitlements.ResponseSchema>(config);
 #elif (UNITY_ANDROID || UNITY_IOS) && !UNITY_EDITOR
+#if MODIO_IN_APP_PURCHASING
             var purchaseData = MobilePurchaseHelper.GetNextPurchase();
             var walletResponse = await ModIOUnityAsync.GetUserWalletBalance();
             if (!walletResponse.result.Succeeded())
@@ -3428,6 +3431,7 @@ namespace ModIO.Implementation
                 config = API.Requests.SyncEntitlements.AppleRequest(purchaseData.Payload);
 
             requestTask = WebRequestManager.Request<SyncEntitlements.ResponseSchema>(config);
+#endif
 #else
             return ResultAnd.Create<Entitlement[]>(ResultBuilder.Create(ResultCode.User_NotAuthenticated), null);
 #endif
@@ -3452,7 +3456,9 @@ namespace ModIO.Implementation
                             ResponseCache.ReplaceEntitlements(entitlements);
                             ResponseCache.ClearWalletFromCache();
 #if (UNITY_ANDROID || UNITY_IOS) && !UNITY_EDITOR
+#if MODIO_IN_APP_PURCHASING
                             MobilePurchaseHelper.CompleteValidation(entitlements);
+#endif
 #endif
 
                             ModIOUnityEvents.OnUserEntitlementsChanged();
