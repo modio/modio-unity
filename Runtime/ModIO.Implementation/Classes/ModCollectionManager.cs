@@ -80,8 +80,8 @@ namespace ModIO.Implementation
             if(!result.Succeeded())
             {
                 Logger.Log(LogLevel.Error,
-                           "ModCollectionManager was unable to save the Registry to disk"
-                           + " because DataStorage.SaveSystemRegistry failed");
+                           $"ModCollectionManager was unable to save the Registry to disk"
+                           + $" because DataStorage.SaveSystemRegistry failed: {result.message}");
             }
         }
 

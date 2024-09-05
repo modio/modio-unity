@@ -1,6 +1,4 @@
-#if (UNITY_IOS || UNITY_ANDROID)
-#if MODIO_IN_APP_PURCHASING
-
+#if (UNITY_IOS || UNITY_ANDROID) && MODIO_MOBILE_IAP
 using System;
 using System.Collections.Generic;
 using ModIO;
@@ -184,5 +182,4 @@ namespace External
         }
     }
 }
-#endif
 #endif

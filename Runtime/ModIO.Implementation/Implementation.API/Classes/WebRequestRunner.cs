@@ -62,14 +62,12 @@ namespace ModIO.Implementation.API
                 if(ModIOUnityImplementation.shuttingDown)
                 {
                     result = ResultBuilder.Create(ResultCode.Internal_OperationCancelled);
-                    Logger.Log(LogLevel.Error, $"SHUTDOWN EXCEPTION"
-                                               + $"\n{e.Message}\n{e.StackTrace}");
+                    Logger.Log(LogLevel.Error, $"SHUTDOWN EXCEPTION: \n{e}");
                 }
                 else
                 {
                     result = ResultBuilder.Unknown;
-                    Logger.Log(LogLevel.Error, $"Unhandled exception when downloading"
-                                               + $"\n{e.Message}\n{e.StackTrace}");
+                    Logger.Log(LogLevel.Error, $"Unhandled exception when downloading: \n{e}");
                 }
             }
 
@@ -151,7 +149,7 @@ namespace ModIO.Implementation.API
             }
             catch(Exception e)
             {
-                Logger.Log(LogLevel.Error, e.Message);
+                Logger.Log(LogLevel.Error, $"Unhandled Exception while executing request: \n{e}");
 
                 if(request != null)
                 {
@@ -170,7 +168,6 @@ namespace ModIO.Implementation.API
                 }
                 else
                 {
-                    Logger.Log(LogLevel.Error, e.Message);
                     response = default;
                 }
             }
@@ -200,8 +197,7 @@ namespace ModIO.Implementation.API
                     exception.Response?.Close();
                 }
                 Logger.Log(LogLevel.Error, $"Unknown exception caught trying to process"
-                                           + $" web request response.\nException: {e.Message}\n"
-                                           + $"Stacktrace: {e.StackTrace}");
+                                           + $" web request response.\n{e}");
                 result = ResultAnd.Create(ResultCode.Unknown, default(TResult));
             }
 
@@ -683,8 +679,7 @@ namespace ModIO.Implementation.API
                 Logger.Log(LogLevel.Error,
                     $"UNRECOGNISED RESPONSE"
                     + $"\nFailed to deserialize a response from the mod.io server.\nThe data"
-                    + $" may have been corrupted or isnt a valid Json format.\n\n[JsonUtility:"
-                    + $" {e.Message}] - {e.InnerException}");
+                    + $" may have been corrupted or isnt a valid Json format.\n{e}]");
 
                 return ResultAnd.Create(
                     ResultBuilder.Create(ResultCode.API_FailedToDeserializeResponse), default(T));

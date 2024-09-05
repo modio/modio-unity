@@ -7,7 +7,7 @@ sidebar_position: 0
 ---
 
 <a href="https://mod.io"><img src="https://mod.io/images/branding/modio-logo-bluewhite.svg" alt="mod.io" width="360" align="right"/></a>
-# mod.io Unity Plugin v2024.7.1
+# mod.io Unity Plugin v2024.8
 [![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)](https://github.com/modio/modio-unity/blob/master/LICENSE)
 [![Discord](https://img.shields.io/discord/389039439487434752.svg?label=Discord&logo=discord&color=7289DA&labelColor=2C2F33)](https://discord.mod.io)
 [![Master docs](https://img.shields.io/badge/docs-master-green.svg)](https://docs.mod.io/unity/)
@@ -26,9 +26,16 @@ mod.io enables game developers of all sizes to integrate user-generated content 
 The mod.io Unity Engine plugin is the simplest and fastest way to integrate UGC into your Unity **2020.3+** game. It handles all of the common tasks, allowing game developers to quickly and easily implement a solution that enables players to access and discover user-generated content for their games.
 
 A custom built [ready-made UI](#browser-ui) for mod discovery is included, along with installation and collection management, and a full-featured [C# interface](#getting-started) which connects to the [mod.io REST API](https://docs.mod.io).
+> [!WARNING]
+> The Browser UI is scheduled for deprecation, and may not receive updates.
+> This is to be replaced with the [Component UI / Template UI](#component-ui)
 
 ## Platform Support
 To access console platforms and documentation, see [Supporting Console Platforms](https://docs.mod.io/platforms/).
+
+> [!WARNING]
+> To enable Mobile In-App Purchasing you need to define the `MODIO_MOBILE_IAP` in Project Settings > Player > Script Compilation > Scripting Define Symbols
+> This will also require the Unity.Purchasing package to be installed.
 
 | Platform        | Support |
 |-----------------|:-------:|
@@ -91,6 +98,9 @@ If you have any questions or need some help join our [Discord](https://discord.m
 The mod.io Unity Engine plugin comes with a prebuilt UI, a drop-in, instant solution for browsing and installing your game's mods.
 
 If you want to skip implementing your own UI, head to the [Browser UI](#browser-ui) section for setup and usage instructions. However, we recommend following the guide below to better understand how the plugin works.
+> [!WARNING]
+> The Browser UI is scheduled for deprecation, and may not receive updates.
+> This is to be replaced with the [Component UI / Template UI](#component-ui)
 
 ## Getting Started
 
@@ -1240,6 +1250,10 @@ namespace ModIO
 
 ## Browser UI
 
+> [!WARNING]
+> The Browser UI is scheduled for deprecation, and may not receive updates.
+> This is to be replaced with the [Component UI / Template UI](#component-ui)
+
 > [!IMPORTANT]  
 > The Browser UI relies on the *config file* that is configured during the [setup instructions](#setup) above. Ensure you have completed all of those steps before proceeding.
 
@@ -1260,6 +1274,13 @@ If you want a fuller understanding of the plugin and its features, we recommend 
 When a user authenticates, the Browser UI will localize mod.io's terms of use based on the language code set in your config file (`Tools > mod.io > Edit Settings`, or `Settings.server.languageCode`). 
 
 To avoid the plugin conflicting with an existing solution, in the case of right-to-left languages you will need to apply your current implementation for mixed RTL and LTR text to the terms text-elements in the browser. 
+
+## Component UI
+The Component UI is an experimental module that allows for a more easily integrated and customised Mod Browsing UI.
+This can be accessed via the `modio-ui.unitypackage` provided in the plugin in the `experimental` folder.
+A Readme is provided in the package.
+> [!IMPORTANT]
+> This will be replacing the functionality provided by the Browser UI, once the Browser UI is deprecated.
 
 # Marketplace
 The mod.io SDK supports full monetization features, allowing you to sell a per-game virtual currency to your players that they can use to purchase mods, with a share of the revenue split between creators and your studio. Every platform requires specific setup for monetization features to work, with regards to the virtual currency configuration and API calls.

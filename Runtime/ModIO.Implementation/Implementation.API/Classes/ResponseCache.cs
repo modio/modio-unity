@@ -600,8 +600,14 @@ namespace ModIO.Implementation.API
                 cancellationTokenSource.Cancel();
 
             cancellationTokenSource = new CancellationTokenSource();
-            await Task.Delay(modLifetimeInCache, cancellationTokenSource.Token); // 60 second cache
-            wallet = null;
+            try
+            {
+                await Task.Delay(modLifetimeInCache, cancellationTokenSource.Token); // 60 second cache
+                wallet = null;
+            }
+            catch (TaskCanceledException)
+            {
+            }
         }
 
         static async void ClearModsFromCacheAfterDelay(List<ModId> modIds)

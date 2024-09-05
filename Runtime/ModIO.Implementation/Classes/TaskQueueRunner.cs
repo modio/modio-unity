@@ -63,9 +63,7 @@ namespace ModIO.Implementation
                 catch(Exception e)
                 {
                     Logger.Log(LogLevel.Warning, $"[TQR] Unhandled exception "
-                                                 + $" thrown in AutoRun. Exception: "
-                                                 + $"{e.Message} - Inner Exception: "
-                                                 + $"{e.InnerException?.Message}");
+                                                 + $" thrown in AutoRun. \n{e}");
                 }
             }
             isAutoRunning = false;
@@ -102,8 +100,7 @@ namespace ModIO.Implementation
             catch(Exception e)
             {
                 Logger.Log(LogLevel.Warning, $"[TQR] Unhandled exception thrown in "
-                                             + $"PerformTasks operation. Exception: {e.Message}"
-                                             + $" - Inner Exception: {e.InnerException?.Message}");
+                                             + $"PerformTasks operation. \n{e}");
             }
         }
 
@@ -217,9 +214,7 @@ namespace ModIO.Implementation
                     catch(Exception e)
                     {
                         Logger.Log(LogLevel.Warning, $"[TQR] Unhandled exception thrown in"
-                                                     + $" synchronized RunTasksAsync() operation."
-                                                     + $" Exception: {e.Message} - Inner Exception:"
-                                                     + $" {e.InnerException?.Message}");
+                                                     + $" synchronized RunTasksAsync() operation. \n{e}");
                     }
                 }
             }
@@ -246,9 +241,7 @@ namespace ModIO.Implementation
                     catch(Exception e)
                     {
                         Logger.Log(LogLevel.Warning, $"[TQR] Unhandled exception thrown in"
-                                                     + $" non-synchronized RunTasksAsync() operation."
-                                                     + $" Exception: {e.Message} - Inner Exception:"
-                                                     + $" {e.InnerException?.Message}");
+                                                     + $" non-synchronized RunTasksAsync() operation.\n{e}");
                     }
                 }
 

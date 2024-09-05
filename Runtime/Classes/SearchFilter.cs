@@ -26,6 +26,7 @@ namespace ModIO
         internal List<string> tags = new List<string>();
         internal List<long> users = new List<long>();
         internal bool showMatureContent = false;
+        internal int platformStatus = 0;    // 0 = null
 
         [SerializeField] internal RevenueType revenueType = RevenueType.Free;
         [SerializeField] internal int stock = Mods_DontShowSoldOut;
@@ -214,6 +215,16 @@ namespace ModIO
         public IReadOnlyList<long> GetUserIds()
         {
             return users;
+        }
+
+        /// <summary>
+        /// Adds a specific platform status to the filter to show mods that are either pending
+        /// or both pending and live. This is primarily to be used in QA of mods.
+        /// </summary>
+        /// <param name="status">Platform verified status to show mods of</param>
+        public void AddPlatformStatus(SearchFilterPlatformStatus status)
+        {
+            platformStatus = Convert.ToInt32(status);
         }
 
         /// <summary>

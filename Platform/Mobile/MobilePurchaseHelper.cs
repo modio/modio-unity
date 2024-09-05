@@ -1,5 +1,4 @@
-#if UNITY_ANDROID || UNITY_IOS
-#if MODIO_IN_APP_PURCHASING
+#if (UNITY_IOS || UNITY_ANDROID) && MODIO_MOBILE_IAP
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -110,5 +109,4 @@ namespace Plugins.mod.io.Platform.Mobile
         }
     }
 }
-#endif
 #endif

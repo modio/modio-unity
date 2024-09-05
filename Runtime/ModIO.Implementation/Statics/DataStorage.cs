@@ -22,6 +22,9 @@ namespace ModIO.Implementation
 
         static string TempImagesFolderPath => $@"{temp.RootDirectory}/images";
 
+        static ModCollectionRegistry _regSavePending = null;
+        static bool _regSaveRunning = false;
+
 #region Data Services
 
         /// <summary>Persistent data storage service.</summary>
@@ -418,12 +421,34 @@ namespace ModIO.Implementation
         /// <summary>Writes the ModCollectionRegistry to disk.</summary>
         public static async Task<Result> SaveSystemRegistry(ModCollectionRegistry registry)
         {
+            _regSavePending = registry;
+
+            if (_regSaveRunning)
+            {
+                while (_regSaveRunning)
+                {
+                    await Task.Yield();
+                }
+
+                return ResultBuilder.Success;
+            }
+
+            _regSaveRunning = true;
+
             // TODO For some platform implementations, check build settings, and create a cooldown/batching feature if required
             string filePath = GenerateSystemRegistryFilePath();
-            byte[] data = IOUtil.GenerateUTF8JSONData(registry);
 
-            return await taskRunner.AddTask(TaskPriority.HIGH, 1,
-                async () => await persistent.WriteFileAsync(filePath, data));
+            Result result = ResultBuilder.Success;
+            while(_regSavePending != null && result.Succeeded())
+            {
+                byte[] data = IOUtil.GenerateUTF8JSONData(_regSavePending);
+                _regSavePending = null;
+
+                result = await persistent.WriteFileAsync(filePath, data);
+            }
+
+            _regSaveRunning = false;
+            return result;
         }
 
         /// <summary>Reads the ModCollectionRegistry from disk.</summary>

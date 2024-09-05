@@ -201,6 +201,32 @@ namespace ModIOBrowser.Implementation
             });
         }
 
+        public void SubmitXboxAuthenticationRequestWithoutTermsHash()
+        {
+            AuthenticationPanels.Instance.OpenPanel_Waiting();
+
+            getXboxToken((token) =>
+            {
+                MonoDispatcher.Instance.Run(() =>
+                {
+                    if(string.IsNullOrEmpty(token))
+                    {
+                        currentAuthenticationPortal = UserPortal.None;
+                        AuthenticationPanels.Instance.OpenPanel_Problem("We were unable to validate your credentials with the mod.io server.");
+                        return;
+                    }
+
+                    ModIOUnity.AuthenticateUserViaXbox(token,
+                        optionalThirdPartyEmailAddressUsedForAuthentication,
+                        null,
+                        delegate (Result result)
+                        {
+                            ThirdPartyAuthenticationSubmittedWithoutTermsHash(result, UserPortal.XboxLive);
+                        });
+                });
+            });
+        }
+
         public void SubmitSwitchAuthenticationRequest()
         {
             AuthenticationPanels.Instance.OpenPanel_Waiting();
@@ -226,6 +252,33 @@ namespace ModIOBrowser.Implementation
                 });
             });
         }
+
+        public void SubmitSwitchAuthenticationRequestWithoutTermsHash()
+        {
+            AuthenticationPanels.Instance.OpenPanel_Waiting();
+
+            getSwitchToken((token) =>
+            {
+                MonoDispatcher.Instance.Run(() =>
+                {
+                    if(string.IsNullOrEmpty(token))
+                    {
+                        currentAuthenticationPortal = UserPortal.None;
+                        AuthenticationPanels.Instance.OpenPanel_Problem("We were unable to validate your credentials with the mod.io server.");
+                        return;
+                    }
+
+                    ModIOUnity.AuthenticateUserViaSwitch(token,
+                        optionalThirdPartyEmailAddressUsedForAuthentication,
+                        null,
+                        delegate (Result result)
+                        {
+                            ThirdPartyAuthenticationSubmittedWithoutTermsHash(result, UserPortal.Nintendo);
+                        });
+                });
+            });
+        }
+
         public void SubmitAppleAuthenticationRequest()
         {
             AuthenticationPanels.Instance.OpenPanel_Waiting();
@@ -300,6 +353,32 @@ namespace ModIOBrowser.Implementation
                         delegate (Result result)
                         {
                             ThirdPartyAuthenticationSubmitted(result, UserPortal.PlayStationNetwork);
+                        });
+                });
+            });
+        }
+
+        internal void SubmitPlayStationAuthenticationRequestWithoutTermsHash()
+        {
+            AuthenticationPanels.Instance.OpenPanel_Waiting();
+
+            getPlayStationAuthCode((authCode) =>
+            {
+                MonoDispatcher.Instance.Run(() =>
+                {
+                    if(string.IsNullOrEmpty(authCode))
+                    {
+                        currentAuthenticationPortal = UserPortal.None;
+                        AuthenticationPanels.Instance.OpenPanel_Problem("We were unable to validate your credentials with the mod.io server.");
+                        return;
+                    }
+
+                    ModIOUnity.AuthenticateUserViaPlayStation(authCode,
+                        optionalThirdPartyEmailAddressUsedForAuthentication,
+                        null, PSEnvironment,
+                        delegate (Result result)
+                        {
+                            ThirdPartyAuthenticationSubmittedWithoutTermsHash(result, UserPortal.PlayStationNetwork);
                         });
                 });
             });
@@ -518,6 +597,34 @@ namespace ModIOBrowser.Implementation
 
                 currentAuthenticationPortal = authenticationPortal;
                 AuthenticationPanels.Instance.OpenPanel_Complete();
+            }
+            else
+            {
+                string problemText = "We were unable to validate your credentials with the mod.io server.";
+
+                // These error codes indicate the account is a child account and therefore cannot use mod.io services.
+                // 11030 = XBOX
+                // 11085 = PSN
+                if (result.apiCode == 11030 || result.apiCode == 11085)
+                    problemText = "Child accounts are not permitted to use mod.io services.";
+
+                currentAuthenticationPortal = UserPortal.None;
+                AuthenticationPanels.Instance.OpenPanel_Problem(problemText);
+            }
+        }
+
+        void ThirdPartyAuthenticationSubmittedWithoutTermsHash(Result result, UserPortal authenticationPortal)
+        {
+            if(result.Succeeded())
+            {
+                Home.Instance.RefreshHomePanel();
+
+                currentAuthenticationPortal = authenticationPortal;
+                AuthenticationPanels.Instance.OpenPanel_Complete();
+            }
+            else if (result.apiCode == 11074)   // NO_TERMS_ACCEPTANCE
+            {
+                Instance.GetTermsOfUse();
             }
             else
             {
