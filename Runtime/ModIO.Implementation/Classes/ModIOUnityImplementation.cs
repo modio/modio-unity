@@ -17,11 +17,9 @@ using Runtime.Enums;
 using UnityEngine;
 using GameObject = ModIO.Implementation.API.Objects.GameObject;
 
-#if UNITY_IOS || UNITY_ANDROID
-#if MODIO_IN_APP_PURCHASING
+#if (UNITY_IOS || UNITY_ANDROID) && MODIO_MOBILE_IAP
 using Plugins.mod.io.Platform.Mobile;
 using Newtonsoft.Json.Linq;
-#endif
 #endif
 
 namespace ModIO.Implementation
@@ -442,7 +440,7 @@ namespace ModIO.Implementation
                 catch (Exception e)
                 {
                     shuttingDown = false;
-                    Logger.Log(LogLevel.Error, $"Exception caught when shutting down plugin: {e.Message} - inner={e.InnerException?.Message} - stacktrace: {e.StackTrace}");
+                    Logger.Log(LogLevel.Error, $"Exception caught when shutting down plugin: \n{e}");
                 }
 
 
@@ -3418,8 +3416,8 @@ namespace ModIO.Implementation
 #elif UNITY_STANDALONE && !UNITY_EDITOR
             config = API.Requests.SyncEntitlements.SteamRequest();
             requestTask = WebRequestManager.Request<SyncEntitlements.ResponseSchema>(config);
-#elif (UNITY_ANDROID || UNITY_IOS) && !UNITY_EDITOR
-#if MODIO_IN_APP_PURCHASING
+#elif ((UNITY_ANDROID || UNITY_IOS) && !UNITY_EDITOR) && MODIO_MOBILE_IAP
+
             var purchaseData = MobilePurchaseHelper.GetNextPurchase();
             var walletResponse = await ModIOUnityAsync.GetUserWalletBalance();
             if (!walletResponse.result.Succeeded())
@@ -3431,7 +3429,6 @@ namespace ModIO.Implementation
                 config = API.Requests.SyncEntitlements.AppleRequest(purchaseData.Payload);
 
             requestTask = WebRequestManager.Request<SyncEntitlements.ResponseSchema>(config);
-#endif
 #else
             return ResultAnd.Create<Entitlement[]>(ResultBuilder.Create(ResultCode.User_NotAuthenticated), null);
 #endif
@@ -3455,10 +3452,8 @@ namespace ModIO.Implementation
                             entitlements = ResponseTranslator.ConvertEntitlementObjectsToEntitlements(task.value.data);
                             ResponseCache.ReplaceEntitlements(entitlements);
                             ResponseCache.ClearWalletFromCache();
-#if (UNITY_ANDROID || UNITY_IOS) && !UNITY_EDITOR
-#if MODIO_IN_APP_PURCHASING
+#if ((UNITY_ANDROID || UNITY_IOS) && !UNITY_EDITOR) && MODIO_MOBILE_IAP
                             MobilePurchaseHelper.CompleteValidation(entitlements);
-#endif
 #endif
 
                             ModIOUnityEvents.OnUserEntitlementsChanged();

@@ -80,7 +80,7 @@ namespace ModIO.Implementation.Wss
 					{
 						Logger.Log(LogLevel.Error, $"Internal: Failed to deserialize user/token "
 						                           + $"object from WssMessage and assign to UserData."
-						                           + $"\n{e.Message}\nStacktrace: {e.StackTrace}");
+						                           + $"\n{e}");
 						result = ResultBuilder.Create(ResultCode.Internal_FailedToDeserializeObject);
 					}
 				}

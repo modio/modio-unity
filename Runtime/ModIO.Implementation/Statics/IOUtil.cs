@@ -28,7 +28,7 @@ namespace ModIO.Implementation
                 }
                 catch(Exception e)
                 {
-                    Logger.Log(LogLevel.Error, $"Failed to deserialize: {e.Message}");
+                    Logger.Log(LogLevel.Error, $"Failed to deserialize: \n{e}");
                 }
             }
 
@@ -49,7 +49,7 @@ namespace ModIO.Implementation
             }
             catch (Exception e)
             {
-                Logger.Log(LogLevel.Error, $"Failed to serialize jsonObject. Exception: {e.Message}");
+                Logger.Log(LogLevel.Error, $"Failed to serialize jsonObject. \n{e}");
                 data = null;
             }
 

@@ -31,5 +31,7 @@ namespace ModIO
         public bool Equals(ModId other) => this == other;
         public override bool Equals(object obj) => obj is ModId other && this == other;
         public override int GetHashCode() => id.GetHashCode();
+
+        public override string ToString() => id.ToString();
     }
 }

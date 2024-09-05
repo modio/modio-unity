@@ -124,7 +124,6 @@ namespace ModIOBrowser.Implementation
                 return false;
             }
 
-            Authentication.Instance.GetTermsOfUse();
             if(Authentication.getSteamAppTicket != null)
             {
                 authenticationMethodAfterAgreeingToTheTOS = Authentication.Instance.SubmitSteamAuthenticationRequest;
@@ -132,10 +131,14 @@ namespace ModIOBrowser.Implementation
             else if(Authentication.getXboxToken != null)
             {
                 authenticationMethodAfterAgreeingToTheTOS = Authentication.Instance.SubmitXboxAuthenticationRequest;
+                Authentication.Instance.SubmitXboxAuthenticationRequestWithoutTermsHash();
+                return true;
             }
             else if(Authentication.getSwitchToken != null)
             {
                 authenticationMethodAfterAgreeingToTheTOS = Authentication.Instance.SubmitSwitchAuthenticationRequest;
+                Authentication.Instance.SubmitSwitchAuthenticationRequestWithoutTermsHash();
+                return true;
             }
             else if(Authentication.getGoogleToken != null)
             {
@@ -144,6 +147,8 @@ namespace ModIOBrowser.Implementation
             else if(Authentication.getPlayStationAuthCode != null)
             {
                 authenticationMethodAfterAgreeingToTheTOS = Authentication.Instance.SubmitPlayStationAuthenticationRequest;
+                Authentication.Instance.SubmitPlayStationAuthenticationRequestWithoutTermsHash();
+                return true;
             }
             else if(Authentication.getGogAuthCode != null)
             {
@@ -161,6 +166,9 @@ namespace ModIOBrowser.Implementation
             {
                 authenticationMethodAfterAgreeingToTheTOS = OpenPanel_Email;
             }
+
+            Authentication.Instance.GetTermsOfUse();
+
             return true;
         }
 

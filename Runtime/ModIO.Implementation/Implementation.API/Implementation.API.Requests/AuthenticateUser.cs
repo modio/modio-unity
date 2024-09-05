@@ -36,7 +36,7 @@
                 DontUseAuthToken = true
             };
 
-            var agreedTerms = ResponseCache.termsHash.md5hash == hash?.md5hash;
+            var agreedTerms = ResponseCache.termsHash.md5hash == hash?.md5hash && hash?.md5hash != null;
             request.AddField(tokenFieldName, data);
             request.AddField("terms_agreed", agreedTerms.ToString());
             request.AddField("email", emailAddress);

@@ -1,4 +1,5 @@
-﻿using ModIO.Implementation.API.Requests;
+﻿using System;
+using ModIO.Implementation.API.Requests;
 
 namespace ModIO.Implementation
 {
@@ -65,6 +66,10 @@ namespace ModIO.Implementation
             int users = searchFilter.users?.Count ?? 0;
             if (users != 0)
                 url += $"&submitted_by{(users == 1 ? "=" : Filtering.In)}{string.Join(",", searchFilter.users)}";
+
+            // add platform status option
+            if (searchFilter.platformStatus > 0 && Enum.IsDefined(typeof(SearchFilterPlatformStatus), searchFilter.platformStatus))
+                url += $"&platform_status={((SearchFilterPlatformStatus)searchFilter.platformStatus).GetString()}";
 
             // add maturity option
             if(!searchFilter.showMatureContent)

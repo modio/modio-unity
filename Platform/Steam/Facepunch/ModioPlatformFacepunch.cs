@@ -15,7 +15,7 @@ namespace ModIO.Implementation.Platform
             ActivePlatform = new ModioPlatformFacepunch();
         }
 
-        public async void PerformSso(TermsHash? displayedTerms, Action<bool> onComplete, string optionalThirdPartyEmailAddressUsedForAuthentication = null)
+        public async void PerformSso(TermsHash? displayedTerms, Action<Result> onComplete, string optionalThirdPartyEmailAddressUsedForAuthentication = null)
         {
 #if UNITY_FACEPUNCH
 
@@ -25,10 +25,7 @@ namespace ModIO.Implementation.Platform
             ModIOUnity.AuthenticateUserViaSteam(base64Ticket,
                 optionalThirdPartyEmailAddressUsedForAuthentication,
                 displayedTerms,
-                result =>
-                {
-                    onComplete(result.Succeeded());
-                });
+                onComplete);
 #endif
         }
 

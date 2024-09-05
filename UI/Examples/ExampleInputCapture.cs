@@ -2,6 +2,7 @@
 using System.Linq;
 using ModIOBrowser;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 /// <summary>
 /// An Example script on how to setup the key/button bindings for the ModIO Browser. Inputs such as
@@ -14,11 +15,11 @@ using UnityEngine;
 /// is invoked. You can use InputReceiver.cs to tell the browser when a specific input has been used
 /// </summary>
 public class ExampleInputCapture : MonoBehaviour
-{    
+{
     // Submit and Horizontal/Vertical directional input is handled by default with Unity's built in
     // UI system. You can set those bindings up with the current or new Unity Input system.
     // refer to the StandaloneInputModule component on the EventSystem gameObject in scene.
-    
+
     // The following inputs are for added ergonomic use.
     [SerializeField] KeyCode Cancel = KeyCode.JoystickButton1;
     [SerializeField] KeyCode Alternate = KeyCode.JoystickButton2;
@@ -66,11 +67,33 @@ public class ExampleInputCapture : MonoBehaviour
         Search = KeyCode.Alpha3;
         Menu = KeyCode.Alpha4;
     }
-    
+
+    void Start()
+    {
+        if (Application.platform != RuntimePlatform.Switch) return;
+
+        // We have to switch the inputs of South & East for Switch exclusively, hence this is here
+
+        Cancel = KeyCode.Joystick1Button0;
+
+        // Unity's default input system handles the select button incorrectly on Switch, it treats the South button as Select
+        // whereas the East button is supposed to be select according to Switch conventions. Therefore, to fix, we have to
+        // access the StandaloneInputModule directly and swap them around using the Tuple trick below.
+        StandaloneInputModule unityInputModule = FindObjectOfType<StandaloneInputModule>();
+
+        if (unityInputModule == null)
+        {
+            Debug.Log($"Could not swap unity inputs!");
+            return;
+        }
+
+        (unityInputModule.submitButton, unityInputModule.cancelButton) = (unityInputModule.cancelButton, unityInputModule.submitButton);
+    }
+
     void Update()
     {
         if(!Browser.IsOpen) return;
-        
+
         // This is a basic example of one way to capture inputs and inform the UI browser what
         // action that that input should perform.
         //
@@ -81,7 +104,7 @@ public class ExampleInputCapture : MonoBehaviour
         // This is a basic example of how we connect the mouse and controller input to the Browser
         //
         // eg.
-        // Pressing a controller or keyboard button will turn off mouse navigation, hide the mouse, 
+        // Pressing a controller or keyboard button will turn off mouse navigation, hide the mouse,
         // and tell the browser to focus on controller navigation, and vice versa.
         HandleControllerInput();
     }

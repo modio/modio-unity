@@ -132,7 +132,7 @@ namespace ModIO.Implementation
                     catch(Exception e)
                     {
                         Logger.Log(LogLevel.Error,
-                            $"Unhandled exception extracting file. MODFILE [{modId}_{fileId}. Exception: {e.Message}");
+                            $"Unhandled exception extracting file. MODFILE [{modId}_{fileId}. \n{e}");
                         cancel = true;
                     }
                 }
@@ -154,7 +154,7 @@ namespace ModIO.Implementation
                 catch(Exception e)
                 {
                     Logger.Log(LogLevel.Error,
-                        $"Unhandled exception extracting file. MODFILE [{modId}_{fileId}. Exception: {e.Message}");
+                        $"Unhandled exception extracting file. MODFILE [{modId}_{fileId}. \n{e}");
                     cancel = true;
                 }
             }
@@ -233,7 +233,7 @@ namespace ModIO.Implementation
                     catch(Exception e)
                     {
                         Logger.Log(LogLevel.Error,
-                            $"Unhandled exception trying to read archive's extract size. MODFILE [{modId}_{fileId}. Exception: {e.Message}");
+                            $"Unhandled exception trying to read archive's extract size. MODFILE [{modId}_{fileId}. \n{e}");
                         return ResultBuilder.Create(ResultCode.IO_FileCouldNotBeRead);
                     }
                 }
