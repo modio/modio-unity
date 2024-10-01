@@ -1,11 +1,3 @@
----
-id: unity-introduction
-title: Unity Introduction
-sidebar_label: Unity Introduction
-slug: /unity/unity-introduction/
-sidebar_position: 0
----
-
 <a href="https://mod.io"><img src="https://mod.io/images/branding/modio-logo-bluewhite.svg" alt="mod.io" width="360" align="right"/></a>
 # mod.io Unity Plugin v2024.8
 [![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)](https://github.com/modio/modio-unity/blob/master/LICENSE)
