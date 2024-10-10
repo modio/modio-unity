@@ -222,6 +222,7 @@ namespace ICSharpCode.SharpZipLib.Zip
 			inputBuffer.ReadRawBuffer(buffer);
 
 			string name = ZipStrings.ConvertToStringExt(flags, buffer);
+			name = ZipStrings.ReplaceBackslashes(name);
 
 			entry = new ZipEntry(name, versionRequiredToExtract, ZipConstants.VersionMadeBy, method)
 			{
