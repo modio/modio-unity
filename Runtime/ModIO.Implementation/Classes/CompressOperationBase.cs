@@ -39,7 +39,7 @@ namespace ModIO.Implementation
             zipStream.PutNextEntry(newEntry);
 
             long max = stream.Length;
-            byte[] data = new byte[4096];
+            byte[] data = new byte[4096*1024];
             stream.Position = 0;
             while(stream.Position < stream.Length)
             {

@@ -1,3 +1,7 @@
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("Modio.Platform.Steam.Facepunch")]
+[assembly: InternalsVisibleTo("Modio.Platform.Steam.Steamworks")]
 namespace ModIO.Implementation
 {
     /// <summary>Convenience class for building Result objects.</summary>
