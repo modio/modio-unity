@@ -383,6 +383,27 @@ namespace ModIO.Implementation
             return result;
         }
 
+#if UNITY_EDITOR
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        static void AddPlayModeHook()
+        {
+            UnityEditor.EditorApplication.playModeStateChanged -= PlayModeChanged;
+            UnityEditor.EditorApplication.playModeStateChanged += PlayModeChanged;
+        }
+
+        static void PlayModeChanged(UnityEditor.PlayModeStateChange stateChange)
+        {
+            if (stateChange == UnityEditor.PlayModeStateChange.ExitingPlayMode)
+            {
+                AutoInitializePlugin = false;
+                if (isInitialized)
+                {
+                    Shutdown(null);
+                }
+            }
+        }
+#endif
+
         static void ApplyLaunchArguments(ref string userProfileIdentifier, ref ServerSettings serverSettings)
         {
             if (ModIOCommandLineArgs.TryGet("gameid", out string serializedId))
@@ -459,6 +480,7 @@ namespace ModIO.Implementation
             await WebRequestManager.Shutdown();
             await ModManagement.ShutdownOperations();
             await WssHandler.Shutdown();
+            AnalyticsManager.ShutdownAllAnalyticsSessions();
 
             isInitialized = false;
             UserData.instance = null;
@@ -854,6 +876,9 @@ namespace ModIO.Implementation
 
                     tags = ResponseTranslator.ConvertGameTagOptionsObjectToTagCategories(task.value.data);
                     ResponseCache.AddTagsToCache(tags);
+
+                    if (shuttingDown)
+                        result = ResultBuilder.Create(ResultCode.Internal_OperationCancelled);
                 }
                 else if (result.IsCancelled())
                 {
@@ -861,12 +886,18 @@ namespace ModIO.Implementation
                 }
                 else
                 {
+                    var webResult = result;
                     ResultAnd<GameTagOptionObject[]> resultDataStorage = await DataStorage.LoadTags();
-                    result = resultDataStorage.result;
+                    result = !shuttingDown ? resultDataStorage.result : ResultBuilder.Create(ResultCode.Internal_OperationCancelled);
                     if (result.Succeeded())
                     {
                         tags = ResponseTranslator.ConvertGameTagOptionsObjectToTagCategories(resultDataStorage.value);
                         ResponseCache.AddTagsToCache(tags);
+                    }
+                    else if (result.code == ResultCode.IO_FileDoesNotExist)
+                    {
+                        Logger.Log(LogLevel.Warning, $"Attempted to get Tags, but they're not cached locally and remote query failed with {webResult}");
+                        result = webResult;
                     }
                 }
             }
@@ -2901,8 +2932,8 @@ namespace ModIO.Implementation
 
                             if (result.Succeeded())
                             {
-                                var m = new ModfileDetails { modId = (ModId)modfile.modId, uploadId = response.value.upload_id };
-                                var requestConfig = await API.Requests.AddModFile.Request(m, null);
+                                modfile.uploadId = uploadId;
+                                var requestConfig = await API.Requests.AddModFile.Request(modfile, null);
 
                                 Task<ResultAnd<ModfileObject>> task = WebRequestManager.Request<ModfileObject>(requestConfig, currentUploadHandle);
                                 ResultAnd<ModfileObject> uploadResult = await openCallbacks.Run(callbackConfirmation, task);
@@ -2956,7 +2987,7 @@ namespace ModIO.Implementation
                 }
 
                 //shrink byte array if last part
-                if (endByte - startByte < chunkSize)
+                if (endByte + 1 - startByte < chunkSize)
                 {
                     data = new byte[endByte + 1 - startByte];
                     Array.Copy(buffer, data, endByte + 1 - startByte);
@@ -3847,6 +3878,85 @@ namespace ModIO.Implementation
                 return;
             }
             ResultAnd<UserDelegationToken> result = await RequestUserDelegationToken();
+            callback?.Invoke(result);
+        }
+
+
+        #endregion //Monetization
+
+        #region Analytics
+
+        public static async Task<Result> StartAnalyticsSession(string sessionId, long[] modIds, bool startHeartbeat)
+        {
+            var callbackConfirmation = openCallbacks.New();
+
+            if (IsInitialized(out var result) && IsAuthenticatedSessionValid(out result))
+            {
+                var config = API.Requests.StartAnalyticsSession.Request(sessionId, modIds);
+                result = await openCallbacks.Run(callbackConfirmation, WebRequestManager.Request(config));
+                if (!result.Succeeded())
+                {
+                    AnalyticsManager.RemoveAnalyticsSessionFromCache(sessionId);
+                }
+                else if(startHeartbeat)
+                {
+                    AnalyticsManager.StartHeartbeat(sessionId);
+                }
+            }
+
+            openCallbacks.Complete(callbackConfirmation);
+            return result;
+        }
+
+        public static async void StartAnalyticsSession(string sessionId, long[] modIds, bool startHeartbeat, Action<Result> callback)
+        {
+            Result result = await StartAnalyticsSession(sessionId, modIds, startHeartbeat);
+            callback?.Invoke(result);
+        }
+
+        public static async Task<Result> SendAnalyticsHeartbeat(string sessionId)
+        {
+            var callbackConfirmation = openCallbacks.New();
+
+            if (IsInitialized(out Result result) && IsAuthenticatedSessionValid(out result) && AnalyticsManager.IsSessionIdValid(sessionId, out result))
+            {
+                var config = API.Requests.SendAnalyticsHeartbeat.Request(sessionId);
+                result = await openCallbacks.Run(callbackConfirmation, WebRequestManager.Request(config));
+            }
+
+            openCallbacks.Complete(callbackConfirmation);
+
+            return result;
+        }
+        
+        public static async void SendAnalyticsHeartbeat(string sessionId, Action<Result> callback)
+        {
+            Result result = await SendAnalyticsHeartbeat(sessionId);
+            callback?.Invoke(result);
+        }
+
+        public static async Task<Result> EndAnalyticsSession(string sessionId)
+        {
+            var callbackConfirmation = openCallbacks.New();
+
+            if (IsInitialized(out Result result) && IsAuthenticatedSessionValid(out result) && AnalyticsManager.IsSessionIdValid(sessionId, out result))
+            {
+                var config = API.Requests.EndAnalyticsSession.Request(sessionId);
+                result = await openCallbacks.Run(callbackConfirmation, WebRequestManager.Request(config));
+                if (result.Succeeded())
+                {
+                    AnalyticsManager.RemoveAnalyticsSessionFromCache(sessionId);
+                }
+            }
+
+            openCallbacks.Complete(callbackConfirmation);
+
+            return result;
+        }
+
+        public static async void EndAnalyticsSession(string sessionId, Action<Result> callback)
+        {
+            Result result = await EndAnalyticsSession(sessionId);
             callback?.Invoke(result);
         }
 

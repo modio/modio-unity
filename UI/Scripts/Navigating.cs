@@ -169,7 +169,7 @@ namespace ModIOBrowser
                && EventSystem.current.currentSelectedGameObject == Details.Instance.ModDetailsScrollToggleGameObject)
             {
                 Vector3 position = Details.Instance.ModDetailsContentRect.position;
-                position.y += direction * (100f * Time.fixedDeltaTime) * -1f;
+                position.y += direction * (100f* Time.unscaledDeltaTime) * -1f;
                 Details.Instance.ModDetailsContentRect.position = position;
             }
         }

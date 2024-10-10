@@ -9,13 +9,13 @@ namespace ModIO.Implementation.Platform
     {
 #if UNITY_EDITOR_WIN
         /// <summary>Holds the value for the platform header value to use in requests.</summary>
-        public static string RESTAPI_HEADER = RestApiPlatform.Windows.ToString();
+        public static RestApiPlatform RESTAPI_HEADER = RestApiPlatform.Windows;
 #elif UNITY_EDITOR_OSX
         /// <summary>Holds the value for the platform header value to use in requests.</summary>
-        public static string RESTAPI_HEADER = RestApiPlatform.Mac.ToString();
+        public static RestApiPlatform RESTAPI_HEADER = RestApiPlatform.Mac;
 #elif UNITY_EDITOR_LINUX
         /// <summary>Holds the value for the platform header value to use in requests.</summary>
-        public static string RESTAPI_HEADER = RestApiPlatform.Linux.ToString();
+        public static RestApiPlatform RESTAPI_HEADER = RestApiPlatform.Linux;
 #endif
         public const bool SynchronizedDataJobs = false;
 

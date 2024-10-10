@@ -1,6 +1,7 @@
 
 public enum RestApiPlatform
 {
+    None,
     Windows,
     Mac,
     Linux,

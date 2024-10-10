@@ -122,7 +122,7 @@ namespace ModIOBrowser.Implementation
 
             while(timePassed <= transitionTime)
             {
-                timePassed += Time.fixedDeltaTime;
+                timePassed += Time.unscaledDeltaTime;
 
                 float delta = animationCurve.Evaluate(timePassed / transitionTime);
 
@@ -134,7 +134,7 @@ namespace ModIOBrowser.Implementation
                 transform.position = positionNow;
                 rectTransform.sizeDelta = startingSize + growth * delta;
 
-                yield return new WaitForSecondsRealtime(0.01f);
+                yield return null;
             }
             yield return new WaitForSecondsRealtime(0.01f);
 

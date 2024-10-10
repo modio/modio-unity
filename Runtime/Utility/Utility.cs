@@ -163,7 +163,7 @@ namespace ModIO.Util
         /// <param name="platform">new rest api platform</param>
         public static void ForceSetPlatformHeader(RestApiPlatform platform)
         {
-            PlatformConfiguration.RESTAPI_HEADER = platform.ToString();
+            PlatformConfiguration.RESTAPI_HEADER = platform;
         }
 
         /// <summary>Downloads a mod's file archive into <paramref name="archiveStream"/>.<br />Use the returned <see cref="DownloadModToStreamOperation"/> to track status and extract files.</summary>

@@ -1,0 +1,28 @@
+{
+    "name": "Modio.UI.Examples.Steam.Facepunch",
+    "rootNamespace": "",
+    "references": [
+        "GUID:f9c62b7ddb9466d4292f4aceed0feb81",
+        "GUID:65112bea60e9544dea4905e876d61428",
+        "GUID:8cbf66468884dde4caeb56bbf6de9389"
+    ],
+    "includePlatforms": [
+        "Editor",
+        "LinuxStandalone64",
+        "macOSStandalone",
+        "WindowsStandalone32",
+        "WindowsStandalone64"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Facepunch.Steamworks.Posix.dll",
+        "Facepunch.Steamworks.Win64.dll",
+        "Facepunch.Steamworks.Win32.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,3 +1,11 @@
+---
+id: unity-introduction
+title: Unity Introduction
+sidebar_label: Unity Introduction
+slug: /unity/unity-introduction/
+sidebar_position: 0
+---
+
 <a href="https://mod.io"><img src="https://mod.io/images/branding/modio-logo-bluewhite.svg" alt="mod.io" width="360" align="right"/></a>
 # mod.io Unity Plugin v2024.8
 [![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)](https://github.com/modio/modio-unity/blob/master/LICENSE)
@@ -1487,6 +1495,82 @@ void Example()
     else
     {
         Debug.Log("failed to get temp installed mods");
+    }
+}
+```
+
+# Analytics
+The mod.io SDK supports analytic features, allowing you to view your players' mod activity.
+
+The following documentation walks you through the setup process and gives example usages.
+
+When you want to start tracking analytic data you can call ```StartAnalyticsSession()```. This function requires a unique ```sessionId```, an array of ```modIds``` being used in the session,
+and the ```autoStartHeartbeat``` boolean that represents automation of the analytics heartbeat. 
+
+> [!NOTE]
+> You will need to cache your session id as it will be needed later.
+
+> [!NOTE]
+> It is recommended that you allow automation of the heartbeat function by passing in ```true```.
+
+
+```csharp
+string[] modIds;
+string sessionId;
+
+void Example()
+{
+    var r = await ModIOUnityAsync.StartAnalyticsSession(sessionId, modIds, true);
+    if (r.result.Succeeded())
+    {
+        //Store the returned session id to end the session later.
+        sessionId = r.value;
+        Debug.Log("Successfully sent start analytics session request");
+    }
+    else
+    {
+        Debug.Log("Failed to send start analytics session request");
+    }
+}
+```
+
+If you decide that you want more control over when the heartbeat function is called, you can manually call ```SendAnalyticsHeartbeat()```. This function tells our backend that the session is still active. The only parameter required is the ```sessionId``` that you used to start the analytics session.
+
+> [!NOTE]
+> Each call to ```SendAnalyticsHeartbeat()``` should be at least 5 minutes apart. 
+```csharp
+string sessionId;
+ 
+async void Example()
+{
+    Result r = await ModIOUnityAsync.SendAnalyticsHeartbeat(sessionId);
+
+    if (r.result.Succeeded())
+    {
+        Debug.Log("Successfully sent analytics heartbeat request");
+    }
+    else
+    {
+        Debug.Log("Failed to send analytics heartbeat request");
+    }
+}
+```
+
+When you are ready to end the session, you can call ```EndAnalyticsSession()``` by passing in the ```sessionId``` that you used to start the analytics session.
+
+```csharp
+string sessionId;
+async void Example()
+{
+    Result result = await ModIOUnityAsync.EndAnalyticsSession(sessionId);
+
+    if (result.Succeeded())
+    {
+        Debug.Log("Successfully sent end analytics request");
+    }
+    else
+    {
+        Debug.Log("Failed to send end analytics request");
     }
 }
 ```

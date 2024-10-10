@@ -489,7 +489,6 @@ namespace ModIO.Implementation.API
 
         static WebRequest BuildWebRequestForDownload(string url)
         {
-
             // Create request
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
             request.Method = "GET";
@@ -517,8 +516,12 @@ namespace ModIO.Implementation.API
             // Cloudflare reuses open TCP connections for up to 15 minutes (900 seconds) after the last HTTP request
             request.Connection = "true"; // is set to true by default
             request.Headers.Add(ServerConstants.HeaderKeys.LANGUAGE, Settings.server.languageCode ?? "en");
-            request.Headers.Add(ServerConstants.HeaderKeys.PLATFORM, PlatformConfiguration.RESTAPI_HEADER);
-            request.Headers.Add(ServerConstants.HeaderKeys.PORTAL, ServerConstants.ConvertUserPortalToHeaderValue(Settings.build.userPortal));
+
+            if (PlatformConfiguration.RESTAPI_HEADER != RestApiPlatform.None)
+                request.Headers.Add(ServerConstants.HeaderKeys.PLATFORM, ServerConstants.ConvertPlatformToHeaderValue(PlatformConfiguration.RESTAPI_HEADER));
+
+            if(Settings.build.userPortal != UserPortal.None)
+                request.Headers.Add(ServerConstants.HeaderKeys.PORTAL, ServerConstants.ConvertUserPortalToHeaderValue(Settings.build.userPortal));
         }
 
         static void SetConfigHeaders(WebRequest request, WebRequestConfig config)

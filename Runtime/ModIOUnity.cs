@@ -3005,6 +3005,128 @@ namespace ModIO
 
         #endregion
 
+        #region Analytics
+
+        /// <summary>
+        /// Send Request to start tracking playtime analytics. Best used after a
+        /// player has loaded into the game with their selected mods. Multiple
+        /// sessions can be active, however the session ids must be unique.
+        /// </summary>
+        /// <param name="sessionId">Must be unique (guid)</param>
+        /// <param name="modIds">Mods used for this session.</param>
+        /// <param name="startHeartbeat">Starts a heartbeat coroutine that will ping the server around every 5 min</param>
+        /// <param name="callback">callback with the result of the operation</param>
+        /// <seealso cref="StartAnalyticsSession"/>
+        /// <seealso cref="ModIOUnityAsync.StartAnalyticsSession"/>
+        /// <seealso cref="ModIOUnity.SendAnalyticsHeartbeat"/>
+        /// <seealso cref="ModIOUnityAsync.SendAnalyticsHeartbeat"/>
+        /// <seealso cref="ModIOUnity.EndAnalyticsSession"/>
+        /// <seealso cref="ModIOUnityAsync.EndAnalyticsSession"/>
+        /// <example><code>
+        /// string[] modIds;
+        /// string sessionId;
+        /// void Example()
+        /// {
+        ///     ModIOUnity.StartAnalyticsSession(sessionId, modIds, true, Callback);
+        /// }
+        /// 
+        /// void ReportCallback(ResultAnd&#60;string&#62; r)
+        /// {
+        ///     if (r.result.Succeeded())
+        ///     {
+        ///         //Store the returned session id to end the session later.
+        ///         sessionId = r.value;
+        ///         Debug.Log("successful");
+        ///     }
+        ///     else
+        ///     {
+        ///         Debug.Log("failed");
+        ///     }
+        /// }
+        /// </code></example>
+        public static void StartAnalyticsSession(string sessionId, long[] modIds, bool startHeartbeat, Action<Result> callback)
+        {
+            ModIOUnityImplementation.StartAnalyticsSession(sessionId, modIds, startHeartbeat, callback);
+        }
+        
+        /// <summary>
+        /// Send Request to start tracking playtime analytics. Best used after a
+        /// player has loaded into the game with their selected mods. Multiple
+        /// sessions can be active, however the session ids must be unique.
+        /// </summary>
+        /// <param name="sessionId">Must be unique (guid)</param>
+        /// <param name="callback">callback with the result of the operation</param>
+        /// <seealso cref="StartAnalyticsSession"/>
+        /// <seealso cref="ModIOUnityAsync.StartAnalyticsSession"/>
+        /// <seealso cref="ModIOUnity.SendAnalyticsHeartbeat"/>
+        /// <seealso cref="ModIOUnityAsync.SendAnalyticsHeartbeat"/>
+        /// <seealso cref="ModIOUnity.EndAnalyticsSession"/>
+        /// <seealso cref="ModIOUnityAsync.EndAnalyticsSession"/>
+        /// <example><code>
+        /// string sessionId;
+        /// void Example()
+        /// {
+        ///     ModIOUnity.StartAnalyticsSession(sessionId, Callback);
+        /// }
+        /// 
+        /// void ReportCallback(Result r)
+        /// {
+        ///     if (r.result.Succeeded())
+        ///     {
+        ///         //Store the returned session id to end the session later.
+        ///         sessionId = r.value;
+        ///         Debug.Log("successful");
+        ///     }
+        ///     else
+        ///     {
+        ///         Debug.Log("failed");
+        ///     }
+        /// }
+        /// </code></example>
+        public static void SendAnalyticsHeartbeat(string sessionId, Action<Result> callback)
+        {
+            ModIOUnityImplementation.SendAnalyticsHeartbeat(sessionId, callback);
+        }
+
+        /// <summary>
+        /// Send Request to end the tracking of playtime analytics. Best used after a
+        /// player has left an in game session.
+        /// </summary>
+        /// <param name="sessionId">Session id associated with the session you want to end.</param>
+        /// <param name="callback">callback with the result of the operation</param>
+        /// <seealso cref="StartAnalyticsSession"/>
+        /// <seealso cref="ModIOUnityAsync.StartAnalyticsSession"/>
+        /// <seealso cref="ModIOUnity.SendAnalyticsHeartbeat"/>
+        /// <seealso cref="ModIOUnityAsync.SendAnalyticsHeartbeat"/>
+        /// <seealso cref="ModIOUnity.EndAnalyticsSession"/>
+        /// <seealso cref="ModIOUnityAsync.EndAnalyticsSession"/>
+        /// <example><code>
+        /// string sessionId;
+        /// void Example()
+        /// {
+        ///     ModIOUnity.EndAnalyticsSession(sessionId, Callback);
+        /// }
+        ///
+        /// void ReportCallback(Result result)
+        /// {
+        ///     if (result.Succeeded())
+        ///     {
+        ///         Debug.Log("successful");
+        ///     }
+        ///     else
+        ///     {
+        ///         Debug.Log("failed");
+        ///     }
+        /// }
+        /// </code></example>
+        public static void EndAnalyticsSession(string sessionId, Action<Result> callback)
+        {
+            ModIOUnityImplementation.EndAnalyticsSession(sessionId, callback);
+        }
+
+#endregion
+
+
 #region Service to Service
 
         /// <summary>
@@ -3170,6 +3292,7 @@ namespace ModIO
         public static InstalledMod[] GetTempSystemInstalledMods(out Result result) => ModIOUnityImplementation.GetTempInstalledMods(out result);
 
         #endregion//TempModSet
+
     }
 }
 
