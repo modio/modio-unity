@@ -14,7 +14,7 @@ namespace ModIOBrowser.Implementation
         static float transitionTime = 0.25f;
 
         public RectTransform Viewport;
-        
+
         // These containers are what is getting moved in the adjustment check
         public RectTransform DefaultViewportContainer;
         public RectTransform HorizontalViewportContainer;
@@ -53,7 +53,7 @@ namespace ModIOBrowser.Implementation
             coroutineHandle = coroutine;
             StartCoroutine(coroutineHandle);
         }
-        
+
         public void CheckSelectionHorizontalVisibility()
         {
             RectTransform rt = transform as RectTransform;
@@ -65,10 +65,10 @@ namespace ModIOBrowser.Implementation
             {
                 float distance = RectTransformOverlap.DistanceFromEdgeX(rto, viewport, PercentPaddingHorizontal);
 
-                Vector2 containerPosition = HorizontalViewportContainer == null 
+                Vector2 containerPosition = HorizontalViewportContainer == null
                                             ? DefaultViewportContainer.position
                                             : HorizontalViewportContainer.position;
-                
+
                 Vector2 targetPosition = new Vector2(
                     containerPosition.x + distance,
                     containerPosition.y);
@@ -110,7 +110,7 @@ namespace ModIOBrowser.Implementation
 
             while(timePassed <= transitionTime)
             {
-                timePassed += Time.fixedDeltaTime;
+                timePassed += Time.unscaledDeltaTime;
                 time = timePassed / transitionTime;
                 current = start;
                 current += distance * time;
@@ -126,7 +126,7 @@ namespace ModIOBrowser.Implementation
 
                 parent.position = current;
 
-                yield return new WaitForSecondsRealtime(0.01f);
+                yield return null;
             }
         }
 

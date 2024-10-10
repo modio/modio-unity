@@ -2237,6 +2237,113 @@ namespace ModIO
 
 #endregion
 
+#region Analytics
+
+        /// <summary>
+        /// Send Request to start tracking playtime analytics. Best used after a
+        /// player has loaded into the game with their selected mods. Multiple
+        /// sessions can be active, however the session ids must be unique.
+        /// </summary>
+        /// <param name="sessionId">Must be unique (guid)</param>
+        /// <param name="modIds">Mods used for this session.</param>
+        /// <param name="startHeartbeat">Starts a heartbeat coroutine that will ping the server around every 5 min</param>
+        /// <seealso cref="StartAnalyticsSession"/>
+        /// <seealso cref="ModIOUnityAsync.StartAnalyticsSession"/>
+        /// <seealso cref="ModIOUnity.SendAnalyticsHeartbeat"/>
+        /// <seealso cref="ModIOUnityAsync.SendAnalyticsHeartbeat"/>
+        /// <seealso cref="ModIOUnity.EndAnalyticsSession"/>
+        /// <seealso cref="ModIOUnityAsync.EndAnalyticsSession"/>
+        /// <example><code>
+        /// string[] modIds;
+        /// string sessionId;
+        /// async void Example()
+        /// {
+        ///     ResultAnd&#60;string&#62; r = await ModIOUnityAsync.StartAnalyticsSession(sessionId, modIds);
+        /// 
+        ///     if (r.result.Succeeded())
+        ///     {
+        ///         //Store the returned session id to end the session later.
+        ///         sessionId = r.value;
+        ///         Debug.Log("successful");
+        ///     }
+        ///     else
+        ///     {
+        ///         Debug.Log("failed");
+        ///     }
+        /// }
+        /// </code></example>
+        public static async Task<Result> StartAnalyticsSession(string sessionId, long[] modIds, bool startHeartbeat)
+        {
+            return await ModIOUnityImplementation.StartAnalyticsSession(sessionId, modIds, startHeartbeat);
+        }
+        
+        /// <summary>
+        /// Send Request to start tracking playtime analytics. Best used after a
+        /// player has loaded into the game with their selected mods. Multiple
+        /// sessions can be active, however the session ids must be unique.
+        /// </summary>
+        /// <param name="sessionId">Must be unique (guid)</param>
+        /// <seealso cref="StartAnalyticsSession"/>
+        /// <seealso cref="ModIOUnityAsync.StartAnalyticsSession"/>
+        /// <seealso cref="ModIOUnity.SendAnalyticsHeartbeat"/>
+        /// <seealso cref="ModIOUnityAsync.SendAnalyticsHeartbeat"/>
+        /// <seealso cref="ModIOUnity.EndAnalyticsSession"/>
+        /// <seealso cref="ModIOUnityAsync.EndAnalyticsSession"/>
+        /// <example><code>
+        /// string sessionId;
+        /// async void Example()
+        /// {
+        ///     Result r = await ModIOUnityAsync.SendAnalyticsHeartbeat(sessionId);
+        /// 
+        ///     if (r.result.Succeeded())
+        ///     {
+        ///         Debug.Log("successful");
+        ///     }
+        ///     else
+        ///     {
+        ///         Debug.Log("failed");
+        ///     }
+        /// }
+        /// </code></example>
+        public static async Task<Result> SendAnalyticsHeartbeat(string sessionId)
+        {
+            return await ModIOUnityImplementation.SendAnalyticsHeartbeat(sessionId);
+        }
+
+        /// <summary>
+        /// Send Request to end the tracking of playtime analytics. Best used after a
+        /// player has left an in game session.
+        /// </summary>
+        /// <param name="sessionId">The session id</param>
+        /// <seealso cref="StartAnalyticsSession"/>
+        /// <seealso cref="ModIOUnityAsync.StartAnalyticsSession"/>
+        /// <seealso cref="ModIOUnity.SendAnalyticsHeartbeat"/>
+        /// <seealso cref="ModIOUnityAsync.SendAnalyticsHeartbeat"/>
+        /// <seealso cref="ModIOUnity.EndAnalyticsSession"/>
+        /// <seealso cref="ModIOUnityAsync.EndAnalyticsSession"/>
+        /// <example><code>
+        /// string sessionId;
+        /// async void Example()
+        /// {
+        ///     Result result = await ModIOUnityAsync.EndAnalyticsSession(sessionId);
+        ///
+        ///     if (result.Succeeded())
+        ///     {
+        ///         Debug.Log("successful");
+        ///     }
+        ///     else
+        ///     {
+        ///         Debug.Log("failed");
+        ///     }
+        /// }
+        /// </code></example>
+        public static async Task<Result> EndAnalyticsSession(string sessionId)
+        {
+            return await ModIOUnityImplementation.EndAnalyticsSession(sessionId);
+        }
+#endregion
+
+
 #region Service to Service
 
         /// <summary>
@@ -2303,6 +2410,7 @@ namespace ModIO
         public static async Task<Result> AddModsToTempModSet(ModId[] modIds) => await ModIOUnityImplementation.AddModsToTempModSet(modIds);
 
 #endregion //TempModSet
+
     }
 }
 
