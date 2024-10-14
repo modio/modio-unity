@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using ModIO.Implementation.API.Objects;
 using ModIO.Implementation.Platform;
 using Newtonsoft.Json;
+using Plugins.mod.io.Runtime.ModIO.Implementation.Classes;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -19,6 +20,7 @@ namespace ModIO.Implementation.API
         static bool isRunning;
 
 #region Main Request Handling
+
         public RequestHandle<Result> Download(string url, Stream downloadTo, ProgressHandle progressHandle)
         {
             var downloadHandler = new DownloadHandlerStream(downloadTo);
@@ -52,8 +54,6 @@ namespace ModIO.Implementation.API
             if (ModIOUnityImplementation.shuttingDown)
             {
                 result = ResultBuilder.Create(ResultCode.Internal_OperationCancelled);
-                Logger.Log(LogLevel.Error, $"SHUTDOWN EXCEPTION"
-                                           + $"\n{request.result}\n");
             }
             else if (request.result != UnityWebRequest.Result.Success)
             {
@@ -64,7 +64,7 @@ namespace ModIO.Implementation.API
             else
                 result = await ProcessDownloadResponse(request);
 
-            if(progressHandle != null)
+            if (progressHandle != null)
             {
                 progressHandle.Failed = !result.Succeeded();
                 progressHandle.Completed = true;
@@ -95,7 +95,7 @@ namespace ModIO.Implementation.API
                 handle.cancel = request.Abort;
             }
 
-            if(config.IsUpload)
+            if (config.IsUpload)
                 await SendUpload(request, config, progressHandle);
             else
                 await SendWebRequest(request, config);
@@ -109,7 +109,7 @@ namespace ModIO.Implementation.API
             ResultAnd<TResult> result;
             try
             {
-                if(ModIOUnityImplementation.shuttingDown)
+                if (ModIOUnityImplementation.shuttingDown)
                 {
                     if (request != null) LogRequestBeingAborted(request, config);
                     result = ResultAnd.Create(ResultCode.Internal_OperationCancelled, default(TResult));
@@ -117,7 +117,7 @@ namespace ModIO.Implementation.API
                 else
                     result = await ProcessResponse<TResult>(request, config);
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Logger.Log(LogLevel.Error, $"Unknown exception caught trying to process"
                                            + $" web request response.\nException: {e.Message}\n"
@@ -125,10 +125,10 @@ namespace ModIO.Implementation.API
                 result = ResultAnd.Create(ResultCode.Unknown, default(TResult));
             }
 
-            if(progressHandle != null)
+            if (progressHandle != null)
                 progressHandle.Failed = !result.result.Succeeded();
 
-            if(request != null)
+            if (request != null)
             {
                 // this event is added in BuildWebRequest(), we remove it here
                 WebRequestManager.ShutdownEvent -= request.Abort;
@@ -140,7 +140,7 @@ namespace ModIO.Implementation.API
         static Task SendWebRequest(UnityWebRequest request, WebRequestConfig config)
         {
             if (config.RawBodyData != null)
-                SetupRequestBodyData(request, config.RawBodyData,  "application/json");
+                SetupRequestBodyData(request, config.RawBodyData, "application/json");
             else if (config.HasStringData)
                 SetupUrlEncodedRequest(request, config, "application/x-www-form-urlencoded");
             else
@@ -169,6 +169,7 @@ namespace ModIO.Implementation.API
 
 
 #region Creating WebRequests
+
         static void LogRequestBeingSent(UnityWebRequest request, WebRequestConfig config)
         {
             string log = $"\n{config.Url}"
@@ -204,7 +205,7 @@ namespace ModIO.Implementation.API
                                         + $"\n{GenerateLogForRequestMessage(request)}"
                                         + $"\n{GenerateLogForResponseMessage(request)}";
 
-            if(IsSuccessStatusCode(statusCode))
+            if (IsSuccessStatusCode(statusCode))
             {
                 Logger.Log(LogLevel.Verbose, $"DOWNLOAD SUCCEEDED {completeRequestLog}");
                 return ResultBuilder.Success;
@@ -212,7 +213,6 @@ namespace ModIO.Implementation.API
 
             Logger.Log(LogLevel.Verbose, $"DOWNLOAD FAILED [{completeRequestLog}]");
             return await HttpStatusCodeError("binary download omitted", completeRequestLog, statusCode);
-
         }
 
         static async Task<ResultAnd<TResult>> ProcessResponse<TResult>(UnityWebRequest request, WebRequestConfig config)
@@ -230,7 +230,7 @@ namespace ModIO.Implementation.API
                                         + $"\n{GenerateLogForWebRequestConfig(config)}"
                                         + $"\n{GenerateLogForResponseMessage(request)}";
 
-            if(IsSuccessStatusCode(statusCode))
+            if (IsSuccessStatusCode(statusCode))
             {
                 Logger.Log(LogLevel.Verbose, $"SUCCEEDED {completeRequestLog}");
 
@@ -260,7 +260,7 @@ namespace ModIO.Implementation.API
         }
         static async Task MonitorProgress(UnityWebRequest request, ProgressHandle progressHandle, bool monitorDownload)
         {
-            float startedAt = Time.time;
+            float startedAt = Time.unscaledTime;
             ulong lastCalculatedSpeedAtBytes = 0;
 
             while (progressHandle != null && !request.isDone)
@@ -269,14 +269,14 @@ namespace ModIO.Implementation.API
                 progressHandle.Progress = 0.99f * (monitorDownload ? request.downloadProgress : request.uploadProgress);
 
                 ulong currentBytes = monitorDownload ? request.downloadedBytes : request.uploadedBytes;
-                float currentTime = Time.time;
+                float currentTime = Time.unscaledTime;
 
                 // update BytesPerSecond continuously for the first second, then once per second
                 if (currentTime - startedAt > 1 || lastCalculatedSpeedAtBytes == 0)
                 {
-                    progressHandle.BytesPerSecond =(long)((currentBytes - lastCalculatedSpeedAtBytes) / (currentTime - startedAt));
+                    progressHandle.BytesPerSecond = (long)((currentBytes - lastCalculatedSpeedAtBytes) / (currentTime - startedAt));
 
-                    if(currentTime - startedAt > 1)
+                    if (currentTime - startedAt > 1)
                     {
                         startedAt = currentTime;
                         lastCalculatedSpeedAtBytes = currentBytes;
@@ -292,7 +292,7 @@ namespace ModIO.Implementation.API
             return EnqueueTask(() =>
             {
                 LogRequestBeingSent(request, config);
-                if(config.RawBinaryData != null)
+                if (config.RawBinaryData != null)
                     return SendOctetUploadRequest(request, config, progressHandle);
                 return SendMultipartUploadRequest(request, config, progressHandle);
             });
@@ -383,22 +383,25 @@ namespace ModIO.Implementation.API
             // Set default headers for all requests
             request.SetRequestHeader("User-Agent", $"unity-{Application.unityVersion}-{ModIOVersion.Current.ToHeaderString()}");
             request.SetRequestHeader("Accept", "application/json");
-
             request.SetRequestHeader(ServerConstants.HeaderKeys.LANGUAGE, Settings.server.languageCode ?? "en");
-            request.SetRequestHeader(ServerConstants.HeaderKeys.PLATFORM, PlatformConfiguration.RESTAPI_HEADER);
-            request.SetRequestHeader(ServerConstants.HeaderKeys.PORTAL, ServerConstants.ConvertUserPortalToHeaderValue(Settings.build.userPortal));
+
+            if (PlatformConfiguration.RESTAPI_HEADER != RestApiPlatform.None)
+                request.SetRequestHeader(ServerConstants.HeaderKeys.PLATFORM, ServerConstants.ConvertPlatformToHeaderValue(PlatformConfiguration.RESTAPI_HEADER));
+
+            if(Settings.build.userPortal != UserPortal.None)
+                request.SetRequestHeader(ServerConstants.HeaderKeys.PORTAL, ServerConstants.ConvertUserPortalToHeaderValue(Settings.build.userPortal));
         }
 
         static void SetConfigHeaders(UnityWebRequest request, WebRequestConfig config)
         {
-            foreach(var header in config.HeaderData)
+            foreach (var header in config.HeaderData)
                 request.SetRequestHeader(header.Key, header.Value);
         }
 
         static void SetupUrlEncodedRequest(UnityWebRequest request, WebRequestConfig config, string contentType)
         {
             string kvpData = "";
-            foreach(var kvp in config.StringKvpData)
+            foreach (var kvp in config.StringKvpData)
                 kvpData += $"{Uri.EscapeDataString(kvp.Key)}={Uri.EscapeDataString(kvp.Value)}&";
             kvpData = kvpData.Trim('&');
 
@@ -417,14 +420,14 @@ namespace ModIO.Implementation.API
         {
             var multipartFormSections = new List<IMultipartFormSection>();
 
-            foreach(var binary in config.BinaryData)
+            foreach (var binary in config.BinaryData)
             {
                 string contentType = "form-data";
                 multipartFormSections.Add(new MultipartFormFileSection(binary.key, binary.data, binary.fileName, contentType));
             }
-            foreach(var kvp in config.StringKvpData)
+            foreach (var kvp in config.StringKvpData)
             {
-                if(string.IsNullOrEmpty(kvp.Value))
+                if (string.IsNullOrEmpty(kvp.Value))
                     continue;
 
                 multipartFormSections.Add(new MultipartFormDataSection(kvp.Key, kvp.Value));
@@ -464,33 +467,34 @@ namespace ModIO.Implementation.API
                 progressHandle.Progress = request.uploadProgress * 0.99f;
                 await Task.Yield();
             }
+
+            while (!request.isDone) await Task.Yield();
         }
 
 #endregion
 
 #region Processing Response Body
 
-
         static async Task<ResultAnd<T>> FormatResult<T>(string rawResponse)
         {
             //int? is used as a nullable type to denote that we are ignoring type in the response
             //ie - some commands are sent without expect any useful response aside from the response code itself
-            if(typeof(T) == typeof(int?))
+            if (typeof( T ) == typeof( int? ))
             {
                 //OnWebRequestResponse
                 return ResultAnd.Create(ResultCode.Success, default(T));
             }
 
             // If the response is empty it was likely 204: NoContent
-            if(rawResponse == null)
+            if (rawResponse == null)
                 return ResultAnd.Create(ResultBuilder.Success, default(T));
 
             try
             {
-                T deserialized = await Task.Run(()=> JsonConvert.DeserializeObject<T>(rawResponse));
+                T deserialized = await Task.Run(() => JsonConvert.DeserializeObject<T>(rawResponse));
                 return ResultAnd.Create(ResultBuilder.Success, deserialized);
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Logger.Log(LogLevel.Error,
                     $"UNRECOGNISED RESPONSE"
@@ -507,6 +511,7 @@ namespace ModIO.Implementation.API
         #endregion
 
 #region Error Handling
+
         static async Task<Result> HttpStatusCodeError(string rawResponse, string requestLog, int status)
         {
             var result = await FormatResult<ErrorObject>(rawResponse);
@@ -516,48 +521,48 @@ namespace ModIO.Implementation.API
                 $"HTTP ERROR [{status} {((HttpStatusCode)status).ToString()}]"
                 + $"\n Error ref [{result.value.error.code}] {result.value.error.error_ref} - {result.value.error.message}\n{errors}\n\n{requestLog}");
 
-            if(ResultCode.IsInvalidSession(result.value))
+            if (ResultCode.IsInvalidSession(result.value))
             {
                 UserData.instance?.SetOAuthTokenAsRejected();
                 ResponseCache.ClearCache();
 
                 return ResultBuilder.Create(ResultCode.User_InvalidToken,
-                                                       (uint)result.value.error.error_ref);
+                    (uint)result.value.error.error_ref);
             }
 
             return ResultBuilder.Create(ResultCode.API_FailedToCompleteRequest,
-                                                   (uint)result.value.error.error_ref);
-
+                (uint)result.value.error.error_ref);
         }
 
 #endregion
 
 #region Logging formatting
+
         static string GenerateLogForWebRequestConfig(WebRequestConfig config)
         {
             string log = "\nFORM BODY\n------------------------\n";
-            if(config.StringKvpData.Count > 0)
+            if (config.StringKvpData.Count > 0)
             {
                 log += "String KVPs\n";
-                foreach(var kvp in config.StringKvpData)
+                foreach (var kvp in config.StringKvpData)
                     log += $"{kvp.Key}: {kvp.Value}\n";
             }
             else
                 log += "--No String Data\n";
 
-            if((config.BinaryData == null || config.BinaryData.Count > 0) && (config.RawBinaryData == null || config.RawBinaryData.Length > 0))
+            if ((config.BinaryData == null || config.BinaryData.Count > 0) && (config.RawBinaryData == null || config.RawBinaryData.Length > 0))
                 log += "--No Binary Data\n";
             else
                 log += "Binary files\n";
 
-            if(config.BinaryData != null && config.BinaryData.Count > 0)
+            if (config.BinaryData != null && config.BinaryData.Count > 0)
             {
                 log += "Binary files\n";
-                foreach(var binData in config.BinaryData)
+                foreach (var binData in config.BinaryData)
                     log += $"{binData.key}: {binData.data.Length} bytes\n";
             }
 
-            if(config.RawBinaryData != null && config.RawBinaryData.Length > 0)
+            if (config.RawBinaryData != null && config.RawBinaryData.Length > 0)
                 log += $"Raw Binary data: {config.RawBinaryData.Length}\n";
 
 
@@ -566,7 +571,7 @@ namespace ModIO.Implementation.API
 
         static string GenerateLogForRequestMessage(UnityWebRequest request)
         {
-            if(request == null)
+            if (request == null)
                 return "\n\n------------------------ \nWebRequest is null";
             string log = "\n\n------------------------";
             string headers = $"\nREQUEST HEADERS";
@@ -579,9 +584,10 @@ namespace ModIO.Implementation.API
             LogHeader("x-modio-portal");
             LogHeader("Authorization");
             LogHeader("Content-Type");
+            LogHeader("x-modio-metrics-secret");
 
             if (request.uploadHandler != null)
-                headers += $"uploadHandler.ContentType: {request.uploadHandler.contentType}";
+                headers += $"\nuploadHandler.ContentType: {request.uploadHandler.contentType}";
 
             log += headers;
             return log;
@@ -591,7 +597,7 @@ namespace ModIO.Implementation.API
                 string requestHeader = request.GetRequestHeader(header);
                 if (!string.IsNullOrEmpty(requestHeader))
                 {
-                    if(header == "Authorization")
+                    if (header == "Authorization")
                         headers += $"\n{header}: [OAUTH-TOKEN]";
                     else
                         headers += $"\n{header}: {requestHeader}";
@@ -601,13 +607,18 @@ namespace ModIO.Implementation.API
 
         static string GenerateLogForResponseMessage(UnityWebRequest response)
         {
-            if(response == null)
+            if (response == null)
                 return "\n\n------------------------\n WebResponse is null";
 
             string log = "\n\n------------------------";
             string headers = $"\nRESPONSE HEADERS";
-            foreach(var kvp in response.GetResponseHeaders())
-                headers += $"\n{kvp.Key}: {kvp.Value}";
+
+            var responseHeaders = response.GetResponseHeaders();
+            if (responseHeaders != null)
+                foreach (var kvp in responseHeaders)
+                    headers += $"\n{kvp.Key}: {kvp.Value}";
+            else
+                headers += "\nNO HEADERS";
             log += headers;
             return log;
         }
@@ -616,12 +627,12 @@ namespace ModIO.Implementation.API
 
         static string GenerateErrorsIntoSingleLog(Dictionary<string, string> errors)
         {
-            if(errors == null || errors.Count == 0)
+            if (errors == null || errors.Count == 0)
                 return "";
 
             string log = "errors:";
             int count = 1;
-            foreach(var error in errors)
+            foreach (var error in errors)
             {
                 log += $"\n{count}. {error.Key}: {error.Value}";
                 count++;
@@ -629,7 +640,7 @@ namespace ModIO.Implementation.API
 
             return log;
         }
- #endregion
 
+ #endregion
     }
 }

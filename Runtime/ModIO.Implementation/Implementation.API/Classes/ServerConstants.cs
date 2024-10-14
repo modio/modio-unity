@@ -1,4 +1,6 @@
-﻿namespace ModIO.Implementation.API
+﻿using System;
+
+namespace ModIO.Implementation.API
 {
     /// <summary>Holds the constants used by the server.</summary>
     internal static class ServerConstants
@@ -13,84 +15,45 @@
         /// <summary>Returns the portal header value for the given UserPortal.</summary>
         public static string ConvertUserPortalToHeaderValue(UserPortal portal)
         {
-            string headerValue = null;
-
-            switch(portal)
+            string headerValue = portal switch
             {
-                case UserPortal.Apple:
-                {
-                    headerValue = "apple";
-                }
-                break;
-
-                case UserPortal.Discord:
-                {
-                    headerValue = "discord";
-                }
-                break;
-
-                case UserPortal.EpicGamesStore:
-                {
-                    headerValue = "egs";
-                }
-                break;
-
-                case UserPortal.GOG:
-                {
-                    headerValue = "gog";
-                }
-                break;
-
-                case UserPortal.Google:
-                {
-                    headerValue = "google";
-                }
-                break;
-
-                case UserPortal.itchio:
-                {
-                    headerValue = "itchio";
-                }
-                break;
-
-                case UserPortal.Nintendo:
-                {
-                    headerValue = "nintendo";
-                }
-                break;
-
-                case UserPortal.Oculus:
-                {
-                    headerValue = "oculus";
-                }
-                break;
-
-                case UserPortal.PlayStationNetwork:
-                {
-                    headerValue = "psn";
-                }
-                break;
-
-                case UserPortal.Steam:
-                {
-                    headerValue = "steam";
-                }
-                break;
-
-                case UserPortal.XboxLive:
-                {
-                    headerValue = "xboxlive";
-                }
-                break;
-
-                default:
-                {
-                    headerValue = "none";
-                }
-                break;
-            }
+                UserPortal.Apple => "apple",
+                UserPortal.Discord => "discord",
+                UserPortal.EpicGamesStore => "egs",
+                UserPortal.GOG => "gog",
+                UserPortal.Google => "google",
+                UserPortal.itchio => "itchio",
+                UserPortal.Nintendo => "nintendo",
+                UserPortal.Oculus => "oculus",
+                UserPortal.PlayStationNetwork => "psn",
+                UserPortal.Steam => "steam",
+                UserPortal.XboxLive => "xboxlive",
+                _ => null
+            };
 
             return headerValue;
+        }
+
+        public static string ConvertPlatformToHeaderValue(RestApiPlatform platform)
+        {
+            return platform switch
+            {
+                RestApiPlatform.Windows => "windows",
+                RestApiPlatform.Mac => "mac",
+                RestApiPlatform.Linux => "linux",
+                RestApiPlatform.XboxOne => "xboxone",
+                RestApiPlatform.XboxSeriesX => "xboxseriesx",
+                RestApiPlatform.Ps5 => "ps5",
+                RestApiPlatform.Ps4 => "ps4",
+                RestApiPlatform.Switch => "switch",
+                //Backend does not currently support uwp
+                RestApiPlatform.Uwp => "windows",
+                RestApiPlatform.Android => "android",
+                RestApiPlatform.Ios => "ios",
+                RestApiPlatform.Oculus => "oculus",
+                RestApiPlatform.Source => "source",
+                _ => null
+            };
         }
     }
 }

@@ -1,0 +1,24 @@
+{
+    "name": "Modio.UI.Examples.Steam.Steamworks",
+    "rootNamespace": "",
+    "references": [
+        "GUID:65112bea60e9544dea4905e876d61428",
+        "GUID:8cbf66468884dde4caeb56bbf6de9389",
+        "GUID:68bd7fdb68ef2684e982e8a9825b18a5"
+    ],
+    "includePlatforms": [
+        "Editor",
+        "LinuxStandalone64",
+        "macOSStandalone",
+        "WindowsStandalone32",
+        "WindowsStandalone64"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

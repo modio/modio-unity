@@ -12,7 +12,7 @@
         //  class is duck-typed.
 
         /// <summary>Holds the value for the platform header value to use in requests.</summary>
-        public static string RESTAPI_HEADER = null;
+        public static RestApiPlatform RESTAPI_HEADER = RestApiPlatform.None;
 
         public const bool SynchronizedDataJobs = false;
 

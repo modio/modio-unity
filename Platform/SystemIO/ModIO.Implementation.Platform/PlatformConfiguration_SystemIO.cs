@@ -9,23 +9,23 @@ namespace ModIO.Implementation.Platform
     {
 #if UNITY_STANDALONE_WIN
         /// <summary>Holds the value for the platform header value to use in requests.</summary>
-        public static string RESTAPI_HEADER = RestApiPlatform.Windows.ToString();
+        public static RestApiPlatform RESTAPI_HEADER = RestApiPlatform.Windows;
 #elif UNITY_WSA
         /// <summary>Holds the value for the platform header value to use in requests.</summary>
         /// UWP is not currently supported on the backend
-        public static string RESTAPI_HEADER = RestApiPlatform.Windows.ToString();
+        public static RestApiPlatform RESTAPI_HEADER = RestApiPlatform.Uwp;
 #elif UNITY_STANDALONE_OSX
         /// <summary>Holds the value for the platform header value to use in requests.</summary>
-        public static string RESTAPI_HEADER = RestApiPlatform.Mac.ToString();
+        public static RestApiPlatform RESTAPI_HEADER = RestApiPlatform.Mac;
 #elif UNITY_STANDALONE_LINUX
         /// <summary>Holds the value for the platform header value to use in requests.</summary>
-        public static string RESTAPI_HEADER = RestApiPlatform.Linux.ToString();
+        public static RestApiPlatform RESTAPI_HEADER = RestApiPlatform.Linux;
 #elif UNITY_ANDROID
         /// <summary>Holds the value for the platform header value to use in requests.</summary>
-        public static string RESTAPI_HEADER = RestApiPlatform.Android.ToString();
+        public static RestApiPlatform RESTAPI_HEADER = RestApiPlatform.Android;
 #elif UNITY_IOS
         /// <summary>Holds the value for the platform header value to use in requests.</summary>
-        public static string RESTAPI_HEADER = RestApiPlatform.Ios.ToString();
+        public static RestApiPlatform RESTAPI_HEADER = RestApiPlatform.Ios;
 #endif
         public const bool SynchronizedDataJobs = false;
 

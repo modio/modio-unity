@@ -1,9 +1,12 @@
 #if UNITY_STEAMWORKS
 using Steamworks;
 #endif
+
 using System;
+using ModIO;
 using UnityEngine;
 using ModIOBrowser;
+using Logger = ModIO.Implementation.Logger;
 
 public class SteamworksExample : MonoBehaviour
 {
@@ -28,6 +31,12 @@ public class SteamworksExample : MonoBehaviour
                 Browser.SetupSteamAuthenticationOption(CallbackOnReceiveCode);
             }
         });
+    }
+    
+    private void OnEncryptedAppTicketResponseCallResult(EncryptedAppTicketResponse_t response, bool ioFailure)
+    {
+        if (response.m_eResult == EResult.k_EResultOK)
+            Logger.Log(LogLevel.Verbose, "Purchase Completed!");
     }
 #endif
 }
