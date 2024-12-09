@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-#if UNITY_ANDROID
+#if UNITY_ANDROID && !MODIO_OCULUS
 using GooglePlayGames;
 #endif
 
@@ -10,11 +10,11 @@ namespace ModIO.Implementation.Platform
     {
         private void Awake()
         {
-#if UNITY_ANDROID
+#if UNITY_ANDROID && !MODIO_OCULUS
             // Enable debug logging for Play Games Platform
             PlayGamesPlatform.DebugLogEnabled = true;
             PlayGamesPlatform.Activate();
-            
+
             // Authenticate with Play Games Services
             PlayGamesPlatform.Instance.Authenticate((success) =>
             {

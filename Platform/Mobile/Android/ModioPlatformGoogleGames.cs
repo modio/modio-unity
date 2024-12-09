@@ -1,6 +1,6 @@
 ﻿using System;
 
-#if UNITY_ANDROID
+#if UNITY_ANDROID && !MODIO_OCULUS
 using GooglePlayGames;
 using UnityEngine;
 #endif
@@ -13,10 +13,10 @@ namespace ModIO.Implementation.Platform
         {
             ActivePlatform = new ModioPlatformGoogleGames();
         }
-        
+
         public void PerformSso(TermsHash? displayedTerms, Action<Result> onComplete, string optionalThirdPartyEmailAddressUsedForAuthentication = null)
         {
-#if UNITY_ANDROID
+#if UNITY_ANDROID && !MODIO_OCULUS
             GetIdToken(token =>
             {
                 ModIOUnity.AuthenticateUserViaGoogle(token,
@@ -26,8 +26,8 @@ namespace ModIO.Implementation.Platform
             });
 #endif
         }
-        
-#if UNITY_ANDROID
+
+#if UNITY_ANDROID && !MODIO_OCULUS
         void GetIdToken(Action<string> onReceivedAuthCode)
         {
             if (Application.isEditor)

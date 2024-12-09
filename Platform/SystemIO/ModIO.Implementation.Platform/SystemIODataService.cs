@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 using System.IO;
+using ModIO.Platform.Mobile.iOS;
 
 #pragma warning disable 1998 // These async functions don't use await!
 
@@ -256,14 +257,16 @@ namespace ModIO.Implementation.Platform
         //TODO: Write native code to properly check for disk space for ILLCPP builds
         public async Task<bool> IsThereEnoughDiskSpaceFor(long bytes)
         {
-#if ENABLE_IL2CPP
-    #if UNITY_ANDROID
+#if UNITY_ANDROID
+            Logger.Log(LogLevel.Verbose, $"Calling Android native function to get free space");
             AndroidJNI.AttachCurrentThread();
             var statFs = new AndroidJavaObject("android.os.StatFs", PersistentDataRootDirectory);
             var freeBytes = statFs.Call<long>("getFreeBytes");
             return bytes < freeBytes;
-    #elif UNITY_IOS
-            return true;
+#elif ENABLE_IL2CPP
+    #if UNITY_IOS
+            Logger.Log(LogLevel.Verbose, $"Calling iOS native function to get free space");
+            return NativeIosBridge.GetAvailableDiskSpace() > bytes;
     #elif UNITY_STANDALONE_OSX
             return true;
     #elif UNITY_STANDALONE_WIN

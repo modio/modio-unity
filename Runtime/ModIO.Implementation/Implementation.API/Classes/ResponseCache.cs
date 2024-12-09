@@ -554,6 +554,8 @@ namespace ModIO.Implementation.API
         }
         public static bool GetWalletFromCache(out Wallet w) => (w = wallet) != null;
 
+        public static bool GetTokenPacksFromCache(out TokenPack[] packs) => (packs = tokenPacks) != null;
+
 #endregion // Getting entries from Cache
 #region Clearing Cache entries
         public static void ReplaceCurrentUserRatings(Rating[] ratings)

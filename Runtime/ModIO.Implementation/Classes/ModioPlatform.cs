@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Threading.Tasks;
 using ModIO.Implementation.API;
 using UnityEngine;
@@ -15,10 +16,12 @@ namespace ModIO.Implementation
                 if(_activePlatform != null)
                     return _activePlatform;
 
-                if (!Application.isConsolePlatform)
+                if (IsInitializing)
+                    Logger.Log(LogLevel.Warning, $"Platform Initialization still in progress! Returning null");
+                else if (!Application.isConsolePlatform )
                     _activePlatform = new ModioPlatform();
                 else
-                    Logger.Log(LogLevel.Error, "You must ser a ModioPlatform before calling some Modio classes on consoles");
+                    Logger.Log(LogLevel.Error, "You must set a ModioPlatform before calling some Modio classes on consoles");
 
                 return _activePlatform;
             }
@@ -30,8 +33,14 @@ namespace ModIO.Implementation
                                                  + "Any previously called methods may have been called on the previous one");
                 }
                 _activePlatform = value;
+                isInitializing = false;
             }
         }
+
+        /// <summary>Is the platform ready to be accessed?</summary>
+        public static bool IsInitializing => isInitializing;
+
+        static bool isInitializing = false;
 
 
         /// <summary>
@@ -42,6 +51,17 @@ namespace ModIO.Implementation
         public virtual void OpenWebPage(string url)
         {
             Application.OpenURL(url);
+        }
+
+        public virtual bool TryOpenVirtualKeyboard(string title,
+                                                   string text,
+                                                   string placeholder,
+                                                   ModioVirtualKeyboardType virtualKeyboardType,
+                                                   int characterLimit,
+                                                   bool multiline,
+                                                   Action<string> onClose)
+        {
+            return false;
         }
 
         public virtual bool TokenPackAvailableOnPlatform(TokenPack tokenPack)
@@ -89,5 +109,9 @@ namespace ModIO.Implementation
 #endif
             return false;
         }
+
+        /// <summary>Tells the plugin that while the platform is not ready to be accessed,
+        /// it is being initialized and should wait until the platform is set.</summary>
+        public static void SetInitializing() => isInitializing = true;
     }
 }

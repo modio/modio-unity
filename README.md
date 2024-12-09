@@ -7,7 +7,7 @@ sidebar_position: 0
 ---
 
 <a href="https://mod.io"><img src="https://mod.io/images/branding/modio-logo-bluewhite.svg" alt="mod.io" width="360" align="right"/></a>
-# mod.io Unity Plugin v2024.8
+# mod.io Unity Plugin v2024.11
 [![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)](https://github.com/modio/modio-unity/blob/master/LICENSE)
 [![Discord](https://img.shields.io/discord/389039439487434752.svg?label=Discord&logo=discord&color=7289DA&labelColor=2C2F33)](https://discord.mod.io)
 [![Master docs](https://img.shields.io/badge/docs-master-green.svg)](https://docs.mod.io/unity/)
@@ -1291,7 +1291,7 @@ The following documentation walks you through the setup process and gives exampl
 The first thing you will need to do is enable the marketplace in the mod.io portal for your game under Admin->Monetization->Settings->Enable Marketplace.
 
 ### Get User Wallet Balance
-Returns the current user's token balance.
+Returns the current user's virtual currency credits balance.
 
 > [!NOTE]
 > This function creates a wallet for the user the first time it is called so this must be called before any sync entitlements calls.
@@ -1300,14 +1300,14 @@ async void GetUserWalletBalanceExample()
 {
     var response = await ModIOUnityAsync.GetUserWalletBalance();
     if (response.result.Succeeded())
-        Debug.Log($"User has a balance of {response.value.balance} tokens.");
+        Debug.Log($"User has a balance of {response.value.balance} credits.");
     else
         Debug.Log("failed to get balance");
 }
 ```
 
 ### Purchase Item
-Purchases a mod using tokens.
+Purchases a mod using virtual currency credits.
 ```csharp
 async void PurchaseItemExample()
 {
@@ -1339,14 +1339,14 @@ async void GetUserPurchases()
 
 ### Syncing Purchases with Steam
 > [!NOTE]
-> Setup token pack SKUs from your game's mod.io website dashboard by navigating to `Admin -> Monetization -> Manage SKUs`.
+> Setup virtual currency pack SKUs from your game's mod.io website dashboard by navigating to `Admin -> Monetization -> Manage SKUs`.
 
 > [!NOTE]
 > > The GetUserWalletBalanceExample function creates a wallet for the user the first time it is called so this must be called before any sync entitlements calls.
 
-Once you have setup SKUs for your users to purchase tokens through Steam, you can sync these purchases with the mod.io server using the `SyncEntitlments()` method. 
+Once you have setup SKUs for your users to purchase virtual currency packs through Steam, you can sync these purchases with the mod.io server using the `SyncEntitlments()` method. 
 
-After a user purchases a token pack on Steam, calling `SyncEntitlements()` will consume the purchased item, and add those tokens to the user's wallet. Below is a very simple example of how to use the method:
+After a user purchases a virtual currency pack on Steam, calling `SyncEntitlements()` will consume the purchased item, and add those credits to the user's wallet. Below is a very simple example of how to use the method:
 
 > [!WARNING]  
 > It is highly recommended that you call `SyncEntitlements()` after any successful external purchase.

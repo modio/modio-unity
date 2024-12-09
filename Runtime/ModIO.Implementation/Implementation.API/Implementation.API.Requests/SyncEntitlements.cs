@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System;
+using System.Net;
 using System.Threading.Tasks;
 using ModIO.Implementation.API.Objects;
 using ModIO.Util;
@@ -50,6 +51,27 @@ namespace ModIO.Implementation.API.Requests
                 ShouldRequestTimeout = false,
             };
             request.AddField("receipt",  receipt);
+
+            return request;
+        }
+
+        public static WebRequestConfig OculusRequest(long userId, OculusDevice device)
+        {
+            var request = new WebRequestConfig()
+            {
+                Url = $"{Settings.server.serverURL}{@"/me/iap/meta/sync"}",
+                RequestMethodType = "POST",
+                ShouldRequestTimeout = false,
+            };
+
+            string deviceString = device switch
+            {
+                OculusDevice.Quest => "quest",
+                OculusDevice.Rift => "rift",
+            };
+
+            request.AddField("device", deviceString);
+            request.AddField("user_id", userId.ToString());
 
             return request;
         }

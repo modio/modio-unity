@@ -315,7 +315,7 @@ namespace ModIO.Implementation.Platform
                     // UnauthorizedAccessException
                     // The caller does not have the required permission.
 
-                    Logger.Log(LogLevel.Verbose,
+                    Logger.Log(LogLevel.Error,
                                "UnauthorizedAccessException when attempting to create directory."
                                    + $"\n.path={directoryPath}" + $"\n.Exception:{e.Message}");
 
@@ -323,7 +323,7 @@ namespace ModIO.Implementation.Platform
                 }
                 catch (Exception e)
                 {
-                    Logger.Log(LogLevel.Warning,
+                    Logger.Log(LogLevel.Error,
                                "Unhandled error when attempting to create the directory."
                                    + $"\n.path={directoryPath}" + $"\n.Exception:{e.Message}");
 

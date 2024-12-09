@@ -2235,6 +2235,11 @@ namespace ModIO
             return await ModIOUnityImplementation.GetUserWalletBalance();
         }
 
+        public static async Task<ResultAnd<TokenPack[]>> GetGameTokenPacks()
+        {
+            return await ModIOUnityImplementation.GetGameTokenPacks();
+        }
+
 #endregion
 
 #region Analytics
@@ -2259,7 +2264,7 @@ namespace ModIO
         /// async void Example()
         /// {
         ///     ResultAnd&#60;string&#62; r = await ModIOUnityAsync.StartAnalyticsSession(sessionId, modIds);
-        /// 
+        ///
         ///     if (r.result.Succeeded())
         ///     {
         ///         //Store the returned session id to end the session later.
@@ -2276,7 +2281,7 @@ namespace ModIO
         {
             return await ModIOUnityImplementation.StartAnalyticsSession(sessionId, modIds, startHeartbeat);
         }
-        
+
         /// <summary>
         /// Send Request to start tracking playtime analytics. Best used after a
         /// player has loaded into the game with their selected mods. Multiple
@@ -2294,7 +2299,7 @@ namespace ModIO
         /// async void Example()
         /// {
         ///     Result r = await ModIOUnityAsync.SendAnalyticsHeartbeat(sessionId);
-        /// 
+        ///
         ///     if (r.result.Succeeded())
         ///     {
         ///         Debug.Log("successful");
