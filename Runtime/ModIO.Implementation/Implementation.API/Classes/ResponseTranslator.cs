@@ -18,7 +18,25 @@ namespace ModIO.Implementation
         static readonly DateTime UnixEpoch =
             new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);
 
-        public static TokenPack[] ConvertTokenPackObjectsToTokenPacks(IEnumerable<TokenPackObject> tokenPackObjects) => tokenPackObjects.GroupBy(tokenPackObject => tokenPackObject.token_pack_id).Select(tokenPack => new TokenPack(tokenPack)).ToArray();
+        public static TokenPack[] ConvertTokenPackObjectsToTokenPacks(IEnumerable<TokenPackObject> tokenPackObjects)
+            => tokenPackObjects
+                .GroupBy(tokenPackObject => tokenPackObject.token_pack_id)
+                .Select(tokenPack => new TokenPack(tokenPack))
+                .ToArray();
+
+        public static TokenPack[] ConvertResponseSchemaToTokenPacks(API.Requests.GetGameTokenPacks.ResponseSchema schema)
+        {
+            var tokenPacks = Array.Empty<TokenPack>();
+
+            if (schema == null)
+                return tokenPacks;
+
+            tokenPacks = ConvertTokenPackObjectsToTokenPacks(schema.data);
+
+            ResponseCache.AddTokenPacksToCache(tokenPacks);
+
+            return tokenPacks;
+        }
 
         public static Wallet ConvertWalletObjectToWallet(WalletObject walletObject)
         {

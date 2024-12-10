@@ -12,7 +12,7 @@ namespace ModIO.Implementation
 #endregion
 
     /// <summary>Asset representation of a collection of build-settings.</summary>
-    internal class SettingsAsset : ScriptableObject
+    public class SettingsAsset : ScriptableObject
     {
         private void Awake()
         {
@@ -35,12 +35,17 @@ namespace ModIO.Implementation
 
         /// <summary>Data path for the asset.</summary>
         public const string FilePath = @"mod.io/config";
+        public const string FilePathOverride = @"mod.io/config_local";
 
         /// <summary>Loads the settings asset at the default path.</summary>
         public static Result TryLoad(out ServerSettings serverSettings,
                                      out BuildSettings buildSettings, out UISettings uiSettings)
         {
-            SettingsAsset asset = Resources.Load<SettingsAsset>(FilePath);
+            //Attempt to load the local override first
+            SettingsAsset asset = Resources.Load<SettingsAsset>(FilePathOverride);
+
+            if(asset == null)
+                asset = Resources.Load<SettingsAsset>(FilePath);
 
             if(asset == null)
             {
@@ -116,19 +121,19 @@ namespace ModIO.Implementation
         /// <summary>Level to log at.</summary>
         [SerializeField] private LogLevel editorLogLevel;
         /// <summary>Configuration for iOS.</summary>
-        [SerializeField] private BuildSettings iosConfiguration;
+        [SerializeField] private BuildSettings iosConfiguration = new BuildSettings();
         /// <summary>Configuration for Windows.</summary>
-        [SerializeField] private BuildSettings standaloneConfiguration;
+        [SerializeField] private BuildSettings standaloneConfiguration = new BuildSettings();
         /// <summary>Configuration for Android.</summary>
-        [SerializeField] private BuildSettings androidConfiguration;
+        [SerializeField] private BuildSettings androidConfiguration = new BuildSettings();
         /// <summary>Configuration for Switch.</summary>
-        [SerializeField] private SwitchBuildSettings switchConfiguration;
+        [SerializeField] private SwitchBuildSettings switchConfiguration = new SwitchBuildSettings();
         /// <summary>Configuration for Gamecore.</summary>
-        [SerializeField] private GameCoreBuildSettings gameCoreConfiguration;
+        [SerializeField] private GameCoreBuildSettings gameCoreConfiguration = new GameCoreBuildSettings();
         /// <summary>Configuration for Playstation.</summary>
-        [SerializeField] private PlaystationBuildSettings playstationConfiguration;
+        [SerializeField] private PlaystationBuildSettings playstationConfiguration = new PlaystationBuildSettings();
         /// <summary>Configuration for the editor.</summary>
-        [SerializeField] private BuildSettings editorConfiguration;
+        [SerializeField] private BuildSettings editorConfiguration = new BuildSettings();
 
         private BuildSettings GetBuildSettings()
         {

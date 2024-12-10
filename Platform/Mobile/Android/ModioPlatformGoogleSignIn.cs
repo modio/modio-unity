@@ -5,7 +5,7 @@ namespace ModIO.Implementation.Platform
     public class ModioPlatformGoogleSignIn : ModioPlatform, IModioSsoPlatform
     {
         private string idToken;
-        
+
         public static void SetAsPlatform(string idToken)
         {
             ActivePlatform = new ModioPlatformGoogleSignIn
@@ -15,7 +15,7 @@ namespace ModIO.Implementation.Platform
         }
         public void PerformSso(TermsHash? displayedTerms, Action<Result> onComplete, string optionalThirdPartyEmailAddressUsedForAuthentication = null)
         {
-#if UNITY_ANDROID
+#if UNITY_ANDROID && !MODIO_OCULUS
             ModIOUnity.AuthenticateUserViaGoogle(idToken,
                 optionalThirdPartyEmailAddressUsedForAuthentication,
                 displayedTerms,

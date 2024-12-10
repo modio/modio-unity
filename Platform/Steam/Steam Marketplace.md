@@ -20,8 +20,8 @@ Steamworks.Net is closer to the actual C++ implementation. Facepunch is more use
 of C# libraries.
 
 ### Sync Entitlements
-Synchronizes purchased tokens through the Steam Store with the mod.io server. This must be called to update the user's
-balance after purchasing token packs. This is done for you automatically in FetchUpdates() but can be called manually 
+Synchronizes purchased virtual currency packs through the Steam Store with the mod.io server. This must be called to update the user's
+balance after purchasing virtual currency packs. This is done for you automatically in FetchUpdates() but can be called manually 
 if needed.
 ```csharp
 async void SyncEntitlements()
@@ -29,7 +29,7 @@ async void SyncEntitlements()
     var response = await ModIOUnityAsync.SyncEntitlements();
     if(response.result.Succeeded())
     {
-        Debug.Log("Token packs have been added to user's balance");
+        Debug.Log("Virtual currency packs have been added to user's balance");
     }
 }
 ```

@@ -29,6 +29,8 @@ namespace ModIO.Implementation.API
 
         public RequestHandle<Result> Download(string url, string downloadToFilepath, ProgressHandle progressHandle)
         {
+            // Note that there's multiple versions of DownloadHandlerFile
+            // We have legacy implementations of it for some console platforms which will hijack this call
             var downloadHandler = new DownloadHandlerFile(downloadToFilepath);
             return RunDownload(url, progressHandle, downloadHandler);
         }

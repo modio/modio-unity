@@ -1,4 +1,6 @@
-﻿namespace ModIO
+﻿using UnityEngine;
+
+namespace ModIO
 {
     /// <summary>
     /// Describes the server settings to use for the ModIO Plugin.
@@ -19,6 +21,7 @@
             this.disableUploads = serverSettings.disableUploads;
             this.languageCode = serverSettings.languageCode;
             this.useCommandLineArgumentOverrides = serverSettings.useCommandLineArgumentOverrides;
+            this.fallbackToEmailAuth = serverSettings.fallbackToEmailAuth;
         }
 
         /// <summary>URL for the mod.io server to connect to.</summary>
@@ -41,5 +44,8 @@
 
         /// <summary>Enables the use of command line arguments to override server settings.</summary>
         public bool useCommandLineArgumentOverrides;
+
+        [Tooltip("Allows the ComponentUI System to fallback to email authentication")]
+        public bool fallbackToEmailAuth;
     }
 }

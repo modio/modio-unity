@@ -3003,6 +3003,11 @@ namespace ModIO
             ModIOUnityImplementation.GetUserWalletBalance(callback);
         }
 
+        public static void GetGameTokenPacks(Action<ResultAnd<TokenPack[]>> callback)
+        {
+            ModIOUnityImplementation.GetGameTokenPacks(callback);
+        }
+
         #endregion
 
         #region Analytics
@@ -3029,7 +3034,7 @@ namespace ModIO
         /// {
         ///     ModIOUnity.StartAnalyticsSession(sessionId, modIds, true, Callback);
         /// }
-        /// 
+        ///
         /// void ReportCallback(ResultAnd&#60;string&#62; r)
         /// {
         ///     if (r.result.Succeeded())
@@ -3048,7 +3053,7 @@ namespace ModIO
         {
             ModIOUnityImplementation.StartAnalyticsSession(sessionId, modIds, startHeartbeat, callback);
         }
-        
+
         /// <summary>
         /// Send Request to start tracking playtime analytics. Best used after a
         /// player has loaded into the game with their selected mods. Multiple
@@ -3068,7 +3073,7 @@ namespace ModIO
         /// {
         ///     ModIOUnity.StartAnalyticsSession(sessionId, Callback);
         /// }
-        /// 
+        ///
         /// void ReportCallback(Result r)
         /// {
         ///     if (r.result.Succeeded())

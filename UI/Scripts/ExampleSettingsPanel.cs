@@ -36,13 +36,13 @@ namespace ModIO.Implementation
 
         public void SetProductionUrl()
         {
-            urlToUse = $"https://g-{Settings.server.gameId}.modapi.io/v1";
+            urlToUse = $"https://g-{gameIdInputField.text}.modapi.io/v1";
             currentServerUrlText.text = $"Server Url: {urlToUse}";
         }
 
         public void SetTestUrl()
         {
-            urlToUse = "https://api.test.mod.io/v1";
+            urlToUse = "https://api-staging.moddemo.io/v1";
             currentServerUrlText.text = $"Server Url: {urlToUse}";
         }
 

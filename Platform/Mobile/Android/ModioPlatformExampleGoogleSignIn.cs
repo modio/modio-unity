@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-#if UNITY_ANDROID
+#if UNITY_ANDROID && !MODIO_OCULUS
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -16,12 +16,12 @@ namespace ModIO.Implementation.Platform
 
         private void Awake()
         {
-#if UNITY_ANDROID
+#if UNITY_ANDROID && !MODIO_OCULUS
             SignInSilently();
 #endif
         }
 
-#if UNITY_ANDROID
+#if UNITY_ANDROID && !MODIO_OCULUS
         async void SignInSilently()
         {
             if (Application.isEditor)

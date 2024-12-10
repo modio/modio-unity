@@ -10,9 +10,17 @@ namespace ModIO.Implementation.Platform
 {
     public class ModioPlatformFacepunch : ModioPlatform, IModioSsoPlatform
     {
+        static bool OverlayActive { get; set; }
         public static void SetAsPlatform()
         {
             ActivePlatform = new ModioPlatformFacepunch();
+            #if UNITY_FACEPUNCH
+            SteamFriends.OnGameOverlayActivated += OnGameOverlayActiveStateChanged;
+            #endif
+        }
+        static void OnGameOverlayActiveStateChanged(bool overlayActive)
+        {
+            OverlayActive = overlayActive;
         }
 
         public async void PerformSso(TermsHash? displayedTerms, Action<Result> onComplete, string optionalThirdPartyEmailAddressUsedForAuthentication = null)
@@ -32,21 +40,34 @@ namespace ModIO.Implementation.Platform
         public override async Task<Result> OpenPlatformPurchaseFlow()
         {
 #if UNITY_FACEPUNCH
+            if (!SteamClient.IsValid)
+            {
+                Logger.Log(LogLevel.Error, "Steam client is not valid.");
+                return ResultBuilder.Unknown;
+            }
+
+            if (!SteamUtils.IsOverlayEnabled)
+            {
+                Logger.Log(LogLevel.Error, "Steam overlay is not enabled, or was accessed too early.");
+                return ResultBuilder.Unknown;
+            }
+
             SteamFriends.OpenStoreOverlay(SteamClient.AppId);
 
             float timeoutAt = Time.unscaledTime + 5f;
-            while (!SteamUtils.IsOverlayEnabled && Time.unscaledTime < timeoutAt)
+
+            while (!OverlayActive && Time.unscaledTime < timeoutAt)
             {
                 await Task.Yield();
             }
 
-            if (!SteamUtils.IsOverlayEnabled)
+            if (!OverlayActive)
             {
                 Logger.Log(LogLevel.Error, "Steam overlay never opened");
                 return ResultBuilder.Unknown;
             }
 
-            while (SteamUtils.IsOverlayEnabled)
+            while (OverlayActive)
             {
                 await Task.Yield();
             }

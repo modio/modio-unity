@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using ModIO.Implementation.API;
 using ModIO.Implementation.API.Objects;
 using Runtime.Enums;
+using UnityEngine;
 
 namespace ModIO.Implementation
 {
@@ -427,12 +428,23 @@ namespace ModIO.Implementation
             long modId = job.modEntry.modObject.id;
             long fileId = job.modEntry.modObject.modfile.id;
 
-            long totalArchiveFileSize = job.modEntry.modObject.modfile.filesize + job.modEntry.modObject.modfile.filesize_uncompressed;
+            bool hasEnoughSpace;
 
-            // Check for enough storage space
-            // Since we need both the archive & the mods install, we check if we can fit both
-            // Should prevent rogue archives from stealing away our storage space
-            if(!await DataStorage.temp.IsThereEnoughDiskSpaceFor(totalArchiveFileSize))
+            // Consoles separate storage into temporary & persistent, so we check them separately
+            if (Application.isConsolePlatform)
+            {
+                hasEnoughSpace =
+                    await DataStorage.temp.IsThereEnoughDiskSpaceFor(job.modEntry.modObject.modfile.filesize)
+                    && await DataStorage.persistent.IsThereEnoughDiskSpaceFor(job.modEntry.modObject.modfile.filesize_uncompressed);
+            }
+            else
+            {
+                // On other platforms, these locations refer to the same drive
+                long totalRequiredSpace = job.modEntry.modObject.modfile.filesize + job.modEntry.modObject.modfile.filesize_uncompressed;
+                hasEnoughSpace = await DataStorage.persistent.IsThereEnoughDiskSpaceFor(totalRequiredSpace);
+            }
+
+            if(!hasEnoughSpace)
             {
                 Logger.Log(LogLevel.Error, $"INSUFFICIENT STORAGE FOR DOWNLOAD [{modId}_{fileId}]");
                 notEnoughStorageMods.Add((ModId)modId);

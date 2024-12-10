@@ -173,7 +173,7 @@ namespace ModIO.Implementation
             if (UserData.instance == null || string.IsNullOrEmpty(UserData.instance.oAuthToken))
             {
                 Logger.Log(
-                    LogLevel.Verbose,
+                    LogLevel.Message,
                     "The current session is not authenticated.");
                 result = ResultBuilder.Create(ResultCode.User_NotAuthenticated);
                 return false;
@@ -370,8 +370,7 @@ namespace ModIO.Implementation
 
             Result result = SettingsAsset.TryLoad(out serverSettings, out buildSettings, out uiSettings);
 
-            if (serverSettings.useCommandLineArgumentOverrides)
-                ApplyLaunchArguments(ref userProfileIdentifier, ref serverSettings);
+            ApplyLaunchArguments(ref userProfileIdentifier, ref serverSettings, ref buildSettings);
 
             if (result.Succeeded())
             {
@@ -404,8 +403,20 @@ namespace ModIO.Implementation
         }
 #endif
 
-        static void ApplyLaunchArguments(ref string userProfileIdentifier, ref ServerSettings serverSettings)
+        static void ApplyLaunchArguments(ref string userProfileIdentifier, ref ServerSettings serverSettings, ref BuildSettings buildSettings)
         {
+            if (ModIOCommandLineArgs.TryGet("loglevel", out string logLevel))
+            {
+                if (Enum.TryParse(logLevel, true, out LogLevel logLevelEnum))
+                    buildSettings.logLevel = logLevelEnum;
+                else
+                    Debug.LogError($"Unrecognized log level: {logLevel}");
+            }
+
+            //respect this for things that change functionality, but ignore for log level
+            if (!serverSettings.useCommandLineArgumentOverrides)
+                return;
+
             if (ModIOCommandLineArgs.TryGet("gameid", out string serializedId))
                 serverSettings.gameId = uint.Parse(serializedId);
 
@@ -3444,6 +3455,21 @@ namespace ModIO.Implementation
                 config = API.Requests.SyncEntitlements.PsnRequest(token.code, token.environment, psb.serviceLabel);
                 requestTask = WebRequestManager.Request<SyncEntitlements.ResponseSchema>(config);
             }
+#elif MODIO_OCULUS
+            OculusDevice device = Application.platform == RuntimePlatform.Android
+                ? OculusDevice.Quest
+                : OculusDevice.Rift;
+
+            var userId = await ModioPlatformOculus.GetCurrentUserId();
+
+            if (!userId.result.Succeeded())
+            {
+                Logger.Log(LogLevel.Error, "Error getting User Id, cannot sync Oculus entitlements");
+                return ResultAnd.Create(ResultCode.User_InvalidToken, entitlements);
+            }
+
+            config = API.Requests.SyncEntitlements.OculusRequest(userId.value, device);
+            requestTask = WebRequestManager.Request<SyncEntitlements.ResponseSchema>(config);
 #elif UNITY_STANDALONE && !UNITY_EDITOR
             config = API.Requests.SyncEntitlements.SteamRequest();
             requestTask = WebRequestManager.Request<SyncEntitlements.ResponseSchema>(config);
@@ -3693,6 +3719,62 @@ namespace ModIO.Implementation
             callback?.Invoke(result);
         }
 
+        public static async Task<ResultAnd<TokenPack[]>> GetGameTokenPacks()
+        {
+            var callbackConfirmation = openCallbacks.New();
+
+            ResultAnd<TokenPack[]> result = ResultAnd.Create<TokenPack[]>(ResultCode.Success,default);
+            TokenPack[] tokenPacks = Array.Empty<TokenPack>();
+
+            if (IsInitialized(out result.result)
+                && IsAuthenticatedSessionValid(out result.result)
+                && !ResponseCache.GetTokenPacksFromCache(out tokenPacks))
+            {
+                result.result = await IsMarketplaceEnabled();
+
+                if (!result.result.Succeeded())
+                {
+                    Logger.Log(LogLevel.Error, $"Monetization is not enabled for this game!");
+                    return result;
+                }
+
+                var config = API.Requests.GetGameTokenPacks.Request();
+
+                var task = await openCallbacks.Run(callbackConfirmation,
+                    WebRequestManager.Request<API.Requests.GetGameTokenPacks.ResponseSchema>(config));
+
+                result.result = task.result;
+
+                if (!result.result.Succeeded())
+                {
+                    Logger.Log(LogLevel.Error, $"Error getting Token Packs: {result.result}");
+                    return result;
+                }
+
+                tokenPacks = ResponseTranslator.ConvertResponseSchemaToTokenPacks(task.value);
+            }
+
+            result.value = tokenPacks;
+            openCallbacks.Complete(callbackConfirmation);
+
+            return result;
+        }
+
+        public static async void GetGameTokenPacks(Action<ResultAnd<TokenPack[]>> callback)
+        {
+            if (callback == null)
+            {
+                Logger.Log(
+                    LogLevel.Warning,
+                    "No callback was given to the GetGameTokenPacks method, any response "
+                    + "returned from the server wont be used. This operation  has been cancelled.");
+                return;
+            }
+
+            var result = await GetGameTokenPacks();
+            callback?.Invoke(result);
+        }
+
         #endregion //Monetization
 
         #region TempModSet
@@ -3928,7 +4010,7 @@ namespace ModIO.Implementation
 
             return result;
         }
-        
+
         public static async void SendAnalyticsHeartbeat(string sessionId, Action<Result> callback)
         {
             Result result = await SendAnalyticsHeartbeat(sessionId);

@@ -3,6 +3,7 @@ using System;
 using System.Text;
 
 #if UNITY_IOS
+using ModIO.Platform.Mobile.iOS;
 using AppleAuth;
 using AppleAuth.Enums;
 using AppleAuth.Extensions;
@@ -46,15 +47,35 @@ namespace ModIO.Implementation.Platform
             }
         }
 #endif
+        public override bool TryGetAvailableDiskSpace(out long availableFreeSpace)
+        {
+#if UNITY_IOS
+            try
+            {
+                availableFreeSpace = NativeIosBridge.GetAvailableDiskSpace();
+                return true;
+            }
+            catch (Exception e)
+            {
+                availableFreeSpace = 0;
+                Logger.Log(LogLevel.Error, $"An Error occurred when trying to get available disk space. {e}");
+                return false;
+            }
+#else
+            availableFreeSpace = 0;
+            return false;
+#endif
+
+        }
         public void PerformSso(TermsHash? displayedTerms, Action<Result> onComplete,
-            string optionalThirdPartyEmailAddressUsedForAuthentication = null)
+                               string optionalThirdPartyEmailAddressUsedForAuthentication = null)
         {
 #if UNITY_IOS
             GetToken((idToken) =>
             {
                 ModIOUnity.AuthenticateUserViaApple(idToken,
                     optionalThirdPartyEmailAddressUsedForAuthentication,
-                    displayedTerms, 
+                    displayedTerms,
                     onComplete);
             });
 #endif

@@ -15,6 +15,7 @@ public class SettingsAssetEditor : Editor
     SerializedProperty useCommandLineArgumentOverrides;
     SerializedProperty _showMonetizationUIProperty;
     SerializedProperty _showEnabledModToggleProperty;
+    SerializedProperty _fallbackToEmailProperty;
 
     void OnEnable()
     {
@@ -29,6 +30,7 @@ public class SettingsAssetEditor : Editor
         var uiSettingsProperty = serializedObject.FindProperty("uiSettings");
 
         _showMonetizationUIProperty = uiSettingsProperty.FindPropertyRelative("ShowMonetizationUI");
+        _fallbackToEmailProperty = serverSettingsProperty.FindPropertyRelative("fallbackToEmailAuth");
         _showEnabledModToggleProperty = uiSettingsProperty.FindPropertyRelative("ShowEnabledModToggle");
     }
 
@@ -58,11 +60,18 @@ public class SettingsAssetEditor : Editor
         EditorGUILayout.Space();
 
         EditorGUILayout.DelayedIntField(gameId, new GUIContent("Game ID"));
+
         using (EditorGUI.ChangeCheckScope passwordChange = new EditorGUI.ChangeCheckScope())
         {
             string tempPassword = EditorGUILayout.PasswordField("API Key", gameKey.stringValue);
             if (passwordChange.changed)
                 gameKey.stringValue = tempPassword;
+        }
+
+        EditorGUILayout.PropertyField(_fallbackToEmailProperty);
+        if (_fallbackToEmailProperty.boolValue)
+        {
+            EditorGUILayout.HelpBox("This may cause certification failures on platforms", MessageType.Warning);
         }
 
         if (myTarget.serverSettings.gameId == 0 || string.IsNullOrWhiteSpace(myTarget.serverSettings.gameKey))
@@ -108,7 +117,7 @@ public class SettingsAssetEditor : Editor
 
             EditorGUILayout.BeginHorizontal();
 
-            if (GUILayout.Button("Insert URL for Test API"))
+            if (GUILayout.Button("Insert URL for Staging API"))
                 SetURLTest();
 
             if (GUILayout.Button("Insert URL for Production API"))
@@ -153,7 +162,7 @@ public class SettingsAssetEditor : Editor
 
     internal static string GetURLProduction(int gameId) => $"https://g-{gameId}.modapi.io/v1";
 
-    static string GetURLTest(int gameId) => "https://api.test.mod.io/v1";
+    static string GetURLTest(int gameId) => "https://api-staging.moddemo.io/v1";
 
     static bool IsURLProduction(string url) => Regex.IsMatch(url, @"https:\/\/g-\d*.modapi.io\/v1");
 }

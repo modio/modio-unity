@@ -10,7 +10,6 @@ GameObject:
   m_Component:
   - component: {fileID: 24952581316947064}
   - component: {fileID: 607017308876997312}
-  - component: {fileID: 6499296292570849428}
   m_Layer: 0
   m_Name: ModioPlatformExampleSteamworks
   m_TagString: Untagged
@@ -45,15 +44,3 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   appId: 1550360
---- !u!114 &6499296292570849428
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 890429863644987089}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2fdbf56a5caf54c338939adb95f7eaa2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
