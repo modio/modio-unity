@@ -22,6 +22,7 @@ namespace ModIO
         internal int pageSize;
         internal List<string> searchPhrases = new List<string>();
         internal List<string> tags = new List<string>();
+        internal List<string> excludedTags = new List<string>();
         internal List<long> users = new List<long>();
 #endregion
         /// <summary>
@@ -31,6 +32,11 @@ namespace ModIO
         public void AddSearchPhrase(string phrase)
         {
             searchPhrases.Add(phrase);
+        }
+
+        public void ExcludeTag(string tag)
+        {
+            excludedTags.Add(tag);
         }
 
         /// <summary>

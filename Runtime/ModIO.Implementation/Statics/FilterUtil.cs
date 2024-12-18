@@ -43,6 +43,17 @@ namespace ModIO.Implementation
                     url += $"&{Filtering.FullTextSearch}{phrase}";
                 }
             }
+
+            if(searchFilter.excludedTags != null && searchFilter.excludedTags.Count > 0)
+            {
+                url += "&tags-not-in=";
+                foreach(string tag in searchFilter.excludedTags)
+                {
+                    url += $"{tag},";
+                }
+                url = url.Trim(',');
+            }
+
             // add tags to filter
             if(searchFilter.tags.Count > 0)
             {
