@@ -3,7 +3,6 @@
     "rootNamespace": "",
     "references": [
         "Unity.PSN.PS5.Runtime",
-        "Unity.GameCore",
         "Google.Play.Games",
         "Apple.GameKit",
         "Unity.Services.Core",
@@ -14,7 +13,8 @@
         "GoogleSignIn",
         "google.play.games",
         "AppleAuth",
-        "Oculus.Platform"
+        "Oculus.Platform",
+        "Unity.Microsoft.GDK"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

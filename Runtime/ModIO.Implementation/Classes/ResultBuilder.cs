@@ -1,11 +1,7 @@
-using System.Runtime.CompilerServices;
-
-[assembly: InternalsVisibleTo("Modio.Platform.Steam.Facepunch")]
-[assembly: InternalsVisibleTo("Modio.Platform.Steam.Steamworks")]
 namespace ModIO.Implementation
 {
     /// <summary>Convenience class for building Result objects.</summary>
-    internal static class ResultBuilder
+    public static class ResultBuilder
     {
         /// <summary>Creator for the Result class.</summary>
         public static Result Create(uint resultCode, uint apiCode = 0)

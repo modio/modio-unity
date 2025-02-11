@@ -6,10 +6,6 @@ using ModIO.Implementation.API.Objects;
 using ModIO.Implementation.API.Requests;
 using Runtime.Enums;
 
-#if UNITY_GAMECORE
-using Unity.GameCore;
-#endif
-
 namespace ModIO.Implementation
 {
     /// <summary>

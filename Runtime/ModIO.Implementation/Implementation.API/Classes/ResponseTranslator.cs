@@ -387,7 +387,7 @@ namespace ModIO.Implementation
                 revenueType: modObject.revenue_type,
                 price: modObject.price,
                 tax: modObject.tax,
-                monetizationOption: (MonetizationOption)modObject.monetisation_options,
+                monetizationOption: (MonetizationOption)modObject.monetization_options,
                 stock: modObject.stock,
                 gameId: modObject.game_id,
                 communityOptions: modObject.community_options,

@@ -4,14 +4,14 @@
     "references": [
         "modio.UnityPlugin",
         "Unity.TextMeshPro",
-        "Unity.GameCore",
         "Unity.PSN.PS5.Runtime",
         "Unity.InputSystem",
         "AppleAuth",
         "AppleAuth.Editor",
         "GoogleSignIn",
         "google.play.games",
-        "NintendoSDK2020"
+        "NintendoSDK2020",
+        "Unity.Microsoft.GDK"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

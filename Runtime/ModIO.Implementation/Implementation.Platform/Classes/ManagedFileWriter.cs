@@ -19,6 +19,7 @@ namespace ModIO.Implementation.Platform
         static int writeSpeedInKbPerSecond;
         static int bytesPerWrite;
         static float writeSpeedReductionThreshold;
+        static bool disableWriteSpeedReduction;
 
         // Task queue runner is used to managed write job priority
         static readonly TaskQueueRunner TaskQueueRunner = new TaskQueueRunner(1, true, true);
@@ -31,12 +32,13 @@ namespace ModIO.Implementation.Platform
             bytesPerWrite = Settings.build.bytesPerWrite;
             writeSpeedInKbPerSecond = Settings.build.writeSpeedInKbPerSecond;
             writeSpeedReductionThreshold = Settings.build.writeSpeedReductionThreshold;
+            disableWriteSpeedReduction = Settings.build.disableWriteSpeedReduction;
 
-            if (bytesPerWrite <= 0)
+            if (bytesPerWrite <= 0 || disableWriteSpeedReduction)
                 bytesPerWrite = bytes.Length;//Write as fast as possible
-            if (writeSpeedInKbPerSecond <= 0)
+            if (writeSpeedInKbPerSecond <= 0 || disableWriteSpeedReduction)
                 writeSpeedInKbPerSecond = bytes.Length;//Write as fast as possible
-            if (writeSpeedReductionThreshold <= 0)
+            if (writeSpeedReductionThreshold <= 0 || disableWriteSpeedReduction)
                 writeSpeedReductionThreshold = 1;//100%, No slowdown
 
             await WriteToFileWithLimitedSpeed_Internal(fs, bytes, offset, count, cancellationToken, taskPriority, onComplete);
@@ -118,8 +120,12 @@ namespace ModIO.Implementation.Platform
         {
             var bytesPerSecond = (double)writeSpeedInKbPerSecond * BytesPerKilobyte;
             var percentageUsed = PercentageOfBudgetUsed();
-            if (percentageUsed > writeSpeedReductionThreshold)
+            if (percentageUsed > writeSpeedReductionThreshold && !disableWriteSpeedReduction)
             {
+                double speedToHitCurrentBudget = SpeedToHitCurrentBudget();
+                if (speedToHitCurrentBudget > 0)
+                    return speedToHitCurrentBudget;
+
                 var currentPercentagePastThreshold = percentageUsed - writeSpeedReductionThreshold;
                 var maxPercentagePastThreshold = 1 - writeSpeedReductionThreshold;
                 var writeSpeedReductionPercentage = 1 - ( currentPercentagePastThreshold / maxPercentagePastThreshold );
@@ -132,8 +138,8 @@ namespace ModIO.Implementation.Platform
         static double PercentageOfBudgetUsed()
         {
 #if UNITY_GAMECORE && !UNITY_EDITOR
-            var hrResult = Unity.GameCore.SDK.XPackageGetWriteStats(out Unity.GameCore.XPackageWriteStats writeStats);
-            if (Unity.GameCore.HR.SUCCEEDED(hrResult))
+            var hrResult = Unity.XGamingRuntime.SDK.XPackageGetWriteStats(out Unity.XGamingRuntime.XPackageWriteStats writeStats);
+            if (Unity.XGamingRuntime.HR.SUCCEEDED(hrResult))
             {
                 var usedPercentage = Math.Min(1, writeStats.BytesWritten / (double)writeStats.Budget );
                 Logger.Log(LogLevel.Verbose, $"Percentage of write budget used is {usedPercentage*100}%");
@@ -143,13 +149,37 @@ namespace ModIO.Implementation.Platform
 #endif
             return 0;
         }
+        static double SpeedToHitCurrentBudget()
+        {
+#if UNITY_GAMECORE
+            var hrResult = Unity.XGamingRuntime.SDK.XPackageGetWriteStats(out Unity.XGamingRuntime.XPackageWriteStats writeStats);
+            if (Unity.XGamingRuntime.HR.SUCCEEDED(hrResult))
+            {
+                const double msPerSecond = 1000d;
+                var secondsLeft = (writeStats.Interval - writeStats.Elapsed) / msPerSecond;
+                ulong bytesLeft = writeStats.Budget - writeStats.BytesWritten;
+
+                return bytesLeft / secondsLeft;
+            }
+#endif
+            return 0;
+        }
 
         public static bool IsOverBudget(ulong bytesRequested, out ulong intervalTimeRemainingMs)
         {
             intervalTimeRemainingMs = 0;
+
+            if (disableWriteSpeedReduction)
+                return false;
+
 #if UNITY_GAMECORE && !UNITY_EDITOR
-            var hrResult = Unity.GameCore.SDK.XPackageGetWriteStats(out Unity.GameCore.XPackageWriteStats writeStats);
-            if (Unity.GameCore.HR.SUCCEEDED(hrResult) && writeStats.BytesWritten + bytesRequested > writeStats.Budget)
+            var hrResult = Unity.XGamingRuntime.SDK.XPackageGetWriteStats(out Unity.XGamingRuntime.XPackageWriteStats writeStats);
+            if (!Unity.XGamingRuntime.HR.SUCCEEDED(hrResult))
+            {
+                Logger.Log(LogLevel.Error, "Unable to get write stats hr="+hrResult);
+                return false;
+            }
+            if (writeStats.BytesWritten + bytesRequested > writeStats.Budget)
             {
                 intervalTimeRemainingMs = Math.Max(0, writeStats.Interval - writeStats.Elapsed);
                 Logger.Log(LogLevel.Verbose, $"Write Stats - Interval {writeStats.Elapsed}/{writeStats.Interval}, Budget {writeStats.BytesWritten}/{writeStats.Budget}");

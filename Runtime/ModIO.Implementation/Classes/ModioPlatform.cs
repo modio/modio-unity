@@ -18,6 +18,8 @@ namespace ModIO.Implementation
 
                 if (IsInitializing)
                     Logger.Log(LogLevel.Warning, $"Platform Initialization still in progress! Returning null");
+                else if (InitializingFailed)
+                    Logger.Log(LogLevel.Error, $"Platform Initialization failed and we're trying to get ModioPlatform! Returning null");
                 else if (!Application.isConsolePlatform )
                     _activePlatform = new ModioPlatform();
                 else
@@ -39,8 +41,10 @@ namespace ModIO.Implementation
 
         /// <summary>Is the platform ready to be accessed?</summary>
         public static bool IsInitializing => isInitializing;
+        public static bool InitializingFailed => initializingFailed;
 
         static bool isInitializing = false;
+        static bool initializingFailed = false;
 
 
         /// <summary>
@@ -113,5 +117,12 @@ namespace ModIO.Implementation
         /// <summary>Tells the plugin that while the platform is not ready to be accessed,
         /// it is being initialized and should wait until the platform is set.</summary>
         public static void SetInitializing() => isInitializing = true;
+
+        /// <summary>Tells the plugin that the platform initialization failed, and things will not work.</summary>
+        public static void SetInitializingFailed()
+        {
+            isInitializing = false;
+            initializingFailed = true;
+        }
     }
 }
