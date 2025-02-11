@@ -9,7 +9,6 @@ namespace ModIO
     /// </summary>
     /// <seealso cref="ServerSettings"/>
     /// <seealso cref="ModIOUnity.InitializeForUser"/>
-    /// <seealso cref="ModIOUnityAsync.InitializeForUser"/>
     [System.Serializable]
     public class BuildSettings
     {
@@ -24,6 +23,7 @@ namespace ModIO
             writeSpeedInKbPerSecond = buildSettings.writeSpeedInKbPerSecond;
             bytesPerWrite = buildSettings.bytesPerWrite;
             writeSpeedReductionThreshold = buildSettings.writeSpeedReductionThreshold;
+            disableWriteSpeedReduction = buildSettings.disableWriteSpeedReduction;
         }
 
         /// <summary>Level to log at.</summary>
@@ -47,6 +47,9 @@ namespace ModIO
 
         /// <summary>The threshold as a percentage of the total budget of one interval, at which write operations will start to slow down.</summary>
         public float writeSpeedReductionThreshold = .75f;
+
+        [Tooltip("Setting this will prevent any write speed reduction on this platform. This will cause issues on some console platforms if you haven't been granted exemptions")]
+        public bool disableWriteSpeedReduction = false;
 
         public void SetDefaultPortal()
         {

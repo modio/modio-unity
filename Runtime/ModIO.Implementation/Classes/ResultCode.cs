@@ -5,7 +5,7 @@ using System.Linq;
 namespace ModIO.Implementation
 {
     /// <summary>Enum representing the result code values.</summary>
-    internal static class ResultCode
+    public static class ResultCode
     {
         // When adding a new value make sure it's also added to the errorCodesClearText dictionary.
 
@@ -19,6 +19,7 @@ namespace ModIO.Implementation
 
         // - init errors -
         public const uint Init_NotYetInitialized = 20000;
+        public const uint Init_NotYetInitialized_FailedToInitialize = 20001;
         public const uint Init_FailedToLoadConfig = 20010;
         public const uint Init_UserDataFailedToInitialize = 20020;
         public const uint Init_PersistentDataFailedToInitialize = 20021;
@@ -441,6 +442,7 @@ namespace ModIO.Implementation
             { Unknown, "Unknown" },
 
             { Init_NotYetInitialized, "Not yet initialized." },
+            { Init_NotYetInitialized_FailedToInitialize, "Not initialized as a platform failed to initialize." },
             { Init_FailedToLoadConfig, "Failed to load the config." },
             { Init_UserDataFailedToInitialize, "User data failed to initialize." },
             { Init_PersistentDataFailedToInitialize, "Persistent data failed to initialize." },

@@ -50,6 +50,7 @@ namespace ModIO
         public bool IsInitializationError()
         {
             return code == ResultCode.Init_NotYetInitialized
+                   || code == ResultCode.Init_NotYetInitialized_FailedToInitialize
                    || code == ResultCode.Init_FailedToLoadConfig;
         }
 

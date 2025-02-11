@@ -428,27 +428,19 @@ namespace ModIO.Implementation
             long modId = job.modEntry.modObject.id;
             long fileId = job.modEntry.modObject.modfile.id;
 
-            bool hasEnoughSpace;
-
-            // Consoles separate storage into temporary & persistent, so we check them separately
-            if (Application.isConsolePlatform)
-            {
-                hasEnoughSpace =
-                    await DataStorage.temp.IsThereEnoughDiskSpaceFor(job.modEntry.modObject.modfile.filesize)
-                    && await DataStorage.persistent.IsThereEnoughDiskSpaceFor(job.modEntry.modObject.modfile.filesize_uncompressed);
-            }
-            else
-            {
-                // On other platforms, these locations refer to the same drive
-                long totalRequiredSpace = job.modEntry.modObject.modfile.filesize + job.modEntry.modObject.modfile.filesize_uncompressed;
-                hasEnoughSpace = await DataStorage.persistent.IsThereEnoughDiskSpaceFor(totalRequiredSpace);
-            }
+            bool hasEnoughSpace = await HasEnoughSpace(job.modEntry.modObject.modfile.filesize,
+                job.modEntry.modObject.modfile.filesize_uncompressed);
 
             if(!hasEnoughSpace)
             {
                 Logger.Log(LogLevel.Error, $"INSUFFICIENT STORAGE FOR DOWNLOAD [{modId}_{fileId}]");
                 notEnoughStorageMods.Add((ModId)modId);
-                return ResultBuilder.Create(ResultCode.IO_InsufficientStorage);
+
+                Result insufficientStorageResult = ResultBuilder.Create(ResultCode.IO_InsufficientStorage);
+                InvokeModManagementDelegate((ModId)modId,
+                    ModManagementEventType.DownloadFailed,
+                    insufficientStorageResult);
+                return insufficientStorageResult;
             }
 
             Logger.Log(LogLevel.Message, $"DOWNLOADING MODFILE[{modId}_{fileId}]");
@@ -571,6 +563,25 @@ namespace ModIO.Implementation
             }
 
             return result;
+        }
+        static async Task<bool> HasEnoughSpace(long tempBytes, long persistentBytes)
+        {
+            // Consoles separate storage into temporary & persistent, so we check them separately
+            bool hasEnoughSpace;
+            if (Application.isConsolePlatform)
+            {
+                hasEnoughSpace =
+                    await DataStorage.temp.IsThereEnoughDiskSpaceFor(tempBytes)
+                    && await DataStorage.persistent.IsThereEnoughDiskSpaceFor(persistentBytes);
+            }
+            else
+            {
+                // On other platforms, these locations refer to the same drive
+                long totalRequiredSpace = tempBytes + persistentBytes;
+                hasEnoughSpace = await DataStorage.persistent.IsThereEnoughDiskSpaceFor(totalRequiredSpace);
+            }
+
+            return hasEnoughSpace;
         }
 
         static Result DownloadCleanup(Result result, long modId, long fileId)
@@ -753,28 +764,21 @@ namespace ModIO.Implementation
             {
                 if(DataStorage.TryGetInstallationDirectory(modId, currentFileId,
                     out string _))
-                {
                     return SubscribedModStatus.WaitingToUninstall;
-                }
+                return SubscribedModStatus.None;
             }
-            else if(DataStorage.TryGetInstallationDirectory(modId, currentFileId,
-                out string _))
+            if(DataStorage.TryGetInstallationDirectory(modId, currentFileId,
+                   out string _))
             {
                 if(currentFileId != fileId)
-                {
                     return SubscribedModStatus.WaitingToUpdate;
-                }
+                return SubscribedModStatus.Installed;
             }
-            else if(DataStorage.TryGetModfileArchive(modId, fileId, out string _))
+            if(DataStorage.TryGetModfileArchive(modId, fileId, out string _))
             {
                 return SubscribedModStatus.WaitingToInstall;
             }
-            else
-            {
-                return SubscribedModStatus.WaitingToDownload;
-            }
-
-            return SubscribedModStatus.Installed;
+            return SubscribedModStatus.WaitingToDownload;
         }
 
         static async Task<ModManagementJob> GetNextModManagementJob()
@@ -1010,6 +1014,49 @@ namespace ModIO.Implementation
             previousJobs.Remove(modid);
             taintedMods.Remove(modid);
             WakeUp();
+        }
+        public static async Task<Result> DoesHaveSpaceForMod(ModId modId)
+        {
+            long spaceRequired = 0;
+            long tempSpaceRequired = 0;
+
+            foreach ((ModId key, ModCollectionEntry modCollectionEntry) in ModCollectionManager.Registry.mods)
+            {
+                if (currentJob != null && currentJob.modEntry.modObject.id == key.id)
+                {
+                    float progressRemaining = 1;
+
+                    if(currentJob.progressHandle != null)
+                        progressRemaining = (1 - currentJob.progressHandle.Progress);
+
+                    if (currentJob.type == ModManagementOperationType.Download)
+                    {
+                        var currentSize = currentJob.modEntry.currentModfile.filesize;
+                        tempSpaceRequired += (long)(progressRemaining * currentSize);
+                    }
+                    else
+                    {
+                        var currentSize = currentJob.modEntry.currentModfile.filesize_uncompressed;
+                        spaceRequired += (long)(progressRemaining * currentSize);
+                    }
+                    continue;
+                }
+
+                var modStatus = GetModCollectionEntrysSubscribedModStatus(modCollectionEntry);
+                if (modStatus is SubscribedModStatus.None or SubscribedModStatus.Installed or SubscribedModStatus.ProblemOccurred)
+                    continue;
+
+                if (modStatus is SubscribedModStatus.WaitingToDownload or SubscribedModStatus.Downloading)
+                    tempSpaceRequired += currentJob.modEntry.currentModfile.filesize;
+                if (modStatus is SubscribedModStatus.WaitingToUninstall)
+                    spaceRequired -= currentJob.modEntry.currentModfile.filesize_uncompressed;
+                else
+                    spaceRequired += currentJob.modEntry.currentModfile.filesize_uncompressed;
+            }
+            bool hasEnoughSpace = await HasEnoughSpace(tempSpaceRequired, spaceRequired);
+            if(!hasEnoughSpace)
+                return ResultBuilder.Create(ResultCode.IO_InsufficientStorage);
+            return ResultBuilder.Success;
         }
     }
 }

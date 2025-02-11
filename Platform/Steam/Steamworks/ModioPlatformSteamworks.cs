@@ -20,6 +20,10 @@ namespace ModIO.Implementation.Platform
         private string betaStoreHomePage => $"https://store.steampowered.com/app/{appId}/modio/?beta=1";
         private string betaStoreInventoryPage => $"https://store.steampowered.com/itemstore/{appId}/browse/?filter=all";
 
+#if UNITY_STEAMWORKS && !DISABLESTEAMWORKS
+        Callback<GamepadTextInputDismissed_t> _virtualKeyboardCallback;
+#endif
+
         public static void SetAsPlatform(uint appId)
         {
             ModioPlatformSteamworks.appId = appId;
@@ -97,6 +101,50 @@ namespace ModIO.Implementation.Platform
             SteamFriends.ActivateGameOverlayToWebPage(this.betaStoreHomePage, EActivateGameOverlayToWebPageMode.k_EActivateGameOverlayToWebPageMode_Modal);
 #else
             base.OpenWebPage(url);
+#endif
+        }
+
+        public override bool TryOpenVirtualKeyboard(
+            string title,
+            string text,
+            string placeholder,
+            ModioVirtualKeyboardType virtualKeyboardType,
+            int characterLimit,
+            bool multiline,
+            Action<string> onClose)
+        {
+#if UNITY_STEAMWORKS && !DISABLESTEAMWORKS
+            if (!SteamUtils.IsSteamRunningOnSteamDeck() || !SteamUtils.IsSteamInBigPictureMode())
+                return false;
+
+            _virtualKeyboardCallback = Callback<GamepadTextInputDismissed_t>.Create(OnGamepadTextInputClose);
+
+            return SteamUtils.ShowGamepadTextInput(
+                EGamepadTextInputMode.k_EGamepadTextInputModeNormal,
+                multiline ? EGamepadTextInputLineMode.k_EGamepadTextInputLineModeMultipleLines : EGamepadTextInputLineMode.k_EGamepadTextInputLineModeSingleLine,
+                title,
+                (uint)characterLimit,
+                placeholder
+            );
+
+            void OnGamepadTextInputClose(GamepadTextInputDismissed_t result)
+            {
+                if (result.m_bSubmitted)
+                {
+                    uint textLength = SteamUtils.GetEnteredGamepadTextLength();
+                    bool success = SteamUtils.GetEnteredGamepadTextInput(out string enteredText, textLength);
+
+                    if (!success)
+                        Logger.Log(LogLevel.Warning, $"Failed to retrieve virtual keyboard text");
+                    else
+                        onClose.Invoke(enteredText);
+                }
+
+                _virtualKeyboardCallback.Dispose();
+                _virtualKeyboardCallback = null;
+            }
+#else
+            return false;
 #endif
         }
     }

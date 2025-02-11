@@ -20,6 +20,9 @@ namespace ModIO.Implementation.Platform
 #elif UNITY_STANDALONE_LINUX
         /// <summary>Holds the value for the platform header value to use in requests.</summary>
         public static RestApiPlatform RESTAPI_HEADER = RestApiPlatform.Linux;
+#elif MODIO_OCULUS
+        /// <summary>Holds the value for the platform header value to use in requests.</summary>
+        public static RestApiPlatform RESTAPI_HEADER = RestApiPlatform.Oculus;
 #elif UNITY_ANDROID
         /// <summary>Holds the value for the platform header value to use in requests.</summary>
         public static RestApiPlatform RESTAPI_HEADER = RestApiPlatform.Android;

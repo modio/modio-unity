@@ -1321,6 +1321,16 @@ namespace ModIO
         }
 
         /// <summary>
+        /// Check if there's space to install a particular mod, in addition to all currently queued (and not failed) mods
+        /// </summary>
+        /// <param name="modId">The mod to check</param>
+        /// <returns>Success if there is space, otherwise a relevant error</returns>
+        public static Task<Result> DoesModManagementHaveSpaceForMod(ModId modId)
+        {
+            return ModManagement.DoesHaveSpaceForMod(modId);
+        }
+
+        /// <summary>
         /// Mutes a user which effectively hides any content from that specified user
         /// </summary>
         /// <remarks>The userId can be found from the UserProfile. Such as ModProfile.creator.userId</remarks>

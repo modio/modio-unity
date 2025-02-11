@@ -4,10 +4,6 @@ using System.Threading.Tasks;
 using ModIO.Implementation.API.Objects;
 using ModIO.Util;
 
-#if UNITY_GAMECORE
-using Unity.GameCore;
-#endif
-
 namespace ModIO.Implementation.API.Requests
 {
     static class SyncEntitlements

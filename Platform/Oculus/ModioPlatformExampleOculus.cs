@@ -14,6 +14,7 @@ namespace ModIO.Implementation.Platform
         {
             // Oculus takes a fair bit of time to initialize and perform the entitlement check. By calling this
             // we're telling the plugin to wait until it's ready.
+            // You MUST call ModioPlatform.SetInitializingFailed if you are later prevented from setting the ModioPlatform
             ModioPlatform.SetInitializing();
 
             // Ensure you have your game's App Id set up in the Oculus Settings object provided by the Meta Platform SDK
@@ -24,6 +25,7 @@ namespace ModIO.Implementation.Platform
         {
             if (message.IsError)
             {
+                ModioPlatform.SetInitializingFailed();
                 Logger.Log(LogLevel.Error, $"initializing Oculus Platform: {message.GetError().Message}");
                 return;
             }
@@ -37,6 +39,7 @@ namespace ModIO.Implementation.Platform
         {
             if (message.IsError)
             {
+                ModioPlatform.SetInitializingFailed();
                 Logger.Log(LogLevel.Error, $"Error checking Oculus Platform entitlement: {message.GetError().Message}");
                 return;
             }

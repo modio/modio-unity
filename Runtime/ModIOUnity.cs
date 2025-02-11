@@ -1894,7 +1894,6 @@ namespace ModIO
         /// <param name="callback">callback with the result of the request</param>
         /// <seealso cref="Result"/>
         /// <seealso cref="ModId"/>
-        /// <seealso cref="dependencies"/>
         /// <seealso cref="ModIOUnity.AddDependenciesToMod"/>
         /// <seealso cref="ModIOUnityAsync.RemoveDependenciesFromMod"/>
         /// <seealso cref="ModIOUnityAsync.AddDependenciesToMod"/>
@@ -3179,11 +3178,11 @@ namespace ModIO
         /// <summary>
         /// Removes a Temp mod set
         /// </summary>
-        /// <example><code>
         /// <seealso cref="ModIOUnity.CreateTempModSet"/>
         /// <seealso cref="ModIOUnity.AddModsToTempModSet"/>
         /// <seealso cref="ModIOUnity.RemoveModsFromTempModSet"/>
         /// <seealso cref="ModIOUnity.GetTempSystemInstalledMods"/>
+        /// <example><code>
         /// void Example()
         /// {
         ///     ModIOUnity.DeleteTempModSet(callback);
@@ -3237,12 +3236,12 @@ namespace ModIO
         /// <summary>
         /// Removes mods from a Temp mod set
         /// </summary>
-        /// <example><code>
         /// <param name="modIds">Mods used for this set.</param>
         /// <seealso cref="ModIOUnity.CreateTempModSet"/>
         /// <seealso cref="ModIOUnity.DeleteTempModSet"/>
         /// <seealso cref="ModIOUnity.AddModsToTempModSet"/>
         /// <seealso cref="ModIOUnity.GetTempSystemInstalledMods"/>
+        /// <example><code>
         /// ModId[] modIds;
         /// void Example()
         /// {

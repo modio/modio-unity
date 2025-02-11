@@ -15,7 +15,7 @@
         public int maturity_option;
         public int stock;
         public int community_options;
-        public int monetisation_options;
+        public int monetization_options;
         public int price;
         public int tax;
         public LogoObject logo;

@@ -7,11 +7,11 @@ sidebar_position: 0
 ---
 
 <a href="https://mod.io"><img src="https://mod.io/images/branding/modio-logo-bluewhite.svg" alt="mod.io" width="360" align="right"/></a>
-# mod.io Unity Plugin v2024.11
-[![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)](https://github.com/modio/modio-unity/blob/master/LICENSE)
+# mod.io Unity Plugin v2025.2
+[![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)](https://github.com/modio/modio-unity/blob/master/Documentation/LICENSE.md)
 [![Discord](https://img.shields.io/discord/389039439487434752.svg?label=Discord&logo=discord&color=7289DA&labelColor=2C2F33)](https://discord.mod.io)
 [![Master docs](https://img.shields.io/badge/docs-master-green.svg)](https://docs.mod.io/unity/)
-[![Unity 3D](https://img.shields.io/badge/Unity-2020.3+-lightgrey.svg)](https://unity3d.com)
+[![Unity 3D](https://img.shields.io/badge/Unity-2021.3+-lightgrey.svg)](https://unity3d.com)
 
 Welcome to the mod.io Unity Engine plugin [repository](https://github.com/modio/modio-unity)!
 
@@ -23,9 +23,9 @@ mod.io enables game developers of all sizes to integrate user-generated content 
 - Founded by the [ModDB.com](https://moddb.com) team, with over two decades of experience in the UGC space
 - Constantly evolving - we continue to work alongside our partners to iterate and improve our plugin support
 
-The mod.io Unity Engine plugin is the simplest and fastest way to integrate UGC into your Unity **2020.3+** game. It handles all of the common tasks, allowing game developers to quickly and easily implement a solution that enables players to access and discover user-generated content for their games.
+The mod.io Unity Engine plugin is the simplest and fastest way to integrate UGC into your Unity **2021.3+** game. It handles all of the common tasks, allowing game developers to quickly and easily implement a solution that enables players to access and discover user-generated content for their games.
 
-A custom built [ready-made UI](#browser-ui) for mod discovery is included, along with installation and collection management, and a full-featured [C# interface](#getting-started) which connects to the [mod.io REST API](https://docs.mod.io).
+A custom-built [ready-made UI](#browser-ui) for mod discovery is included, along with installation and collection management, and a full-featured [C# interface](#getting-started) which connects to the [mod.io REST API](https://docs.mod.io).
 > [!WARNING]
 > The Browser UI is scheduled for deprecation, and may not receive updates.
 > This is to be replaced with the [Component UI / Template UI](#component-ui)
@@ -87,7 +87,7 @@ The first thing you'll need to do is [create a game profile](https://mod.io/g/ad
 4. Use the *Insert URL* buttons to set the `server URL` depending on where you created your game profile earlier.
 
 > [!WARNING]  
-> Deselect the config file before entering Play mode. A known Unity bug can cause the Editor to crash in Unity 2019-2021.
+> Deselect the config file before entering Play mode. A known Unity bug can cause the Editor to crash.
 
 Your setup is now complete. The following sections will guide you through getting your mod.io integration up and running quickly.
 

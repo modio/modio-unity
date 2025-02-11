@@ -178,9 +178,12 @@ namespace ModIO.Implementation.Platform
             {
                 if (message.IsError)
                 {
+                    if (message.GetError().Code == 0)
+                        taskCompletionSource.SetResult(ResultBuilder.Create(ResultCode.Internal_OperationCancelled));
+
                     Logger.Log(LogLevel.Error, $"{message.GetError().Message}");
 
-                    taskCompletionSource.SetResult(ResultBuilder.Create(ResultCode.Internal_OperationCancelled));
+                    taskCompletionSource.SetResult(ResultBuilder.Create(ResultCode.Unknown));
                     return;
                 }
 

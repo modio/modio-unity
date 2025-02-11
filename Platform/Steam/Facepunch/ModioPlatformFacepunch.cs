@@ -86,5 +86,43 @@ namespace ModIO.Implementation.Platform
             base.OpenWebPage(url);
 #endif
         }
+
+        public override bool TryOpenVirtualKeyboard(
+            string title,
+            string text,
+            string placeholder,
+            ModioVirtualKeyboardType virtualKeyboardType,
+            int characterLimit,
+            bool multiline,
+            Action<string> onClose)
+        {
+#if UNITY_FACEPUNCH
+            // This will not work in desktop mode of Steam Deck.
+            // Facepunch does not support Steam deck API calls yet
+            // TODO: If the above changes, re-implement to check if we're steam deck
+            if (!SteamUtils.IsSteamInBigPictureMode) return false;
+
+            SteamUtils.OnGamepadTextInputDismissed += OnGamepadTextInputClose;
+
+            return SteamUtils.ShowGamepadTextInput(
+                GamepadTextInputMode.Normal,
+                multiline ? GamepadTextInputLineMode.MultipleLines : GamepadTextInputLineMode.SingleLine,
+                title,
+                characterLimit,
+                placeholder
+            );
+
+            void OnGamepadTextInputClose(bool isSubmitted)
+            {
+                if (!isSubmitted) return;
+
+                SteamUtils.OnGamepadTextInputDismissed -= OnGamepadTextInputClose;
+
+                onClose.Invoke(SteamUtils.GetEnteredGamepadText());
+            }
+#else
+            return false;
+#endif
+        }
     }
 }

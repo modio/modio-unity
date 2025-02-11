@@ -3470,7 +3470,7 @@ namespace ModIO.Implementation
 
             config = API.Requests.SyncEntitlements.OculusRequest(userId.value, device);
             requestTask = WebRequestManager.Request<SyncEntitlements.ResponseSchema>(config);
-#elif UNITY_STANDALONE && !UNITY_EDITOR
+#elif UNITY_FACEPUNCH || UNITY_STEAMWORKS
             config = API.Requests.SyncEntitlements.SteamRequest();
             requestTask = WebRequestManager.Request<SyncEntitlements.ResponseSchema>(config);
 #elif ((UNITY_ANDROID || UNITY_IOS) && !UNITY_EDITOR) && MODIO_MOBILE_IAP
