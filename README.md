@@ -7,17 +7,20 @@ sidebar_position: 0
 ---
 
 <a href="https://mod.io"><img src="https://mod.io/images/branding/modio-logo-bluewhite.svg" alt="mod.io" width="360" align="right"/></a>
-# mod.io Unity Plugin v2025.2
+# mod.io Unity Plugin v2025.4
 [![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)](https://github.com/modio/modio-unity/blob/master/Documentation/LICENSE.md)
 [![Discord](https://img.shields.io/discord/389039439487434752.svg?label=Discord&logo=discord&color=7289DA&labelColor=2C2F33)](https://discord.mod.io)
 [![Master docs](https://img.shields.io/badge/docs-master-green.svg)](https://docs.mod.io/unity/)
 [![Unity 3D](https://img.shields.io/badge/Unity-2021.3+-lightgrey.svg)](https://unity3d.com)
 
+> [!IMPORTANT]  
+> This is a new &amp; improved version of the mod.io Unity plugin! You can find the old version (known as V2) on the "legacy-v2" branch. This version doesn't currently have support for all platforms, you can see in [Platform Support](#platform-support) when each platform is expected to be available.
+
 Welcome to the mod.io Unity Engine plugin [repository](https://github.com/modio/modio-unity)!
 
 mod.io enables game developers of all sizes to integrate user-generated content directly into their games quickly and easily. This includes hosting, user profiles and subscriptions, moderation tools, file delivery, and *more*: 
 
-- Completely cross-platform: content uploaded on PC can be enjoyed by players on Xbox, Switch, PlayStation, VR and mobile
+- Completely cross-platform: content uploaded can be enjoyed by players on PlayStation®4, PlayStation®5, Xbox, Switch, VR and mobile
 - One-click mod installs, synced to a single mod.io account across all platforms
 - Independent API: integrate mod.io into your game's launcher or your homepage using our Embedded UGC Hub. It can also be used by community fan sites and Discord bots
 - Founded by the [ModDB.com](https://moddb.com) team, with over two decades of experience in the UGC space
@@ -25,30 +28,36 @@ mod.io enables game developers of all sizes to integrate user-generated content 
 
 The mod.io Unity Engine plugin is the simplest and fastest way to integrate UGC into your Unity **2021.3+** game. It handles all of the common tasks, allowing game developers to quickly and easily implement a solution that enables players to access and discover user-generated content for their games.
 
-A custom-built [ready-made UI](#browser-ui) for mod discovery is included, along with installation and collection management, and a full-featured [C# interface](#getting-started) which connects to the [mod.io REST API](https://docs.mod.io).
-> [!WARNING]
-> The Browser UI is scheduled for deprecation, and may not receive updates.
-> This is to be replaced with the [Component UI / Template UI](#component-ui)
+> [!NOTE]  
+> A custom-built [ready-made UI](#quick-start) for mod discovery is included, along with installation and collection management, and a full-featured [C# interface](#getting-started) which connects to the [mod.io REST API](https://docs.mod.io).
+>
+>![Auth Form Example](Unity/Examples/Images/template_ui_example.png)
 
 ## Platform Support
-To access console platforms and documentation, see [Supporting Console Platforms](https://docs.mod.io/platforms/).
+To access console platforms and documentation, see [Supporting Console Platforms](https://docs.mod.io/platforms/). If a platform you require isn't available yet, please reach out to us.
 
-> [!WARNING]
-> To enable Mobile In-App Purchasing you need to define the `MODIO_MOBILE_IAP` in Project Settings > Player > Script Compilation > Scripting Define Symbols
-> This will also require the Unity.Purchasing package to be installed.
+| Platform          | Support |
+|-------------------|:-------:|
+| Windows           |    ✓    |
+| macOS             |   Q2    |
+| Linux             |   Q2    |
+| Meta Quest        |    ✓    |
+| Xbox One          |   Q2    |
+| Xbox Series X     |   Q2    |
+| PlayStation® 4    |   Q2    |
+| PlayStation® 5    |   Q2    |
+| Nintendo Switch   |   Q2    |
+| iOS               |   Q2    |
+| Android           |   Q2    |
 
-| Platform        | Support |
-|-----------------|:-------:|
-| Windows         |    ✓    |
-| macOS           |    ✓    |
-| Linux           |    ✓    |
-| Xbox One        |    ✓    |
-| Xbox Series X   |    ✓    |
-| PlayStation 4   |    ✓    |
-| PlayStation 5   |    ✓    |
-| Nintendo Switch |    ✓    |
-| iOS             |    ✓    |
-| Android         |    ✓    |
+## Unity Version Support
+mod.io guarantees full functionality and Long-Term Support of the plugin for the following Unity Versions:
+
+| Version | Support |
+|---------|:-------:|
+| 2021.3  |    ✓    |
+| 2022.3  |    ✓    |
+| Unity 6 |    ✓    |
 
 ## Game Studios and Publishers
 If you need assistance with first-party approval, or require a private, white-label UGC solution. [Contact us](mailto:developers@mod.io)!
@@ -72,22 +81,18 @@ Want to make changes to our plugin? Submit a pull request, and we'll review your
 3. Restart Unity, to ensure it recognises the new assembly definitions.
 
 > [!NOTE]  
-> If you receive errors due to conflicting libraries after installing the plugin, remove any duplicates from `Assets/Plugins/mod.io/ThirdParty`.
+> If you receive errors due to conflicting libraries after installing the plugin, remove any duplicates from `Assets/Plugins/Modio/ThirdParty`.
 
 ## Setup
 
 The first thing you'll need to do is [create a game profile](https://mod.io/g/add) on mod.io (or our [private test environment](https://test.mod.io/g/add)).
 
 > [!IMPORTANT]  
-> You'll need your `game ID` and `API key` for the following steps.
+> You'll need your `Game Id`, `API key` and `API Path` for the following steps.
 
 1. Ensure you have installed the plugin using the [installation instructions](#installation) above.
 2. In Unity, select the mod.io *config file* by navigating to `Tools -> mod.io -> Edit Settings`.
-3. In the Inspector under *Server Settings*, enter your `game ID` and `API key`.
-4. Use the *Insert URL* buttons to set the `server URL` depending on where you created your game profile earlier.
-
-> [!WARNING]  
-> Deselect the config file before entering Play mode. A known Unity bug can cause the Editor to crash.
+3. In the Inspector, enter your `Game Id`, `API key` and `API Path` into `Server URL`.
 
 Your setup is now complete. The following sections will guide you through getting your mod.io integration up and running quickly.
 
@@ -97,31 +102,23 @@ If you have any questions or need some help join our [Discord](https://discord.m
 
 The mod.io Unity Engine plugin comes with a prebuilt UI, a drop-in, instant solution for browsing and installing your game's mods.
 
-If you want to skip implementing your own UI, head to the [Browser UI](#browser-ui) section for setup and usage instructions. However, we recommend following the guide below to better understand how the plugin works.
-> [!WARNING]
-> The Browser UI is scheduled for deprecation, and may not receive updates.
-> This is to be replaced with the [Component UI / Template UI](#component-ui)
+If you want to skip implementing your own UI, head to the README in `/Unity/UI` section for setup and usage instructions. However, we recommend following the guide below to better understand how the plugin works.
 
 ## Getting Started
 
 In the following section, we will walk through implementing some of the most common functions of the mod.io Unity Engine plugin. We recommend reading this step-by-step guide to ensure you understand how everything works, but you can find the resulting class for reference [here](#complete-class).
 
-### Video Tutorial
-
-If you prefer a video tutorial, click the image below to view it on YouTube:
-
-<a href="https://www.youtube.com/watch?v=pmECrkdzHzQ">
-   <img src="https://i.ytimg.com/vi/pmECrkdzHzQ/maxresdefault.jpg" alt="mod.io" width="49%"/>
-</a>
+> [!NOTE]  
+> The mod.io plugin was built around Asynchronous programming to ensure a smooth experience for the user by never blocking the main thread. For more information on asynchronous concepts, check out the the [docs here](https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/).
 
 ### Initial Setup
 
-First, let's create a new `MonoBehaviour` called `ModIOExample.cs` that will contain all of our example functionality:
+First, let's create a new `MonoBehaviour` called `ModioExample.cs` that will contain all of our example functionality:
 
 ```csharp
 using UnityEngine;
 
-public class ModIOExample : MonoBehaviour
+public class ModioExample : MonoBehaviour
 {
     // TODO: Keep reading the Getting Started guide
 }
@@ -131,7 +128,7 @@ Once you've created the above class:
 
 1. Create a new `Scene`.
 2. In that scene, create an `Empty Game Object` (name it anything you'd like).
-3. Add the `ModIOExample` component to your `GameObject`.
+3. Add the `ModioExample` component to your `GameObject`.
 4. Save the scene.
 
 ### Initialization
@@ -139,107 +136,120 @@ Once you've created the above class:
 > [!IMPORTANT]  
 > The plugin relies on the *config file* that is configured during the [setup instructions](#setup) above. Please ensure you have completed all of those steps before proceeding.
 
-Before the plugin can be used, it needs to be initialized for the current player. This usually only needs to happen once, so let's implement Unity's `Start` method in our `ModIOExample.cs` file:
+Before the plugin can be used, it needs to be initialized for the current player. This usually only needs to happen once so let's implement Unity's `Start` method in our `ModioExample.cs` file as an async method:
 
 ```csharp
-using ModIO; // Add this to the top of your class
+using Modio; // Add this to the top of your class
 
 void Start()
 {
-    Result result = ModIOUnity.InitializeForUser("default");
-    if (!result.Succeeded())
-        return;
+    InitPlugin();
+}
 
-    Debug.Log("ModIO plugin initialized!");
+async Task InitPlugin()
+{
+    Error error = await ModioClient.Init();
+    
+    if (error)
+    {
+        Debug.LogError($"Error initializing mod.io: {error}");
+        return;
+    }
+
+    Debug.Log("mod.io plugin initialized");
 }
 ```
 
-The value passed into `InitializeForUser` is important. We've used *"default"* here, however, if your game allows for multiple players on the same installation, you should instead use a unique identifier per player. This allows the plugin to cache authentication and mod-subscriptions on a per-player basis.
+> [!IMPORTANT]  
+> All plugin configuration should be performed during Unity's `Awake` step. Make sure you only ever bind services during `Awake`, and only ever initialize the plugin during `Start` or later.
+
+It's worth noting the `Error` class returned. All mod.io functions you call will provide this `Error` class for detailed reporting on each function call. For convenience, `Error` is implicitly converted to a boolean, allowing you to simply check if this conversion is true to know if an error occured.
 
 Now, return to your scene in Unity, enter Play mode and you should see the logged success message.
 
 ## Authentication
 
-> [!NOTE]  
-> This guide uses `ModIOUnityAsync` wherever possible. However, you can find callback equivalents to every method in `ModIOUnity` if you prefer.
+Most of the API’s functionality requires player authentication. The plugin offers a large range of SSO (single-sign on) authentication options, including Steam, Oculus, Xbox, PlayStation 4/5, and more. We strongly recommend using these options as they provide a frictionless user experience and don't require multiple steps.
 
-Most of the API’s functionality requires player authentication. The plugin offers a large range of SSO (single-sign on) authentication options, including Steam, Xbox, Google, PlayStation, and more. We strongly recommend using these options as they provide a frictionless user experience and don't require multiple steps.
+For now, let's start with a simple email authentication to allow us full access. To do so we need to bind the Email Authentication service so that it's chosen as the auth service for the plugin.
 
-For now, let's start with a simple email authentication to allow us full access.
+The `ModioEmailAuthService` class is provided for convenience. It requires an async task or object implementing `IEmailCodePrompter`. This is to tell a UI implementation when the email authentication process is ready to accept the code.
 
 > [!NOTE]  
 > While creating the UI layout referenced below is outside the scope of this guide, there are great Unity UI tutorials available. You can, however, use the image below as a guide for the elements required to achieve the same functionality:
 >
-> ![Auth Form Example](Example/Images/auth_form_example.png)
+> ![Auth Form Example](Unity/Examples/Images/auth_form_example.png)
 
 With your UI created, let's add our authentication functionality: 
 
 ```csharp
-using UnityEngine.UI; // Add this to the top of your class
+using UnityEngine.UI; // Add these to the top of your class
+using Modio.Users;
+using Modio.Authentication;
 
 [SerializeField] InputField authInput;
 [SerializeField] Button authRequest;
 [SerializeField] Button authSubmit;
-   
-void Start()
+
+// Services should be bound in the Awake event. 
+// Services bound in Start aren't guaranteed to bound in time for initialization.
+void Awake()
+{
+    // This enforces email auth to be used, a higher priority can be used if needed
+    ModioServices.Bind<IModioAuthService>()
+                      .FromInstance(new ModioEmailAuthService(GetAuthCode));
+}
+
+// Start method...
+
+async Task InitPlugin()
 {
     // Initialization ...
 
     OnInit();
 }
 
-async void OnInit()
+async Task OnInit()
 {
-    Result result = await ModIOUnityAsync.IsAuthenticated();
-    if (result.Succeeded())
+    if (User.Current.IsAuthenticated)
     {
         OnAuth();
-
         return;
     }
     
     // You can assign these using the Inspector if you prefer
-    authRequest.onClick.AddListener(RequestAuthCode);
-    authSubmit.onClick.AddListener(SubmitAuthCode);
+    authRequest.clicked += async () => await Authenticate();
 }
    
-async void RequestAuthCode()
+async Task Authenticate()
 {
-    Result result = await ModIOUnityAsync.RequestAuthenticationEmail(authInput.text);
-    if (!result.Succeeded())
+    Error error = await ModioClient.AuthService.Authenticate(true, authInput.text);
+    
+    if (error)
     {
-        Debug.LogError($"RequestAuthenticationEmail failed: {result.message}");
-
+        Debug.LogError($"Error authenticating with email: {error}");
         return;
     }
-
-    Debug.Log($"Authentication email sent to: {authInput.text}");
-
-    authInput.text = string.Empty;
-}
-
-async void SubmitAuthCode()
-{
-    Result result = await ModIOUnityAsync.SubmitEmailSecurityCode(authInput.text);
-    if (!result.Succeeded())
-    {
-        Debug.LogError($"SubmitEmailSecurityCode failed: {result.message}");
-
-        return;
-    }
-
+    
     OnAuth();
 }
-   
-async void OnAuth()
-{
-    ResultAnd<UserProfile> result = await ModIOUnityAsync.GetCurrentUser();
-    if (!result.result.Succeeded())
-    {
-        Debug.LogError($"GetCurrentUser failed: {result.result.message}");
-    }
 
-    Debug.Log($"Authenticated user: {result.value.username}");
+// This will be called by the ModioEmailAuthService object we constructed earlier
+async Task<string> GetAuthCode()
+{
+    bool codeEntered = false;
+    
+    authSubmit.onClick.AddListener(() => codeEntered = true);
+    
+    while (!codeEntered)
+        await Task.Yield();
+    
+    return authInput.text;
+}
+   
+void OnAuth()
+{
+    Debug.Log($"Authenticated user: {User.Current.Profile.Username}");
 }
 ```
 
@@ -259,10 +269,10 @@ If you've implemented the above correctly, you should now be able to:
 
 There is something worth highlighting: if you restart Play mode, you'll see the logged authentication message again almost immediately. This is the result of two separate factors:
 
-- The value passed to `InitializeForUser` during the [initialization section](#initialization) needs to have been used when a user successfully authenticated.
+- The authentication service with the highest priority is the same as the one last used by the user to authenticate.
 - At the beginning of `OnInit()`, we check to see if we are already authenticated, and if so move straight to `OnAuth()`.
 
-If you change the initialization value (currently *"default"*), you will no longer receive the authenticated log. This functionality can enable support for multiple players; separately tracking authentication states and mod-subscriptions. However, as mentioned previously, most games can pass a constant value if they only ever expect one player on the device.
+If you change the highest priority auth service to another one, then the user won't be automatically logged in. This is to help facilitate both a silent log in and multiple users on the same device.
 
 > [!NOTE]  
 > If your email provider supports it, you can use plus-addressing to test multiple users with a single email address:
@@ -271,6 +281,78 @@ If you change the initialization value (currently *"default"*), you will no long
 > john.smith+test2@gmail.com
 > john.smith+test3@gmail.com
 > ```
+
+### Steam Single Sign-On
+
+Alternatively SSO methods with other platforms can be used to authenticate the user with mod.io. Check out our [documentation](https://docs.mod.io/restapiref/?http#authentication-2) to see a list of all platforms we support SSO with. For this example we're going to use Steam with the [Facepunch Steamworks library](https://wiki.facepunch.com/steamworks/).
+
+Feel free to come back to this section later! Authentication is agnostic of the rest of this guide's behavior.
+
+<details>
+
+<summary><i>Click to expand</i></summary>
+
+> [!IMPORTANT]   
+> Before we can implement Single Sign-On, we need to configure Steam SSO for your game on the mod.io website. Please read our [documentation](https://docs.mod.io/platforms/steam/authentication) on how to do this before continuing with the implementation below.
+>
+
+To perform our Single Sign-On we're going to use Facepunch's Steamworks C# library to authenticate using a Steam account. Similarly to the Email authentication, we need to bind a Facepunch Auth Service:
+
+```csharp
+using Modio.Platforms.Facepunch; // Add this to the top of your class
+
+void Awake()
+{
+    // Email binding...
+        
+    // By passing in the DeveloperOverride priority with the + 10, this will take precedence over email auth
+    ModioServices.Bind<IModioAuthService>()
+                 .FromInstance(new ModioFacepunchAuthService(), ModioServicePriority.DeveloperOverride + 10));    
+}
+```
+
+> [!IMPORTANT]  
+> This next section requires the `SteamClient` to have been initialized before executing. This is out of scope for this guide, but you can find a convenient example of how to do this in `/Unity/Examples/Steam/Facepunch/FacepunchExampl.cs`.
+
+### Terms of Use
+
+In order to authenticate a user with mod.io, they must agree to the mod.io Terms of Use. This differs from Email authentication as the Terms of Use is built into the email sign-up process, not requiring it in-game. This window requires links to the mod.io Terms of Use &amp; the mod.io Privacy Policy to be valid.
+
+> [!NOTE]  
+> While creating the UI layout referenced below is outside the scope of this guide, there are great Unity UI tutorials available. You can, however, use the image below as a guide for the elements required to achieve the same functionality:
+>
+> ![Auth Form Example](Unity/Examples/Images/terms_of_use_example.png)
+
+Using the above as a template, we'll want to modify the `OnInt()` method to display the Terms of Use if the highest priority auth service is Facepunch:
+
+```csharp
+async Task OnInit()
+{
+    // IsAuthenticated check...
+    
+    if (ModioClient.AuthService is ModioFacepunchAuthService)
+    {
+        tosContainer.SetActive(true);
+        
+        termsLink.onClick.AddListener(() => Application.OpenURL("https://mod.io/terms"));
+        privacyLink.onClick.AddListener(() => Application.OpenURL("https://mod.io/privacy"));
+        
+        acceptButton.onClick.AddListener(() => Authenticate());
+        denyButton.onClick.AddListener(() => tosContainer.SetActive(false));
+        
+        return;
+    }
+    
+    // Attach authRequest click listener...
+}
+```
+
+Lastly, we need to add a compiler directive to your project settings in order for the Facepunch library to compile. In your Project Settings, under Player and the platform you're building for, add `UNITY_FACEPUNCH` to the `Scripting Define Symbols`:
+
+![Unity Scripting Symbols](Unity/Examples/Images/precompile_directive.png)
+
+And that should be it! Log into Steam, accept the Terms of Use and you should see your Steam account authenticated with mod.io! If you've initialized your Steam client with the correct AppId then the mod.io plugin will automatically detect the currently logged in user and authenticate using that user.
+</details>
 
 ## Adding Mods
 
@@ -282,9 +364,10 @@ If you change the initialization value (currently *"default"*), you will no long
 Before we can interact with your game's mods via the API, we're going to need to create some test mods. We’ll start by adding some functionality that checks to see if your game has any mods. If it doesn't then we'll upload some using the API:
 
 ```csharp
-using System.Threading.Tasks; // Add this to the top of your class
+using System.Threading.Tasks; // Add these to the top of your class
+using Modio.Mods;
 
-async void OnAuth()
+void OnAuth()
 {
     // Authenticated ...
     
@@ -294,20 +377,18 @@ async void OnAuth()
 async Task AddModsIfNone()
 {
     // This section ensures we only upload our mods once. Don't worry too much
-    // about the specifics for now, we will introduce SearchFilters and GetMods 
+    // about the specifics for now, we will introduce ModSearchFilters and GetMods 
     // properly later on.
-    ResultAnd<ModPage> resultAnd = await ModIOUnityAsync.GetMods(new SearchFilter());
-    if (!resultAnd.result.Succeeded())
+    (Error error, ModioPage<Mod> page) = await Mod.GetMods(new ModSearchFilter());
+    if (error)
     {
-        Debug.LogError($"GetMods failed: {resultAnd.result.message}");
-
+        Debug.LogError($"Error getting mods: {error}");
         return;
     }
 
-    if (resultAnd.value.modProfiles.Length != 0)
+    if (page.Data.Length != 0)
     {
-        Debug.Log($"{resultAnd.value.modProfiles.Length} mods found. Not adding mods");
-
+        Debug.Log($"{page.Data.Length} mods found. Not adding mods");
         return;
     }
 
@@ -426,67 +507,38 @@ readonly struct DummyModData
 
 ### Uploading Mods
 
-Uploading mods is a two-step process:
+Uploading mods is a relatively simple two-step process:
 
-1. We need to create a *Mod Profile*. This is essentially the mod's page or listing. It contains all of a mod's metadata, including its files.
-   - Creating a *Mod Profile* requires an API call (`CreateModProfile`), which will return a `mod id`.
-2. We can upload our files to the associated *Mod Profile* with our newly created `mod id`.
+1. In order to upload a new mod, we need to prepare all the data with a *Mod Builder*. This builder stores and allows you to mutate all the data related to a mod, including its files.
+2. We then call `Publish()` on the builder to push all changes to the mod.io API.
 
 Let's add a method that handles both steps:
-
-> [!NOTE]  
-> The following code takes advantage of `ModIOUnity.GetCurrentUploadHandle`, which can be used for obtaining the current upload progress. This isn't required, and you can use `await ModIOUnityAsync.UploadModFile(details)` instead if you prefer. 
 
 ```csharp
 async Task UploadMod(string name, string summary, Texture2D logo, string path)
 {
     Debug.Log($"Starting upload: {name}");
-
-    ModProfileDetails details = new ModProfileDetails
+    
+    var builder = Mod.Create();
+    
+    builder.SetName(name)
+           .SetSummary(summary)
+           .SetLogo(logo.GetRawTextureData())
+               .EditModfile()
+               .SetSourceDirectoryPath(path)
+               .FinishModfile();
+    
+    (Error error, Mod mod) = await builder.Publish();
+    
+    if (error)
     {
-        name = name,
-        summary = summary,
-        logo = logo,
-    };
-
-    ResultAnd<ModId> resultCreate = await ModIOUnityAsync.CreateModProfile(ModIOUnity.GenerateCreationToken(), details);
-    if (!resultCreate.result.Succeeded())
-    {
-        Debug.LogError($"CreateModProfile failed: {resultCreate.result.message}");
-
+        Debug.LogError($"Error uploading mod {name}: {error}");
         return;
     }
-
-    ModfileDetails modFile = new ModfileDetails
+    else
     {
-        modId = resultCreate.value,
-        directory = path,
-    };
-
-    float progress = 0f;
-
-    Task<Result> taskUpload = ModIOUnityAsync.UploadModfile(modFile);
-    while (!taskUpload.IsCompleted)
-    {
-        ProgressHandle progressHandle = ModIOUnity.GetCurrentUploadHandle();
-
-        if (!Mathf.Approximately(progressHandle.Progress, progress))
-        {
-            progress = progressHandle.Progress;
-            Debug.Log($"Uploading: {name} ({Mathf.RoundToInt(progress * 100)}%)");
-        }
-
-        await Task.Delay(1000);
+        Debug.Log($"Successfully created mod {mod.Name} with Id {mod.Id}");
     }
-
-    if (!taskUpload.Result.Succeeded())
-    {
-        Debug.LogError($"UploadModfile failed: {taskUpload.Result.message}");
-
-        return;
-    }
-
-    Debug.Log($"Finished upload: {name}");
 }
 ```
 
@@ -516,7 +568,7 @@ async Task AddModsIfNone()
 > [!NOTE]  
 > When uploading a mod, the plugin expects a directory (for each mod) that it will compress before uploading. You do <b><u>not</u></b> need to zip your files before uploading.
 
-That’s it! Enter Play mode now and, after authentication, the Unity console should come to life with the upload progress of your mods. If you're eager, you can view the mods as soon as they're uploaded by going to your game's mod.io page and using the web interface.
+That’s it! Enter Play mode now and, after authentication, the Unity console should come to life with the uploading of your mods. If you're eager, you can view the mods as soon as they're uploaded by going to your game's mod.io page and using the web interface.
 
 ## Searching for Mods
 
@@ -525,22 +577,21 @@ Searching for mods is a simple task — we've actually seen it already in the [a
 ```csharp
 using System; // Add this to the top of your class
 
-async Task<ModProfile[]> GetAllMods()
+async Task<Mod[]> GetAllMods()
 {
-    ResultAnd<ModPage> resultAnd = await ModIOUnityAsync.GetMods(new SearchFilter());
-    if (!resultAnd.result.Succeeded())
+    (Error error, ModioPage<Mod> page) = await Mod.GetMods(new ModSearchFilter());
+    if (error)
     {
-        Debug.LogError($"GetMods failed: {resultAnd.result.message}");
-
-        return Array.Empty<ModProfile>();
+        Debug.LogError($"Error getting mods: {error}");
+        return Array.Empty<Mod>();
     }
 
-    return resultAnd.value.modProfiles;
+    return page.Data;
 }
 ```
 
 > [!IMPORTANT]  
-> A *Mod Profile* is a read-only snapshot of the state of a mod. It is <u>not</u> a unique or dynamic class. Compare `ModProfile.id` if you want to determine whether two Mod Profiles represent the same mod. 
+> A *Mod* is a read-only mutable representation of the state of a mod. It will be updated by the mod.io plugin whenever new data for that mod is received. Each mod can be listened to for any changes so UI elements can be updated accordingly. In order to edit a mod, call `Edit` on the mod instance you want to modify, which will provide a `ModBuilder` class in edit mode.
 
 If we add the above to our example class, and then head back up to our `OnAuth` method we can quickly log a list of all<sup>1</sup> of our available mods:
 
@@ -554,37 +605,39 @@ async void OnAuth()
     // ...
     
     allMods = await GetAllMods();
-    Debug.Log($"Available mods:\n{string.Join("\n", allMods.Select(mod => $"{mod.name} (id: {mod.id.id})"))}");
+    Debug.Log($"Available mods:\n{string.Join("\n", allMods.Select(mod => $"{mod.Name} (id: {mod.Id})"))}");
 }
 ```
 
-We write *all<sup>1</sup>* because while using the default *Search Filter* settings will return all of *your* mods, this is only because you don't have many. This brings us to *Search Filters*. 
+> [!NOTE]
+> We write *all<sup>1</sup>* because while using the default *Mod Search Filter* settings will return all of *your* mods, this is only because you don't have many. This brings us to *Mod Search Filters*.
 
-### Search Filters
+### Mod Search Filters
 
-The maximum number of results returned can be set in the Search Filter using its `SetPageSize()` method. However, the default value of 100 is also the limit. In order to return later results, you can use the Search Filter's `SetPageIndex()` method.
+The maximum number of results returned can be set in the Mod Search Filter using its `SetPageSize()` method. However, the default value of 100 is also the limit. In order to return later results, you can use the Search Filter's `SetPageIndex()` method.
 
 This is fairly simple in practice and is explained best with the following snippet:
 
 ```csharp
-var searchFilter = new SearchFilter();
+var searchFilter = new ModSearchFilter();
 searchFilter.SetPageSize(10);
 searchFilter.SetPageIndex(0); // Will return results 1-10
 searchFilter.SetPageIndex(1); // Will return results 11-20
 searchFilter.SetPageIndex(2); // Will return results 21-30
 
 // You can also set pageIndex and pageSize using the constructor
-new SearchFilter(0, 10); // Will return results 1-10
-new SearchFilter(1, 10); // Will return results 11-20
-new SearchFilter(2, 10); // Will return results 21-30
+new ModSearchFilter(0, 10); // Will return results 1-10
+new ModSearchFilter(1, 10); // Will return results 11-20
+new ModSearchFilter(2, 10); // Will return results 21-30
 ```
 
 > [!NOTE]  
-> Search Filters have a number of options for filtering and ordering your results. See the [documentation](https://sdkdocs.mod.io/unity/) (or use code completion in your IDE) for its available options.
+> Mod Search Filters have a number of options for filtering and ordering your results. See the [documentation](https://docs.mod.io/unity/) (or use code completion in your IDE) for its available options.
+> If you're looking for more granular filtering, check out the `ModioAPI.Mods.GetModsFilter` class.
 
 ### Downloading Images
 
-More specifically: downloading a *Mod Profile's* images. We'll cover subscribing to and installing mods soon.
+More specifically: downloading a *Mod's* images. We'll cover subscribing to and installing mods soon.
 
 A common feature when listing mods is to display an image along with its name and summary. Metadata images such as logos, screenshots, and avatars don't require subscribing to a mod to view them, and can be downloaded separately from a mod's in-game files.
 
@@ -593,7 +646,7 @@ As we know, [all mods have a logo](#adding-mods). So let's write a short method 
 > [!NOTE]  
 > Below is a screenshot of the UI we're using to utilize the method. You can use this as a guide for your own or display the result however you'd like!
 >
-> ![Auth Form Example](Example/Images/random_mod_example.png)
+> ![Auth Form Example](Unity/Examples/Images/random_mod_example.png)
 
 ```csharp
 [SerializeField] Text randomName;
@@ -601,164 +654,151 @@ As we know, [all mods have a logo](#adding-mods). So let's write a short method 
 
 async void SetRandomMod()
 {
-    ModProfile modProfile = allMods[UnityEngine.Random.Range(0, allMods.Length)];
+    Mod mod = allMods[UnityEngine.Random.Range(0, allMods.Length - 1)];
 
-    randomName.text = modProfile.name;
+    randomName.text = mod.name;
+    
+    (Error error, Texture2D texture) = await mod.Logo.DownloadAsTexture2D(Mod.LogoResolution.X320_Y180);
 
-    ResultAnd<Texture2D> resultAnd = await ModIOUnityAsync.DownloadTexture(modProfile.logoImage_320x180);
-    if (!resultAnd.result.Succeeded())
+    if (error)
     {
-        Debug.LogError($"DownloadTexture failed: {resultAnd.result.message}");
-
+        Debug.LogError($"Error downloading {mod.Name}'s logo: {error}");
         return;
     }
-
-    Texture2D logo = resultAnd.value;
-    randomLogo.sprite = Sprite.Create(logo, new Rect(0, 0, logo.width, logo.height), Vector2.zero);
+    
+    randomLogo.sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), Vector2.zero);
 }
 ```
 
 > [!WARNING]  
 > The code above relies on `allMods`, which is set in the first [searching for mods](#searching-for-mods) section. **Ensure that `allMods` has been set before running this method.**
 
-This method is downloading the smallest version of the logo, `logoImage_320x180`. However, Mod Profiles have a number of sizes for each image. See the [documentation](https://sdkdocs.mod.io/unity/) (or use code completion in your IDE) to view available options. 
+This method is downloading the smallest version of the logo, `320x180`. However, Mods have a number of sizes for each image as defined in `Mod.LogoResolution` &amp; `Mod.GalleryResolution`. See the [documentation](https://sdkdocs.mod.io/unity/) (or use code completion in your IDE) to view available options. 
 
 ## Getting Subscribed Mods
 
 We're going to cover mod subscriptions in what will seem like a backward way. First, we'll learn how to get a list of our subscribed mods, then we'll learn how to subscribe to a mod.
 
-The reason we do it this way is because subscribed mods are cached locally, so we avoid redundant API calls if we're already subscribed. 
+The reason we do it this way is because when a User authenticates, their subscriptions will be automatically synced with the mod.io plugin. All mods retrieved from the mod.io API will be cached and updated with the most recent data, with the User's subscriptions updated and stored in `User.Current.ModRepository`.
 
-With that in mind, the rest is quite straightforward:
+This makes getting Subscribed mods incredibly convenient as no requests need to be made:
 
 ```csharp
-static ModProfile[] GetSubscribedMods()
-{
-    SubscribedMod[] subscribed = ModIOUnity.GetSubscribedMods(out Result result);
-    if (!result.Succeeded())
-    {
-        Debug.LogError($"GetSubscribedMods failed: {result.message}");
-
-        return Array.Empty<ModProfile>();
-    }
-
-    return subscribed.Select(mod => mod.modProfile).ToArray();
-}
+static Mod[] GetSubscribedMods() => User.Current.ModRepository.GetSubscribed().ToArray();
 ```
 
-Getting the user's subscribed mods first requires a call to `FetchUpdates()`. This method synchronises the cached local state with mod.io (subscriptions, ratings, etc.). This is an expensive method and usually only needs to be called on authentication, as local subscription changes are reflected automatically. However if, for example, you change subscriptions using the web interface, they won't be reflected in your game until `FetchUpdates()` has been called.
-
-We'll make use of the above from our `OnAuth()` method, after we log all available mods. First, we call `FetchUpdates()` to synchronize our local state, and then we can get an array of our subscribed mods:
+Getting the user's subscribed mods first requires they be authenticated. This will be handled automatically when a User authenticates with mod.io. In order to know when everything has finished syncing, we'll want to wait until `User.Current.IsUpdating` comes back as false:
 
 ```csharp
 async void OnAuth()
 {
     // ...
     
-    Result resultUpdate = await ModIOUnityAsync.FetchUpdates(); // Synchronize our local state
-    if (!resultUpdate.Succeeded())
-    {
-        Debug.LogError($"FetchUpdates failed: {resultUpdate.message}");
-    }
+    while (User.Current.IsUpdating)
+        await Task.Yield();
 
-    ModProfile[] subscribedMods = GetSubscribedMods();
-    Debug.Log($"Subscribed mods:\n{(subscribedMods.Length > 0 ? string.Join("\n", subscribedMods.Select(mod => $"{mod.name} (id: {mod.id.id})")) : "None")}");
+    Mod[] subscribedMods = GetSubscribedMods();
+    Debug.Log($"Subscribed mods:\n{(subscribedMods.Length > 0 ? string.Join("\n", subscribedMods.Select(mod => $"{mod.Name} (id: {mod.Id})")) : "None")}");
 }
 ```
 
 > [!IMPORTANT]  
-> A *Mod Profile* is a read-only snapshot of the state of a mod. It is <u>not</u> a unique or dynamic class. Compare `ModProfile.id` if you want to determine whether two Mod Profiles represent the same mod.
-
-For now, you should see "*Subscribed mods: None*" in the log if you enter Play mode. But we're going to rectify that *very* soon.
+> `Sync()` will typically only be called automatically by the plugin on authentication. If you make any changes using the web interface, they won't be reflected in the mod.io plugin until this `Sync()` runs. This method is available to you under `User.Current.Sync()`. However, this is an expensive method and it's recommended it be called as little as possible.
 
 ## Subscribing to Mods
 
-> [!NOTE]  
-> The web interface at your game's mod.io page can also be used to subscribe to mods. However, you'll need to exit and enter Play mode to see the changes, as `FetchUpdates()` needs to be run to synchronise the local state.
-
-Subscribing to mods is very simple. The following code adds a check to see if we're already subscribed and then logs the name of the mod once the subscription is successful. The only *actual* requirement is the call to `SubscribeToMod()`:
+Subscribing to mods is very simple. We call the async method `mod.Subscribe()`. This method already contains checks for if you're already subscribed, short-cutting to the success result if so:
 
 ```csharp
-async Task SubscribeToMod(ModId modId, ModProfile[] subscribed)
+async Task SubscribeToMod(Mod mod)
 {
-    if (subscribed.Any(mod => mod.id == modId))
-        return;
+    var error = await mod.Subscribe();
 
-    Result result = await ModIOUnityAsync.SubscribeToMod(modId);
-    if (!result.Succeeded())
+    if (error)
     {
-        Debug.LogError($"SubscribeToMod failed: {result.message}");
-
+        Debug.LogError($"Error subscribing to {mod.Name}: {error}");
         return;
     }
 
-    Debug.Log($"Subscribed to mod: {allMods.First(mod => mod.id == modId).name}");
+    Debug.Log($"Subscribed to mod: {mod.Name}");
 }
 ```
 
-> [!NOTE]  
-> Inefficient code is used here to reduce the sample's complexity. Translating subscriptions to a `List<ModId>` and keeping a `Dictionary<ModId, ModProfile>` would be more efficient solutions for these look-ups.
+> [!NOTE]
+> The web interface at your game's mod.io page can also be used to subscribe to mods. However, you'll need to exit and enter Play mode to see the changes, as `Sync()` needs to be run to synchronise the local state.
 
-To test it out:
+To test it out, in your `OnAuth()` method, after we log all subscribed mods add the following line to subscribe to a random mod:
 
-1. Enter Play mode, and in the "Available mods" log, locate the "Ten New Missions" id.
-2. In your `OnAuth()` method, after we log all subscribed mods add the following line (replace `YOUR_MOD_ID` with the id from step 1):
-   ```csharp
-   async void OnAuth()
-   {
-       // ...
+```csharp
+async void OnAuth()
+{
+    // ...
        
-       await SubscribeToMod(new ModId(YOUR_MOD_ID), subscribedMods);
-   }
-   ```
-3. Restart Play mode and you should see "Ten New Missions" in your "Subscribed mods" log!
+    await SubscribeToMod(allMods[UnityEngine.Random.Range(0, allMods.Length - 1)]);
+}
+```
+
+Enter Play mode and you should see one of the generated mods appear in your "Subscribed mods" log!
 
 ## Installing Mods
 
-Now, the moment we've all been waiting for. Downloading, installing, updating, and deleting mods are all handled automatically by the plugin. However, it requires both an authenticated user and to opt-in to the behaviour. The latter is done via a simple `EnableModManagement()` call. This method requires a delegate argument that exposes us to the various events that mod management emits.
+Now, the moment we've all been waiting for. Downloading, installing, updating, and deleting mods are all handled automatically by the plugin. This behaviour can be disabled using your `ModioSettings` we configured in [Set Up](#setup).
 
-In the following code we're going to enable mod management and also log the download progress when a mod is being downloaded:
+In the following code we'll presume this has been disabled, so we can show how to activate &amp; deactivate it at will. We'll also leverage `ModInstallationManagement.MangementEvents` to see the download progress:
 
 ```csharp
-string downloadName = "";
+Mod currentDownload;
 float downloadProgress;
+float timeToProgressCheck = 1f;
 
-void EnableModManagement()
+void WakeUpModManagement()
 {
-    void HandleModManagementEvent(ModManagementEventType eventType, ModId modId, Result eventResult)
-    {
-        switch (eventType)
-        {
-            case ModManagementEventType.DownloadStarted:
-                downloadName = allMods.First(mod => mod.id == modId).name;
-                Debug.Log($"Downloading {downloadName}");
-                break;
-            case ModManagementEventType.Downloaded:
-                Debug.Log($"Downloaded {downloadName}");
-                downloadName = string.Empty;
-                break;
-            case ModManagementEventType.DownloadFailed:
-                Debug.Log($"Download failed {downloadName}");
-                downloadName = string.Empty;
-                break;
-        }
-    }
+    void HandleModManagementEvent(
+        Mod mod, 
+        Modfile modfile, 
+        ModInstallationManagement.OperationType jobType, 
+        ModInstallationManagement.OperationPhase jobPhase
+    ){
+        Debug.Log($"{jobType} {jobPhase}: {mod.Name}");
 
-    ModIOUnity.EnableModManagement(HandleModManagementEvent);
+        switch (jobPhase)
+        {
+            case ModInstallationManagement.OperationPhase.Started
+                when jobType is not ModInstallationManagement.OperationType.Uninstall:
+                currentDownload = mod;
+                break;
+
+            case ModInstallationManagement.OperationPhase.Cancelled:
+            case ModInstallationManagement.OperationPhase.Failed:
+                currentDownload = null;
+                break;
+            
+            case ModInstallationManagement.OperationPhase.Completed
+                when jobType is not ModInstallationManagement.OperationType.Uninstall:
+                Debug.Log($"Mod {mod.Name} installed at {mod.File.InstallLocation}");
+                currentDownload = null;
+                break;
+            
+            case ModInstallationManagement.OperationPhase.Completed:
+                Debug.Log($"Mod {mod.Name} uninstalled");
+                break;
+    }
+    
+    ModInstallationManagement.ManagementEvents += HandleModManagementEvent;
 }
 
 void Update()
 {
-    if (downloadName.Length == 0)
+    if (currentDownload == null)
         return;
 
-    ProgressHandle progress = ModIOUnity.GetCurrentModManagementOperation();
+    timeToProgressCheck -= Time.deltaTime;
 
-    if (Mathf.Approximately(progress.Progress, downloadProgress))
+    if (timeToProgressCheck > 0)
         return;
 
-    downloadProgress = progress.Progress;
-    Debug.Log($"Downloading {downloadName} ({Mathf.RoundToInt(downloadProgress * 100)}%)");
+    Debug.Log($"Downloading {currentDownload.Name}: [{Mathf.RoundToInt(currentDownload.File.FileStateProgress * 100)}%]");
+    timeToProgressCheck += 1f;
 }
 ```
 
@@ -773,33 +813,38 @@ We’re nearing the end now. You've [initialized](#initialization). You've [auth
 
 *"How do I find installed mods?"*
 
-The answer is very straight forward: `GetInstalledModsForUser()`. Using this is as simple as expected:
+The answer is very straight forward: `mod.File.InstallLocation`. Using this is as simple as expected, in the previous method lets move `OperationPhase.Completed` to its own case and print the install location to the console:
 
 ```csharp
-void LogInstalledModsForUser()
+case ModInstallationManagement.OperationPhase.Completed:
+    Debug.Log($"Mod {mod.Name} installed at {mod.File.InstallLocation}");
+    break;
+```
+
+In order to get a list of all installed mods on the file system, we simply call `ModInstallationManagement.GetAllInstalledMods()`:
+
+```csharp
+async void OnAuth()
 {
-    UserInstalledMod[] installedMods = ModIOUnity.GetInstalledModsForUser(out Result result);
-    if (!result.Succeeded())
-    {
-        Debug.LogError($"GetInstalledModsForUser failed: {result.message}");
-
-        return;
-    }
-
-    Debug.Log($"Installed mods:\n{(installedMods.Length > 0 ? string.Join("\n", installedMods.Select(mod => $"{mod.modProfile.name} ({mod.directory})")) : "None")}");
+    // ...
+       
+    var installedMods = ModInstallationManagement.GetAllInstalledMods();
+    Debug.Log($"Installed mods:\n{(installedMods.Count > 0 ? string.Join("\n", installedMods.Select(mod => $"{mod.Name} (id: {mod.Id})")) : "None")}");
 }
 ```
 
-We're currently logging each installed mod and the path to its files (`UserInstalledMod.directory`). However, *you* are only limited by how you want to utilize user-generated content. A mod's installation directory is exactly the same as when we uploaded it: uncompressed and ready for action.
+We're currently logging each installed mod and the path to its files (`mod.File.InstallLocation`). However, *you* are only limited by how you want to utilize user-generated content. A mod's installation directory is exactly the same as when we uploaded it: uncompressed and ready for action.
 
-That’s it, we’re done. The time has come to build a bridge to your creator community using mod.io.
+One last thing to note, this will provide mods installed by *any user* on the file system. This is to facilitate offline mod management so the user doesn't ever get stuck if they're offline. Use `installedMod.IsSubscribed()` to determine if the mod is subscribed to by the current authenticated user.
+
+And that’s it, we’re done! The time has come to build a bridge to your creator community using mod.io.
 
 Please join us on our [Discord server](https://discord.mod.io) if you have any questions or need some help.
 
 ## Complete Class
 
 > [!NOTE]  
-> You can also find the following class (along with an example scene) in `Assets/Plugins/mod.io/Example`. 
+> You can also find the following class (along with an example scene) in `Assets/Plugins/Modio/Unity/Example`. 
 
 <details>
 
@@ -810,767 +855,384 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Modio;
+using Modio.Authentication;
+using Modio.Mods;
+using Modio.Unity;
+using Modio.Users;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.UI;
+using Random = System.Random;
 
-namespace ModIO
+public class ModioUnityExample : MonoBehaviour
 {
-    public class ModIOExample : MonoBehaviour
+    // Reusing a single byte-array is a small memory-conscious
+    // optimization for when we are generating our dummy files.
+    static readonly byte[] Megabyte = new byte[1024 * 1024];
+    static readonly Random RandomBytes = new Random();
+
+    [Header("Authentication")]
+    [SerializeField] GameObject authContainer;
+    [SerializeField] InputField authInput;
+    [SerializeField] Button authRequest;
+    [SerializeField] Button authSubmit;
+
+    // Downloading images
+    [Header("Random Mod")]
+    [SerializeField] GameObject randomContainer;
+    [SerializeField] Text randomName;
+    [SerializeField] Image randomLogo;
+    [SerializeField] Button randomButton;
+    
+    // Searching for mods
+    Mod[] allMods;
+
+    // Installing mods
+    Mod currentDownload;
+    float downloadProgress;
+    float timeToProgressCheck = 1f;
+
+    void Awake()
     {
-        // Generating Dummy Mods
-        static readonly byte[] Megabyte = new byte[1024 * 1024];
-        static readonly System.Random RandomBytes = new System.Random();
-
-        [Header("Authentication")]
-        [SerializeField] GameObject authContainer;
-        [SerializeField] InputField authInput;
-        [SerializeField] Button authRequest;
-        [SerializeField] Button authSubmit;
-
-        // Downloading Images
-        [Header("Random Mod")]
-        [SerializeField] GameObject randomContainer;
-        [SerializeField] Text randomName;
-        [SerializeField] Image randomLogo;
-        [SerializeField] Button randomButton;
-
-        // Searching for Mods
-        ModProfile[] allMods;
-
-        // Installing Mods
-        string downloadName = "";
-        float downloadProgress;
-
-        void Awake()
-        {
-            randomContainer.SetActive(false);
-        }
-
-        #region Initialization
-
-        void Start()
-        {
-            Result result = ModIOUnity.InitializeForUser("default");
-            if (!result.Succeeded())
-                return;
-
-            Debug.Log("ModIO plugin initialized!");
-
-            OnInit();
-        }
-
-        async void OnInit()
-        {
-            Result result = await ModIOUnityAsync.IsAuthenticated();
-            if (result.Succeeded())
-            {
-                OnAuth();
-
-                return;
-            }
-
-            authRequest.onClick.AddListener(RequestAuthCode);
-            authSubmit.onClick.AddListener(SubmitAuthCode);
-        }
-
-        #endregion
-
-        #region Authentication
-
-        async void RequestAuthCode()
-        {
-            Result result = await ModIOUnityAsync.RequestAuthenticationEmail(authInput.text);
-            if (!result.Succeeded())
-            {
-                Debug.LogError($"RequestAuthenticationEmail failed: {result.message}");
-
-                return;
-            }
-
-            Debug.Log($"Authentication email sent to: {authInput.text}");
-
-            authInput.text = string.Empty;
-        }
-
-        async void SubmitAuthCode()
-        {
-            Result result = await ModIOUnityAsync.SubmitEmailSecurityCode(authInput.text);
-            if (!result.Succeeded())
-            {
-                Debug.LogError($"SubmitEmailSecurityCode failed: {result.message}");
-
-                return;
-            }
-
-            OnAuth();
-        }
-
-        #endregion
-
-        async void OnAuth()
-        {
-            ResultAnd<UserProfile> result = await ModIOUnityAsync.GetCurrentUser();
-            if (!result.result.Succeeded())
-            {
-                Debug.LogError($"GetCurrentUser failed: {result.result.message}");
-            }
-
-            Debug.Log($"Authenticated user: {result.value.username}");
-
-            authContainer.SetActive(false);
-
-            await AddModsIfNone();
-
-            allMods = await GetAllMods();
-            Debug.Log($"Available mods:\n{string.Join("\n", allMods.Select(mod => $"{mod.name} (id: {mod.id.id})"))}");
-
-            randomButton.onClick.AddListener(SetRandomMod);
-            randomContainer.SetActive(true);
-            SetRandomMod();
-
-            ModProfile[] subscribedMods = await GetSubscribedMods();
-            Debug.Log($"Subscribed mods:\n{(subscribedMods.Length > 0 ? string.Join("\n", subscribedMods.Select(mod => $"{mod.name} (id: {mod.id.id})")) : "None")}");
-
-            if (allMods.Length > 0)
-            {
-                int index = Array.FindIndex(allMods, mod => mod.name == "Ten New Missions");
-                if (index != -1)
-                    await SubscribeToMod(allMods[index].id, subscribedMods);
-                else
-                    Debug.Log("Couldn't find Ten New Missions mod, not subscribing");
-            } else
-                Debug.Log("No mods found, not subscribing");
-
-            EnableModManagement();
-
-            LogInstalledModsForUser();
-        }
-
-        #region Adding Mods
-
-        async Task AddModsIfNone()
-        {
-            ResultAnd<ModPage> resultAnd = await ModIOUnityAsync.GetMods(new SearchFilter());
-            if (!resultAnd.result.Succeeded())
-            {
-                Debug.LogError($"GetMods failed: {resultAnd.result.message}");
-
-                return;
-            }
-
-            if (resultAnd.value.modProfiles.Length != 0)
-            {
-                Debug.Log($"{resultAnd.value.modProfiles.Length} mods found. Not adding mods");
-
-                return;
-            }
-
-            DummyModData[] mods =
-            {
-                await GenerateDummyMod("Cool Weapon", "A really cool weapon.", "24466B", "FDA576", 10),
-                await GenerateDummyMod("Funny Sound Pack", "You'll laugh a lot using this.", "B85675", "633E63", 50),
-                await GenerateDummyMod("Klingon Language Pack", "tlhIngan Hol Dajatlh'a'?", "93681C", "FFEAD0", 1),
-                await GenerateDummyMod("Ten New Missions", "Ported from the sequel to the prequel!", "FDA576", "D45B7A", 99),
-            };
-
-            foreach (DummyModData mod in mods)
-            {
-                await UploadMod(mod.name, mod.summary, mod.logo, mod.path);
-                Directory.Delete(mod.path, true);
-            }
-        }
-
-        #endregion
-
-        #region Uploading Mods
-
-        static async Task UploadMod(string name, string summary, Texture2D logo, string path)
-        {
-            Debug.Log($"Starting upload: {name}");
-
-            ModProfileDetails details = new ModProfileDetails
-            {
-                name = name,
-                summary = summary,
-                logo = logo,
-            };
-
-            ResultAnd<ModId> resultCreate = await ModIOUnityAsync.CreateModProfile(ModIOUnity.GenerateCreationToken(), details);
-            if (!resultCreate.result.Succeeded())
-            {
-                Debug.LogError($"CreateModProfile failed: {resultCreate.result.message}");
-
-                return;
-            }
-
-            ModfileDetails modFile = new ModfileDetails
-            {
-                modId = resultCreate.value,
-                directory = path,
-            };
-
-            float progress = 0f;
-
-            Task<Result> taskUpload = ModIOUnityAsync.UploadModfile(modFile);
-            while (!taskUpload.IsCompleted)
-            {
-                ProgressHandle progressHandle = ModIOUnity.GetCurrentUploadHandle();
-
-                if (!Mathf.Approximately(progressHandle.Progress, progress))
-                {
-                    progress = progressHandle.Progress;
-                    Debug.Log($"Uploading: {name} ({Mathf.RoundToInt(progress * 100)}%)");
-                }
-
-                await Task.Delay(1000);
-            }
-
-            if (!taskUpload.Result.Succeeded())
-            {
-                Debug.LogError($"UploadModfile failed: {taskUpload.Result.message}");
-
-                return;
-            }
-
-            Debug.Log($"Finished upload: {name}");
-        }
-
-        #endregion
-
-        #region Searching for Mods
-
-        async Task<ModProfile[]> GetAllMods()
-        {
-            ResultAnd<ModPage> resultAnd = await ModIOUnityAsync.GetMods(new SearchFilter());
-            if (!resultAnd.result.Succeeded())
-            {
-                Debug.LogError($"GetMods failed: {resultAnd.result.message}");
-
-                return Array.Empty<ModProfile>();
-            }
-
-            return resultAnd.value.modProfiles;
-        }
-
-        #endregion
-
-        #region Downloading Images
-
-        async void SetRandomMod()
-        {
-            ModProfile modProfile = allMods[UnityEngine.Random.Range(0, allMods.Length)];
-
-            randomName.text = modProfile.name;
-
-            ResultAnd<Texture2D> resultAnd = await ModIOUnityAsync.DownloadTexture(modProfile.logoImage_320x180);
-            if (!resultAnd.result.Succeeded())
-            {
-                Debug.LogError($"DownloadTexture failed: {resultAnd.result.message}");
-
-                return;
-            }
-
-            Texture2D logo = resultAnd.value;
-            randomLogo.sprite = Sprite.Create(logo, new Rect(0, 0, logo.width, logo.height), Vector2.zero);
-        }
-
-        #endregion
-
-        #region Getting Subscribed Mods
-
-        static async Task<ModProfile[]> GetSubscribedMods()
-        {
-            Result resultUpdate = await ModIOUnityAsync.FetchUpdates();
-            if (!resultUpdate.Succeeded())
-            {
-                Debug.LogError($"FetchUpdates failed: {resultUpdate.message}");
-
-                return Array.Empty<ModProfile>();
-            }
-
-            SubscribedMod[] subscribed = ModIOUnity.GetSubscribedMods(out Result resultSubscribed);
-            if (!resultSubscribed.Succeeded())
-            {
-                Debug.LogError($"GetSubscribedMods failed: {resultSubscribed.message}");
-
-                return Array.Empty<ModProfile>();
-            }
-
-            return subscribed.Select(mod => mod.modProfile).ToArray();
-        }
-
-        #endregion
-
-        #region Subscribing to Mods
-
-        async Task SubscribeToMod(ModId modId, ModProfile[] subscribed)
-        {
-            if (subscribed.Any(mod => mod.id == modId))
-                return;
-
-            Result result = await ModIOUnityAsync.SubscribeToMod(modId);
-            if (!result.Succeeded())
-            {
-                Debug.LogError($"SubscribeToMod failed: {result.message}");
-
-                return;
-            }
-
-            Debug.Log($"Subscribed to mod: {allMods.First(mod => mod.id == modId).name}");
-        }
-
-        #endregion
-
-        #region Installing Mods
-
-        void EnableModManagement()
-        {
-            void HandleModManagementEvent(ModManagementEventType eventType, ModId modId, Result eventResult)
-            {
-                switch (eventType)
-                {
-                    case ModManagementEventType.DownloadStarted:
-                        downloadName = allMods.First(mod => mod.id == modId).name;
-                        Debug.Log($"Downloading {downloadName}");
-                        break;
-                    case ModManagementEventType.Downloaded:
-                        Debug.Log($"Downloaded {downloadName}");
-                        downloadName = string.Empty;
-                        break;
-                    case ModManagementEventType.DownloadFailed:
-                        Debug.Log($"Download failed {downloadName}");
-                        downloadName = string.Empty;
-                        break;
-                }
-            }
-
-            ModIOUnity.EnableModManagement(HandleModManagementEvent);
-        }
-
-        void Update()
-        {
-            if (downloadName.Length == 0)
-                return;
-
-            ProgressHandle progress = ModIOUnity.GetCurrentModManagementOperation();
-
-            if (Mathf.Approximately(progress.Progress, downloadProgress))
-                return;
-
-            downloadProgress = progress.Progress;
-            Debug.Log($"Downloading {downloadName} ({Mathf.RoundToInt(downloadProgress * 100)}%)");
-        }
-
-        #endregion
-
-        #region Using Mods
-
-        static void LogInstalledModsForUser()
-        {
-            UserInstalledMod[] installedMods = ModIOUnity.GetInstalledModsForUser(out Result result);
-            if (!result.Succeeded())
-            {
-                Debug.LogError($"GetInstalledModsForUser failed: {result.message}");
-
-                return;
-            }
-
-            Debug.Log($"Installed mods:\n{(installedMods.Length > 0 ? string.Join("\n", installedMods.Select(mod => $"{mod.modProfile.name} ({mod.directory})")) : "None")}");
-        }
-
-        #endregion
-
-        #region Generate Dummy Mods
-
-        static async Task<DummyModData> GenerateDummyMod(string name, string summary, string backgroundColor, string textColor, int megabytes)
-        {
-            Debug.Log($"Writing temporary mod file: {name}");
-
-            string path = Path.Combine(Application.dataPath, $"../_temp_dummy_mods/{name}");
-            Directory.CreateDirectory(path);
-
-            using (FileStream fs = File.OpenWrite(Path.Combine(path, $"{name}.dummy")))
-            {
-                for (int i = 0; i < megabytes; i++)
-                {
-                    RandomBytes.NextBytes(Megabyte);
-                    await fs.WriteAsync(Megabyte, 0, Megabyte.Length);
-                }
-            }
-
-            return new DummyModData(
-                name,
-                summary,
-                await GenerateLogo(name.Replace(' ', '+'), backgroundColor, textColor),
-                path
-            );
-        }
-
-        static async Task<Texture2D> GenerateLogo(string text, string backgroundColor, string textColor)
-        {
-            UnityWebRequest request = UnityWebRequestTexture.GetTexture($"https://placehold.co/512x288/{backgroundColor}/{textColor}.png?text={text}");
-            request.SendWebRequest();
-
-            while (!request.isDone)
-                await Task.Yield();
-
-            if (request.result != UnityWebRequest.Result.Success)
-            {
-                Debug.LogError($"GenerateLogo failed: {request.error}");
-
-                return null;
-            }
-
-            return DownloadHandlerTexture.GetContent(request);
-        }
-
-        readonly struct DummyModData
-        {
-            public readonly string name;
-            public readonly string summary;
-            public readonly Texture2D logo;
-            public readonly string path;
-
-            public DummyModData(string name, string summary, Texture2D logo, string path)
-            {
-                this.name = name;
-                this.summary = summary;
-                this.logo = logo;
-                this.path = path;
-            }
-        }
-
-        #endregion
+        // This enforces email auth to be used, a higher priority can be used if needed
+        ModioServices.Bind<IModioAuthPlatform>()
+                          .FromInstance(new ModioEmailAuthPlatform(GetAuthCode));
+        
+        randomContainer.SetActive(false);
     }
+
+#region Initialization
+
+    void Start()
+    {
+        InitPlugin();
+    }
+
+    async Task InitPlugin()
+    {
+        Error error = await ModioClient.Init();
+
+        if (error)
+        {
+            Debug.LogError($"Error initializing mod.io: {error}");
+            return;
+        }
+
+        Debug.Log("mod.io plugin initialized");
+        OnInit();
+    }
+
+    void OnInit()
+    {
+        if (User.Current.IsAuthenticated)
+        {
+            OnAuth();
+            return;
+        }
+
+        // You can assign these using the Inspector if you prefer
+        authRequest.onClick.AddListener(() => Authenticate());
+    }
+
+#endregion
+
+#region Authentication
+
+    async Task Authenticate()
+    {
+        Error error = await ModioClient.AuthPlatform.Authenticate(true, authInput.text);
+
+        if (error)
+        {
+            Debug.LogError($"Error authenticating with email: {error}");
+            return;
+        }
+
+        OnAuth();
+    }
+
+    async Task<string> GetAuthCode()
+    {
+        bool codeEntered = false;
+
+        authSubmit.onClick.AddListener(() => codeEntered = true);
+        
+        while (!codeEntered)
+            await Task.Yield();
+
+        return authInput.text;
+    }
+
+    async void OnAuth()
+    {
+        Debug.Log($"Authenticated user: {User.Current.Profile.Username}");
+
+        await AddModsIfNone();
+        
+        allMods = await GetAllMods();
+        Debug.Log($"Available mods:\n{string.Join("\n", allMods.Select(mod => $"{mod.Name} (id: {mod.Id})"))}");
+        
+        randomButton.onClick.AddListener(SetRandomMod);
+        randomContainer.SetActive(true);
+        SetRandomMod();
+        
+        while (User.Current.IsUpdating)
+            await Task.Yield();
+
+        Mod[] subscribedMods = GetSubscribedMods();
+        Debug.Log($"Subscribed mods:\n{(subscribedMods.Length > 0 ? string.Join("\n", subscribedMods.Select(mod => $"{mod.Name} (id: {mod.Id})")) : "None")}");
+
+        await SubscribeToMod(allMods[UnityEngine.Random.Range(0, allMods.Length - 1)]);
+        
+        WakeUpModManagement();
+    }
+
+#endregion
+
+#region Uploading Mods
+
+    async Task AddModsIfNone()
+    {
+        (Error error, ModioPage<Mod> page) = await Mod.GetMods(new ModSearchFilter());
+        if (error)
+        {
+            Debug.LogError($"Error getting mods: {error}");
+            return;
+        }
+
+        if (page.Data.Length != 0)
+        {
+            Debug.Log($"{page.Data.Length} mods found. Not adding mods");
+            return;
+        }
+
+        DummyModData[] mods =
+        {
+            await GenerateDummyMod("Cool Weapon", "A really cool weapon.", "24466B", "FDA576", 10),
+            await GenerateDummyMod( "Funny Sound Pack", "You'll laugh a lot using this.", "B85675", "633E63", 50),
+            await GenerateDummyMod("Klingon Language Pack", "tlhIngan Hol Dajatlh'a'?", "93681C", "FFEAD0", 1),
+            await GenerateDummyMod( "Ten New Missions", "Ported from the sequel to the prequel!", "FDA576", "D45B7A", 99),
+        };
+        
+        foreach (DummyModData mod in mods)
+        {
+            await UploadMod(mod.name, mod.summary, mod.logo, mod.path);
+            // Directory.Delete(mod.path, true); // Uncomment if you generated dummy mods
+        }
+    }
+
+    async Task UploadMod(string modName, string summary, Texture2D logo, string path)
+    {
+        Debug.Log($"Starting upload: {modName}");
+    
+        var builder = Mod.Create();
+    
+        builder.SetName(modName)
+               .SetSummary(summary)
+               .SetLogo(logo.GetRawTextureData())
+               .EditModfile()
+               .SetSourceDirectoryPath(path)
+               .FinishModfile();
+    
+        (Error error, Mod mod) = await builder.Publish();
+    
+        if (error)
+        {
+            Debug.LogError($"Error uploading mod {modName}: {error}");
+            return;
+        }
+
+        Debug.Log($"Successfully created mod {mod.Name} with Id {mod.Id}");
+    }
+
+#endregion
+
+#region Searching for Mods
+
+    async Task<Mod[]> GetAllMods()
+    {
+        (Error error, ModioPage<Mod> page) = await Mod.GetMods(new ModSearchFilter());
+        if (error)
+        {
+            Debug.LogError($"Error getting mods: {error}");
+            return Array.Empty<Mod>();
+        }
+
+        return page.Data;
+    }
+
+#endregion
+
+#region Downloading Images
+
+    async void SetRandomMod()
+    {
+        Mod mod = allMods[UnityEngine.Random.Range(0, allMods.Length - 1)];
+        
+        randomName.text = mod.Name;
+
+        (Error error, Texture2D texture) = await mod.Logo.DownloadAsTexture2D(Mod.LogoResolution.X320_Y180);
+
+        if (error)
+        {
+            Debug.LogError($"Error downloading {mod.Name}'s logo: {error}");
+            return;
+        }
+        
+        randomLogo.sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), Vector2.zero);
+    }
+
+#endregion
+
+#region Subscribing to Mods
+
+    static Mod[] GetSubscribedMods() => User.Current.ModRepository.GetSubscribed().ToArray();
+
+    async Task SubscribeToMod(Mod mod)
+    {
+        var error = await mod.Subscribe();
+
+        if (error)
+        {
+            Debug.LogError($"Error subscribing to {mod.Name}: {error}");
+            return;
+        }
+        
+        Debug.Log($"Subscribed to mod: {mod.Name}");
+    }
+
+#endregion
+
+#region Installing Mods
+
+    void WakeUpModManagement()
+    {
+        void HandleModManagementEvent(
+            Mod mod, 
+            Modfile modfile, 
+            ModInstallationManagement.OperationType jobType, 
+            ModInstallationManagement.OperationPhase jobPhase
+        ){
+            Debug.Log($"{jobType} {jobPhase}: {mod.Name}");
+
+            switch (jobPhase)
+            {
+                case ModInstallationManagement.OperationPhase.Started
+                    when jobType is not ModInstallationManagement.OperationType.Uninstall:
+                    currentDownload = mod;
+                    break;
+
+                case ModInstallationManagement.OperationPhase.Cancelled:
+                case ModInstallationManagement.OperationPhase.Failed:
+                    currentDownload = null;
+                    break;
+                
+                case ModInstallationManagement.OperationPhase.Completed
+                    when jobType is not ModInstallationManagement.OperationType.Uninstall:
+                    Debug.Log($"Mod {mod.Name} installed at {mod.File.InstallLocation}");
+                    currentDownload = null;
+                    break;
+                
+                case ModInstallationManagement.OperationPhase.Completed:
+                    Debug.Log($"Mod {mod.Name} uninstalled");
+                    break;
+            }
+        }
+        
+        ModInstallationManagement.ManagementEvents += HandleModManagementEvent;
+    }
+
+    void Update()
+    {
+        if (currentDownload == null)
+            return;
+
+        timeToProgressCheck -= Time.deltaTime;
+
+        if (timeToProgressCheck > 0)
+            return;
+
+        Debug.Log($"Downloading {currentDownload.Name}: [{Mathf.RoundToInt(currentDownload.File.FileStateProgress * 100)}%]");
+        timeToProgressCheck += 1f;
+    }
+
+#endregion
+
+#region Generate Dummy Mods
+
+    async Task<DummyModData> GenerateDummyMod(
+        string dummyName,
+        string summary,
+        string backgroundColor,
+        string textColor,
+        int megabytes
+    )
+    {
+        Debug.Log($"Writing temporary mod file: {dummyName}");
+
+        string path = Path.Combine(Application.dataPath, $"../_temp_dummy_mods/{dummyName}");
+        Directory.CreateDirectory(path);
+
+        using (FileStream fs = File.OpenWrite(Path.Combine(path, $"{dummyName}.dummy")))
+        {
+            for (int i = 0; i < megabytes; i++)
+            {
+                RandomBytes.NextBytes(Megabyte);
+                await fs.WriteAsync(Megabyte, 0, Megabyte.Length);
+            }
+        }
+
+        return new DummyModData(
+            dummyName,
+            summary,
+            await GenerateLogo(dummyName.Replace(' ', '+'), backgroundColor, textColor),
+            path
+        );
+    }
+
+    // Uses a third-party API to generate a logo for each
+    // mod, adding some variety when we display them later
+    async Task<Texture2D> GenerateLogo(string text, string backgroundColor, string textColor)
+    {
+        UnityWebRequest request = UnityWebRequestTexture.GetTexture(
+            $"https://placehold.co/512x288/{backgroundColor}/{textColor}.png?text={text}"
+        );
+
+        request.SendWebRequest();
+
+        while (!request.isDone)
+            await Task.Yield();
+
+        if (request.result != UnityWebRequest.Result.Success)
+        {
+            Debug.LogError($"GenerateLogo failed: {request.error}");
+
+            return null;
+        }
+
+        return DownloadHandlerTexture.GetContent(request);
+    }
+
+    readonly struct DummyModData
+    {
+        public readonly string name;
+        public readonly string summary;
+        public readonly Texture2D logo;
+        public readonly string path;
+
+        public DummyModData(string name, string summary, Texture2D logo, string path)
+        {
+            this.name = name;
+            this.summary = summary;
+            this.logo = logo;
+            this.path = path;
+        }
+    }
+
+#endregion
 }
+
 ```
 
 </details>
-
-## Browser UI
-
-> [!WARNING]
-> The Browser UI is scheduled for deprecation, and may not receive updates.
-> This is to be replaced with the [Component UI / Template UI](#component-ui)
-
-> [!IMPORTANT]  
-> The Browser UI relies on the *config file* that is configured during the [setup instructions](#setup) above. Ensure you have completed all of those steps before proceeding.
-
-The Browser UI is incredibly simple to set up, and completely avoids the complexity that can come with building a full-featured mod browser: 
-
-1. Drag the Browser UI prefab at `Assets/Plugins/mod.io/UI/Examples/ModIOBrowser` into your scene.
-2. Call its `ModIOBrowser.Browser.Open()` method to show the browser in your scene.
-
-If you want a fuller understanding of the plugin and its features, we recommend following the [getting started](#getting-started) guide above.
-
-<p float="left">
-  <img src="https://assetstorev1-prd-cdn.unity3d.com/package-screenshot/a7f9360d-4837-4d6e-b5cb-db5544a27b8c_orig.png" width="49%" alt="Browser UI screenshot" />
-  <img src="https://assetstorev1-prd-cdn.unity3d.com/package-screenshot/b37c33d6-aaa1-49c5-a6fd-c4ae18627bd2_orig.png" width="49%" alt="Browser UI screenshot" /> 
-</p>
-
-### Terms of Use Localization and RTL Languages
-
-When a user authenticates, the Browser UI will localize mod.io's terms of use based on the language code set in your config file (`Tools > mod.io > Edit Settings`, or `Settings.server.languageCode`). 
-
-To avoid the plugin conflicting with an existing solution, in the case of right-to-left languages you will need to apply your current implementation for mixed RTL and LTR text to the terms text-elements in the browser. 
-
-## Component UI
-The Component UI is an experimental module that allows for a more easily integrated and customised Mod Browsing UI.
-This can be accessed via the `modio-ui.unitypackage` provided in the plugin in the `experimental` folder.
-A Readme is provided in the package.
-> [!IMPORTANT]
-> This will be replacing the functionality provided by the Browser UI, once the Browser UI is deprecated.
-
-# Marketplace
-The mod.io SDK supports full monetization features, allowing you to sell a per-game virtual currency to your players that they can use to purchase mods, with a share of the revenue split between creators and your studio. Every platform requires specific setup for monetization features to work, with regards to the virtual currency configuration and API calls.
-
-The following documentation walks you through the setup process and gives example usages. The mod.io monetization features are enabled as part of the onboarding process on your game profile. Once that is setup, there is nothing further you need to do for initialization in the SDK.
-
-### Enable Marketplace in the Plugin
-The first thing you will need to do is enable the marketplace in the mod.io portal for your game under Admin->Monetization->Settings->Enable Marketplace.
-
-### Get User Wallet Balance
-Returns the current user's virtual currency credits balance.
-
-> [!NOTE]
-> This function creates a wallet for the user the first time it is called so this must be called before any sync entitlements calls.
-```csharp
-async void GetUserWalletBalanceExample()
-{
-    var response = await ModIOUnityAsync.GetUserWalletBalance();
-    if (response.result.Succeeded())
-        Debug.Log($"User has a balance of {response.value.balance} credits.");
-    else
-        Debug.Log("failed to get balance");
-}
-```
-
-### Purchase Item
-Purchases a mod using virtual currency credits.
-```csharp
-async void PurchaseItemExample()
-{
-    ModId modId = new ModId(1234); // Mod to purchase
-    int displayedAmount = 12; // Price displayed to the player (must match mod price)
-    string idempotent = $"aUniqueKey"; // Unique key used to prevent duplicate purchases
-    
-    var response = await ModIOUnityAsync.PurchaseItem(modId, displayedAmount, idempotent);
-    if (response.result.Succeeded())
-        Debug.Log("Completed Purchase");
-    else
-        Debug.Log("failed to complete purchase");
-}
-```
-
-### Get User Purchases
-Returns the current user's purchased mods.
-```csharp
-async void GetUserPurchases()
-{
-    ModProfile[] purchased = ModIOUnity.GetPurchasedMods(out Result result);
-    if (result.Succeeded())
-        foreach (ModProfile mod in purchased)
-            Debug.Log($"User owns mod with id: {mod.id}");
-    else
-        Debug.Log("Failed to get purchases");
-}
-```
-
-### Syncing Purchases with Steam
-> [!NOTE]
-> Setup virtual currency pack SKUs from your game's mod.io website dashboard by navigating to `Admin -> Monetization -> Manage SKUs`.
-
-> [!NOTE]
-> > The GetUserWalletBalanceExample function creates a wallet for the user the first time it is called so this must be called before any sync entitlements calls.
-
-Once you have setup SKUs for your users to purchase virtual currency packs through Steam, you can sync these purchases with the mod.io server using the `SyncEntitlments()` method. 
-
-After a user purchases a virtual currency pack on Steam, calling `SyncEntitlements()` will consume the purchased item, and add those credits to the user's wallet. Below is a very simple example of how to use the method:
-
-> [!WARNING]  
-> It is highly recommended that you call `SyncEntitlements()` after any successful external purchase.
-
-```csharp
-async void SyncEntitlements()
-{
-    Result result = await ModIOUnityAsync.SyncEntitlements();
-    if (response.result.Succeeded())
-        Debug.Log("Entitlements are synced");
-    else
-        Debug.Log("Failed to sync entitlements");
-}
-```
-
-> [!NOTE]
-> `SyncEntitlements()` is automatically run during `ModIOUnity.FetchUpdates()`.
-
-> [!NOTE]
-> `SyncEntitlements()` can also be used for consuming purchases on console platforms.
-
-# Service to Service API
-To facilitate HTTP requests to mod.io's Service To Service (S2S) API's, your backend server must first authenticate and generate 
-credentials that your backend service will use. Credentials required by S2S API's are separate from mod.io's public API 
-endpoints and cannot be used interchangeably.
-
-### Requesting a User Delegation Token
-Some service-to-service endpoints require user context to be able to make requests on behalf of a user, such as creating a transaction.
-To facilitate this, mod.io hosts a public endpoint which can be called by an authenticated user with their bearer token which returns 
-what we call a User Delegation Token. This token should then be sent to your secure backend server from your game client, where you 
-can then use it for specific endpoints in conjunction with a valid service token.
-
-> [!NOTE]
-> User must me authenticated to request a User Delegation Token.
-
-```csharp
-async void Example()
-{
-     ResultAnd<UserDelegationToken> response = await ModIOUnityImplementation.RequestUserDelegationToken();
-
-    if (response.result.Succeeded())
-    {
-        Debug.Log("successful.");
-        //TODO: Send response.value.token to server
-    }
-    else
-    {
-        Debug.Log("failed.");
-    }
- }
-```
-
-# Temp Mod Sets
-
-Temp Mod sets allow users to download mods that they are not subscribed to. This can be helpful in multiplayer situations, when a player might join a game that requires specific mods to be downloaded.
-The intended flow in this situation would be to Create a temp mod set when a player joins the game and Delete the temp mod set when the game is over.
-The following documentation walks you through the setup process and gives example usages.
-
-Creating a temp mod set starts to download mods in the set in a temporary location unassociated with their subscribed mods. 
-
-> [!NOTE]
-> Mods that the user is subscribed to will be not be re-downloaded and will remain in the installed mods location for that user.
-
-```csharp
-ModId[] modIds;
-void Example()
-{
-    Result result = await ModIOUnityAsync.CreateTempModSet(modIds);
-    if (result.Succeeded())
-    {
-        Debug.Log("Successful");
-    }
-    else
-    {
-        Debug.Log("Failed");
-    }
-}
-```
-
-Destroying a temp mod set removes the temporary installed mods in that set and allows for uninstallation of temporary mods.
-
-```csharp
-void Example()
-{
-    Result result = await ModIOUnityAsync.ModIOUnity.DeleteTempModSet();
-    if (result.Succeeded())
-    {
-        Debug.Log("Successful");
-    }
-    else
-    {
-        Debug.Log("Failed");
-    }
-}
-```
-
-Adds mods to an existing Temp mod set and downloads/installs them if needed.
-> [!NOTE]
-> Mods that the user is subscribed to will be not be re-downloaded and will remain in the installed mods location for that user.
-
-```csharp
-ModId[] modIds;
-void Example()
-{
-    Result result = await ModIOUnityAsync.AddModToTempModSet(modIds);
-    if (result.Succeeded())
-    {
-        Debug.Log("Successful");
-    }
-    else
-    {
-        Debug.Log("Failed");
-    }
-}
-```
-
-Removes mods from an existing Temporary Mod Set. This removes them from the list in the set but does not uninstall them, that is done when the set is destroyed.
-```csharp
-ModId[] modIds;
-void Example()
-{
-    Result result = await ModIOUnityAsync.RemoveModsFromTempModSet(modIds);
-    if (result.Succeeded())
-    {
-        Debug.Log("Successful");
-    }
-    else
-    {
-        Debug.Log("Failed");
-    }
-}
-```
-
-Gets an array of temp mods that are installed on the current device. 
-
-> [!NOTE]
-> These will not be subscribed by the current user. If you wish to get all the current user's installed mods use ModIOUnity.GetSubscribedMods() and check the SubscribedMod.status equals SubscribedModStatus.Installed.
-```csharp
-void Example()
-{
-    InstalledMod[] mods = await ModIOUnityAsync.GetTempSystemInstalledMods(out Result result);
-    if (result.Succeeded())
-    {
-        Debug.Log("found " + mods.Length.ToString() + " temp mods installed");
-    }
-    else
-    {
-        Debug.Log("failed to get temp installed mods");
-    }
-}
-```
-
-# Analytics
-The mod.io SDK supports analytic features, allowing you to view your players' mod activity.
-
-The following documentation walks you through the setup process and gives example usages.
-
-When you want to start tracking analytic data you can call ```StartAnalyticsSession()```. This function requires a unique ```sessionId```, an array of ```modIds``` being used in the session,
-and the ```autoStartHeartbeat``` boolean that represents automation of the analytics heartbeat. 
-
-> [!NOTE]
-> You will need to cache your session id as it will be needed later.
-
-> [!NOTE]
-> It is recommended that you allow automation of the heartbeat function by passing in ```true```.
-
-
-```csharp
-string[] modIds;
-string sessionId;
-
-void Example()
-{
-    var r = await ModIOUnityAsync.StartAnalyticsSession(sessionId, modIds, true);
-    if (r.result.Succeeded())
-    {
-        //Store the returned session id to end the session later.
-        sessionId = r.value;
-        Debug.Log("Successfully sent start analytics session request");
-    }
-    else
-    {
-        Debug.Log("Failed to send start analytics session request");
-    }
-}
-```
-
-If you decide that you want more control over when the heartbeat function is called, you can manually call ```SendAnalyticsHeartbeat()```. This function tells our backend that the session is still active. The only parameter required is the ```sessionId``` that you used to start the analytics session.
-
-> [!NOTE]
-> Each call to ```SendAnalyticsHeartbeat()``` should be at least 5 minutes apart. 
-```csharp
-string sessionId;
- 
-async void Example()
-{
-    Result r = await ModIOUnityAsync.SendAnalyticsHeartbeat(sessionId);
-
-    if (r.result.Succeeded())
-    {
-        Debug.Log("Successfully sent analytics heartbeat request");
-    }
-    else
-    {
-        Debug.Log("Failed to send analytics heartbeat request");
-    }
-}
-```
-
-When you are ready to end the session, you can call ```EndAnalyticsSession()``` by passing in the ```sessionId``` that you used to start the analytics session.
-
-```csharp
-string sessionId;
-async void Example()
-{
-    Result result = await ModIOUnityAsync.EndAnalyticsSession(sessionId);
-
-    if (result.Succeeded())
-    {
-        Debug.Log("Successfully sent end analytics request");
-    }
-    else
-    {
-        Debug.Log("Failed to send end analytics request");
-    }
-}
-```

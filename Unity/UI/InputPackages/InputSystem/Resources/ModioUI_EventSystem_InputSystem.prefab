@@ -1,0 +1,210 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &6912211052455551757
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8656691622232598538}
+  - component: {fileID: 4647128686488620260}
+  - component: {fileID: 3034000040800523264}
+  - component: {fileID: 8755658807577935523}
+  - component: {fileID: 245996909495200855}
+  m_Layer: 0
+  m_Name: ModioUI_EventSystem_InputSystem
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8656691622232598538
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6912211052455551757}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4647128686488620260
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6912211052455551757}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4ad19883c2b047d89b32a766ba00710f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &3034000040800523264
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6912211052455551757}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 76c392e42b5098c458856cdf6ecaaaa1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_FirstSelected: {fileID: 0}
+  m_sendNavigationEvents: 1
+  m_DragThreshold: 10
+--- !u!114 &8755658807577935523
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6912211052455551757}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01614664b831546d2ae94a42149d80ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_MoveRepeatDelay: 0.5
+  m_MoveRepeatRate: 0.1
+  m_XRTrackingOrigin: {fileID: 0}
+  m_ActionsAsset: {fileID: -944628639613478452, guid: ca9f5fa95ffab41fb9a615ab714db018,
+    type: 3}
+  m_PointAction: {fileID: -1654692200621890270, guid: ca9f5fa95ffab41fb9a615ab714db018,
+    type: 3}
+  m_MoveAction: {fileID: -8784545083839296357, guid: ca9f5fa95ffab41fb9a615ab714db018,
+    type: 3}
+  m_SubmitAction: {fileID: 392368643174621059, guid: ca9f5fa95ffab41fb9a615ab714db018,
+    type: 3}
+  m_CancelAction: {fileID: 7727032971491509709, guid: ca9f5fa95ffab41fb9a615ab714db018,
+    type: 3}
+  m_LeftClickAction: {fileID: 3001919216989983466, guid: ca9f5fa95ffab41fb9a615ab714db018,
+    type: 3}
+  m_MiddleClickAction: {fileID: -2185481485913320682, guid: ca9f5fa95ffab41fb9a615ab714db018,
+    type: 3}
+  m_RightClickAction: {fileID: -4090225696740746782, guid: ca9f5fa95ffab41fb9a615ab714db018,
+    type: 3}
+  m_ScrollWheelAction: {fileID: 6240969308177333660, guid: ca9f5fa95ffab41fb9a615ab714db018,
+    type: 3}
+  m_TrackedDevicePositionAction: {fileID: 6564999863303420839, guid: ca9f5fa95ffab41fb9a615ab714db018,
+    type: 3}
+  m_TrackedDeviceOrientationAction: {fileID: 7970375526676320489, guid: ca9f5fa95ffab41fb9a615ab714db018,
+    type: 3}
+  m_DeselectOnBackgroundClick: 0
+  m_PointerBehavior: 0
+  m_CursorLockBehavior: 0
+--- !u!114 &245996909495200855
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6912211052455551757}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62899f850307741f2a39c98a8b639597, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Actions: {fileID: -944628639613478452, guid: 7292afd6696f7d347a66620a173825f0,
+    type: 3}
+  m_NotificationBehavior: 2
+  m_UIInputModule: {fileID: 0}
+  m_DeviceLostEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_DeviceRegainedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ControlsChangedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ActionEvents:
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 5e25ee26-71b5-4496-8d79-5425a8d354bf
+    m_ActionName: Generic/Cancel[/Keyboard/escape,/XInputControllerWindows/buttonEast]
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 5ed7bbea-6c38-49c8-9472-c9fbe15521c4
+    m_ActionName: Generic/Search[/Keyboard/n]
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 9f7a2e16-b1de-4538-a071-0f0d146e9c53
+    m_ActionName: Generic/Filter[/Keyboard/f]
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 88ca5207-6106-4c9b-895d-9f44d4779d6e
+    m_ActionName: Generic/Sort[/Keyboard/r]
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 68d13cd6-6e08-4ed9-a5c8-5bb8c3380301
+    m_ActionName: Generic/Report[/Keyboard/y]
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 812a6193-d4b9-4415-940f-07691d900f6a
+    m_ActionName: Generic/Subscribe
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 55622874-44d7-466d-8f3c-67adda0ced2d
+    m_ActionName: Generic/TabLeft[/Keyboard/q]
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: b9ce2aaa-6755-447d-b6d2-c40614cfc14a
+    m_ActionName: Generic/TabRight[/Keyboard/e]
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: d7a3defe-00e0-433c-89ea-5159c86d1d0c
+    m_ActionName: Generic/BuyTokens[/Keyboard/t]
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 10b1c41d-b9d9-4882-b8c5-bd57fed8e3c6
+    m_ActionName: Generic/FilterLeft
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 5c488676-a66b-4df8-a5d7-59ac6a01c22d
+    m_ActionName: Generic/FilterRight
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: ab67cf02-570a-41d3-b8c1-94122651057e
+    m_ActionName: Generic/DetectMouseInput[/Mouse/press]
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 461961ec-5afb-41da-9abe-ff52dc6e2a39
+    m_ActionName: Generic/DetectMouseMovement[/Mouse/delta/x]
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 1bf2ac78-b8b4-4f49-8a37-3dc5c4cb9ac6
+    m_ActionName: Generic/FilterClear
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 03829c05-01dd-4f2f-a3b7-b6ed6e0b8b4e
+    m_ActionName: Generic/MoreOptions[/Keyboard/period]
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 0150af94-635f-4c3b-8ae7-7f45032e1ce1
+    m_ActionName: Generic/SearchPageLeft[/Keyboard/leftBracket]
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: cb2eecbf-df31-40a8-ac60-d040d1afe869
+    m_ActionName: Generic/SearchPageRight[/Keyboard/rightBracket]
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 9526f3e0-cd60-4b36-9894-decbb2e06861
+    m_ActionName: Generic/ScrollDescription
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: d48c868a-0e5a-4158-a6f6-15e0d9d2d2e7
+    m_ActionName: Generic/MoreFromThisCreator
+  m_NeverAutoSwitchControlSchemes: 0
+  m_DefaultControlScheme: 
+  m_DefaultActionMap: Generic
+  m_SplitScreenIndex: -1
+  m_Camera: {fileID: 0}
