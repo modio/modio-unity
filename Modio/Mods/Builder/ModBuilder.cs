@@ -31,6 +31,7 @@ namespace Modio.Mods.Builder
         public string Description { get; private set; } = null;
         public string LogoFilePath { get; private set; } = null;
         byte[] _logoBytes;
+        ImageFormat _logoBytesFormat;
         public string[] GalleryFilePaths { get; private set; } = null;
         bool _appendingGallery;
 
@@ -99,7 +100,8 @@ namespace Modio.Mods.Builder
             _pendingChanges |= ChangeFlags.Description;
             return this;
         }
-
+        
+        /// <remarks>This will overwrite all tags on the mod.</remarks>
         public ModBuilder SetTags(ICollection<string> tags)
         {
             Tags = tags.ToArray();
@@ -107,12 +109,17 @@ namespace Modio.Mods.Builder
             return this;
         }
 
+        /// <remarks>This will overwrite all tags on the mod.</remarks>
+        public ModBuilder SetTags(string tag) => SetTags(new[] { tag, });
+
         public ModBuilder AppendTags(ICollection<string> tags)
         {
             Tags = Tags.Concat(tags).ToArray();
             _pendingChanges |= ChangeFlags.Tags;
             return this;
         }
+
+        public ModBuilder AppendTags(string tag) => AppendTags(new[] { tag, });
 
         public ModBuilder SetMetadataBlob(string data)
         {
@@ -145,9 +152,10 @@ namespace Modio.Mods.Builder
             return this;
         }
 
-        public ModBuilder SetLogo(byte[] imageData)
+        public ModBuilder SetLogo(byte[] imageData, ImageFormat format)
         {
             _logoBytes = imageData;
+            _logoBytesFormat = format;
             _pendingChanges |= ChangeFlags.Logo;
             return this;
         }
@@ -323,8 +331,14 @@ namespace Modio.Mods.Builder
 
             string nameId = Name.ToLowerInvariant().Replace(' ', '-');
 
-            ModioAPIFileParameter logo = LogoFromFilePath(LogoFilePath);
-            
+            (Error error, ModioAPIFileParameter logo) = TryGetLogoFileParameter();
+
+            if (error)
+            {
+                ModioLog.Error?.Log($"Error getting File parameter from Logo: {error}");
+                return (error, null);
+            }
+
             var body = new AddModRequest(
                 Name,
                 nameId,
@@ -340,13 +354,14 @@ namespace Modio.Mods.Builder
                 Tags
             );
 
-            (Error error, ModObject? modObject) = await ModioAPI.Mods.AddMod(body);
+            ModObject? modObject;
+            (error, modObject) = await ModioAPI.Mods.AddMod(body);
 
             _commitErrors[ChangeFlags.AddFlags] = error;
             
             if (error || !modObject.HasValue)
             {
-                ModioLog.Error?.Log($"Error publishing new mod {Name}: {error}");
+                if (!error.IsSilent) ModioLog.Error?.Log($"Error publishing new mod {Name}: {error}");
                 return (error, null);
             }
 
@@ -363,11 +378,34 @@ namespace Modio.Mods.Builder
             return (Error.None, mod);
         }
 
+        (Error error, ModioAPIFileParameter logo) TryGetLogoFileParameter()
+        {
+            ModioAPIFileParameter logo = ModioAPIFileParameter.None;
+            Error error = Error.None;
+
+            if (!string.IsNullOrEmpty(LogoFilePath))
+            {
+                (error, logo) = LogoFromFilePath(LogoFilePath);
+                if (error) 
+                    ModioLog.Error?.Log($"Couldn't create Logo file from file path {LogoFilePath}, cannot publish edits");
+            }
+            else if (_logoBytes.Length > 0)
+                logo = LogoFromByteArray();
+            else
+            {
+                ModioLog.Error?.Log($"Couldn't create Logo file from either source! Cannot publish edits");
+                error = new Error(ErrorCode.BAD_PARAMETER);
+            }
+                
+            return (error, logo);
+        }
+
         async Task PublishRemainingChanges()
         {
             List<ChangeFlags> remainingChanges = Enum.GetValues(typeof(ChangeFlags))
                                                      .Cast<ChangeFlags>()
                                                      .Where(flag => _pendingChanges.HasFlag(flag))
+                                                     .Where(flag => flag != ChangeFlags.None)
                                                      .ToList();
 
             foreach (ChangeFlags change in remainingChanges)
@@ -389,17 +427,16 @@ namespace Modio.Mods.Builder
             string nameId = Name?.ToLowerInvariant().Replace(' ', '-');
 
             ModioAPIFileParameter logo = ModioAPIFileParameter.None;
-
+            Error error;
+            
             if (_pendingChanges.HasFlag(ChangeFlags.Logo))
             {
-                if (!string.IsNullOrEmpty(LogoFilePath))
-                    logo = LogoFromFilePath(LogoFilePath);
-                else if (_logoBytes.Length > 0)
-                    logo = LogoFromByteArray();
-                else
+                (error, logo) = TryGetLogoFileParameter();
+
+                if (error)
                 {
-                    ModioLog.Error?.Log($"Couldn't create Logo file from either source! Cannot publish edits");
-                    return (new Error(ErrorCode.BAD_PARAMETER), null);
+                    ModioLog.Error?.Log($"Error getting File parameter from logo, cannot publish edits: {error}");
+                    return (error, EditTarget);
                 }
             }
             
@@ -421,13 +458,14 @@ namespace Modio.Mods.Builder
                 _pendingChanges.HasFlag(ChangeFlags.MonetizationConfig) ? Stock : null
             );
 
-            (Error error, ModObject? modObject) = await ModioAPI.Mods.EditMod(EditTarget.Id, body);
+            ModObject? modObject;
+            (error, modObject) = await ModioAPI.Mods.EditMod(EditTarget.Id, body);
 
             _commitErrors[ChangeFlags.EditFlags] = error;
             
             if (error)
             {
-                ModioLog.Error?.Log($"Error publishing changes for mod {EditTarget.Name}: {error}");
+                if (!error.IsSilent) ModioLog.Error?.Log($"Error publishing changes for mod {EditTarget.Name}: {error}");
                 return (error, EditTarget);
             }
             
@@ -459,7 +497,7 @@ namespace Modio.Mods.Builder
             var requestBody = new AddModMediaRequest(file, sync);
             (error, _) = await ModioAPI.Media.AddModMedia(EditTarget.Id, requestBody);
 
-            if (error)
+            if (error && !error.IsSilent)
                 ModioLog.Error?.Log($"Error publishing Gallery for {EditTarget.Name}: {error}");
             
             return error;
@@ -480,7 +518,7 @@ namespace Modio.Mods.Builder
             (Error error, _)
                 = await ModioAPI.Metadata.AddModKvpMetadata(EditTarget.Id, body);
 
-            if (error)
+            if (error && !error.IsSilent)
                 ModioLog.Error?.Log($"Error publishing MetadataKvps for {EditTarget.Name}: {error}");
 
             return error;
@@ -495,7 +533,7 @@ namespace Modio.Mods.Builder
             (Error error, _) 
                 = await ModioAPI.Dependencies.AddModDependencies(EditTarget.Id, body);
 
-            if (error)
+            if (error && !error.IsSilent)
                 ModioLog.Error?.Log($"Error publishing Dependencies for {EditTarget.Name}: {error}");
 
             return error;
@@ -525,7 +563,7 @@ namespace Modio.Mods.Builder
 
             (error, _) = await ModioAPI.Mods.EditMod(EditTarget.Id, body);
 
-            if (error)
+            if (error && !error.IsSilent)
                 ModioLog.Error?.Log($"Error publishing Monetization changes for {EditTarget.Id}: {error}");
 
             return error;
@@ -558,6 +596,12 @@ namespace Modio.Mods.Builder
 
         static bool ValidateImageFilePath(string filePath)
         {
+            if (string.IsNullOrEmpty(filePath))
+            {
+                ModioLog.Error?.Log($"Image file path {filePath} cannot be null or empty!");
+                return false;
+            }
+            
             string extension = Path.GetExtension(filePath).ToLowerInvariant();
             string fileName = Path.GetFileName(filePath).ToLowerInvariant();
 
@@ -589,22 +633,25 @@ namespace Modio.Mods.Builder
             {
                 Position = 0,
             },
-            "logo.jpg",
-            "logo"
+            $"logo.{_logoBytesFormat}",
+            $"image/{_logoBytesFormat}"
         );
 
-        static ModioAPIFileParameter LogoFromFilePath(string filePath)
+        static (Error error, ModioAPIFileParameter file) LogoFromFilePath(string filePath)
         {
             if (!ValidateImageFilePath(filePath))
-                return default(ModioAPIFileParameter);
+                return (new Error(ErrorCode.BAD_PARAMETER), default(ModioAPIFileParameter));
             
             string extension = Path.GetExtension(filePath).ToLowerInvariant();
 
-            return new ModioAPIFileParameter(
+            if (string.IsNullOrEmpty(extension)) 
+                return (new Error(ErrorCode.BAD_PARAMETER), default(ModioAPIFileParameter));
+
+            return (Error.None, new ModioAPIFileParameter(
                 $"logo{extension}",
-                "logo",
+                $"image/{extension[1..]}",
                 filePath
-            );
+            ));
         }
 
         static async Task<(Error error, ModioAPIFileParameter file)> GalleryZipFromFilePaths(ICollection<string> imageFilePaths)
@@ -636,7 +683,7 @@ namespace Modio.Mods.Builder
 
             memStream.Position = 0;
 
-            return (Error.None, new ModioAPIFileParameter(memStream, "images.zip", "images"));
+            return (Error.None, new ModioAPIFileParameter(memStream, "images.zip", "application/zip"));
         }
         
         [Flags]
@@ -647,6 +694,21 @@ namespace Modio.Mods.Builder
             Live         = 2,
             LimitedStock = 8,
         }
+
+        static string GetExtensionFromFormat(ImageFormat format) => format switch
+        {
+            ImageFormat.Jpeg => "jpeg",
+            ImageFormat.Jpg  => "jpg",
+            ImageFormat.Png  => "png",
+            _                => throw new ArgumentException($"Image format {format} not supported!"),
+        };
+    }
+    
+    public enum ImageFormat
+    {
+        Jpg,
+        Jpeg,
+        Png,
     }
     
     /*

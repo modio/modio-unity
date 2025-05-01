@@ -395,7 +395,7 @@ namespace Modio.Unity.UI.Search
                 
             if (error)
             {
-                if(error.Code != ErrorCode.SHUTTING_DOWN)
+                if(!error.IsSilent)
                     ModioLog.Error?.Log($"Error getting mods: {error.GetMessage()}");
                 return (error, null, 0);
             }

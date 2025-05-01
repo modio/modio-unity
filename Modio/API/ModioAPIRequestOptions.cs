@@ -85,12 +85,12 @@ namespace Modio.API
 
         public void AddBody(IApiRequest request)
         {
-            foreach (KeyValuePair<string, object> fileParam in request.GetBodyParameters())
+            foreach (KeyValuePair<string, object> bodyParam in request.GetBodyParameters())
             {
-                if (fileParam.Value is ModioAPIFileParameter file)
-                    FileParameters.Add(fileParam.Key, file);
-                else
-                    FormParameters.Add(fileParam.Key, ParameterToString(fileParam.Value));
+                if (bodyParam.Value is ModioAPIFileParameter file)
+                    FileParameters.Add(bodyParam.Key, file);
+                else if(bodyParam.Value != null)
+                    FormParameters.Add(bodyParam.Key, ParameterToString(bodyParam.Value));
             }
         }
 

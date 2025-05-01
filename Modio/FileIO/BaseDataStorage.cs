@@ -47,6 +47,8 @@ namespace Modio.FileIO
             IsShuttingDown = false;
             Initialized = true;
 
+            MigrateLegacyModInstalls();
+            
             return Task.FromResult(Error.None);
         }
 
@@ -124,9 +126,7 @@ namespace Modio.FileIO
             Error error = await WriteTextFile(filePath, json);
 
             if (error)
-                ModioLog.Error?.Log(
-                    $"Error writing the {typeof(T).Name} file at path {filePath}: {error.GetMessage()}"
-                );
+                ModioLog.Error?.Log($"Error writing the {typeof(T).Name} file at path {filePath}: {error.GetMessage()}");
 
             return error;
         }
@@ -537,7 +537,7 @@ namespace Modio.FileIO
 
             if (error)
             {
-                ModioLog.Error?.Log($"Extraction operation for Modfile {mod.Id} aborted.");
+                if (!error.IsSilent) ModioLog.Error?.Log($"Extraction operation for Modfile {mod.Id} aborted.");
                 Error cleanupError = DeleteDirectoryAndContents(temporaryDirectoryPath);
 
                 if (cleanupError)
@@ -595,7 +595,7 @@ namespace Modio.FileIO
             {
                 var validPaths = new List<(long modId, long modfileId)>();
 
-                foreach ((Error error, string path) in IterateDirectoriesInDirectory(Path.Combine(Root, "Installed")))
+                foreach ((Error error, string path) in IterateDirectoriesInDirectory(Path.Combine(Root, "mods")))
                 {
                     if (error) continue;
 
@@ -617,6 +617,39 @@ namespace Modio.FileIO
                 ModioLog.Error?.Log($"Exception scanning Mod Installations: {exception}");
 
                 return Task.FromResult(((Error)new ErrorException(exception), new List<(long, long)>()));
+            }
+        }
+
+        internal virtual void MigrateLegacyModInstalls()
+        {
+            try
+            {
+                foreach ((Error error, string legacyPath) in IterateDirectoriesInDirectory(Path.Combine(Root, "Installed")))
+                {
+                    if (error) continue;
+
+                    string fileName = Path.GetFileName(legacyPath);
+                    string[] nameComponents = fileName.Split('_');
+
+                    if (nameComponents.Length != 2
+                        || !long.TryParse(nameComponents[0], out long modId)
+                        || !long.TryParse(nameComponents[1], out long modfileId))
+                    {
+                        ModioLog.Message?.Log($"Invalid Install name in legacy folder: [{fileName}], skipping");
+                        continue;
+                    }
+
+                    string newPath = GetInstallPath(modId, modfileId);
+
+                    if (Directory.Exists(newPath))
+                        Directory.Delete(legacyPath, true);
+                    else
+                        Directory.Move(legacyPath, newPath);
+                }
+            }
+            catch (Exception exception)
+            {
+                ModioLog.Error?.Log($"Exception scanning legacy Mod Installations: {exception}");
             }
         }
 
@@ -941,7 +974,8 @@ namespace Modio.FileIO
             => Path.Combine(Root, "Modfiles", $"{modId}_{modfileId}_modfile.zip");
 
         public virtual string GetInstallPath(long modId, long modfileId)
-            => $"{Path.Combine(Root, "Installed", $"{modId}_{modfileId}")}{Path.DirectorySeparatorChar}";
+            // Match V2 install path. Note that initial V3 versions put mods in an "Installed" directory; see MigrateLegacyModInstalls
+            => $"{Path.Combine(Root, "mods", $"{modId}_{modfileId}")}{Path.DirectorySeparatorChar}";
 
         protected virtual string GetTemporaryInstallPath(long modId, long modfileId)
             => $"{Path.Combine(Root, "Temp", $"{modId}_{modfileId}")}{Path.DirectorySeparatorChar}";

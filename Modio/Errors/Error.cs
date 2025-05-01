@@ -12,6 +12,9 @@ namespace Modio
 
         public Error(ErrorCode code) => Code = code;
 
+        /// <summary>If an error is silent, don't print an error to the console.</summary>
+        public bool IsSilent => Code is ErrorCode.SHUTTING_DOWN or ErrorCode.OPERATION_CANCELLED;
+
         public virtual string GetMessage() => Code.GetMessage();
 
         public static implicit operator bool(Error error) => error.Code != ErrorCode.NONE;

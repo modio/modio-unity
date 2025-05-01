@@ -5,9 +5,14 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json.Linq;
 
+/*
+ * CHANGES FROM AUTO GENERATION
+ *  - Made public
+ */
+
 namespace Modio.API.SchemaDefinitions{
     [JsonObject]
-    internal readonly partial struct SwitchAuthenticationRequest : IApiRequest
+    public readonly partial struct SwitchAuthenticationRequest : IApiRequest
     {
         static readonly Dictionary<string, object> _bodyParameters = new Dictionary<string, object>();
 

@@ -57,33 +57,34 @@ namespace Modio.Unity
         public async Task<(Error, Stream)> DownloadFile(string url, CancellationToken token = default)
         {
             Error testError = await CheckFakeErrorsForTest(url);
-            
-            if(testError)
+
+            if (testError)
                 return (testError, null);
             
             if (string.IsNullOrEmpty(url))
             {
                 ModioLog.Error?.Log($"Attempting to download null url");
-                return (new Error(ErrorCode.HTTP_EXCEPTION), null);
+                return (new HttpError(HttpErrorCode.REQUEST_ERROR), null);
             }
 
             var downloadRequest = ModioAPIRequest.New(url);
-            var webRequest = CreateWebRequest(downloadRequest, url);
-            
-            Error error = EnforceAuthentication(downloadRequest, webRequest);
-            if(error) return (error, null);
-            
-            Stream stream = null;
-            
-            CancellationToken cachedShutdownToken = _cancellationTokenSource?.Token ?? CancellationToken.None;
-            if(token == default(CancellationToken))
-                token = cachedShutdownToken;
-            
-            // NOTE: Downloads aren't rate limited, so we don't check for them here
+            UnityWebRequest webRequest = CreateWebRequest(downloadRequest, url);
 
+            Error error = EnforceAuthentication(downloadRequest, webRequest);
+
+            if (error)
+                return (error, null);
+
+            await LogRequest(webRequest);
+            Stream stream;
+            CancellationToken cachedShutdownToken = _cancellationTokenSource?.Token ?? CancellationToken.None;
+
+            // NOTE: Downloads aren't rate limited, so we don't check for them here
             try
             {
-                await LogRequest(webRequest);
+                if (token == default(CancellationToken))
+                    token = cachedShutdownToken;
+
                 error = await SendRequest(webRequest, token);
 
                 if (error) return (error, null);
@@ -99,7 +100,7 @@ namespace Modio.Unity
                     return (new Error(ErrorCode.HTTP_EXCEPTION), null);
                 }
 
-                var handler = webRequest.downloadHandler;
+                DownloadHandler handler = webRequest.downloadHandler;
                 string jsonResponse = webRequest.downloadHandler.text;
 
                 if (!(webRequest.responseCode >= 200 && webRequest.responseCode < 300))
@@ -114,7 +115,7 @@ namespace Modio.Unity
                     return (GetErrorAndLogBadResponse(jsonResponse), null);
                 }
 
-                if (handler == null) 
+                if (handler == null)
                     // NO HANDLE!? NO DATA!
                     return (new Error(ErrorCode.NO_DATA_AVAILABLE), null);
 
@@ -137,7 +138,7 @@ namespace Modio.Unity
             if(testSettings == null)
                 return Task.FromResult(Error.None);
 
-            if (testSettings.ShouldFakeDisconnected(url)) 
+            if (testSettings.ShouldFakeDisconnected(url))
                 return FakeConnectionError();
 
             if (testSettings.ShouldFakeRateLimit(url))
@@ -184,6 +185,7 @@ namespace Modio.Unity
         
         static Error EnforceAuthentication(ModioAPIRequest downloadRequest, UnityWebRequest webRequest)
         {
+           
             if (downloadRequest.Options.RequiresAuthentication && !User.Current.IsAuthenticated)
                 return new Error(ErrorCode.USER_NOT_AUTHENTICATED);
 
@@ -202,10 +204,12 @@ namespace Modio.Unity
                 return (error, default(T));
             
             using UnityWebRequest webRequest = CreateWebRequest(request, target);
-            
-            error = EnforceAuthentication(request, new UnityWebRequest());
-            if (error) return (error, default(T));
-            
+
+            error = EnforceAuthentication(request, webRequest);
+
+            if (error)
+                return (error, default(T));
+
             _webRequests.Add(webRequest);
 
             CancellationToken cachedShutdownToken = _cancellationTokenSource?.Token ?? CancellationToken.None;
@@ -464,6 +468,7 @@ namespace Modio.Unity
             
             if (shutdownToken.IsCancellationRequested)
                 return new Error(ErrorCode.SHUTTING_DOWN);
+
             if (token.IsCancellationRequested)
                 return new Error(ErrorCode.OPERATION_CANCELLED);
 
@@ -496,7 +501,7 @@ namespace Modio.Unity
             return Task.CompletedTask;
         }
 
-        static bool IsResponseConnectionFailure(long responseCode) 
+        static bool IsResponseConnectionFailure(long responseCode)
             => responseCode == 0       // Generic can't reach server
                || responseCode == 408  // Request timeout
                || responseCode == 503; // Server unavailable;

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Modio;
 using Modio.Authentication;
 using Modio.Mods;
+using Modio.Mods.Builder;
 using Modio.Unity;
 using Modio.Users;
 using UnityEngine;
@@ -219,7 +220,7 @@ public class ModioUnityExample : MonoBehaviour
     
         builder.SetName(modName)
                .SetSummary(summary)
-               .SetLogo(logo.GetRawTextureData())
+               .SetLogo(logo.EncodeToPNG(), ImageFormat.Png)
                .EditModfile()
                .SetSourceDirectoryPath(path)
                .FinishModfile();

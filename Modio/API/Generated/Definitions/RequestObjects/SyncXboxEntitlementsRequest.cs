@@ -7,12 +7,12 @@ using Newtonsoft.Json.Linq;
 
 namespace Modio.API.SchemaDefinitions{
     [JsonObject]
-    internal readonly partial struct SyncXboxEntitlementsRequest : IApiRequest
+    public readonly partial struct SyncXboxEntitlementsRequest : IApiRequest
     {
         static readonly Dictionary<string, object> _bodyParameters = new Dictionary<string, object>();
 
         /// <summary></summary>
-        internal readonly string XboxToken;
+        public readonly string XboxToken;
 
         /// <param name="xboxToken"></param>
         [JsonConstructor]

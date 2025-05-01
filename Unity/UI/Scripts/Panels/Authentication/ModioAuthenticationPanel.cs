@@ -132,7 +132,8 @@ namespace Modio.Unity.UI.Panels.Authentication
             }
             else
             {
-                ModioLog.Error?.Log($"SSO failed: {error.GetMessage()} (agreed to terms {agreedToTerms})");
+                if (!error.IsSilent) 
+                    ModioLog.Error?.Log($"SSO failed: {error.GetMessage()} (agreed to terms {agreedToTerms})");
                 _onError?.Invoke(error);
                 waitingPanel?.ClosePanel();
 

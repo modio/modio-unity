@@ -40,7 +40,10 @@ namespace Modio.Unity
             else
                 ModioLog.Message?.Log($"Couldn't find a ModioUnitySettings named '{ModioUnitySettings.DefaultResourceName}' to load in a Resources folder");
 
-            //ModioServices.Bind<IModioAPIInterface>().FromNew<ModioAPIUnityClient>(ModioServicePriority.EngineImplementation);
+            // Uncomment the below for console implementations. Unity's web requests are not as reliable or informative
+            // as standard HTTP requests, but standard HTTP requests will not qualify for XBOX (and potentially others)
+            // certification requirements around Curl requests.
+            // ModioServices.Bind<IModioAPIInterface>().FromNew<ModioAPIUnityClient>(ModioServicePriority.EngineImplementation);
             
             #if UNITY_STANDALONE_WIN
             ModioServices.Bind<IModioRootPathProvider>()
@@ -48,6 +51,10 @@ namespace Modio.Unity
                                   ModioServicePriority.PlatformProvided,
                                   WindowsRootPathProvider.IsPublicEnvironmentVariableSet);
             #endif
+            
+            ModioServices.Bind<IModioRootPathProvider>()
+                         .FromNew<DefaultRootPathProvider>(
+                             ModioServicePriority.Default);
             ModioServices.Bind<IWebBrowserHandler>().FromNew<UnityWebBrowserHandler>(ModioServicePriority.EngineImplementation);
 
             ModioServices.BindErrorMessage<ModioSettings>(

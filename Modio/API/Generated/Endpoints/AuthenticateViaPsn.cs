@@ -36,7 +36,7 @@ namespace Modio.API
             /// <p>"PlayStation" and "DualSense" are registered trademarks or trademarks of Sony Interactive Entertainment Inc.</p>
             /// </summary>
             /// <param name="body"></param>
-            internal static async Task<(Error error, AccessTokenObject? accessTokenObject)> AuthenticateViaPsn(
+            public static async Task<(Error error, AccessTokenObject? accessTokenObject)> AuthenticateViaPsn(
                 PsnAuthenticationRequest? body = null
             ) {
                 if (!IsInitialized()) return (new Error(ErrorCode.API_NOT_INITIALIZED), null);
