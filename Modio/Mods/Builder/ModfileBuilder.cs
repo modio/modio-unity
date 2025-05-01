@@ -15,7 +15,7 @@ namespace Modio.Mods.Builder
         public string Version { get; private set; } = null;
         public string ChangeLog { get; private set; } = null;
         public string MetadataBlob { get; private set; } = null;
-        public string[] Platforms { get; private set; } = null;
+        public Platform[] Platforms { get; private set; } = null;
 
         ModId ParentId => _parentModBuilder.EditTarget.Id;
         readonly ModBuilder _parentModBuilder;
@@ -46,14 +46,20 @@ namespace Modio.Mods.Builder
             MetadataBlob = metadataBlob;
             return this;
         }
-        
-        public ModfileBuilder SetPlatforms(ICollection<string> platforms)
+
+        /// <remarks>This will overwrite all platforms on this modfile.</remarks>
+        public ModfileBuilder SetPlatform(Platform platform) => SetPlatforms(new[] { platform, });
+
+        /// <remarks>This will overwrite all platforms on this modfile.</remarks>
+        public ModfileBuilder SetPlatforms(ICollection<Platform> platforms)
         {
             Platforms = platforms.ToArray();
             return this;
         }
-        
-        public ModfileBuilder AppendPlatforms(ICollection<string> platforms)
+
+        public ModfileBuilder AppendPlatform(Platform platform) => AppendPlatforms(new[] { platform, });
+
+        public ModfileBuilder AppendPlatforms(ICollection<Platform> platforms)
         {
             Platforms = Platforms.Concat(platforms).ToArray();
             return this;
@@ -105,12 +111,14 @@ namespace Modio.Mods.Builder
                     Path = temporaryFilePath
                 };
 
+                string[] platformStrings = Platforms.Select(GetPlatformHeader).ToArray();
+                
                 var addModfileRequest = new AddModfileRequest(
                     modioAPIFileParameter,
                     Version,
                     ChangeLog,
                     MetadataBlob,
-                    Platforms,
+                    platformStrings,
                     null
                 );
 
@@ -152,10 +160,12 @@ namespace Modio.Mods.Builder
                 );
 
             if (end.error) return end.error;
+            
+            string[] platformStrings = Platforms.Select(GetPlatformHeader).ToArray();
 
             (Error error, ModfileObject? modfileObject) upload = await ModioAPI.Files.AddModfile(
                 ParentId,
-                new AddModfileRequest(ModioAPIFileParameter.None, Version, ChangeLog, MetadataBlob, Platforms, uploadId)
+                new AddModfileRequest(ModioAPIFileParameter.None, Version, ChangeLog, MetadataBlob, platformStrings, uploadId)
             );
 
             return Error.None;
@@ -258,5 +268,36 @@ namespace Modio.Mods.Builder
 
             return (Error.None, upload.modfileObject);
         }
+
+        public enum Platform
+        {
+            Windows,
+            Mac,
+            Linux,
+            Android,
+            IOS,
+            XboxOne,
+            XboxSeriesX,
+            PlayStation4,
+            PlayStation5,
+            Switch,
+            Oculus,
+        }
+
+        static string GetPlatformHeader(Platform platform) => platform switch
+        {
+            Platform.Windows      => "windows",
+            Platform.Mac          => "mac",
+            Platform.Linux        => "linux",
+            Platform.Android      => "android",
+            Platform.IOS          => "ios",
+            Platform.XboxOne      => "xboxone",
+            Platform.XboxSeriesX  => "xboxseriesx",
+            Platform.PlayStation4 => "ps4",
+            Platform.PlayStation5 => "ps5",
+            Platform.Switch       => "switch",
+            Platform.Oculus       => "oculus",
+            _                     => string.Empty,
+        };
     }
 }

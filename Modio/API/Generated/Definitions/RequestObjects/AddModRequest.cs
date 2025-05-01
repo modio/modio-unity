@@ -93,7 +93,13 @@ namespace Modio.API.SchemaDefinitions{
             if (MaturityOption != null) _bodyParameters.Add("maturity_option", MaturityOption);
             if (CommunityOptions != null) _bodyParameters.Add("community_options", CommunityOptions);
             if (MetadataBlob != null) _bodyParameters.Add("metadata_blob", MetadataBlob);
-            if (Tags != null) _bodyParameters.Add("tags", Tags);
+            if (Tags != null)
+            {
+                for (int i = 0; i < Tags.Length; i++)
+                {
+                    _bodyParameters.Add($"tags[{i}]", Tags[i]);
+                }
+            }
 
             return _bodyParameters;
         }

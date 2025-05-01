@@ -108,7 +108,7 @@ namespace Modio.Unity.UI.Components
 
             if (error)
             {
-                if(error.Code != ErrorCode.SHUTTING_DOWN)
+                if(!error.IsSilent)
                     ModioLog.Error?.Log($"Unable to get tags {error}");
                 return;
             }

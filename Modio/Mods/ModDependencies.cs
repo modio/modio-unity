@@ -90,7 +90,8 @@ namespace Modio.Mods
 
                 if (error)
                 {
-                    ModioLog.Error?.Log($"Error getting dependencies for mod {_dependent}: {error.GetMessage()}");
+                    if (!error.IsSilent) 
+                        ModioLog.Error?.Log($"Error getting dependencies for mod {_dependent}: {error.GetMessage()}");
                     _isFetchingDependencies.SetResult(error);
                     _isFetchingDependencies = null;
                     return error;

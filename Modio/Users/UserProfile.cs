@@ -116,7 +116,7 @@ namespace Modio.Users
 
             if (error)
             {
-                ModioLog.Error?.Log($"Error muting user {Username}: {error}");
+                if (!error.IsSilent) ModioLog.Error?.Log($"Error muting user {Username}: {error}");
                 return error;
             }
             
@@ -131,7 +131,7 @@ namespace Modio.Users
 
             if (error)
             {
-                ModioLog.Error?.Log($"Error un-muting user {Username}: {error}");
+                if (!error.IsSilent) ModioLog.Error?.Log($"Error un-muting user {Username}: {error}");
                 return error;
             }
             

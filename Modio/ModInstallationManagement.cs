@@ -83,7 +83,11 @@ namespace Modio
                 ModIndex.IndexEntry entry = entryPair.Value;
 
                 if (mod.File != null) // shouldn't be possible so long as the mod was in the index cache, but protect against corrupt index
+                {
                     mod.File.State = entry.FileState;
+                    if(mod.File.State == ModFileState.Installed)
+                        mod.File.InstallLocation = ModioClient.DataStorage.GetInstallPath(mod.Id, entry.InstalledModfileId);
+                }
 
                 mod.Logo?.CacheLowestResolutionOnDisk(true);
 
@@ -252,7 +256,7 @@ namespace Modio
                         Error error = await _currentOperation.Run();
 
                         if (error)
-                            if (error.Code == ErrorCode.OPERATION_CANCELLED)
+                            if (error.IsSilent)
                                 ModioLog.Verbose?.Log(
                                     $"Cancelled performing {_currentOperation.Type} job for mod {_currentOperation.Mod}: {error}"
                                 );
@@ -326,7 +330,7 @@ namespace Modio
                 if (mod.File == null) continue;
 
                 if ((!anyOtherSubscribers && !tempModIsValid)
-                    || (!localUserIsSubscribed && mod.File.State is not ModFileState.Installed and not ModFileState.Uninstalling)
+                    || (!tempModIsValid && !localUserIsSubscribed && mod.File.State is not ModFileState.Installed and not ModFileState.Uninstalling)
                     || _modsToUninstall.Contains(mod))
                     _operationQueue.Enqueue(new UninstallJob(mod));
                 else
@@ -612,26 +616,29 @@ namespace Modio
             {
                 PostEvent(OperationPhase.Checking, ModFileState.Downloading);
 
-                (Error error, ModfileObject? modfileObjectNullable)
-                    = await ModioAPI.Files.GetModfile(Mod.Id, Mod.File.Id);
+                Error error;
 
-                if (error)
+                // Cached Modfiles can expire, so we need to validate our cached URL and replace it if needed
+                if (Mod.File.Download.ExpiresAfter < DateTime.Now.ToUniversalTime())
                 {
-                    PostEvent(OperationPhase.Failed, ModFileState.FileOperationFailed, error);
-                    return error;
-                }
+                    ModioLog.Verbose?.Log($"Cached Modfile download for Mod {Mod.Name} has expired, getting new download");
+                    
+                    ModfileObject? modfileObjectNullable;
+                    (error, modfileObjectNullable) = await ModioAPI.Files.GetModfile(Mod.Id, Mod.File.Id);
 
-                ModfileObject modfileObject;
+                    if (error)
+                    {
+                        PostEvent(OperationPhase.Failed, ModFileState.FileOperationFailed, error);
+                        return error;
+                    }
 
-                if (modfileObjectNullable != null)
-                {
-                    modfileObject = modfileObjectNullable.Value;
-
-                    Mod.UpdateModfile(new Modfile(modfileObject));
-                }
-                else
-                {
-                    return new Error(ErrorCode.NO_DATA_AVAILABLE);
+                    if (modfileObjectNullable != null)
+                    {
+                        ModfileObject modfileObject = modfileObjectNullable.Value;
+                        Mod.UpdateModfile(new Modfile(modfileObject));
+                    }
+                    else
+                        return new Error(ErrorCode.NO_DATA_AVAILABLE);
                 }
 
                 if (ModioClient.DataStorage.DoesModfileExist(Mod.Id, Mod.File.Id))
@@ -640,13 +647,13 @@ namespace Modio
                     return Error.None;
                 }
 
-                string downloadBinaryUrl = modfileObject.Download.BinaryUrl;
-                long modfileId = modfileObject.Id;
-                string filehashMd5 = modfileObject.Filehash.Md5;
+                string downloadBinaryUrl = Mod.File.Download.BinaryUrl;
+                long modfileId = Mod.File.Id;
+                string filehashMd5 = Mod.File.Md5Hash;
 
                 bool hasSpace = await ModioClient.DataStorage.IsThereAvailableFreeSpaceFor(
-                    modfileObject.Filesize,
-                    modfileObject.FilesizeUncompressed
+                    Mod.File.ArchiveFileSize,
+                    Mod.File.FileSize
                 );
 
                 if (!hasSpace)
@@ -859,28 +866,31 @@ namespace Modio
 
                 PostEvent(OperationPhase.Checking, progressFileState);
 
-                (Error error, ModfileObject? modfileObjectNullable)
-                    = await ModioAPI.Files.GetModfile(Mod.Id, Mod.File.Id);
+                Error error;
 
-                if (error)
+                // Cached Modfiles can expire, so we need to validate our cached URL and replace it if needed
+                if (Mod.File.Download.ExpiresAfter < DateTime.Now.ToUniversalTime())
                 {
-                    PostEvent(OperationPhase.Failed, ModFileState.FileOperationFailed, error);
-                    return error;
+                    ModioLog.Verbose?.Log($"Cached Modfile download for Mod {Mod.Name} has expired, getting new download");
+
+                    ModfileObject? modfileObjectNullable;
+                    (error, modfileObjectNullable) = await ModioAPI.Files.GetModfile(Mod.Id, Mod.File.Id);
+
+                    if (error)
+                    {
+                        PostEvent(OperationPhase.Failed, ModFileState.FileOperationFailed, error);
+                        return error;
+                    }
+
+                    if (modfileObjectNullable != null)
+                    {
+                        ModfileObject modfileObject = modfileObjectNullable.Value;
+                        Mod.UpdateModfile(new Modfile(modfileObject));
+                    }
+                    else
+                        return new Error(ErrorCode.NO_DATA_AVAILABLE);
                 }
-
-                ModfileObject modfileObject;
-
-                if (modfileObjectNullable != null)
-                {
-                    modfileObject = modfileObjectNullable.Value;
-
-                    Mod.UpdateModfile(new Modfile(modfileObject));
-                }
-                else
-                {
-                    return new Error(ErrorCode.NO_DATA_AVAILABLE);
-                }
-
+                
                 if (ModioClient.DataStorage.DoesInstallExist(Mod.Id, Mod.File.Id))
                 {
                     _index.GetEntry(Mod).FileState = ModFileState.Installed;
@@ -930,7 +940,7 @@ namespace Modio
                 }
 
                 var (downloadError, stream) = await ModioClient.Api.DownloadFile(
-                    modfileObject.Download.BinaryUrl,
+                    Mod.File.Download.BinaryUrl,
                     CancellationToken
                 );
 
@@ -944,7 +954,7 @@ namespace Modio
                     Mod,
                     Mod.File.Id,
                     stream,
-                    modfileObject.Filehash.Md5,
+                    Mod.File.Md5Hash,
                     CancellationToken
                 );
 

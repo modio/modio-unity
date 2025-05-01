@@ -17,7 +17,7 @@ namespace Modio.API.SchemaDefinitions{
         /// <param name="binaryUrl">URL to download the file from the mod.io CDN.<br/><br/>__NOTE:__ If the [game](#edit-game) requires mod downloads to be initiated via the API, the `binary_url` returned will contain a verification hash. This hash must be supplied to get the modfile, and will expire after a certain period of time. Saving and reusing the `binary_url` won't work in this situation given it's dynamic nature.</param>
         /// <param name="dateExpires">Unix timestamp of when the `binary_url` will expire.</param>
         [JsonConstructor]
-        public DownloadObject(
+        internal DownloadObject(
             string binary_url,
             long date_expires
         ) {

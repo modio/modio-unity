@@ -69,7 +69,8 @@ namespace Modio.Unity.UI.Panels.Authentication
                 if (error.Code == ErrorCode.VALIDATION_ERRORS) 
                     error = new Error(ErrorCode.EMAIL_LOGIN_CODE_INVALID);
 
-                ModioLog.Error?.Log($"Error authenticating with email: {error.GetMessage()}\nEmail: {email}");
+                if (!error.IsSilent) 
+                    ModioLog.Error?.Log($"Error authenticating with email: {error.GetMessage()}\nEmail: {email}");
                 _onError.Invoke(error);
                 return;
             }

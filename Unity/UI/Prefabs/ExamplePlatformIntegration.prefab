@@ -59,3 +59,15 @@ MonoBehaviour:
     prefabNames:
     - ModioPlatformExampleOculus
     - ModioPlatformExampleAndroid
+  - platforms: 19000000
+    prefabNames:
+    - ModioPlatformExamplePlayStation4
+  - platforms: 26000000
+    prefabNames:
+    - ModioPlatformExamplePlayStation5
+  - platforms: 2400000025000000
+    prefabNames:
+    - ModioPlatformExampleGameCore
+  - platforms: 20000000
+    prefabNames:
+    - ModioPlatformExampleSwitch

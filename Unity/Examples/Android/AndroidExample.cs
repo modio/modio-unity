@@ -7,7 +7,7 @@ namespace Modio.Unity.Examples.Android
 {
     public class AndroidExample : MonoBehaviour
     {
-#if UNITY_ANDROID
+#if UNITY_ANDROID && !UNITY_EDITOR
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
         static void OnAssemblyLoaded()
         {

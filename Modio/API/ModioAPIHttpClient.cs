@@ -421,7 +421,7 @@ namespace Modio.API.HttpClient
             return byteArrayContent;
         }
 
-        static async Task LogRequest(HttpRequestMessage request)
+        async Task LogRequest(HttpRequestMessage request)
         {
             if (ModioLog.Verbose == null) return;
             if (request == null) return;
@@ -436,6 +436,10 @@ namespace Modio.API.HttpClient
                         : $"{header.Key}: {string.Join(", ", header.Value)}"
                 );
 
+            foreach (var clientDefaultRequestHeader in _client.DefaultRequestHeaders)
+            {
+                builder.AppendLine($"{clientDefaultRequestHeader.Key}: {string.Join(", ", clientDefaultRequestHeader.Value)}");
+            }
             if (request.Content != null)
             {
                 foreach (var header in request.Content.Headers)

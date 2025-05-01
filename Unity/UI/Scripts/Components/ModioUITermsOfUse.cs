@@ -42,7 +42,7 @@ namespace Modio.Unity.UI.Components
 
             if (error)
             {
-                ModioLog.Error?.Log($"Error getting terms of use: {error.GetMessage()}");
+                if (!error.IsSilent) ModioLog.Error?.Log($"Error getting terms of use: {error.GetMessage()}");
                 return;
             }
 

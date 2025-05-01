@@ -15,6 +15,8 @@ namespace Modio.Mods
         public Error FileStateErrorCause { get; internal set; } = Error.None;
         public float FileStateProgress { get; internal set; }
         public long DownloadingBytesPerSecond { get; internal set; }
+        public ModfileDownloadReference Download { get; private set; }
+        public string Md5Hash { get; private set; }
 
         internal Modfile(ModfileObject modfileObject)
         {
@@ -28,6 +30,8 @@ namespace Modio.Mods
             FileSize = modfileObject.FilesizeUncompressed;
             ArchiveFileSize = modfileObject.Filesize;
             Version = modfileObject.Version;
+            Download = new ModfileDownloadReference(modfileObject.Download);
+            Md5Hash = modfileObject.Filehash.Md5;
             MetadataBlob = modfileObject.MetadataBlob;
         }
     }

@@ -337,7 +337,7 @@ namespace Modio.Mods
 
             if (error)
             {
-                ModioLog.Error?.Log($"Error getting Mod {Id}: {error.GetMessage()}");
+                if (!error.IsSilent) ModioLog.Error?.Log($"Error getting Mod {Id}: {error.GetMessage()}");
                 return (error, this);
             }
 
@@ -358,7 +358,7 @@ namespace Modio.Mods
 
             if (error)
             {
-                ModioLog.Error?.Log($"Error getting Mod {modId}: {error.GetMessage()}");
+                if (!error.IsSilent) ModioLog.Error?.Log($"Error getting Mod {modId}: {error.GetMessage()}");
                 return (error, null);
             }
 
@@ -401,7 +401,8 @@ namespace Modio.Mods
 
                 if (error)
                 {
-                    ModioLog.Error?.Log($"Error getting Mods to populate cache from Index: {error.GetMessage()}");
+                    if (!error.IsSilent) 
+                        ModioLog.Error?.Log($"Error getting Mods to populate cache from Index: {error.GetMessage()}");
                     return (error, Array.Empty<Mod>());
                 }
 
@@ -432,7 +433,7 @@ namespace Modio.Mods
 
             if (error)
             {
-                ModioLog.Warning?.Log($"Error rating mod {Id}: {error.GetMessage()}");
+                if (!error.IsSilent) ModioLog.Warning?.Log($"Error rating mod {Id}: {error.GetMessage()}");
                 UpdateStatsWithUserRating(previousRating);
                 InvokeModUpdated(ModChangeType.Rating);
             }
@@ -505,7 +506,7 @@ namespace Modio.Mods
 
             if (error)
             {
-                ModioLog.Error?.Log($"Error purchasing mod {Id}: {error}");
+                if (!error.IsSilent) ModioLog.Error?.Log($"Error purchasing mod {Id}: {error}");
                 return error;
             }
             

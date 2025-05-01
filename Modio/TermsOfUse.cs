@@ -35,7 +35,7 @@ namespace Modio
 
             if (error)
             {
-                ModioLog.Error?.Log($"Error getting Terms of Use: {error}");
+                if (!error.IsSilent) ModioLog.Error?.Log($"Error getting Terms of Use: {error}");
                 return (error, null);
             }
             

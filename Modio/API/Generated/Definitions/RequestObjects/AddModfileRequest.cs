@@ -66,7 +66,13 @@ namespace Modio.API.SchemaDefinitions{
             if (string.IsNullOrEmpty(Version)) _bodyParameters.Add("version", Version);
             if (string.IsNullOrEmpty(Changelog)) _bodyParameters.Add("changelog", Changelog);
             if (string.IsNullOrEmpty(MetadataBlob)) _bodyParameters.Add("metadata_blob", MetadataBlob);
-            if (Platforms is not null && Platforms.Length > 0) _bodyParameters.Add("platforms", Platforms);
+            if (Platforms is not null && Platforms.Length > 0)
+            {
+                for (int i = 0; i < Platforms.Length; i++)
+                {
+                    _bodyParameters.Add($"platforms[{i}]", Platforms[i]);
+                }
+            }
             if (string.IsNullOrEmpty(UploadId)) _bodyParameters.Add("upload_id", UploadId);
 
             return _bodyParameters;

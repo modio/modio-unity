@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Modio.Authentication;
 using Modio.Monetization;
 using Modio.Unity.UI.Input;
 using Modio.Unity.UI.Panels;
@@ -46,7 +47,7 @@ namespace Modio.Unity.UI.Components
         {
             if (ModioClient.AuthService == null)
             {
-                ModioLog.Error?.Log($"Active platform is null");
+                ModioLog.Error?.Log($"No {nameof(IModioAuthService)} is bound! Cannot auth");
                 return;
             }
             

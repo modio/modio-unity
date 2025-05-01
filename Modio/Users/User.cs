@@ -185,10 +185,10 @@ namespace Modio.Users
                 return error;
             }
 
-            if (error) 
-                ModioLog.Error?.Log($"Error syncing User {UserId} profile details: {error}");
-            else
+            if (!error)
                 Profile.ApplyDetailsFromUserObject(userObject.Value);
+            else if (!error.IsSilent)
+                ModioLog.Error?.Log($"Error syncing User {UserId} profile details: {error}");
             
             // We set these here as the sync profile confirms if the access token's valid or not
             IsAuthenticated = true;
@@ -217,7 +217,7 @@ namespace Modio.Users
 
             if (error)
             {
-                ModioLog.Error?.Log($"Error syncing subscriptions for {UserId}: {error}");
+                if (!error.IsSilent) ModioLog.Error?.Log($"Error syncing subscriptions for {UserId}: {error}");
                 return error;
             }
             
@@ -274,7 +274,7 @@ namespace Modio.Users
 
             if (error)
             {
-                ModioLog.Error?.Log($"Error syncing purchases for {UserId}: {error}");
+                if (!error.IsSilent) ModioLog.Error?.Log($"Error syncing purchases for {UserId}: {error}");
                 return error;
             }
 
@@ -332,8 +332,7 @@ namespace Modio.Users
 
             if (error)
             {
-                if(error.Code != ErrorCode.SHUTTING_DOWN)
-                    ModioLog.Error?.Log($"Error syncing Entitlements for {UserId}: {error}");
+                if (!error.IsSilent) ModioLog.Error?.Log($"Error syncing Entitlements for {UserId}: {error}");
                 return error;
             }
             
@@ -365,7 +364,7 @@ namespace Modio.Users
             
             if (error)
             {
-                ModioLog.Error?.Log($"Error syncing Wallet for {UserId}: {error}");
+                if (!error.IsSilent) ModioLog.Error?.Log($"Error syncing Wallet for {UserId}: {error}");
                 return error;
             }
             
@@ -402,7 +401,7 @@ namespace Modio.Users
 
             if (error)
             {
-                ModioLog.Error?.Log($"Error syncing Ratings for {UserId}: {error}");
+                if (!error.IsSilent) ModioLog.Error?.Log($"Error syncing Ratings for {UserId}: {error}");
                 return error;
             }
             
@@ -433,7 +432,8 @@ namespace Modio.Users
 
             if (error)
             {
-                ModioLog.Error?.Log($"Error getting muted users for user {Profile.Username}: {error}");
+                if (!error.IsSilent) 
+                    ModioLog.Error?.Log($"Error getting muted users for user {Profile.Username}: {error}");
                 return (error, Array.Empty<UserProfile>());
             }
 
@@ -460,7 +460,7 @@ namespace Modio.Users
 
             if (error)
             {
-                ModioLog.Error?.Log($"Error getting user creations for {UserId}: {error}");
+                if (!error.IsSilent) ModioLog.Error?.Log($"Error getting user creations for {UserId}: {error}");
                 return (error, Array.Empty<Mod>());
             }
 
@@ -516,7 +516,8 @@ namespace Modio.Users
 
                 if (error)
                 {
-                    ModioLog.Warning?.Log($"Error crawling pages for user {Current.UserId}: {error.GetMessage()}");
+                    if (!error.IsSilent) 
+                        ModioLog.Warning?.Log($"Error crawling pages for user {Current.UserId}: {error.GetMessage()}");
                     return (error, new List<T>());
                 }
 

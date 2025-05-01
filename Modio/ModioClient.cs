@@ -162,8 +162,8 @@ namespace Modio
 
             await ModInstallationManagement.Shutdown();
             
-            if (DataStorage != null) 
-                await DataStorage.Shutdown();
+            if (ModioServices.TryResolve(out IModioDataStorage dataStorage))
+                await dataStorage.Shutdown();
         }
         
         static void BindDefaultServices()
