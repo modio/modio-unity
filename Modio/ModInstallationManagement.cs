@@ -40,6 +40,7 @@ namespace Modio
         static HashSet<ModId> _currentSessionMods = new HashSet<ModId>();
         static HashSet<Mod> _modsToUninstall = new HashSet<Mod>();
         static HashSet<Mod> _unverifiedMods = new HashSet<Mod>(); // present at session start and not yet checked
+        static bool _hasScannedMissingMods;
 
         static bool _isDeactivated;
 
@@ -71,6 +72,10 @@ namespace Modio
             _index = !error ? index : new ModIndex();
 
             _operationQueue = new Queue<Job>();
+            
+            // Reset in case of switching game
+            _unverifiedMods.Clear();
+            _hasScannedMissingMods = false;
 
             // Guaranteeing that the mods we will be referencing will have their data
             // The only team we can have this missing data is from reading/scanning the index
@@ -87,6 +92,7 @@ namespace Modio
                     mod.File.State = entry.FileState;
                     if(mod.File.State == ModFileState.Installed)
                         mod.File.InstallLocation = ModioClient.DataStorage.GetInstallPath(mod.Id, entry.InstalledModfileId);
+                    mod.InvokeModUpdated(ModChangeType.FileState);
                 }
 
                 mod.Logo?.CacheLowestResolutionOnDisk(true);
@@ -94,8 +100,6 @@ namespace Modio
                 // Don't want to override synced sub status here, only if we couldn't get them do we set
                 if (!User.Current.ModRepository.HasGotSubscriptions)
                     mod.UpdateLocalSubscriptionStatus(entry.Subscribers.Contains(User.Current.Profile.UserId));
-
-                mod.InvokeModUpdated(ModChangeType.FileState);
                 
                 _unverifiedMods.Add(mod);
             }
@@ -189,7 +193,10 @@ namespace Modio
             foreach ((long modId, ModIndex.IndexEntry _) in _index.Index)
             {
                 Mod mod = GetModRespectingIndexCache(modId);
+                
                 if (mod?.File == null) continue;
+                if (mod.File.State == ModFileState.FileOperationFailed) continue;
+                
                 long fileSize = mod.File.FileSize;
 
                 if (!includeQueued)
@@ -336,6 +343,9 @@ namespace Modio
                 else
                     EnqueueJobsIfNeeded(entry.Value, mod);
             }
+            
+            if(!_hasScannedMissingMods)
+                _operationQueue.Enqueue(new ScanMissingInstallsJob());
 
             return Task.CompletedTask;
 
@@ -517,16 +527,31 @@ namespace Modio
         /// Retries installing a given mod.
         /// </summary>
         /// <param name="mod">The Mod to be installed.</param>
-        public static void RetryInstallingMod(Mod mod)
+        public static async Task<Error> RetryInstallingMod(Mod mod)
         {
             if (mod.File.State != ModFileState.FileOperationFailed) 
-                return;
+                return Error.None;
 
             _index.GetEntry(mod).FileState = ModFileState.None;
             mod.File.State = ModFileState.None;
             mod.InvokeModUpdated(ModChangeType.FileState);
+            
+            bool spaceAvailable = await IsThereAvailableSpaceFor(mod);
+            
+            if (!spaceAvailable)
+            {
+                var error = new FilesystemError(FilesystemErrorCode.INSUFFICIENT_SPACE);
+
+                mod.File.FileStateErrorCause = error;
+                mod.File.State = ModFileState.FileOperationFailed;
+
+                mod.InvokeModUpdated(ModChangeType.FileState);
+
+                return error;
+            }
 
             WakeUp();
+            return Error.None;
         }
 
         /// <summary>
@@ -1067,6 +1092,36 @@ namespace Modio
             { }
         }
 
+        /// <summary>
+        /// A job that scans the "mods" folder for anything that isn't tracked by the index
+        /// After this completes and the queue is empty we'll EnqueueJobs again, uninstalling old mods if necessary
+        /// </summary>
+        class ScanMissingInstallsJob : Job
+        {
+            public ScanMissingInstallsJob() : base(null, OperationType.Scan)
+            {
+            }
+
+            public override async Task<Error> Run()
+            {
+                Phase = OperationPhase.Started;
+
+                bool foundAnyNewMods = await _index.UpdateIndexWithMissingEntriesFromScan();
+
+                if (foundAnyNewMods)
+                    await SaveIndex();
+                
+                _hasScannedMissingMods = true;
+                
+                Phase = OperationPhase.Completed;
+                
+                return Error.None;
+            }
+
+            internal override void GetPendingSpaceChange(ref long spaceRequired, ref long tempSpaceRequired)
+            { }
+        }
+
         public enum OperationType
         {
             Download,
@@ -1074,6 +1129,7 @@ namespace Modio
             Update,
             Uninstall,
             Validate,
+            Scan,
         }
 
         public enum OperationPhase

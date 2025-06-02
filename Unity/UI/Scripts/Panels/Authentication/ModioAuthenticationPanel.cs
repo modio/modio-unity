@@ -114,7 +114,6 @@ namespace Modio.Unity.UI.Panels.Authentication
             else
                 error = await ModioClient.AuthService.Authenticate(agreedToTerms);
             
-
             if (!error)
             {
                 waitingPanel?.ClosePanel();
@@ -137,10 +136,12 @@ namespace Modio.Unity.UI.Panels.Authentication
                 _onError?.Invoke(error);
                 waitingPanel?.ClosePanel();
 
-                var compUISettings = ModioClient.Settings.GetPlatformSettings<ModioComponentUISettings>();
-
-                if (compUISettings != null && compUISettings.FallbackToEmailAuthentication)
-                    _fallbackToEmailAuth = true;
+                if (error.Code != ErrorCode.CANNOT_OPEN_CONNECTION)
+                {
+                    var compUISettings = ModioClient.Settings.GetPlatformSettings<ModioComponentUISettings>();
+                    if (compUISettings != null && compUISettings.FallbackToEmailAuthentication)
+                        _fallbackToEmailAuth = true;                    
+                }
             }
 
             ModioPanelManager.GetPanelOfType<ModioAuthenticationTermsOfServicePanel>()?.ClosePanel();

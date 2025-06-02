@@ -51,15 +51,23 @@ namespace Modio.Unity
                                   ModioServicePriority.PlatformProvided,
                                   WindowsRootPathProvider.IsPublicEnvironmentVariableSet);
             #endif
+
+            if(Application.platform == RuntimePlatform.LinuxPlayer)
+                ModioServices.Bind<IModioDataStorage>()
+                             .FromNew<LinuxDataStorage>(ModioServicePriority.PlatformProvided);
+            if(Application.platform == RuntimePlatform.OSXPlayer)
+                ModioServices.Bind<IModioDataStorage>()
+                             .FromNew<MacDataStorage>(ModioServicePriority.PlatformProvided);
             
             ModioServices.Bind<IModioRootPathProvider>()
-                         .FromNew<DefaultRootPathProvider>(
+                         .FromNew<UnityRootPathProvider>(
                              ModioServicePriority.Default);
             ModioServices.Bind<IWebBrowserHandler>().FromNew<UnityWebBrowserHandler>(ModioServicePriority.EngineImplementation);
 
             ModioServices.BindErrorMessage<ModioSettings>(
-                "Please ensure you've bound a ModioSettings using " +
-                "something unity specific", ModioServicePriority.Fallback + 1);
+                "Please ensure you've bound a ModioSettings."
+                + " You can create one using the menu item 'Tools/mod.io/Edit Settings'",
+                ModioServicePriority.Fallback + 1);
 
 #if UNITY_EDITOR
             EditorApplication.playModeStateChanged += OnGameShuttingDown;

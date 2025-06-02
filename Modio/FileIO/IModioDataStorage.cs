@@ -224,12 +224,12 @@ namespace Modio.FileIO
         /// <summary>
         /// Checks if there is enough space for download size and install size.
         /// </summary>
-        /// <param name="bytesDownload">The size of the Modfile</param>
-        /// <param name="bytesInstall">The size of the (uncompressed) files</param>
+        /// <param name="tempBytes">The size of the Modfile</param>
+        /// <param name="persistentBytes">The size of the (uncompressed) files</param>
         /// <returns>
         /// An asynchronous task that return <c>true</c> if there is available space, <c>false</c> otherwise.
         /// </returns>
-        Task<bool> IsThereAvailableFreeSpaceFor(long bytesDownload, long bytesInstall);
+        Task<bool> IsThereAvailableFreeSpaceFor(long tempBytes, long persistentBytes);
         
         /// <summary>Checks if there's enough available free space on the drive to download a Modfile.</summary>
         /// <param name="bytes">The size of the Modfile.</param>

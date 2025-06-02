@@ -31,6 +31,8 @@ namespace Modio.Unity.UI.Components
 
             (Error error, PortalSku[] skus) = await skuProvider.GetCurrencyPackSkus();
 
+            if (error) ModioLog.Error?.Log(error);
+            
             ShowTokenPacks(skus);
         }
 

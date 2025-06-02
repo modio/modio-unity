@@ -219,7 +219,6 @@ namespace Modio.Mods
                     File.FileStateErrorCause = error;
                     File.State = ModFileState.FileOperationFailed;
 
-                    UpdateLocalSubscriptionStatus(false);
                     InvokeModUpdated(ModChangeType.FileState);
 
                     return error;

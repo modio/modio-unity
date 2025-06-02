@@ -1,7 +1,9 @@
 ﻿using System.Collections;
+using System.Threading.Tasks;
 using Modio.Unity.UI.Components.Selectables;
 using Modio.Unity.UI.Input;
 using Modio.Unity.UI.Panels;
+using Modio.Extensions;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -46,15 +48,11 @@ namespace Modio.Unity.UI.Navigation
                 }
             );
 
+            
             _inputField.onDeselect.AddListener(
                 s =>
                 {
-                    ModioPanelManager.GetInstance()
-                                     .PopFocusSuppression(ModioPanelBase.GainedFocusCause.InputSuppressionChangeOnly);
-
-                    ModioUIInput.RemoveHandler(ModioUIInput.ModioAction.Cancel, OnPressedCancel);
-
-                    UpdateAnimation();
+                    DelayPopFocusSuppression().ForgetTaskSafely();
                 }
             );
 
@@ -69,6 +67,22 @@ namespace Modio.Unity.UI.Navigation
             );
 
             if (_disableWhenCollapsed != null) _disableWhenCollapsed.SetActive(false);
+
+            return;
+            
+            async Task DelayPopFocusSuppression()
+            {
+                await Task.Yield();
+
+                ModioPanelManager.GetInstance()
+                                 .PopFocusSuppression(
+                                     ModioPanelBase.GainedFocusCause.InputSuppressionChangeOnly
+                                 );
+
+                ModioUIInput.RemoveHandler(ModioUIInput.ModioAction.Cancel, OnPressedCancel);
+
+                UpdateAnimation();
+            }
         }
 
         protected override void OnDestroy()

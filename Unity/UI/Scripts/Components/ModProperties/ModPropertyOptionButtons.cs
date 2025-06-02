@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Modio.Mods;
 using Modio.Unity.UI.Panels;
 using Modio.Unity.UI.Panels.Report;
@@ -57,7 +58,10 @@ namespace Modio.Unity.UI.Components.ModProperties
 
         void RetryDownloadButtonClicked()
         {
-            ModInstallationManagement.RetryInstallingMod(_mod);
+            Task<Error> retryInstallingModTask = ModInstallationManagement.RetryInstallingMod(_mod);
+
+            ModioPanelManager.GetPanelOfType<ModioErrorPanelGeneric>()
+                             ?.MonitorTaskThenOpenPanelIfError(retryInstallingModTask);
         }
 
         void UninstallModButtonClicked()

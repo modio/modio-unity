@@ -38,6 +38,13 @@ namespace Modio.Unity.Platforms.Android
 
         protected override long GetAvailableFreeSpace()
         {
+            if (ModioClient.Settings.TryGetPlatformSettings(out ModioDiskTestSettings settings)
+                && settings.OverrideDiskSpaceRemaining)
+                return settings.BytesRemaining;
+
+            //plugin likely isn't initialized yet
+            if (!Initialized) return 0;
+            
             var statFs = new AndroidJavaObject("android.os.StatFs", Root);
             var availableBytes = statFs.Call<long>("getFreeBytes");
             return availableBytes;

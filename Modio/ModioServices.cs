@@ -177,8 +177,15 @@ namespace Modio
                 }
                 
                 _runningFactoryMethod = true;
-                _value = _factory();
-                _runningFactoryMethod = false;
+
+                try
+                {
+                    _value = _factory();
+                }
+                finally
+                {
+                    _runningFactoryMethod = false;
+                }
 
                 return _value;
             }

@@ -13,7 +13,7 @@ using UnityEngine.Networking;
 using UnityEngine.UI;
 using Random = System.Random;
 
-#if UNITY_FACEPUNCH
+#if MODIO_FACEPUNCH
 using Modio.Platforms.Facepunch;
 #endif
 
@@ -58,7 +58,7 @@ public class ModioUnityExample : MonoBehaviour
         ModioServices.Bind<IModioAuthService>()
                           .FromInstance(new ModioEmailAuthService(GetAuthCode));
 
-#if UNITY_FACEPUNCH
+#if MODIO_FACEPUNCH
         ModioServices.Bind<IModioAuthService>()
                      .FromInstance(new ModioFacepunchService(), ModioServicePriority.DeveloperOverride);
 #endif
@@ -97,7 +97,7 @@ public class ModioUnityExample : MonoBehaviour
             return;
         }
 
-#if UNITY_FACEPUNCH
+#if MODIO_FACEPUNCH
         if (ModioClient.AuthService is ModioFacepunchService)
         {
             tosContainer.SetActive(true);

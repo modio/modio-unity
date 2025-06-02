@@ -12,6 +12,7 @@ using Newtonsoft.Json.Linq;
 using Modio.API.SchemaDefinitions;
 using Modio.Errors;
 using Modio.Users;
+using UnityEngine;
 
 namespace Modio.Unity
 {
@@ -22,7 +23,7 @@ namespace Modio.Unity
         readonly Dictionary<string, string> _pathParameters = new Dictionary<string, string>();
         readonly Dictionary<string, string> _defaultHeaders = new Dictionary<string, string>();
         readonly List<UnityWebRequest> _webRequests = new List<UnityWebRequest>();
-
+        
         CancellationTokenSource _cancellationTokenSource;
 
         public void SetBasePath(string value) => _basePath = value;
@@ -169,7 +170,8 @@ namespace Modio.Unity
             {
                 webRequest.SetRequestHeader(header.Key, header.Value);
             }
-
+            
+            webRequest.SetRequestHeader("User-Agent", Version.GetCurrent());
             webRequest.uploadHandler = MapUploadHandler(request);
 
             if (webRequest.uploadHandler == null)
@@ -178,6 +180,11 @@ namespace Modio.Unity
             foreach (KeyValuePair<string, string> headerParameter in request.Options.HeaderParameters)
             {
                 webRequest.SetRequestHeader(headerParameter.Key, headerParameter.Value);
+            }
+            
+            foreach (KeyValuePair<string, string> header in _defaultHeaders)
+            {
+                request.Options.HeaderParameters[header.Key] = header.Value;
             }
 
             return webRequest;
@@ -216,7 +223,7 @@ namespace Modio.Unity
             
             try
             {
-                await LogRequest(webRequest);
+                await LogRequest(webRequest, request);
                 error = await SendRequest(webRequest, cachedShutdownToken);
 
                 if(error) return (error, default(T));
@@ -227,7 +234,7 @@ namespace Modio.Unity
 
                 ModioLog.Verbose?.Log(jsonResponse);
 
-                if (!(webRequest.responseCode >= 200 && webRequest.responseCode < 300))
+                if (webRequest.responseCode < 200 || webRequest.responseCode >= 300)
                 {
                     if (IsResponseConnectionFailure(webRequest.responseCode))
                     {
@@ -296,6 +303,12 @@ namespace Modio.Unity
                 ModioLog.Error?.Log($"There is an error with the json response.");
                 return new Error(ErrorCode.INVALID_JSON);
             }
+            
+            if (errorToken.Error.ErrorRef == 0)
+            {
+                ModioLog.Error?.Log($"Invalid error returned from API [{errorToken.Error.Code}], please contact mod.io support");
+                return new Error(ErrorCode.UNKNOWN);
+            }
 
             return new Error((ErrorCode)errorToken.Error.ErrorRef);
         }
@@ -309,6 +322,7 @@ namespace Modio.Unity
         {
             return GetJson(request, reader => JToken.ReadFromAsync(reader));
         }
+
 
         private UploadHandler MapUploadHandler(ModioAPIRequest request)
         {
@@ -483,13 +497,31 @@ namespace Modio.Unity
             }
         }
 
-        static Task LogRequest(UnityWebRequest request)
+        Task LogRequest(UnityWebRequest request, ModioAPIRequest modioRequest = null)
         {
             if (ModioLog.Verbose == null) return Task.CompletedTask;
             if (request == null) return Task.CompletedTask;
 
             var builder = new StringBuilder();
             builder.AppendLine($"{request.method} {request.uri.PathAndQuery} HTTP/1.1");
+
+            if (modioRequest != null)
+            {
+                foreach ((string key, string value) in modioRequest.Options.HeaderParameters)
+                {
+                    builder.AppendLine(
+                        string.Equals(key, "Authorization")
+                            ? $"{key}: Bearer (omitted)"
+                            : $"{key}: {string.Join(", ", value)}"
+                        );
+                }
+            }
+            
+            foreach (var clientDefaultRequestHeader in _defaultParameters)
+            {
+                builder.AppendLine(clientDefaultRequestHeader);
+            }
+            
             if (request.uploadHandler != null && request.uploadHandler.data.Length != 0)
             {
                 builder.AppendLine($"Content-Type: {request.uploadHandler.contentType}");

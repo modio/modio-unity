@@ -22,7 +22,7 @@ namespace Modio.API.SchemaDefinitions{
         /// <summary></summary>
         public readonly bool TermsAgreed;
         /// <summary></summary>
-        public readonly string Email;
+        public readonly string? Email;
         /// <summary></summary>
         public readonly int Environment;
         /// <summary></summary>
@@ -37,7 +37,7 @@ namespace Modio.API.SchemaDefinitions{
         public PsnAuthenticationRequest(
             string auth_code,
             bool terms_agreed,
-            string email,
+            string? email,
             int environment,
             long date_expires
         ) {
@@ -54,7 +54,7 @@ namespace Modio.API.SchemaDefinitions{
 
             _bodyParameters.Add("auth_code", AuthCode);
             _bodyParameters.Add("terms_agreed", TermsAgreed);
-            _bodyParameters.Add("email", Email);
+            if (!string.IsNullOrEmpty(Email)) _bodyParameters.Add("email", Email);
             _bodyParameters.Add("env", Environment);
             _bodyParameters.Add("date_expires", DateExpires);
 
