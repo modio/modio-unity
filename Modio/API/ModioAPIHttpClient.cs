@@ -55,7 +55,7 @@ namespace Modio.API.HttpClient
             _pathParameters.Clear();
             _basePath = string.Empty;
             _client.DefaultRequestHeaders.Clear();
-
+            
             ModioClient.OnShutdown -= Shutdown;
             ModioClient.OnShutdown += Shutdown;
         }
@@ -87,6 +87,10 @@ namespace Modio.API.HttpClient
             httpRequest.Content = content;
 
             error = EnforceAuthentication(downloadRequest, httpRequest);
+
+            if (!httpRequest.Headers.UserAgent.TryParseAdd(Version.GetCurrent()))
+                ModioLog.Error?.Log($"Failed to set user agent to {Version.GetCurrent()}");
+
             if(error) return (error, null);
 
             await LogRequest(httpRequest);
@@ -240,6 +244,10 @@ namespace Modio.API.HttpClient
                 error = EnforceAuthentication(request, httpRequest);
                 if(error) return (error, default(T));
 
+                if (!httpRequest.Headers.UserAgent.TryParseAdd(Version.GetCurrent()))
+                    ModioLog.Error?.Log($"Failed to set user agent to {Version.GetCurrent()}");
+
+                
                 foreach (KeyValuePair<string, string> headerParameter in request.Options.HeaderParameters)
                 {
                     if (headerParameter.Key == "Content-Range")
@@ -371,6 +379,7 @@ namespace Modio.API.HttpClient
         {
             return GetJson(request, reader => JToken.ReadFromAsync(reader));
         }
+
 
         string BuildPath(ModioAPIRequest request)
         {

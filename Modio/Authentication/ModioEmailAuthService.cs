@@ -131,7 +131,7 @@ namespace Modio.Authentication
         public void SetCodePrompter(Func<Task<string>> codePrompter)
             => _codePrompter = new EmailCodePrompter(codePrompter);
 
-        public string GetActiveUserIdentifier() => "user";
+        public Task<string> GetActiveUserIdentifier() => Task.FromResult("user");
         
         class EmailCodePrompter : IEmailCodePrompter
         {

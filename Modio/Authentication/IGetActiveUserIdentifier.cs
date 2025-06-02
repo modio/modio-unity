@@ -1,7 +1,9 @@
+using System.Threading.Tasks;
+
 namespace Modio.Authentication
 {
     public interface IGetActiveUserIdentifier
     {
-        public string GetActiveUserIdentifier();
+        public Task<string> GetActiveUserIdentifier();
     }
 }

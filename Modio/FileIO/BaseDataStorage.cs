@@ -34,11 +34,7 @@ namespace Modio.FileIO
 
         public virtual Task<Error> Init()
         {
-            GameId = ModioServices.Resolve<ModioSettings>().GameId;
-            Root = 
-                $"{Path.Combine(ModioServices.Resolve<IModioRootPathProvider>().Path, "mod.io", GameId.ToString())}{Path.DirectorySeparatorChar}";
-            UserRoot
-                = $"{Path.Combine(ModioServices.Resolve<IModioRootPathProvider>().UserPath, "mod.io", GameId.ToString())}{Path.DirectorySeparatorChar}";
+            SetupRootPaths();
 
             OngoingTaskCount = 0;
             ShutdownTokenSource = new CancellationTokenSource();
@@ -50,6 +46,15 @@ namespace Modio.FileIO
             MigrateLegacyModInstalls();
             
             return Task.FromResult(Error.None);
+        }
+
+        protected virtual void SetupRootPaths()
+        {
+            GameId = ModioServices.Resolve<ModioSettings>().GameId;
+            Root = 
+                $"{Path.Combine(ModioServices.Resolve<IModioRootPathProvider>().Path, "mod.io", GameId.ToString())}{Path.DirectorySeparatorChar}";
+            UserRoot
+                = $"{Path.Combine(ModioServices.Resolve<IModioRootPathProvider>().UserPath, "mod.io", GameId.ToString())}{Path.DirectorySeparatorChar}";
         }
 
         public virtual async Task Shutdown()
@@ -424,6 +429,8 @@ namespace Modio.FileIO
             string installDirectoryPath = GetInstallPath(mod.Id, modfileId);
             Error directoryError = CreateDirectory(temporaryDirectoryPath);
             if (directoryError) error = directoryError;
+            
+            ModioLog.Message?.Log($"Installing Modfile {mod} to {installDirectoryPath}");
 
             if (error)
             {
@@ -455,7 +462,18 @@ namespace Modio.FileIO
 
                     if (string.IsNullOrEmpty(entry.Name)) continue;
                     if (entry.IsDirectory) continue;
-                    if (!DoesDirectoryExist(newFilePath)) CreateDirectory(newFilePath);
+
+                    if (!DoesDirectoryExist(newFilePath))
+                    {
+                        error = CreateDirectory(newFilePath);
+
+                        if (error)
+                        {
+                            if (!error.IsSilent) ModioLog.Error?.Log($"Extraction operation for Modfile {mod.Id} aborted. Failed to create directory {newFilePath} with error {error}");
+
+                            return error;
+                        }
+                    }
 
                     await using Stream writerStream = File.Open(newFilePath, FileMode.Create);
 
@@ -557,7 +575,18 @@ namespace Modio.FileIO
 
                 // This ensures Root/Installed exists
                 string parentPath = Path.GetDirectoryName(installDirectoryPath);
-                if (!DoesDirectoryExist(parentPath)) CreateDirectory(parentPath);
+
+                if (!DoesDirectoryExist(parentPath))
+                {
+                    error = CreateDirectory(parentPath);
+                    
+                    if (error)
+                    {
+                        if (!error.IsSilent) ModioLog.Error?.Log($"Install operation for Modfile {mod.Id} aborted. Failed to create directory {parentPath} with error {error}");
+
+                        return error;
+                    }
+                }
 
                 Directory.Move(temporaryDirectoryPath, installDirectoryPath);
             }
@@ -620,11 +649,16 @@ namespace Modio.FileIO
             }
         }
 
-        internal virtual void MigrateLegacyModInstalls()
+        protected virtual void MigrateLegacyModInstalls()
+        {
+            MigrateLegacyModInstalls(Path.Combine(Root, "Installed"));
+        }
+
+        protected void MigrateLegacyModInstalls(string legacyDirectoryPath)
         {
             try
             {
-                foreach ((Error error, string legacyPath) in IterateDirectoriesInDirectory(Path.Combine(Root, "Installed")))
+                foreach ((Error error, string legacyPath) in IterateDirectoriesInDirectory(legacyDirectoryPath))
                 {
                     if (error) continue;
 
@@ -642,9 +676,17 @@ namespace Modio.FileIO
                     string newPath = GetInstallPath(modId, modfileId);
 
                     if (Directory.Exists(newPath))
+                    {
+                        ModioLog.Message?.Log($"Deleting redundant legacy folder: {newPath}");
                         Directory.Delete(legacyPath, true);
+                    }
                     else
+                    {
+                        ModioLog.Message?.Log($"Moving legacy folder: {legacyPath} to {newPath}");
+                        //Ensure the parent directory exists
+                        CreateDirectory(Path.GetFullPath(Path.Combine(newPath, "..") + Path.DirectorySeparatorChar));
                         Directory.Move(legacyPath, newPath);
+                    }
                 }
             }
             catch (Exception exception)
@@ -709,8 +751,8 @@ namespace Modio.FileIO
 
 #region Drive Space
 
-        public virtual Task<bool> IsThereAvailableFreeSpaceFor(long bytesDownload, long bytesInstall)
-            => Task.FromResult(IsThereEnoughDiskSpaceFor(Math.Max(bytesDownload + bytesInstall, bytesInstall * 2)));
+        public virtual Task<bool> IsThereAvailableFreeSpaceFor(long tempBytes, long persistentBytes)
+            => Task.FromResult(IsThereEnoughDiskSpaceFor(tempBytes + persistentBytes));
         //Either download plus install, or temp extracted plus copy
 
         public virtual Task<bool> IsThereAvailableFreeSpaceForModfile(long bytes)
@@ -743,7 +785,11 @@ namespace Modio.FileIO
             return await IsThereAvailableFreeSpaceForModInstall(uncompressedSize);
         }
 
-        protected virtual bool IsThereEnoughDiskSpaceFor(long bytes) => bytes < GetAvailableFreeSpace();
+        protected virtual bool IsThereEnoughDiskSpaceFor(long bytes)
+        {
+            var spaceAvailable = GetAvailableFreeSpace();
+            return spaceAvailable <= 0 || bytes < spaceAvailable;
+        }
 
         protected virtual long GetAvailableFreeSpace()
         {
@@ -753,6 +799,9 @@ namespace Modio.FileIO
 
             //plugin likely isn't initialized yet
             if (!Initialized) return 0;
+            
+            // IL2CPP does not support DriveInfo.AvailableFreeSpace. Because of this, we have to implement our own
+            // methods of checking storage for each platform
             
 #if ENABLE_IL2CPP && (UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN)
             GetDiskFreeSpaceEx(Root, out ulong availableBytesUlong, out _, out _);

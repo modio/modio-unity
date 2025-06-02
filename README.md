@@ -7,7 +7,7 @@ sidebar_position: 0
 ---
 
 <a href="https://mod.io"><img src="https://mod.io/images/branding/modio-logo-bluewhite.svg" alt="mod.io" width="360" align="right"/></a>
-# mod.io Unity Plugin v2025.5
+# mod.io Unity Plugin v2025.6
 [![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)](https://github.com/modio/modio-unity/blob/master/Documentation/LICENSE.md)
 [![Discord](https://img.shields.io/discord/389039439487434752.svg?label=Discord&logo=discord&color=7289DA&labelColor=2C2F33)](https://discord.mod.io)
 [![Master docs](https://img.shields.io/badge/docs-master-green.svg)](https://docs.mod.io/unity/)
@@ -39,13 +39,13 @@ To access console platforms and documentation, see [Supporting Console Platforms
 | Platform          | Support |
 |-------------------|:-------:|
 | Windows           |    ✓    |
-| macOS             |   Q2    |
-| Linux             |   Q2    |
+| macOS             |    ✓    |
+| Linux             |    ✓    |
 | Meta Quest        |    ✓    |
-| Xbox One          |   Q2    |
-| Xbox Series X     |   Q2    |
-| PlayStation® 4    |   Q2    |
-| PlayStation® 5    |   Q2    |
+| Xbox One          |    ✓    |
+| Xbox Series X     |    ✓    |
+| PlayStation® 4    |    ✓    |
+| PlayStation® 5    |    ✓    |
 | Nintendo Switch   |   Q2    |
 | iOS               |   Q2    |
 | Android           |   Q2    |

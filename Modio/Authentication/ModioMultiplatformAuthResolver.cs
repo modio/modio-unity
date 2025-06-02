@@ -42,7 +42,7 @@ namespace Modio.Authentication
         public Task<Error> Authenticate(bool displayedTerms, string thirdPartyEmail = null)
             => Get<IModioAuthService>().Authenticate(displayedTerms, thirdPartyEmail);
 
-        public string GetActiveUserIdentifier() => Get<IGetActiveUserIdentifier>().GetActiveUserIdentifier();
+        public Task<string> GetActiveUserIdentifier() => Get<IGetActiveUserIdentifier>().GetActiveUserIdentifier();
 
         static T Get<T>()
         {

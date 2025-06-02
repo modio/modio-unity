@@ -94,6 +94,52 @@ namespace Modio
             return (Error.None, output);
         }
 
+        internal async Task<bool> UpdateIndexWithMissingEntriesFromScan()
+        {
+            var scannedInstalls = await ModioClient.DataStorage.ScanForInstalledMods();
+            
+            List<long> missingModIds = null;
+
+            if (!scannedInstalls.error)
+            {
+                foreach ((long modId, long modfileId) in scannedInstalls.results)
+                {
+                    if (Index.TryGetValue(modId, out IndexEntry entry))
+                    {
+                        if (entry.InstalledModfileId != 0)
+                            continue;
+
+                        entry.InstalledModfileId = modfileId;
+                        entry.FileState = ModFileState.Installed;
+                        IsDirty = true;
+                    }
+                    else
+                    {
+                        Index[modId] = new IndexEntry
+                        {
+                            InstalledModfileId = modfileId,
+                            FileState = ModFileState.Installed,
+                        };
+
+                        missingModIds ??= new List<long>();
+                        missingModIds.Add(modId);
+                    }
+                }
+            }
+
+            if (missingModIds == null)
+                return false;
+
+            (Error error, IEnumerable<Mod> mods) = await Mod.GetMods(missingModIds);
+
+            if (!error)
+                foreach (Mod mod in mods)
+                    ModObjectCache[mod.Id] = mod.LastModObject;
+            IsDirty = true;
+
+            return true;
+        }
+
         [System.Serializable]
         internal class IndexEntry
         {

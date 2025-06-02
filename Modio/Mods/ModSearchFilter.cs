@@ -130,8 +130,8 @@ namespace Modio.Mods
         /// Adds a tag to be used in filtering mods for a request.
         /// </summary>
         /// <param name="tag">the tag to be added to the filter</param>
-        /// <seealso cref="Tag"/>
-        /// <seealso cref="TagCategory"/>
+        /// <seealso cref="ModTag"/>
+        /// <seealso cref="GameTagCategory"/>
         public void AddTag(string tag)
         {
             _tags ??= new List<string>();
@@ -142,8 +142,8 @@ namespace Modio.Mods
         /// Adds multiple tags used in filtering mods for a request.
         /// </summary>
         /// <param name="tags">the tags to be added to the filter</param>
-        /// <seealso cref="Tag"/>
-        /// <seealso cref="TagCategory"/>
+        /// <seealso cref="ModTag"/>
+        /// <seealso cref="GameTagCategory"/>
         public void AddTags(IEnumerable<string> tags)
         {
             _tags ??= new List<string>();

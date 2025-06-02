@@ -43,7 +43,7 @@ namespace Modio.Users
 
             Current.IsUpdating = true;
 
-            Current.LocalUserId = ModioServices.Resolve<IGetActiveUserIdentifier>().GetActiveUserIdentifier();
+            Current.LocalUserId = await ModioServices.Resolve<IGetActiveUserIdentifier>().GetActiveUserIdentifier();
             
             (Error error, UserSaveObject userObject) = await ModioClient.DataStorage.ReadUserData(Current.LocalUserId);
 
