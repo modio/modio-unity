@@ -51,11 +51,13 @@ namespace Modio.API.HttpClient
             _cancellationTokenSource?.Cancel();
             _cancellationTokenSource = new CancellationTokenSource();
             
+
             _defaultParameters.Clear();
             _pathParameters.Clear();
             _basePath = string.Empty;
             _client.DefaultRequestHeaders.Clear();
             
+
             ModioClient.OnShutdown -= Shutdown;
             ModioClient.OnShutdown += Shutdown;
         }
@@ -362,7 +364,11 @@ namespace Modio.API.HttpClient
 
             if (errorToken.Error.ErrorRef == 0)
             {
-                ModioLog.Error?.Log("Invalid error returned from API, please contact mod.io support");
+                ModioLog.Error?.Log(
+                    "Invalid error returned from API, please contact mod.io support.\n"
+                    + $"{errorToken.Error.Code}: {errorToken.Error.Message}"
+                );
+
                 return new Error(ErrorCode.UNKNOWN);
             }
 

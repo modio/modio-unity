@@ -169,7 +169,7 @@ namespace Modio.FileIO
         /// An asynchronous task that returns <see cref="Error"/>.<see cref="Error.None"/> on success.
         /// </returns>
         Task<Error> InstallModFromStream(Mod mod, long modfileId, Stream stream, string md5Hash, CancellationToken token);
-
+        
         /// <summary>Deletes the specified installed Mod.</summary>
         /// <param name="mod">The mod being intalled.</param>
         /// <param name="modfileId">The ID of the modfile being installed.</param>
@@ -277,13 +277,28 @@ namespace Modio.FileIO
         
 #region other
 
-        /// <summary> Compress a file or directory to a ZIP and output the ZIP to a stream</summary>
+        /// <summary> Compress a file or directory to a ZIP and output the ZIP to a writable stream</summary>
         /// <param name="filePath">The source path or directory.</param>
         /// <param name="outputTo">The output stream</param>
         /// <returns>
         /// An asynchronous task that returns <see cref="Error"/>.<see cref="Error.None"/> on success.
         /// </returns>
         Task<Error> CompressToZip(string filePath, Stream outputTo);
+
+        /// <summary> Compress a file or directory to a ZIP and return a readable stream</summary>
+        /// <param name="filePath">The source path or directory.</param>
+        /// <param name="modId"></param>
+        /// <returns>
+        /// An asynchronous task that returns
+        /// - <see cref="Error"/>.<see cref="Error.None"/> on success.
+        /// - A readable stream with a known length, suitable for uploading directly
+        /// </returns> 
+        Task<(Error, Stream)> CompressToZipStream(string filePath, long modId);
+        
+        /// <summary>
+        /// Called after uploading a zip, to potentially clean up temp files
+        /// </summary>
+        Task CleanUpCompressToZipStream(long modId);
 #endregion
     }
 }

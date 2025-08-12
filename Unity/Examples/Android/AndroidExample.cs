@@ -1,6 +1,5 @@
 using Modio.FileIO;
 using Modio.Unity.Platforms.Android;
-using Plugins.Modio.Unity.Examples.Android;
 using UnityEngine;
 
 namespace Modio.Unity.Examples.Android

@@ -588,6 +588,7 @@ GameObject:
   - component: {fileID: 5034860642056658852}
   - component: {fileID: 5034860642056658855}
   - component: {fileID: 5034860642056658858}
+  - component: {fileID: 4578711802020814857}
   m_Layer: 5
   m_Name: Scroll Rect
   m_TagString: Untagged
@@ -687,6 +688,25 @@ MonoBehaviour:
   m_FlexibleWidth: -1
   m_FlexibleHeight: 1
   m_LayoutPriority: 1
+--- !u!114 &4578711802020814857
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5034860642056658849}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5022d22648d94bb58f3a7c3f726e6a3d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  PercentPaddingHorizontal: 0.05
+  PercentPaddingVertical: 0.05
+  adjustHorizontally: 0
+  adjustVertically: 1
+  Viewport: {fileID: 5034860642056658854}
+  DefaultViewportContainer: {fileID: 5034860640446753431}
+  HorizontalViewportContainer: {fileID: 0}
 --- !u!1 &7298138444312782303
 GameObject:
   m_ObjectHideFlags: 0

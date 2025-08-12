@@ -5,9 +5,9 @@ using Modio.API;
 
 namespace Modio.Authentication
 {
-    public class ModioMultiplatformAuthResolver : IModioAuthService, IGetActiveUserIdentifier, IPotentialModioEmailAuthService
+    public class ModioMultiplatformAuthResolver : IModioAuthService, IGetActiveUserIdentifier, IPotentialModioEmailAuthService, IGetPortalProvider
     {
-        const ModioServicePriority SERVICE_BINDING_PRIORITY = ModioServicePriority.PlatformProvided + 20;
+        const ModioServicePriority SERVICE_BINDING_PRIORITY = ModioServicePriority.PlatformProvided + 9;
         
         static bool _resolveUsingThis;
         static bool _hasInitialized;
@@ -21,16 +21,22 @@ namespace Modio.Authentication
             _hasInitialized = true;
             AuthBindings = ModioServices.GetBindings<IModioAuthService>()
                                               .ResolveAll()
-                                              .OrderByDescending(tuple => tuple.Item2)
-                                              .Select(platformPair => platformPair.Item1)
+                                              .OrderByDescending(platformPair => platformPair.priority)
+                                              .Select(platformPair => platformPair.service)
                                               .Where(platform => platform is IGetActiveUserIdentifier)
                                               .ToList();
 
+            foreach (IModioAuthService service in AuthBindings)
+            {
+                ModioLog.Warning?.Log(service.GetType().Name);
+            }
+            
             ServiceOverride = AuthBindings.FirstOrDefault();
             
             ModioServices.Bind<ModioMultiplatformAuthResolver>()
                               .WithInterfaces<IModioAuthService>(IsActiveForConditional)
                               .WithInterfaces<IGetActiveUserIdentifier>(IsActiveForConditional)
+                              .WithInterfaces<IGetPortalProvider>(IsActiveForConditional)
                               .FromNew<ModioMultiplatformAuthResolver>(SERVICE_BINDING_PRIORITY);
 
             
@@ -55,6 +61,6 @@ namespace Modio.Authentication
         }
 
         public bool IsEmailPlatform => Get<IModioAuthService>() is IPotentialModioEmailAuthService { IsEmailPlatform: true, };
-        public ModioAPI.Portal Portal => Get<IModioAuthService>()?.Portal ?? ModioAPI.Portal.None;
+        public ModioAPI.Portal Portal => Get<IGetPortalProvider>()?.Portal ?? ModioAPI.Portal.None;
     }
 }

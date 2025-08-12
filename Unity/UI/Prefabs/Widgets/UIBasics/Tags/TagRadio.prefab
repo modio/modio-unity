@@ -146,6 +146,7 @@ GameObject:
   - component: {fileID: 8769637392507222937}
   - component: {fileID: 5256179721552408996}
   - component: {fileID: 6835426204982471733}
+  - component: {fileID: 5801595296257032563}
   m_Layer: 5
   m_Name: TagRadio
   m_TagString: Untagged
@@ -244,6 +245,19 @@ MonoBehaviour:
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
+--- !u!114 &5801595296257032563
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8769637392507222938}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6c2f87ea80ff45bdbb12878c24494610, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _overrideFocusTo: {fileID: 0}
 --- !u!1001 &825440595892181060
 PrefabInstance:
   m_ObjectHideFlags: 0

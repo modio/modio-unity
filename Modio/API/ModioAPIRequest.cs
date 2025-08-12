@@ -42,6 +42,9 @@ namespace Modio.API
             request.Method = method;
             request.ContentType = contentType;
             request.ContentTypeHint = contentTypeHint;
+
+            request.Options.SetContentType(contentType);
+            
             return request;
         }
 

@@ -1,0 +1,21 @@
+{
+    "name": "Modio.Unity.Platforms.Google",
+    "rootNamespace": "",
+    "references": [
+        "GUID:cf54f91a42894c249a9644ac6b98c1b6",
+        "GUID:1ed07ff861e5f468287b0baef844706d",
+        "GUID:9172e27a923a34eb8b02dc3ab88d3dcd"
+    ],
+    "includePlatforms": [
+        "Android",
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

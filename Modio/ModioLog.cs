@@ -41,7 +41,7 @@ namespace Modio
                          .FromNew<ModioConsoleLog>(ModioServicePriority.Default);
             ModioServices.AddBindingChangedListener<IModioLogHandler>(UpdateLogHandler);
 
-            if (ModioCommandLine.TryGet("loglevel", out string logLevelText))
+            if (ModioCommandLine.TryGetArgument("loglevel", out string logLevelText))
             {
                 if (Enum.TryParse(logLevelText, true, out LogLevel logLevelEnum))
                     ApplyLogLevel(logLevelEnum);

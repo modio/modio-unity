@@ -131,6 +131,9 @@ namespace Modio
             }
             
             await User.InitializeNewUser();
+
+            
+            
             
             error = await ModInstallationManagement.Init();
 
@@ -156,6 +159,19 @@ namespace Modio
         /// </summary>
         public static async Task Shutdown()
         {
+            if (_initializingTCS != null)
+            {
+                ModioLog.Warning?.Log("You have shutdown the mod.io SDK while is is initializing. Waiting for the Init to complete first, which may cause undesirable delays");
+                
+                await _initializingTCS.Task;
+            }
+
+            if (!IsInitialized)
+            {
+                ModioLog.Warning?.Log("Attempted to shutdown mod.io SDK when is not initialized. Ignoring.");
+                return;
+            }
+
             IsInitialized = false;
             
             OnShutdown?.Invoke();
@@ -180,6 +196,7 @@ namespace Modio
             ModioServices.Bind<ModioEmailAuthService>()
                          .WithInterfaces<IGetActiveUserIdentifier>()
                          .WithInterfaces<IModioAuthService>()
+                         .WithInterfaces<IGetPortalProvider>()
                          .FromNew<ModioEmailAuthService>(ModioServicePriority.Default);
             
             

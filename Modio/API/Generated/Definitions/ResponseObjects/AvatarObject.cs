@@ -7,16 +7,16 @@ using Newtonsoft.Json.Linq;
 
 namespace Modio.API.SchemaDefinitions{
     [JsonObject]
-    internal readonly partial struct AvatarObject 
+    public readonly partial struct AvatarObject 
     {
         /// <summary>Avatar filename including extension.</summary>
-        internal readonly string Filename;
+        public readonly string Filename;
         /// <summary>URL to the full-sized avatar.</summary>
-        internal readonly string Original;
+        public readonly string Original;
         /// <summary>URL to the small avatar thumbnail.</summary>
-        internal readonly string Thumb50X50;
+        public readonly string Thumb50X50;
         /// <summary>URL to the medium avatar thumbnail.</summary>
-        internal readonly string Thumb100X100;
+        public readonly string Thumb100X100;
 
         /// <param name="filename">Avatar filename including extension.</param>
         /// <param name="original">URL to the full-sized avatar.</param>

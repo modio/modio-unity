@@ -196,6 +196,8 @@ namespace Modio.Unity.UI.Panels
 
                 return platformSettings;
             }
+            
+            _debugMenu.AddButton("Close without applying some settings", ClosePanel);
         }
 
         string StagingUrl() => "https://api-staging.moddemo.io/v1";
