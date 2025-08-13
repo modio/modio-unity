@@ -1,4 +1,5 @@
 ﻿using Modio.API.SchemaDefinitions;
+using Plugins.Modio.Modio.Ratings;
 
 namespace Modio.Mods
 {
@@ -10,9 +11,9 @@ namespace Modio.Mods
         public long RatingsNegative { get; private set; }
         public long RatingsPercent { get; private set;}
 
-        ModRating _previousRating;
+        ModioRating _previousRating;
 
-        internal ModStats(ModStatsObject statsObject, ModRating previousRating)
+        internal ModStats(ModStatsObject statsObject, ModioRating previousRating)
         {
             Subscribers = statsObject.SubscribersTotal;
             Downloads = statsObject.DownloadsTotal;
@@ -23,13 +24,13 @@ namespace Modio.Mods
             _previousRating = previousRating;
         }
 
-        internal void UpdateEstimateFromLocalRatingChange(ModRating rating)
+        internal void UpdateEstimateFromLocalRatingChange(ModioRating rating)
         {
-            if (_previousRating == ModRating.Negative) RatingsNegative--;
-            if (_previousRating == ModRating.Positive) RatingsPositive--;
+            if (_previousRating == ModioRating.Negative) RatingsNegative--;
+            if (_previousRating == ModioRating.Positive) RatingsPositive--;
             
-            if (rating == ModRating.Negative) RatingsNegative++;
-            if (rating == ModRating.Positive) RatingsPositive++;
+            if (rating == ModioRating.Negative) RatingsNegative++;
+            if (rating == ModioRating.Positive) RatingsPositive++;
 
             _previousRating = rating;
             
@@ -37,7 +38,7 @@ namespace Modio.Mods
             RatingsPercent = totalRatings > 0 ? (RatingsPositive * 100) / totalRatings : 100;
         }
 
-        internal void UpdatePreviousRating(ModRating rating)
+        internal void UpdatePreviousRating(ModioRating rating)
         {
             _previousRating = rating;
         }

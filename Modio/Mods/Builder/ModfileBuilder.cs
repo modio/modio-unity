@@ -56,6 +56,13 @@ namespace Modio.Mods.Builder
             Platforms = platforms.ToArray();
             return this;
         }
+        
+        /// <remarks>This will overwrite all platforms on this modfile.</remarks>
+        public ModfileBuilder SetPlatforms(params Platform[] platforms)
+        {
+            Platforms = platforms;
+            return this;
+        }
 
         public ModfileBuilder AppendPlatform(Platform platform) => AppendPlatforms(new[] { platform, });
 
@@ -74,58 +81,44 @@ namespace Modio.Mods.Builder
                 ModioLog.Error?.Log($"Unable to publish modfile, no {typeof(ModId)} found to upload to. How did you get here?");
                 return new Error(ErrorCode.BAD_PARAMETER);
             }
-            
-            if (!Directory.Exists(FilePath))
-            {
-                ModioLog.Error?.Log($"Unable to publish modfile, directory {FilePath} not found");
-                return new Error(ErrorCode.BAD_PARAMETER);
-            }
-            
-            string temporaryDirectoryPath = ModioClient.DataStorage.GetInstallPath(ParentId, 0);
-            Directory.CreateDirectory(temporaryDirectoryPath);
-            var temporaryFilePath = Path.Combine(temporaryDirectoryPath, "upload.zip");
-            Error error;
 
-            await using (Stream writerStream = File.Open(temporaryFilePath, FileMode.Create))
-            {
-                error = await ModioClient.DataStorage.CompressToZip(FilePath, writerStream);
-                if (error) 
-                    return error;
-            }
+            (Error error, Stream dataStorageStream) = await ModioClient.DataStorage.CompressToZipStream(FilePath, ParentId);
 
-            long fileSize = new FileInfo(temporaryFilePath).Length;
+            if (error)
+                return error;
 
-            ModfileObject? modfileObject;
-            const long oneHundredMiB = 100 * 1024 * 1024;
+            await using(Stream readStream = dataStorageStream)
+            {
+                const long oneHundredMiB = 100 * 1024 * 1024;
 
-            if (fileSize > oneHundredMiB) //recommended limit
-            {
-                await using Stream readStream = File.Open(temporaryFilePath, FileMode.Open);
-                error = await AddMultipartModfile(readStream);
-            }
-            else
-            {
-                var modioAPIFileParameter = new ModioAPIFileParameter()
+                if (readStream.Length > oneHundredMiB) //recommended limit
                 {
-                    Name = "upload.zip",
-                    Path = temporaryFilePath
-                };
+                    error = await AddMultipartModfile(readStream);
+                }
+                else
+                {
+                    var modioAPIFileParameter = new ModioAPIFileParameter(readStream)
+                    {
+                        Name = "upload.zip",
+                    };
 
-                string[] platformStrings = Platforms.Select(GetPlatformHeader).ToArray();
-                
-                var addModfileRequest = new AddModfileRequest(
-                    modioAPIFileParameter,
-                    Version,
-                    ChangeLog,
-                    MetadataBlob,
-                    platformStrings,
-                    null
-                );
+                    string[] platformStrings = Platforms?.Select(GetPlatformHeader).ToArray();
 
-                var uploadTask = ModioAPI.Files.AddModfile(ParentId, addModfileRequest);
+                    var addModfileRequest = new AddModfileRequest(
+                        modioAPIFileParameter,
+                        Version,
+                        ChangeLog,
+                        MetadataBlob,
+                        platformStrings,
+                        null
+                    );
 
-                (error, _) = await uploadTask;
+                    var uploadTask = ModioAPI.Files.AddModfile(ParentId, addModfileRequest);
+
+                    (error, _) = await uploadTask;
+                }
             }
+            await ModioClient.DataStorage.CleanUpCompressToZipStream(ParentId);
             
             return error;
         }

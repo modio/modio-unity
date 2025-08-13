@@ -6,17 +6,43 @@ using Modio.API;
 using Modio.API.SchemaDefinitions;
 using Modio.Authentication;
 using Modio.Caching;
+using Modio.Collections;
 using Modio.Errors;
 using Modio.Extensions;
 using Modio.FileIO;
 using Modio.Mods;
 using Modio.Monetization;
+using Plugins.Modio.Modio.Ratings;
 
 namespace Modio.Users
 {
     public class User
     {
+        /// <summary>
+        /// An event that is invoked when the user changes.
+        /// </summary>
         public static event Action<User> OnUserChanged;
+
+        static event Action InternalOnUserChanged;
+        
+        /// <summary>
+        /// An event that is invoked when the user is authenticated.
+        /// If the user is already authenticated when a listener is added,
+        /// it is immediately invoked.
+        /// </summary>
+        public static event Action OnUserAuthenticated
+        {
+            
+            add
+            {
+                InternalOnUserChanged += value;
+                
+                if (Current is { IsAuthenticated: true, }) value?.Invoke();
+            }
+            
+            remove => InternalOnUserChanged -= value;
+        }
+
         public static User Current { get; private set; }
         
         public string LocalUserId { get; private set; }
@@ -28,6 +54,7 @@ namespace Modio.Users
         public UserProfile Profile { get; private set; }
         public Wallet Wallet { get; private set; }
         public ModRepository ModRepository { get; private set; }
+        public ModCollectionRepository ModCollectionRepository { get; private set; }
 
         readonly Authentication _authentication;
         bool _isWritingToDisk;
@@ -52,6 +79,7 @@ namespace Modio.Users
                 Current.ApplyDetailsFromSaveObject(userObject);
                 Current.IsAuthenticated = true;
                 Current.HasAcceptedTermsOfUse = true;
+                InternalOnUserChanged?.Invoke();
                 await Current.Sync();
                 return;
             }
@@ -64,6 +92,8 @@ namespace Modio.Users
             _authentication = new Authentication();
             Wallet = new Wallet();
             ModRepository = new ModRepository();
+            ModCollectionRepository = new ModCollectionRepository();
+            
             Profile = new UserProfile();
             
             IsUpdating = false;
@@ -98,7 +128,14 @@ namespace Modio.Users
                     Mod mod = Mod.Get(purchasedMod);
                     mod.UpdateLocalPurchaseStatus(true);
                 }
-
+            
+            if (userObject.FollowedCollections != null)
+                foreach (long collection in userObject.FollowedCollections)
+                {
+                    ModCollection mod = ModCollection.Get(collection);
+                    mod.UpdateLocalFollowStatus(true);
+                }
+            
             //For now just store the OAuthToken, we'll clarify if we're actually authenticated in Sync()
             _authentication.OAuthToken = userObject.AuthToken;
             
@@ -115,7 +152,8 @@ namespace Modio.Users
             _authentication.OAuthToken = oAuthToken;
             HasAcceptedTermsOfUse = true;
             IsAuthenticated = true;
-            
+            InternalOnUserChanged?.Invoke();
+
             // Using Task.Run() causes this to run in another thread, breaking sync completely as event subscribers
             // exist on main thread. By requiring it run synchronously we keep it on the Unity main thread.
             Sync().ForgetTaskSafely();
@@ -142,6 +180,7 @@ namespace Modio.Users
             SyncRatings().ForgetTaskSafely();
             SyncWallet().ForgetTaskSafely();
             SyncEntitlements().ForgetTaskSafely();
+            SyncCollections().ForgetTaskSafely();
 
             Error[] errors = await Task.WhenAll(profileTask, subscriptionTask, purchaseTask);
 
@@ -149,7 +188,7 @@ namespace Modio.Users
 
             ModRepository.OnContentsChanged += OnAnyModRepositoryChange;
             
-            // We already log the errors in their methods so we just return the first one here
+            // We already log the errors in their methods, so we just return the first one here
             if (errors.Any(error => error)) 
                 return errors.First(error => error);
             
@@ -193,7 +232,7 @@ namespace Modio.Users
             // We set these here as the sync profile confirms if the access token's valid or not
             IsAuthenticated = true;
             HasAcceptedTermsOfUse = true;
-            
+            InternalOnUserChanged?.Invoke();
             OnUserChanged?.Invoke(this);
             
             ModioLog.Verbose?.Log($"Finished Syncing Profile {UserId} with result: {error}");
@@ -212,7 +251,7 @@ namespace Modio.Users
             ModioLog.Verbose?.Log($"Syncing Subscriptions {UserId}");
 
             var filter = ModioAPI.Me.FilterGetUserSubscriptions().GameId(ModioClient.Settings.GameId);
-
+    
             (Error error, List<ModObject> subObjects) = await CrawlAllPages(filter, ModioAPI.Me.GetUserSubscriptions);
 
             if (error)
@@ -222,7 +261,6 @@ namespace Modio.Users
             }
             
             List<Mod> subscriptions = subObjects
-                                      .Where(modObject => modObject.Visible != 0)
                                       .Select(ModCache.GetMod)
                                       .ToList();
 
@@ -308,6 +346,54 @@ namespace Modio.Users
         }
 
         /// <summary>
+        /// Syncs the user collections with changes made on the WebInterface
+        /// </summary>
+        /// <returns>
+        /// An asynchronous task that returns <see cref="Error"/>.<see cref="Error.None"/> on success.
+        /// </returns>
+        public async Task<Error> SyncCollections()
+        {
+            ModioLog.Verbose?.Log($"Syncing Collections for {UserId}");
+
+            var settings = ModioServices.Resolve<ModioSettings>();
+
+            
+            ModioAPI.Me.GetUserFollowedCollectionsFilter filter = ModioAPI.Me.FilterGetUserFollowedCollections().GameId(settings.GameId);
+
+            (Error error, List<ModCollectionObject> collections) = await CrawlAllPages(filter, ModioAPI.Me.GetUserFollowedCollections);
+
+            if (error)
+            {
+                if (!error.IsSilent) ModioLog.Error?.Log($"Error syncing collections for {UserId}: {error}");
+                return error;
+            }
+
+            List<ModCollection> subscribed = collections
+                                             .Select(ModCollectionCache.Get)
+                                             .ToList();
+
+            // Get all previously, but not currently, subscribed mods and update their status
+            // Far less likely case than subscriptions, but mods can be refunded
+            var previouslyFollowed = new HashSet<ModCollection>(ModCollectionRepository.GetFollowed());
+            
+            // Cull values that don't need to change
+            foreach (ModCollection collection in subscribed)
+            {
+                previouslyFollowed.Remove(collection);
+                collection.UpdateLocalFollowStatus(true);
+            }
+
+            foreach (ModCollection collection in previouslyFollowed) 
+                collection.UpdateLocalFollowStatus(false);
+            
+            OnUserChanged?.Invoke(this);
+            
+            ModioLog.Verbose?.Log($"Finished Syncing Collections for {UserId} with result: {error}");
+            
+            return Error.None;
+        }
+        
+        /// <summary>
         /// Syncs the user entitlements with changes made on the WebInterface
         /// </summary>
         /// <returns>
@@ -315,7 +401,7 @@ namespace Modio.Users
         /// </returns>
         public async Task<Error> SyncEntitlements()
         {
-            ModioLog.Verbose?.Log($"Syncing Entitlements {LocalUserId}");
+            ModioLog.Verbose?.Log($"Syncing Entitlements {UserId}");
 
             var settings = ModioServices.Resolve<ModioSettings>();
 
@@ -350,7 +436,7 @@ namespace Modio.Users
         /// </returns>
         public async Task<Error> SyncWallet()
         {
-            ModioLog.Verbose?.Log($"Syncing Wallet {LocalUserId}");
+            ModioLog.Verbose?.Log($"Syncing Wallet {UserId}");
 
             var settings = ModioServices.Resolve<ModioSettings>();
 
@@ -390,7 +476,7 @@ namespace Modio.Users
         /// </returns>
         public async Task<Error> SyncRatings()
         {
-            ModioLog.Verbose?.Log($"Syncing Ratings {LocalUserId}");
+            ModioLog.Verbose?.Log($"Syncing Ratings {UserId}");
 
             var settings = ModioServices.Resolve<ModioSettings>();
 
@@ -410,7 +496,7 @@ namespace Modio.Users
                 if (!ModCache.TryGetMod(ratingObject.ModId, out Mod mod))
                     continue;
                 
-                mod.SetCurrentUserRating((ModRating)ratingObject.Rating);
+                mod.SetCurrentUserRating((ModioRating)ratingObject.Rating);
             }
             
             ModioLog.Verbose?.Log($"Finished Syncing Ratings for {LocalUserId} with result: {error}");
@@ -449,26 +535,124 @@ namespace Modio.Users
         /// <p><c>error</c> is the error encountered during the task (if any)</p>
         /// <p><c>result</c> is a readonly list of <see cref="Mod"/>s created by this user.</p>
         /// </returns>
-        /// <remarks>This will crawl through all creations but not cache any data. Please use sparingly.</remarks>
-        public async Task<(Error error, IReadOnlyList<Mod> mods)> GetUserCreations(bool filterForGame = false)
+        public async Task<(Error error, IReadOnlyList<Mod> mods)> GetUserCreations(bool filterForGame = true)
         {
-            var filter = ModioAPI.Me.FilterGetUserMods();
+            ModioAPI.Me.GetUserModsFilter filter = ModioAPI.Me.FilterGetUserMods();
             
-            if (filterForGame) filter.GameId(ModioClient.Settings.GameId);
+            var output = new List<Mod>();
+            while (true)
+            {
+                (Error error, ModioPage<Mod> page) = await GetUserCreationsPaged(filter, filterForGame);
+                
+                if (error)
+                {
+                    if (!error.IsSilent) ModioLog.Error?.Log($"Error getting user creations for {UserId}: {error}");
+                    return (error, Array.Empty<Mod>());
+                }
+                
+                output.AddRange(page.Data);
+                    
+                if (page.HasMoreResults())
+                    filter.PageIndex++;
+                else
+                    break;
+            }
+            
+            return (Error.None, output);
+        }
 
-            (Error error, List<ModObject> mods) = await CrawlAllPages(filter, ModioAPI.Me.GetUserMods);
+        /// <summary>
+        /// Get all creations by the user. This does cache results
+        /// </summary>
+        public Task<(Error error, ModioPage<Mod> page)> GetUserCreationsPaged(
+            ModioAPI.Mods.GetModsFilter modsFilter,
+            bool filterForGame = true
+        )
+        {
+            ModioAPI.Me.GetUserModsFilter filter = ModioAPI.Me.FilterGetUserMods(modsFilter.PageIndex, modsFilter.PageSize);
 
+            foreach ((string key, object value) in modsFilter.Parameters)
+                filter.Parameters[key] = value;
+
+            return GetUserCreationsPaged(filter, filterForGame);
+        }
+        
+        /// <summary>
+        /// Get all creations by the user. This does cache results
+        /// </summary>
+        public async Task<(Error error, ModioPage<Mod> page)> GetUserCreationsPaged(ModioAPI.Me.GetUserModsFilter filter, bool filterForGame = true)
+        {
+            if(filterForGame)
+                filter.GameId(ModioClient.Settings.GameId);
+            //Don't show archived mods; those are only useful on the web interface
+            filter.Status(3, Filtering.Not);
+
+            string searchCacheKey = "me:yes,"+ ModCache.ConstructFilterKey(filter);
+   
+            if (ModCache.GetCachedModSearch(filter, searchCacheKey, out Mod[] cachedMods, out long resultTotal))
+                return (Error.None, new ModioPage<Mod>(
+                            cachedMods,
+                            filter.PageSize,
+                            filter.PageIndex,
+                            resultTotal
+                        ));
+
+            
+            (Error error, Pagination<ModObject[]>? pagination) = await ModioAPI.Me.GetUserMods(filter);
+            
             if (error)
             {
                 if (!error.IsSilent) ModioLog.Error?.Log($"Error getting user creations for {UserId}: {error}");
-                return (error, Array.Empty<Mod>());
+                return (error, null);
             }
+            
+            ModioPage<Mod> page = Mod.ConvertPaginationToModPage(pagination.Value, searchCacheKey);
 
-            List<Mod> creations = mods.Select(ModCache.GetMod).ToList();
-
-            return (Error.None, creations);
+            return (Error.None, page);
         }
 
+        /// <summary>
+        /// Gets all users following the currently authenticated User from the API.
+        /// </summary>
+        /// <returns>An asynchronous task that returns a tuple (<see cref="Error"/> error, <see cref="IReadOnlyList{UserProfile}"/> results), where:</returns>
+        public async Task<(Error error, IReadOnlyList<UserProfile> results)> GetUsersFollowers()
+        {
+            ModioAPI.Me.GetUserFollowersFilter filter = ModioAPI.Me.FilterGetUserFollowers();
+            
+            (Error error, List<UserObject> userObjects) = await CrawlAllPages(filter, ModioAPI.Me.GetUserFollowers);
+            if (error)
+            {
+                if (!error.IsSilent) 
+                    ModioLog.Error?.Log($"Error getting followers of user {UserId}: {error}");
+                return (error, Array.Empty<UserProfile>());
+            }
+
+            List<UserProfile> output = userObjects.Select(UserProfile.Get).ToList();
+
+            return (Error.None, output);
+        }
+        
+        /// <summary>
+        /// Gets all users that the currently authenticated User is following from the API.
+        /// </summary>
+        /// <returns>An asynchronous task that returns a tuple (<see cref="Error"/> error, <see cref="IReadOnlyList{UserProfile}"/> results), where:</returns>
+        public async Task<(Error error, IReadOnlyList<UserProfile> results)> GetUsersFollowing()
+        {
+            ModioAPI.Me.GetUsersFollowingFilter filter = ModioAPI.Me.FilterGetUsersFollowing();
+            
+            (Error error, List<UserObject> userObjects) = await CrawlAllPages(filter, ModioAPI.Me.GetUsersFollowing);
+            if (error)
+            {
+                if (!error.IsSilent) 
+                    ModioLog.Error?.Log($"Error getting followed users of user {UserId}: {error}");
+                return (error, Array.Empty<UserProfile>());
+            }
+
+            List<UserProfile> output = userObjects.Select(UserProfile.Get).ToList();
+
+            return (Error.None, output);
+        }
+        
         /// <summary>Removes the <see cref="User"/> and associated authentication and caches from this device.</summary>
         [ModioDebugMenu(ShowInBrowserMenu = false, ShowInSettingsMenu = true)]
         public static void DeleteUserData()
@@ -564,6 +748,7 @@ namespace Modio.Users
                 SubscribedMods = ModRepository.GetSubscribed().Select(mod => (long)mod.Id).ToList(),
                 DisabledMods = ModRepository.GetDisabled().Select(mod => (long)mod.Id).ToList(),
                 PurchasedMods = ModRepository.GetPurchased().Select(mod => (long)mod.Id).ToList(),
+                FollowedCollections = ModCollectionRepository.GetFollowed().Select(collection => (long)collection.Id).ToList(),
             };
     }
     
@@ -578,5 +763,6 @@ namespace Modio.Users
         public List<long> SubscribedMods;
         public List<long> DisabledMods;
         public List<long> PurchasedMods;
+        public List<long> FollowedCollections;
     }
 }

@@ -95,10 +95,13 @@ namespace Modio.API.SchemaDefinitions{
             if (MetadataBlob != null) _bodyParameters.Add("metadata_blob", MetadataBlob);
             if (Tags != null)
             {
-                for (int i = 0; i < Tags.Length; i++)
-                {
-                    _bodyParameters.Add($"tags[{i}]", Tags[i]);
-                }
+                if(Tags.Length > 0)
+                    for (int i = 0; i < Tags.Length; i++)
+                    {
+                        _bodyParameters.Add($"tags[{i}]", Tags[i]);
+                    }
+                else
+                    _bodyParameters.Add("tags[]", string.Empty);
             }
 
             return _bodyParameters;

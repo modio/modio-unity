@@ -37,9 +37,8 @@ namespace Modio.Unity.UI.Components.Selectables
 
             if (_owner == null && enabled)
             {
-                Debug.Log(
-                    $"{GetType().Name} {gameObject.name} could not find an {nameof(IModioUISelectable)}, disabling.",
-                    this
+                ModioLog.Verbose?.Log(
+                    $"{GetType().Name} {gameObject.name} could not find an {nameof(IModioUISelectable)}, disabling."
                 );
 
                 enabled = false;

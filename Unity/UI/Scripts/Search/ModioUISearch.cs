@@ -389,9 +389,7 @@ namespace Modio.Unity.UI.Search
         {
             ModioAPI.Mods.GetModsFilter yeet = LastSearchFilter.GetModsFilter();
 
-            var result = await Mod.GetMods(yeet);
-
-            var error = (Error)result.error;
+            (Error error, ModioPage<Mod> page) = await Mod.GetMods(yeet);
                 
             if (error)
             {
@@ -400,42 +398,23 @@ namespace Modio.Unity.UI.Search
                 return (error, null, 0);
             }
 
-            return (error, result.page.Data, (int)result.page.TotalSearchResults);
+            return (error, page.Data, (int)page.TotalSearchResults);
         }
 
         async Task<(Error error, IReadOnlyList<Mod> mods, int totalCount)> GetCurrentUserCreationsQuery()
         {
-            var repo = User.Current.ModRepository;
+            ModioAPI.Mods.GetModsFilter yeet = LastSearchFilter.GetModsFilter();
 
-            IEnumerable<Mod> mods = Enumerable.Empty<Mod>();
-
-            if (_searchPreset == SpecialSearchType.UserCreations)
-            {
-                mods = repo.GetCreatedMods();
-            }
+            (Error error, ModioPage<Mod> page) = await User.Current.GetUserCreationsPaged(yeet);
             
-            if (mods == null)
+            if (error)
             {
-                ModioLog.Error?.Log($"Unable to construct local query results for " + _searchPreset);
-                Error error = Error.Unknown;
+                if(!error.IsSilent)
+                    ModioLog.Error?.Log($"Error getting mods: {error.GetMessage()}");
                 return (error, null, 0);
             }
-            
-            var modList = mods.Where(MatchesFilter).Distinct().ToList();
 
-            modList.Sort(SortModComparer);
-
-            var totalResultCount = modList.Count;
-
-            if (totalResultCount > LastSearchFilter.PageSize)
-            {
-                _lastLocalQueryInFull = modList;
-                modList = modList.Skip(LastSearchFilter.PageSize * LastSearchFilter.PageIndex)
-                                 .Take(LastSearchFilter.PageSize)
-                                 .ToList();
-            }
-
-            return (Error.None, modList, totalResultCount);
+            return (error, page.Data, (int)page.TotalSearchResults);
         }
 
         async Task<(Error error, IReadOnlyList<Mod> mods, int totalCount)> GetModsViaLocalQuery()

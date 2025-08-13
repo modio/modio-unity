@@ -42,7 +42,7 @@ namespace Modio.FileIO
 
             while (!_hasTransformedFinalBlock)
             {
-                int bytesRead = await ReadAsync(buffer, 0, buffer.Length);
+                int bytesRead = await ReadAsync(buffer, 0, buffer.Length, CancellationToken.None);
                 if (bytesRead == 0) break;
             }
 

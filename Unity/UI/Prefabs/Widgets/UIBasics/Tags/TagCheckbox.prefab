@@ -146,6 +146,7 @@ GameObject:
   - component: {fileID: 3574962414365987803}
   - component: {fileID: 61186151183440358}
   - component: {fileID: 3960686718879299954}
+  - component: {fileID: -7466174238259807543}
   m_Layer: 5
   m_Name: TagCheckbox
   m_TagString: Untagged
@@ -244,6 +245,19 @@ MonoBehaviour:
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
+--- !u!114 &-7466174238259807543
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3574962414365987800}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6c2f87ea80ff45bdbb12878c24494610, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _overrideFocusTo: {fileID: 0}
 --- !u!1001 &2202338252068950713
 PrefabInstance:
   m_ObjectHideFlags: 0

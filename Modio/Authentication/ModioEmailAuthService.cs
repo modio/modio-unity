@@ -41,7 +41,7 @@ namespace Modio.Authentication
     /// }
     /// </code>
     /// </example>
-    public class ModioEmailAuthService : IModioAuthService, IGetActiveUserIdentifier, IPotentialModioEmailAuthService
+    public class ModioEmailAuthService : IModioAuthService, IGetActiveUserIdentifier, IPotentialModioEmailAuthService, IGetPortalProvider
     {
         public bool IsEmailPlatform => true;
         public ModioAPI.Portal Portal => ModioAPI.Portal.None;

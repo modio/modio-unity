@@ -11,17 +11,13 @@ namespace Modio.Users
 
         internal event Action OnContentsChanged;
         
-        readonly HashSet<Mod> _created = new HashSet<Mod>();
         readonly HashSet<Mod> _subscribed = new HashSet<Mod>();
         readonly HashSet<Mod> _purchased = new HashSet<Mod>();
         readonly HashSet<Mod> _disabled = new HashSet<Mod>();
         
-        /// <summary>
-        /// <para>Returns a new array containing the <see cref="Mod"/>s this user added or is a team member of.</para>
-        /// <para>Use <see cref="GetCreatedMods(List{Modio.Mods.Mod},out Modio.Error)"/> to avoid the array creation.</para>
-        /// <para><b>Note:</b> mods may not be initialized, use Mod.<see cref="Mod.IsInitialized"/> to test for initialization.</para>
-        /// </summary>
-        public IEnumerable<Mod> GetCreatedMods() => _created;
+        [Obsolete("GetCreatedMods should be called via User.Current.GetUserCreations, which is async", true)]
+        public IEnumerable<Mod> GetCreatedMods() => throw new NotImplementedException();
+
         public IEnumerable<Mod> GetSubscribed() => _subscribed;
         public IEnumerable<Mod> GetPurchased() => _purchased;
         public IEnumerable<Mod> GetDisabled() => _disabled;
@@ -64,6 +60,15 @@ namespace Modio.Users
                 anyChange |= _purchased.Add(mod);
             else
                 anyChange |= _purchased.Remove(mod);
+            if(anyChange) OnContentsChanged?.Invoke();
+        }
+
+        public void RemoveMod(Mod mod)
+        {
+            var anyChange = false;
+            anyChange |= _subscribed.Remove(mod);
+            anyChange |= _disabled.Remove(mod);
+            anyChange |= _purchased.Remove(mod);
             if(anyChange) OnContentsChanged?.Invoke();
         }
 

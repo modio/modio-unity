@@ -1,6 +1,7 @@
 ﻿using System;
 using Modio.Mods;
 using Modio.Unity.UI.Panels;
+using Plugins.Modio.Modio.Ratings;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -23,8 +24,8 @@ namespace Modio.Unity.UI.Components.ModProperties
             _positiveVoteToggle.onValueChanged.RemoveListener(PositiveToggleValueChanged);
             _negativeVoteToggle.onValueChanged.RemoveListener(NegativeToggleValueChanged);
 
-           _positiveVoteToggle.isOn = ratingResult == ModRating.Positive;
-            _negativeVoteToggle.isOn = ratingResult == ModRating.Negative;
+           _positiveVoteToggle.isOn = ratingResult == ModioRating.Positive;
+            _negativeVoteToggle.isOn = ratingResult == ModioRating.Negative;
 
             _positiveVoteToggle.onValueChanged.AddListener(PositiveToggleValueChanged);
             _negativeVoteToggle.onValueChanged.AddListener(NegativeToggleValueChanged);
@@ -32,14 +33,14 @@ namespace Modio.Unity.UI.Components.ModProperties
 
         void PositiveToggleValueChanged(bool arg0)
         {
-            var task = _mod.RateMod(_positiveVoteToggle.isOn ? ModRating.Positive : ModRating.None);
+            var task = _mod.RateMod(_positiveVoteToggle.isOn ? ModioRating.Positive : ModioRating.None);
 
             ModioPanelManager.GetPanelOfType<ModioErrorPanelGeneric>()?.MonitorTaskThenOpenPanelIfError(task);
         }
 
         void NegativeToggleValueChanged(bool toggleValue)
         {
-            var task = _mod.RateMod(_negativeVoteToggle.isOn ? ModRating.Negative : ModRating.None);
+            var task = _mod.RateMod(_negativeVoteToggle.isOn ? ModioRating.Negative : ModioRating.None);
 
             ModioPanelManager.GetPanelOfType<ModioErrorPanelGeneric>()?.MonitorTaskThenOpenPanelIfError(task);
         }

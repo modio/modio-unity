@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 
 namespace Modio
 {
@@ -12,7 +13,8 @@ namespace Modio
         const string PREFIX = "-modio-";
 
         static ReadOnlyDictionary<string, string> _argumentCache;
-
+        static ReadOnlyCollection<string> _flagCache;
+        
         /// <summary>
         /// Attempt to get a mod.io command line argument and its encoded value from the environment.
         /// </summary>
@@ -23,7 +25,7 @@ namespace Modio
         /// or
         /// <c>-modio-arg value</c>
         /// </remarks>
-        public static bool TryGet(string argument, out string value)
+        public static bool TryGetArgument(string argument, out string value)
         {
             if (_argumentCache == null) GetArguments();
 
@@ -31,6 +33,15 @@ namespace Modio
             return _argumentCache != null && _argumentCache.TryGetValue(argument, out value);
         }
 
+        public static bool HasFlag(string flag)
+        {
+            _flagCache ??= new ReadOnlyCollection<string>(
+                Environment.GetCommandLineArgs().Where(arg => arg.StartsWith(PREFIX)).Select(arg => arg.Substring(PREFIX.Length)).ToList()
+            );
+
+            return _flagCache.Contains(flag);
+        }
+        
         static void GetArguments()
         {
             if (_argumentCache != null) return;
@@ -52,12 +63,12 @@ namespace Modio
                 //using '=' to separate key value pairs
                 if (argumentValue.Length == 2)
                 {
-                    key = argumentValue[0].Substring(PREFIX.Length);
+                    key = argumentValue[0][PREFIX.Length..];
                     value = argumentValue[1];
                 }
                 else if (index + 1 < launchArgs.Length)
                 {
-                    key = argument.Substring(PREFIX.Length);;
+                    key = argument[PREFIX.Length..];;
                     value = launchArgs[index + 1];
                 }
                 else

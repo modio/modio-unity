@@ -8,8 +8,8 @@ using Modio.API;
 using Modio.API.SchemaDefinitions;
 using Modio.Caching;
 using Modio.Errors;
-using Modio.Extensions;
 using Modio.Mods;
+using Modio.Collections;
 using Modio.Settings;
 using Modio.Users;
 
@@ -30,7 +30,7 @@ namespace Modio
         /// </summary>
         public static Mod CurrentOperationOnMod => _currentOperation?.Mod;
 
-        static ModIndex _index;
+        internal static ModIndex _index;
 
         static Job _currentOperation;
         static bool _isRunning;
@@ -43,6 +43,8 @@ namespace Modio
         static bool _hasScannedMissingMods;
 
         static bool _isDeactivated;
+
+        internal static bool IsRunning => _isRunning;
 
         public delegate void InstallationManagementEventDelegate(
             Mod mod,
@@ -242,52 +244,62 @@ namespace Modio
 
             _isRunning = true;
 
-            while (true)
+            try
             {
-                await EnqueueJobs();
-
-                if (_index.IsDirty)
-                    await SaveIndex();
-                else if (!_operationQueue.Any()) //else as if we awaited a save, we need to check for new jobs after
+                while (ModioClient.IsInitialized || ModioClient.IsCurrentlyInitializing)
                 {
-                    _isRunning = false;
-                    return;
-                }
+                    await EnqueueJobs();
 
-                try
-                {
-                    while (_operationQueue.Any())
+                    if (_index.IsDirty)
+                        await SaveIndex();
+                    else if (!_operationQueue.Any()) //else as if we awaited a save, we need to check for new jobs after
                     {
-                        _currentOperation = _operationQueue.Dequeue();
-
-                        Error error = await _currentOperation.Run();
-
-                        if (error)
-                            if (error.IsSilent)
-                                ModioLog.Verbose?.Log(
-                                    $"Cancelled performing {_currentOperation.Type} job for mod {_currentOperation.Mod}: {error}"
-                                );
-                            else
-                                ModioLog.Error?.Log(
-                                    $"Error performing {_currentOperation.Type} job for mod {_currentOperation.Mod}: {error}"
-                                );
-
-                        if (!ModioClient.IsInitialized && !ModioClient.IsCurrentlyInitializing)
-                        {
-                            _currentOperation = null;
-                            _isRunning = false;
-                            return;
-                        }
-
-                        if (_index.IsDirty) await SaveIndex();
+                        _isRunning = false;
+                        return;
                     }
-                }
-                finally
-                {
-                    _currentOperation = null;
-                }
 
-                await Task.Yield(); //prevent this becoming an infinite loop if something goes wrong
+                    try
+                    {
+                        while (_operationQueue.Any() && _index != null)
+                        {
+                            _currentOperation = _operationQueue.Dequeue();
+
+                            ModioLog.Verbose?.Log($"Executing MIM operation: {_currentOperation}");
+                            
+                            Error error = await _currentOperation.Run();
+
+                            if (error)
+                                if (error.IsSilent)
+                                    ModioLog.Verbose?.Log(
+                                        $"Cancelled performing {_currentOperation.Type} job for mod {_currentOperation.Mod}: {error}"
+                                    );
+                                else
+                                    ModioLog.Error?.Log(
+                                        $"Error performing {_currentOperation.Type} job for mod {_currentOperation.Mod}: {error}"
+                                    );
+
+                            if (!ModioClient.IsInitialized && !ModioClient.IsCurrentlyInitializing)
+                            {
+                                _currentOperation = null;
+                                _isRunning = false;
+                                return;
+                            }
+
+                            if (_index.IsDirty)
+                                await SaveIndex();
+                        }
+                    }
+                    finally
+                    {
+                        _currentOperation = null;
+                    }
+
+                    await Task.Yield(); //prevent this becoming an infinite loop if something goes wrong
+                }
+            }
+            finally
+            {
+                _isRunning = false;
             }
         }
 
@@ -299,9 +311,6 @@ namespace Modio
             {
                 //If the modfile is missing, this is likely a saved ModID and not much else
                 if (mod.File == null) continue;
-
-                //don't retry a failed file operation without external input, as we'll likely just fail again and get rate limited
-                if (mod.File.State == ModFileState.FileOperationFailed) continue;
 
                 _index.GetEntry(mod);
             }
@@ -335,6 +344,9 @@ namespace Modio
                 // By early outing here, we apply index changes without installing/uninstalling anything
                 if (_isDeactivated) continue;
                 if (mod.File == null) continue;
+
+                //don't retry a failed file operation without external input, as we'll likely just fail again and get rate limited
+                if (mod.File.State == ModFileState.FileOperationFailed) continue;
 
                 if ((!anyOtherSubscribers && !tempModIsValid)
                     || (!tempModIsValid && !localUserIsSubscribed && mod.File.State is not ModFileState.Installed and not ModFileState.Uninstalling)
@@ -372,7 +384,8 @@ namespace Modio
                 }
                 else
                 {
-                    if (entry.DownloadedModfileId != mod.File.Id && mod.File.State != ModFileState.Downloading)
+                    if ((entry.DownloadedModfileId != mod.File.Id || !ModioClient.DataStorage.DoesModfileExist(mod.Id, mod.File.Id))
+                        && mod.File.State != ModFileState.Downloading)
                         _operationQueue.Enqueue(new DownloadJob(mod));
 
                     _operationQueue.Enqueue(new InstallJob(mod, isUpdateJob));
@@ -442,6 +455,13 @@ namespace Modio
             (Error error, ICollection<Mod> mods) = await Mod.GetMods(longIds);
 
             if (error) return error;
+            
+            if (tempMods.Count != mods.Count && tempMods.Distinct().Count() != mods.Count)
+            {
+                //oh no
+                ModioLog.Warning?.Log($"AddTemporaryMods failed; only able to fetch {mods.Count} temporary mods. Expected {tempMods.Distinct().Count()}");
+                return new Error(ErrorCode.REQUESTED_MODFILE_NOT_FOUND);
+            }
 
             // If one mod is tainted the whole session is missing a dependency, so we early out
             bool canInstall = !tempMods.Any(
@@ -510,11 +530,21 @@ namespace Modio
         {
             foreach (KeyValuePair<long, ModIndex.IndexEntry> entry in _index.Index)
             {
-                if (entry.Value.FileState != ModFileState.FileOperationFailed) continue;
+                Mod mod = null;
+
+                if (entry.Value.FileState != ModFileState.FileOperationFailed)
+                {
+                    if (entry.Value.FileState != ModFileState.None)
+                        continue;
+
+                    mod = GetModRespectingIndexCache(entry.Key);
+                    if (mod.File?.State != ModFileState.FileOperationFailed)
+                        continue;
+                }
 
                 entry.Value.FileState = ModFileState.None;
 
-                Mod mod = GetModRespectingIndexCache(entry.Key);
+                mod ??= GetModRespectingIndexCache(entry.Key);
 
                 mod.File.State = ModFileState.None;
                 mod.InvokeModUpdated(ModChangeType.FileState);
@@ -631,6 +661,8 @@ namespace Modio
             }
 
             internal abstract void GetPendingSpaceChange(ref long spaceRequired, ref long tempSpaceRequired);
+
+            public override string ToString() => $"{Type} {Mod}: {Phase}";
         }
 
         class DownloadJob : Job
@@ -696,7 +728,10 @@ namespace Modio
 
                 if (error)
                 {
-                    PostEvent(OperationPhase.Failed, ModFileState.FileOperationFailed, error);
+                    if (error.Code == ErrorCode.OPERATION_CANCELLED)
+                        PostEvent(OperationPhase.Cancelled, ModFileState.None);
+                    else 
+                        PostEvent(OperationPhase.Failed, ModFileState.FileOperationFailed, error);
                     return error;
                 }
 
@@ -719,8 +754,17 @@ namespace Modio
 
                 if (error)
                 {
-                    PostEvent(OperationPhase.Failed, ModFileState.FileOperationFailed, error);
+                    if(error.Code == ErrorCode.OPERATION_CANCELLED)
+                        PostEvent(OperationPhase.Cancelled, ModFileState.None);
+                    else
+                        PostEvent(OperationPhase.Failed, ModFileState.FileOperationFailed, error);
                     return error;
+                }
+
+                if (_index == null) // From Shutdown
+                {
+                    PostEvent(OperationPhase.Cancelled, ModFileState.None);
+                    return new Error(ErrorCode.SHUTTING_DOWN);
                 }
 
                 _index.GetEntry(Mod).FileState = ModFileState.Downloaded;
@@ -758,6 +802,13 @@ namespace Modio
 
             public override async Task<Error> Run()
             {
+                if (Mod.File.State is ModFileState.FileOperationFailed or ModFileState.None)
+                {
+                    //Early out; installing isn't valid when modfile downloading failed
+                    
+                    return new Error(ErrorCode.OPERATION_CANCELLED);
+                }
+                
                 ModFileState progressFileState = _isUpdateJob ? ModFileState.Updating : ModFileState.Installing;
 
                 PostEvent(OperationPhase.Checking, progressFileState);
@@ -778,14 +829,11 @@ namespace Modio
 
                 if (!ModioClient.DataStorage.DoesModfileExist(Mod.Id, Mod.File.Id))
                 {
-                    _operationQueue.Enqueue(new DownloadJob(Mod));
-                    _operationQueue.Enqueue(new InstallJob(Mod, _isUpdateJob));
-
                     ModioLog.Error?.Log(
                         $"Unable to install mod {Mod.Id}_{Mod.File.Id} as Modfile could not be found!"
                     );
 
-                    PostEvent(OperationPhase.Failed, ModFileState.Queued);
+                    PostEvent(OperationPhase.Failed, ModFileState.FileOperationFailed);
                     //SUB_MANAGEMENT_MODFILE_DOESNT_EXIST
                     return new Error(ErrorCode.FILE_NOT_FOUND);
                 }
@@ -845,6 +893,12 @@ namespace Modio
 
                 Mod.File.InstallLocation = ModioClient.DataStorage.GetInstallPath(Mod.Id, Mod.File.Id);
 
+                if (_index == null) // From Shutdown
+                {
+                    PostEvent(OperationPhase.Cancelled, ModFileState.None);
+                    return new Error(ErrorCode.SHUTTING_DOWN);
+                }
+                
                 _index.GetEntry(Mod).FileState = ModFileState.Installed;
                 _index.GetEntry(Mod).InstalledModfileId = Mod.File.Id;
                 await SaveIndex();
@@ -971,10 +1025,14 @@ namespace Modio
 
                 if (downloadError)
                 {
-                    PostEvent(OperationPhase.Failed, ModFileState.FileOperationFailed, downloadError);
+                    if (downloadError.Code == ErrorCode.OPERATION_CANCELLED)
+                        PostEvent(OperationPhase.Cancelled, ModFileState.None);
+                    else
+                        PostEvent(OperationPhase.Failed, ModFileState.FileOperationFailed, downloadError);
                     return downloadError;
                 }
-
+                
+                
                 error = await ModioClient.DataStorage.InstallModFromStream(
                     Mod,
                     Mod.File.Id,
@@ -985,12 +1043,21 @@ namespace Modio
 
                 if (error)
                 {
-                    PostEvent(OperationPhase.Failed, ModFileState.FileOperationFailed, error);
+                    if(error.Code == ErrorCode.OPERATION_CANCELLED)
+                        PostEvent(OperationPhase.Cancelled, ModFileState.None);
+                    else
+                        PostEvent(OperationPhase.Failed, ModFileState.FileOperationFailed, error);
                     return error;
                 }
                 
                 Mod.File.InstallLocation = ModioClient.DataStorage.GetInstallPath(Mod.Id, Mod.File.Id);
 
+                if (_index == null) // From Shutdown
+                {
+                    PostEvent(OperationPhase.Cancelled, ModFileState.None);
+                    return new Error(ErrorCode.SHUTTING_DOWN);
+                }
+                
                 _index.GetEntry(Mod).FileState = ModFileState.Installed;
                 _index.GetEntry(Mod).InstalledModfileId = Mod.File.Id;
                 await SaveIndex();
@@ -1169,6 +1236,44 @@ namespace Modio
                 tempSpaceRequired + mod.File.ArchiveFileSize,
                 spaceRequired + mod.File.FileSize
             );
+        }
+        
+        /// <summary>
+        /// Returns if there is enough available space to install a Mod, will account for pending jobs.
+        /// </summary>
+        /// <param name="mod">The mod check available space for</param>
+        /// <returns>
+        /// An asynchronous task that returns <c>true</c> if there is enough space, <c>false</c> otherwise.
+        /// </returns>
+        public static async Task<bool> IsThereAvailableSpaceFor(ModCollection mod)
+        {
+            long spaceRequired = 0;
+            long tempSpaceRequired = 0;
+
+            _currentOperation?.GetPendingSpaceChange(ref spaceRequired, ref tempSpaceRequired);
+
+            foreach (Job job in _operationQueue) job.GetPendingSpaceChange(ref spaceRequired, ref tempSpaceRequired);
+            
+            if (DownloadAndExtractAsSingleJob)
+                return await ModioClient.DataStorage.IsThereAvailableFreeSpaceFor(
+                    tempSpaceRequired,
+                    spaceRequired + mod.Filesize
+                );
+
+            return await ModioClient.DataStorage.IsThereAvailableFreeSpaceFor(
+                tempSpaceRequired + mod.ArchiveFilesize,
+                spaceRequired + mod.Filesize
+            );
+        }
+
+        internal static string GetDebugString()
+        {
+            string debugString = $"Current operation: {_currentOperation}";
+            foreach (Job job in _operationQueue)
+            {
+                debugString += $"\n{job}";
+            }
+            return debugString;
         }
     }
 }

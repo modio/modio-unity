@@ -3,8 +3,8 @@
 The Component UI has two key goals; provide a series of components that are easier to integrate into all designs, and a robust UI suitable for dropping into your project as is or with as much customization as you'd like
 
 <p float="left">
-  <img src="/Assets/Plugins/ModioUI/ReadmeImages/compui-songsofconquest.png" width="49%" alt="Screenshot of the Mod Browser" />
-  <img src="/Assets/Plugins/ModioUI/ReadmeImages/compui-songsofconquest-2.png" width="49%" alt="Screenshot of an individual mod" /> 
+  <img src="./ReadmeImages/compui-songsofconquest.png" width="49%" alt="Screenshot of the Mod Browser" />
+  <img src="./ReadmeImages/compui-songsofconquest-2.png" width="49%" alt="Screenshot of an individual mod" /> 
 </p>
 
 > [!IMPORTANT]  
@@ -50,19 +50,32 @@ We use a panels system, which handles the basics of pushing and popping panels a
 
 ### Localization
 We have a basic localization implementation in the ModioUI_Localization prefab. This allows all of our buttons to look up a key in a CSV, but lacks the advanced features typical in most localization packages.
-- The localization solution looks at `Settings.server.languageCode` to determine the language. Please re-initialise the plugin via `ModIOUnity.InitializeForUser` if you change the language. See `ModioExampleSettingsPanel` for an example.
-- If you are using a localization package, you can override the implementation by calling `ModioUI_Localization.SetCustomHandler(YourHandlerMethod)`
+- The localization solution looks at `Settings.DefaultLanguage` to determine the language. If you need to change the language see `ModioExampleSettingsPanel` for an example.
+- If you are using a localization package, you can override the implementation by calling `ModioUILocalizationManager.SetCustomHandler(YourHandlerMethod)`
 - Alternatively, you can leave both localization solutions running
 - The component UI does not handle RTL text to avoid conflicts. If your game supports RTL language, you'll need to apply your solution to the Component UI yourself
 
 # Customization
 
 ### Basic Recoloring
-The Component UI is built using a small set of prefabs stored in `ModioUI/Prefabs/Widgets/UIBasics/Components/`
+The Component UI is built using a small set of prefabs stored in `Modio/Unity/UI/Prefabs/Widgets/UIBasics/Components/`
+
 - The majority of background elements are ButtonBackground or PanelBackground
   - In addition to changing the `Image` component's Color, you'll need to change the values on `ModioUISelectableTransitions` which controls the various selection states
   - ButtonBackground is also used in locations other than buttons, with some of its functionality (like SelectableTransitions) disabled
 - Most text is based on the `ButtonText (TMP)` prefab. You can change its font, and change colors in the same way as above
+
+### Input UI Prompts and Icons
+The Component UI uses `ModioUIPromptIconResolver` to allow the configuration of icons per platform and keyboard.
+
+- To change the icons for a platform you can simply swap a sprite to the desired sprite.
+
+### Working with Monetization
+Several settings have to be setup to work with Monetization.
+
+- Your game must have monetization enabled
+- You must add `MonetizationSettings` to your Modio Settings Asset
+- Your scene needs to have a `ModioUITokenPurchaseButton` and a `ModioBuyTokensPanel`
 
 ### Adding ModioUIModProperties options
 To add a new property, simply extend IModProperty and respond to the OnModUpdate property, which will be called whenever the mod is changed or 'dirtied' (such as by changing subscription or file state, rating the mod, or dependencies being fetched from the server)

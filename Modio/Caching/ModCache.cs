@@ -57,10 +57,14 @@ namespace Modio.Caching
             SearchesSavedByCache = 0;
         }
 
-        internal static bool GetCachedModSearch(ModioAPI.Mods.GetModsFilter filter, string searchKey,
-                                              out Mod[] cachedMods, out long resultTotal)
+        internal static bool GetCachedModSearch(
+            SearchFilter filter,
+            string searchKey,
+            out Mod[] cachedMods,
+            out long resultTotal
+        )
         {
-            if (ModSearches.TryGetValue(searchKey, out var cachedResponse)
+            if (ModSearches.TryGetValue(searchKey, out ModQueryCachedResponse cachedResponse)
                 && cachedResponse.Results.TryGetValue(filter.PageIndex, out cachedMods))
             {
                 resultTotal = cachedResponse.ResultTotal;
@@ -72,7 +76,7 @@ namespace Modio.Caching
 
             cachedMods = null;
             resultTotal = 0;
-            
+
             SearchesNotInCache++;
             return false;
         }
@@ -90,8 +94,14 @@ namespace Modio.Caching
             SearchesNotInCache = 0;
             SearchesSavedByCache = 0;
         }
+        
+        internal static void ClearMod(ModId modId)
+        {
+            ClearModSearchCache();
+            Mods.Remove(modId);
+        }
 
-        internal static string ConstructFilterKey(ModioAPI.Mods.GetModsFilter filter)
+        internal static string ConstructFilterKey(SearchFilter filter)
         {
             StringBuilder.Clear();
 
@@ -101,11 +111,10 @@ namespace Modio.Caching
             StringBuilder.Append(filter.PageIndex);
 
             foreach (KeyValuePair<string, object> parameter in filter.Parameters)
-            {
                 if (!(parameter.Value is string) && parameter.Value is IEnumerable enumerable)
                 {
                     StringBuilder.AppendFormat(",{0}:[", parameter.Key);
-                    bool first = true;
+                    var first = true;
                     foreach (object o in enumerable)
                     {
                         if (!first)
@@ -118,7 +127,6 @@ namespace Modio.Caching
                 }
                 else
                     StringBuilder.AppendFormat(",{0}:{1}", parameter.Key, parameter.Value);
-            }
 
             var filterKey = StringBuilder.ToString();
             StringBuilder.Clear();

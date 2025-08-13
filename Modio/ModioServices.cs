@@ -133,7 +133,7 @@ namespace Modio
 
             event Action<T> OnNewBinding;
 
-            IEnumerable<(T, ModioServicePriority)> ResolveAll();
+            IEnumerable<(T service, ModioServicePriority priority)> ResolveAll();
         }
         
         abstract class ServiceBindings
