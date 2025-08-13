@@ -19,7 +19,7 @@ namespace Modio.Users
     {
         // Since users are not unique per game, we don't need to invalidate this between shutdowns
         static Dictionary<long, UserProfile> _cache = new Dictionary<long, UserProfile>();
-        
+
         public event Action OnProfileUpdated;
 
         public override int GetHashCode() => UserId.GetHashCode();
@@ -40,8 +40,10 @@ namespace Modio.Users
         /// </summary>
         public string PortalUsername { get; private set; }
 
-        public Wallet GetWallet() => UserId == User.Current.Profile.UserId ? //local user
-            User.Current.Wallet : null;
+        public Wallet GetWallet() => UserId == User.Current.Profile.UserId
+            ? //local user
+            User.Current.Wallet
+            : null;
 
         public enum AvatarResolution
         {
@@ -58,7 +60,7 @@ namespace Modio.Users
 
         internal UserProfile(UserObject userObject) => ApplyDetailsFromUserObject(userObject);
 
-        internal UserProfile(){}
+        internal UserProfile() { }
 
         internal void ApplyDetailsFromUserObject(UserObject userObject)
         {
@@ -76,15 +78,15 @@ namespace Modio.Users
             );
 
             _cache[UserId] = this;
-            
+
             OnProfileUpdated?.Invoke();
         }
-        
+
         internal static UserProfile Get(UserObject user)
         {
-            if (!_cache.TryGetValue(user.Id, out UserProfile profile)) 
+            if (!_cache.TryGetValue(user.Id, out UserProfile profile))
                 return new UserProfile(user);
-            
+
             profile.ApplyDetailsFromUserObject(user);
             return profile;
         }
@@ -95,16 +97,26 @@ namespace Modio.Users
 
         public bool Equals(UserProfile other)
         {
-            if (ReferenceEquals(null, other)) return false;
-            if (ReferenceEquals(this, other)) return true;
+            if (ReferenceEquals(null, other))
+                return false;
+
+            if (ReferenceEquals(this, other))
+                return true;
+
             return UserId == other.UserId;
         }
 
         public override bool Equals(object obj)
         {
-            if (ReferenceEquals(null, obj)) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != this.GetType()) return false;
+            if (ReferenceEquals(null, obj))
+                return false;
+
+            if (ReferenceEquals(this, obj))
+                return true;
+
+            if (obj.GetType() != this.GetType())
+                return false;
+
             return Equals((UserProfile)obj);
         }
 
@@ -116,37 +128,43 @@ namespace Modio.Users
 
             if (error)
             {
-                if (!error.IsSilent) ModioLog.Error?.Log($"Error muting user {Username}: {error}");
+                if (!error.IsSilent)
+                    ModioLog.Error?.Log($"Error muting user {Username}: {error}");
+
                 return error;
             }
-            
+
             ModCache.ClearModSearchCache();
 
             return Error.None;
         }
-        
+
         public async Task<Error> UnMute()
         {
             (Error error, Response204? _) = await ModioAPI.Users.UnmuteAUser(UserId);
 
             if (error)
             {
-                if (!error.IsSilent) ModioLog.Error?.Log($"Error un-muting user {Username}: {error}");
+                if (!error.IsSilent)
+                    ModioLog.Error?.Log($"Error un-muting user {Username}: {error}");
+
                 return error;
             }
-            
+
             ModCache.ClearModSearchCache();
 
             return Error.None;
         }
 
 #endregion
-        
+
 #region Reporting
+
         public async Task<Error> Report(ReportType reportType, string contact, string summary)
         {
-            if (User.Current == null || !User.Current.IsAuthenticated) return (Error) ErrorCode.USER_NOT_AUTHENTICATED;
-            
+            if (User.Current == null || !User.Current.IsAuthenticated)
+                return (Error)ErrorCode.USER_NOT_AUTHENTICATED;
+
             var request = new AddReportRequest(
                 ReportResourceTypes.USERS,
                 UserId,
@@ -160,6 +178,25 @@ namespace Modio.Users
 
             var (error, response) = await ModioAPI.Reports.SubmitReport(request);
             return (Error)error;
+        }
+
+#endregion
+
+#region Following
+
+        public async Task<Error> Follow()
+        {
+            var request = new FollowUserRequest(UserId);
+            (Error error, Response204? _) = await ModioAPI.Followers.FollowUser(User.Current.UserId, request);
+
+            return error;
+        }
+
+        public async Task<Error> Unfollow()
+        {
+            (Error error, Response204? _) = await ModioAPI.Followers.UnfollowUser(User.Current.UserId, UserId);
+
+            return error;
         }
 
 #endregion

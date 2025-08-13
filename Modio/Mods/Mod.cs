@@ -12,6 +12,7 @@ using Modio.Images;
 using Modio.Mods.Builder;
 using Modio.Reports;
 using Modio.Users;
+using Plugins.Modio.Modio.Ratings;
 
 namespace Modio.Mods
 {
@@ -73,7 +74,7 @@ namespace Modio.Mods
         public ModioImageSource<GalleryResolution>[] Gallery { get; private set; }
         public UserProfile Creator { get; private set; }
         public ModDependencies Dependencies { get; private set; }
-        public ModRating CurrentUserRating { get; private set; }
+        public ModioRating CurrentUserRating { get; private set; }
 
         public bool IsSubscribed { get; private set; }
         public bool IsPurchased { get; private set; }
@@ -127,7 +128,12 @@ namespace Modio.Mods
 
             MetadataBlob = modObject.MetadataBlob;
 
-            MetadataKvps = modObject.MetadataKvp.ToDictionary(kvp => kvp.Metakey, kvp => kvp.Metavalue);
+            MetadataKvps ??= new Dictionary<string, string>();
+            MetadataKvps.Clear();
+            // Note that the server can store duplicate keys; we're only tracking the most recent one here
+            // TODO: swap to a more robust structure that allows fetching those duplicate keys
+            foreach (MetadataKvpObject metadataKvpObject in modObject.MetadataKvp)
+                MetadataKvps[metadataKvpObject.Metakey] = metadataKvpObject.Metavalue;
 
             CommunityOptions = (ModCommunityOptions)modObject.CommunityOptions;
             MaturityOptions = (ModMaturityOptions)modObject.MaturityOption;
@@ -308,24 +314,31 @@ namespace Modio.Mods
 
             if (error) return (error, null);
 
-            int resultCount = modObjects.Value.Data.Length;
+            ModioPage<Mod> page = ConvertPaginationToModPage(modObjects.Value, searchCacheKey);
+
+            return (Error.None, page);
+        }
+
+        internal static ModioPage<Mod> ConvertPaginationToModPage(Pagination<ModObject[]> modObjects, string searchCacheKey)
+        {
+            int resultCount = modObjects.Data.Length;
             Mod[] mods = resultCount == 0 ? Array.Empty<Mod>() : new Mod[resultCount];
 
-            for (var i = 0; i < mods.Length; i++) mods[i] = ModCache.GetMod(modObjects.Value.Data[i]);
+            for (var i = 0; i < mods.Length; i++) mods[i] = ModCache.GetMod(modObjects.Data[i]);
 
-            long pageSize = modObjects.Value.ResultLimit;
-            var pageIndex = modObjects.Value.ResultOffset / pageSize;
+            long pageSize = modObjects.ResultLimit;
+            long pageIndex = modObjects.ResultOffset / pageSize;
 
-            ModCache.CacheModSearch(searchCacheKey, mods, pageIndex, modObjects.Value.ResultTotal);
+            if(!string.IsNullOrEmpty(searchCacheKey))
+                ModCache.CacheModSearch(searchCacheKey, mods, pageIndex, modObjects.ResultTotal);
 
             var page = new ModioPage<Mod>(
                 mods,
                 (int)pageSize,
                 pageIndex,
-                modObjects.Value.ResultTotal
+                modObjects.ResultTotal
             );
-
-            return (Error.None, page);
+            return page;
         }
 
         /// <summary>Gets this mod's details from the mod.io server and applies those details to this mod.</summary>
@@ -419,7 +432,7 @@ namespace Modio.Mods
 #endregion
 
         /// <summary>Rate this mod as either a single positive, negative or no rating.</summary>
-        public async Task<Error> RateMod(ModRating rating)
+        public async Task<Error> RateMod(ModioRating rating)
         {
             var previousRating = CurrentUserRating;
             
@@ -439,7 +452,7 @@ namespace Modio.Mods
 
             return error;
             
-            void UpdateStatsWithUserRating(ModRating userRating)
+            void UpdateStatsWithUserRating(ModioRating userRating)
             {
                 Stats.UpdateEstimateFromLocalRatingChange(userRating);
                 CurrentUserRating = userRating;
@@ -447,7 +460,7 @@ namespace Modio.Mods
             }
         }
 
-        internal void SetCurrentUserRating(ModRating rating)
+        internal void SetCurrentUserRating(ModioRating rating)
         {
             CurrentUserRating = rating;
             Stats?.UpdatePreviousRating(rating);

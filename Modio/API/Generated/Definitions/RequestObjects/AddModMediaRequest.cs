@@ -35,7 +35,8 @@ namespace Modio.API.SchemaDefinitions{
         {
             _bodyParameters.Clear();
             
-            _bodyParameters.Add(_media.MediaType, _media);
+            _bodyParameters.Add("images", _media);
+            _bodyParameters.Add("sync", GallerySync);
 
             return _bodyParameters;
         }

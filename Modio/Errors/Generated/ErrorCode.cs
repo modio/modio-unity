@@ -174,6 +174,8 @@ namespace Modio.Errors
         MOD_DIRECTORY_NOT_FOUND,
         /// <summary>Mod MD5 does not match</summary>
         MD5DOES_NOT_MATCH,
+        /// <summary>File CRC does not match</summary>
+        CRCDOES_NOT_MATCH,
         /// <summary>The display price for the mod was out-of-date or incorrect. Please retry with the correct display price.</summary>
         DISPLAY_PRICE_INCORRECT,
         /// <summary>A failure has occured when trying to authenticate with the monetization system.</summary>
@@ -196,6 +198,13 @@ namespace Modio.Errors
         INVALID_METRICS_SECRET,
         /// <summary>A mod installation has previously failed, can't install all needed mods for this temporary mod session.</summary>
         CANT_INSTALL_TAINTED_MOD,
+        WSS_TIMEOUT,
+        WSS_SERVICE_NOT_CONNECTED,
+        WSS_FAILED_TO_SEND,
+        WSS_FAILED_TO_DESERIALIZE,
+        WSS_NOT_CONFIGURED,
+        MISSING_MOUNT,
+        MOUNT_LIMIT_EXCEEDED,
         /// <summary>mod.io is currently experiencing an outage. (rare)</summary>
         MODIO_OUTAGE = 10000,
         /// <summary>Cross-origin request forbidden.</summary>
@@ -237,6 +246,10 @@ namespace Modio.Errors
         CANNOT_VERIFY_EXTERNAL_CREDENTIALS = 11032,
         /// <summary>The user has not agreed to the mod.io Terms of Use. Please see terms_agreed parameter description and the Terms endpoint for more information.</summary>
         USER_NO_ACCEPT_TERMS_OF_USE = 11074,
+        /// <summary>Targeted user is banned</summary>
+        USER_TARGET_BANNED = 11130,
+        /// <summary>Targeted user has been deleted</summary>
+        USER_TARGET_DELETED = 11131,
         /// <summary>You must configure your OpenID config for your game in your game authentication settings before being able to authenticate users.</summary>
         OPEN_IDNOT_CONFIGURED = 11086,
         /// <summary>The submitted binary file is corrupted.</summary>
@@ -263,9 +276,9 @@ namespace Modio.Errors
         FORBIDDEN_DMCA = 15000,
         /// <summary>This mod is hidden and the user cannot be subscribed to it.</summary>
         FORBIDDEN_HIDDEN = 15001,
-        /// <summary>The user is already subscribed to the specified mod</summary>
+        /// <summary>The user is already subscribed to the specified resource</summary>
         ALREADY_SUBSCRIBED = 15004,
-        /// <summary>The authenticated user is not subscribed to the mod.</summary>
+        /// <summary>The authenticated user is not subscribed to the resource.</summary>
         ALREADY_UNSUBSCRIBED = 15005,
         /// <summary>The authenticated user does not have permission to upload modfiles for the specified mod. Ensure the user is a team manager or administrator.</summary>
         MODFILE_NO_UPLOAD_PERMISSION = 15006,
@@ -273,6 +286,8 @@ namespace Modio.Errors
         REQUESTED_MODFILE_NOT_FOUND = 15010,
         /// <summary>The item has not been accepted and can not be purchased at this time.</summary>
         FORBIDDEN_TACNOT_ACCEPTED = 15011,
+        /// <summary>The authenticated user does not have permission to update this mod.</summary>
+        MOD_NO_UPDATE_PERMISSION = 15013,
         /// <summary>The authenticated user does not have permission to delete this mod. This action is restricted to team managers and administrators only.</summary>
         INSUFFICIENT_PERMISSION = 15019,
         /// <summary>This mod is missing a file and cannot be subscribed to.</summary>
@@ -301,6 +316,8 @@ namespace Modio.Errors
         MOD_MEDIA_NO_DELETE_PERMISSION = 15036,
         /// <summary>This game does not allow mature mods.</summary>
         MATURE_MODS_NOT_ALLOWED = 15054,
+        /// <summary>The user cannot subscribe to self.</summary>
+        SUBSCRIBE_FAILED_SELF = 15091,
         /// <summary>The user with the supplied UserID could not be found.</summary>
         MUTE_USER_NOT_FOUND = 17000,
         /// <summary>You cannot mute yourself.</summary>
@@ -411,6 +428,7 @@ namespace Modio.Errors
                 ErrorCode.NO_FILES_FOUND_FOR_MOD => "Mod directory does not contain any files",
                 ErrorCode.MOD_DIRECTORY_NOT_FOUND => "Mod directory does not exist",
                 ErrorCode.MD5DOES_NOT_MATCH => "Mod MD5 does not match",
+                ErrorCode.CRCDOES_NOT_MATCH => "File CRC does not match, please unsubscribe and report the mod.",
                 ErrorCode.DISPLAY_PRICE_INCORRECT => "The display price for the mod was out-of-date or incorrect. Please retry with the correct display price.",
                 ErrorCode.MONETIZATION_AUTHENTICATION_FAILED => "A failure has occured when trying to authenticate with the monetization system.",
                 ErrorCode.WALLET_FETCH_FAILED => "Unable to fetch the account's wallet. Please confirm the account has one",
@@ -442,6 +460,8 @@ namespace Modio.Errors
                 ErrorCode.APIKEY_FOR_TEST_ONLY => "The api_key supplied in the request is for test environment purposes only and cannot be used for this functionality.",
                 ErrorCode.CANNOT_VERIFY_EXTERNAL_CREDENTIALS => "mod.io was unable to verify the credentials against the external service provider.",
                 ErrorCode.USER_NO_ACCEPT_TERMS_OF_USE => "The user has not agreed to the mod.io Terms of Use. Please see terms_agreed parameter description and the Terms endpoint for more information.",
+                ErrorCode.USER_TARGET_BANNED => "Targeted user is banned",
+                ErrorCode.USER_TARGET_DELETED => "Targeted user has been deleted",
                 ErrorCode.OPEN_IDNOT_CONFIGURED => "You must configure your OpenID config for your game in your game authentication settings before being able to authenticate users.",
                 ErrorCode.BINARY_FILE_CORRUPTED => "The submitted binary file is corrupted.",
                 ErrorCode.BINARY_FILE_UNREADABLE => "The submitted binary file is unreadable.",
@@ -455,11 +475,12 @@ namespace Modio.Errors
                 ErrorCode.REQUESTED_GAME_DELETED => "The requested game has been deleted.",
                 ErrorCode.FORBIDDEN_DMCA => "This mod is currently under DMCA and the user cannot be subscribed to it.",
                 ErrorCode.FORBIDDEN_HIDDEN => "This mod is hidden and the user cannot be subscribed to it.",
-                ErrorCode.ALREADY_SUBSCRIBED => "The user is already subscribed to the specified mod",
-                ErrorCode.ALREADY_UNSUBSCRIBED => "The authenticated user is not subscribed to the mod.",
+                ErrorCode.ALREADY_SUBSCRIBED => "The user is already subscribed to the specified resource",
+                ErrorCode.ALREADY_UNSUBSCRIBED => "The authenticated user is not subscribed to the resource.",
                 ErrorCode.MODFILE_NO_UPLOAD_PERMISSION => "The authenticated user does not have permission to upload modfiles for the specified mod. Ensure the user is a team manager or administrator.",
                 ErrorCode.REQUESTED_MODFILE_NOT_FOUND => "The requested modfile could not be found.",
                 ErrorCode.FORBIDDEN_TACNOT_ACCEPTED => "The item has not been accepted and can not be purchased at this time.",
+                ErrorCode.MOD_NO_UPDATE_PERMISSION => "The authenticated user does not have permission to update this mod.",
                 ErrorCode.INSUFFICIENT_PERMISSION => "The authenticated user does not have permission to delete this mod. This action is restricted to team managers and administrators only.",
                 ErrorCode.FORBIDDEN_MISSING_FILE => "This mod is missing a file and cannot be subscribed to.",
                 ErrorCode.REQUESTED_MOD_NOT_FOUND => "The requested mod could not be found.",
@@ -472,6 +493,7 @@ namespace Modio.Errors
                 ErrorCode.MOD_MEDIA_NO_DELETE_PERMISSION => "The authenticated user does not have permission to modify this resource.",
                 ErrorCode.USER_NO_MOD_RATING => "The authenticated user cannot clear the mod rating as none exists.",
                 ErrorCode.MATURE_MODS_NOT_ALLOWED => "This game does not allow mature mods.",
+                ErrorCode.SUBSCRIBE_FAILED_SELF => "The user cannot subscribe to self.",
                 ErrorCode.MUTE_USER_NOT_FOUND => "The user with the supplied UserID could not be found.",
                 ErrorCode.CANNOT_MUTE_YOURSELF => "You cannot mute yourself.",
                 ErrorCode.INSUFFICIENT_SPACE => "Insufficient space for file",

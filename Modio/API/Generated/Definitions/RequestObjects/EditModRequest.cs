@@ -104,7 +104,16 @@ namespace Modio.API.SchemaDefinitions{
             if (MaturityOption != null) _bodyParameters.Add("maturity_option", MaturityOption);
             if (CommunityOptions != null) _bodyParameters.Add("community_options", CommunityOptions);
             if (!string.IsNullOrEmpty(MetadataBlob)) _bodyParameters.Add("metadata_blob", MetadataBlob);
-            if (Tags != null) _bodyParameters.Add("tags", Tags);
+            if (Tags != null)
+            {   
+                if(Tags.Length > 0)
+                    for (int i = 0; i < Tags.Length; i++)
+                    {
+                        _bodyParameters.Add($"tags[{i}]", Tags[i]);
+                    }
+                else
+                    _bodyParameters.Add("tags[]", string.Empty);
+            }
             if (MonetizationOptions != null) _bodyParameters.Add("monetization_options", MonetizationOptions);
             if (Price != null) _bodyParameters.Add("price", Price);
             if (Stock != null) _bodyParameters.Add("stock", Stock);

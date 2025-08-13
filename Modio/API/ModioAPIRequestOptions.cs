@@ -22,6 +22,13 @@ namespace Modio.API
             new Dictionary<string, ModioAPIFileParameter>();
 
         public byte[] BodyDataBytes { get; private set; }
+        
+        ModioAPIRequestContentType _contentType;
+
+        internal void SetContentType(ModioAPIRequestContentType contentType)
+        {
+            _contentType = contentType;
+        }
 
         public void Dispose()
         {
@@ -57,25 +64,35 @@ namespace Modio.API
 
         static string ParameterToString(object value)
         {
-            if (value == null) return string.Empty;
-            if (value is IEnumerable<string> e) return string.Join(",", e);
-
-            if (value is ICollection collection)
+            switch (value)
             {
-                var stringBuilder = new StringBuilder();
-
-                int index = 0;
-
-                foreach (object o in collection)
+                case null:
+                    return string.Empty;
+                
+                case IEnumerable<string> e:
+                    return string.Join(",", e);
+                
+                case ICollection collection:
                 {
-                    if (index++ > 0) stringBuilder.Append(",");
-                    stringBuilder.Append(o);
+                    var stringBuilder = new StringBuilder();
+
+                    var index = 0;
+
+                    foreach (object o in collection)
+                    {
+                        if (index++ > 0) stringBuilder.Append(",");
+                        stringBuilder.Append(o);
+                    }
+
+                    return stringBuilder.ToString();
                 }
-
-                return stringBuilder.ToString();
+                
+                case bool:
+                    return $"{value}".ToLowerInvariant();
+                
+                default:
+                    return $"{value}";
             }
-
-            return $"{value}";
         }
 
         public void AddBody(byte[] data)
@@ -89,8 +106,23 @@ namespace Modio.API
             {
                 if (bodyParam.Value is ModioAPIFileParameter file)
                     FileParameters.Add(bodyParam.Key, file);
-                else if(bodyParam.Value != null)
+                else if (bodyParam.Value != null)
+                {
+                    if (_contentType is ModioAPIRequestContentType.MultipartFormData 
+                                        or ModioAPIRequestContentType.FormUrlEncoded
+                        && bodyParam.Value is IEnumerable enumerable and not string)
+                    {
+                        var index = 0;
+                        foreach (object o in enumerable)
+                            FormParameters.Add($"{bodyParam.Key}[{index++}]", o.ToString());
+                        if(index == 0)
+                            FormParameters.Add($"{bodyParam.Key}[]", string.Empty);
+
+                        continue;
+                    }
+                    
                     FormParameters.Add(bodyParam.Key, ParameterToString(bodyParam.Value));
+                }
             }
         }
 

@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using Modio.API.SchemaDefinitions;
 using Modio.Mods;
+using Modio.Platforms.Wss;
+using Modio.Wss.Messages;
 using Newtonsoft.Json.Utilities;
 
 namespace Modio.API
@@ -64,9 +66,16 @@ namespace Modio.API
 			AotHelper.EnsureList<TeamMemberObject>();
 			AotHelper.EnsureList<TermsObject>();
 			AotHelper.EnsureList<TransactionObject>();
+            AotHelper.EnsureList<GameTokenPackObject>();
 			AotHelper.EnsureList<UserEventObject>();
 			AotHelper.EnsureList<UserObject>();
 			AotHelper.EnsureList<WalletObject>();
+            
+            AotHelper.EnsureList<WssMessage>();
+            AotHelper.EnsureList<WssMessages>();
+            AotHelper.EnsureList<WssLoginSuccess>();
+            AotHelper.EnsureList<WssDeviceLoginResponse>();
+            AotHelper.EnsureList<WssDeviceLoginRequest>();
         }
     }
 }

@@ -136,6 +136,7 @@ namespace Modio.FileIO
             return error;
         }
 
+
         Task<Error> DeleteData(string filePath)
         {
             Error error = DeleteFile(filePath);
@@ -249,7 +250,16 @@ namespace Modio.FileIO
 
                 using var md5 = MD5.Create();
 
-                await using (Stream writeStream = File.Open(filePath, FileMode.Create))
+                Mod mod = Mod.Get(modId);
+                ModInstallProgressTracker tracker = mod.File == null ? null : new ModInstallProgressTracker(
+                    mod,
+                    mod.File.ArchiveFileSize
+                );
+                
+                Stream writerStream = CreateFileStream(filePath, FileMode.Create); 
+                
+                int totalBytesRead = 0;
+                await using (writerStream)
                 {
                     int bytesRead;
 
@@ -262,8 +272,11 @@ namespace Modio.FileIO
                             break;
                         }
 
+                        totalBytesRead += bytesRead;
+                        tracker?.SetBytesRead(bytesRead);
+
                         md5.TransformBlock(buffer, 0, bytesRead, null, 0);
-                        await writeStream.WriteAsync(buffer, 0, bytesRead, token);
+                        await writerStream.WriteAsync(buffer, 0, bytesRead, token);
                     }
                 }
 
@@ -294,6 +307,17 @@ namespace Modio.FileIO
 
                 return error;
             }
+            catch (OperationCanceledException exception)
+            {
+                ModioLog.Verbose?.Log($"Cancelled downloading Modfile: {exception}\nAt:{filePath}");
+
+                error = new Error(IsShuttingDown ? ErrorCode.SHUTTING_DOWN : ErrorCode.OPERATION_CANCELLED);
+                Error deleteFileError = DeleteFile(filePath);
+
+                if (deleteFileError) error = deleteFileError;
+
+                return error;
+            }
             catch (Exception exception)
             {
                 ModioLog.Error?.Log($"Exception attempting to download Modfile: {exception}\nAt:{filePath}");
@@ -312,6 +336,8 @@ namespace Modio.FileIO
 
             return error;
         }
+
+        protected virtual Stream CreateFileStream(string filePath, FileMode mode) => new FileStream(filePath,mode, mode == FileMode.Append ? FileAccess.Write : FileAccess.ReadWrite, FileShare.None);
 
         /// <summary>
         /// Calculate a MD5 Hash
@@ -414,7 +440,7 @@ namespace Modio.FileIO
 
             return error;
         }
-
+        
         public virtual async Task<Error> InstallModFromStream(
             Mod mod,
             long modfileId,
@@ -423,6 +449,7 @@ namespace Modio.FileIO
             CancellationToken token
         )
         {
+            
             Error error = Error.None;
 
             string temporaryDirectoryPath = GetTemporaryInstallPath(mod.Id, modfileId);
@@ -432,13 +459,21 @@ namespace Modio.FileIO
             
             ModioLog.Message?.Log($"Installing Modfile {mod} to {installDirectoryPath}");
 
+            if (mod.File == null)
+            {
+                ModioLog.Error?.Log($"Mod {mod.Id} has no file information, cannot install.");
+                await stream.DisposeAsync();
+                return new Error(ErrorCode.BAD_PARAMETER);
+            }
+            
             if (error)
             {
                 ModioLog.Error?.Log(
                     $"Unable to install mod: {error.GetMessage()}\nInstall Path:{installDirectoryPath}\nTemp Path:{temporaryDirectoryPath}\n"
                 );
 
-                stream?.Dispose();
+                if(stream != null)
+                    await stream.DisposeAsync();
 
                 return error;
             }
@@ -451,49 +486,69 @@ namespace Modio.FileIO
                 token = combinedCts.Token;
 
                 await using var md5Stream = new MD5ComputingStreamWrapper(stream);
-                await using var zipStream = new ZipInputStream(md5Stream);
+                await using var zipStream = new ModioZipInputStream(md5Stream);
                 zipStream.IsStreamOwner = false;
 
-                while (zipStream.GetNextEntry() is { } entry)
+                // ReSharper disable once AccessToDisposedClosure
+                // tracker won't outlive the scope
+                var tracker = new ModInstallProgressTracker(
+                    mod,
+                    mod.File.FileSize,
+                    () => md5Stream.TotalBytesRead
+                );
+                
+                
+
+                var writtenEntries = new Dictionary<string,ZipEntry>();
+                
+                // Run the extraction on a background thread
+                // Note this isn't just an optimisation; this extract can lock the thread
+                // which will freeze unityWebRequest downloads if on the main thread
+                error = await Task.Run(async () =>
                 {
-                    token.ThrowIfCancellationRequested();
-
-                    var newFilePath = $@"{temporaryDirectoryPath}{entry.Name}";
-
-                    if (string.IsNullOrEmpty(entry.Name)) continue;
-                    if (entry.IsDirectory) continue;
-
-                    if (!DoesDirectoryExist(newFilePath))
+                    while (zipStream.GetNextEntryWithBackTrack() is { } entry)
                     {
-                        error = CreateDirectory(newFilePath);
+                        token.ThrowIfCancellationRequested();
 
-                        if (error)
+                        if (entry.IsDirectory)
+                            continue;
+
+                        if (string.IsNullOrEmpty(entry.Name))
+                            continue;
+                        long crc;
+                        Error extractFileError;
+                        (extractFileError, crc) = await ExtractFileFromZipStream(
+                            zipStream,
+                            entry,
+                            $@"{temporaryDirectoryPath}{entry.Name}",
+                            tracker,
+                            token
+                        );
+
+                        if (extractFileError)
                         {
-                            if (!error.IsSilent) ModioLog.Error?.Log($"Extraction operation for Modfile {mod.Id} aborted. Failed to create directory {newFilePath} with error {error}");
+                            Error cleanupError = DeleteDirectoryAndContents(temporaryDirectoryPath);
 
-                            return error;
+                            if (cleanupError)
+                                ModioLog.Message?.Log(
+                                    $"Error cleaning up temporary download location: {cleanupError.GetMessage()}\nAt: {temporaryDirectoryPath}"
+                                );
+
+                            return extractFileError;
                         }
+                        //update the entry with the extracted CRC
+                        entry.Crc = crc;
+                    
+                        writtenEntries[entry.Name] = entry;
                     }
 
-                    await using Stream writerStream = File.Open(newFilePath, FileMode.Create);
+                    return Error.None;
+                });
 
-                    var buffer = new byte[1024 * 1024]; // 1 MB
+                if (error)
+                    return error;
 
-                    var progressTracker = new ModInstallProgressTracker(mod, mod.File.ArchiveFileSize);
-
-                    while (true)
-                    {
-                        int readSize = await zipStream.ReadAsync(buffer, 0, buffer.Length, token);
-
-                        progressTracker.SetBytesRead(md5Stream.TotalBytesRead);
-
-                        if (readSize > 0)
-                            await writerStream.WriteAsync(buffer, 0, readSize, token);
-                        else
-                            break;
-                    }
-                }
-
+                await zipStream.ReadUntilEndAsync(token);
                 string rawMd5Hash = await md5Stream.GetMD5HashAsync();
                 string actualMd5Hash = rawMd5Hash.Replace("-", "").ToLowerInvariant();
 
@@ -505,40 +560,35 @@ namespace Modio.FileIO
 
                     error = new Error(ErrorCode.MD5DOES_NOT_MATCH);
                 }
+                else
+                    error = await ValidateZipEntries(zipStream, writtenEntries.Values.ToList(), temporaryDirectoryPath);
             }
             catch (TaskCanceledException)
             {
-                error = new Error(IsShuttingDown ? ErrorCode.SHUTTING_DOWN : ErrorCode.OPERATION_CANCELLED);
-
-                ModioLog.Verbose?.Log(
-                    $"Cancelled installing mod: \nInstall Path: {installDirectoryPath}\nTemp Path: {temporaryDirectoryPath}\n"
-                );
-
-                Error cleanupError = DeleteDirectoryAndContents(temporaryDirectoryPath);
-
-                if (cleanupError)
-                    ModioLog.Message?.Log(
-                        $"Error cleaning up temporary download location: {cleanupError.GetMessage()}\nAt: {temporaryDirectoryPath}"
-                    );
+                error = LogTaskCancelAndCleanup();
 
                 return error;
             }
             catch (OperationCanceledException)
             {
-                error = new Error(IsShuttingDown ? ErrorCode.SHUTTING_DOWN : ErrorCode.OPERATION_CANCELLED);
-
-                ModioLog.Verbose?.Log(
-                    $"Cancelled installing mod: \nInstall Path: {installDirectoryPath}\nTemp Path: {temporaryDirectoryPath}\n"
-                );
-
-                Error cleanupError = DeleteDirectoryAndContents(temporaryDirectoryPath);
-
-                if (cleanupError)
-                    ModioLog.Message?.Log(
-                        $"Error cleaning up temporary download location: {cleanupError.GetMessage()}\nAt: {temporaryDirectoryPath}"
-                    );
+                error = LogTaskCancelAndCleanup();
 
                 return error;
+            }
+            catch ( AggregateException aggregateException)
+            {
+                if(aggregateException.InnerExceptions.Any(ex => ex is TaskCanceledException or OperationCanceledException))
+                {
+                    error = LogTaskCancelAndCleanup();
+                    return error;
+                }
+
+                ModioLog.Error?.Log(
+                    $"Error installing mod: {aggregateException}\nInstall Path: {installDirectoryPath}\nTemp Path: {temporaryDirectoryPath}\n"
+                );
+
+                error = new Error(IsShuttingDown ? ErrorCode.SHUTTING_DOWN : ErrorCode.UNKNOWN);
+                
             }
             catch (Exception exception)
             {
@@ -546,7 +596,7 @@ namespace Modio.FileIO
                     $"Error installing mod: {exception}\nInstall Path: {installDirectoryPath}\nTemp Path: {temporaryDirectoryPath}\n"
                 );
 
-                error = new Error(IsShuttingDown ? ErrorCode.SHUTTING_DOWN : ErrorCode.OPERATION_CANCELLED);
+                error = new Error(IsShuttingDown ? ErrorCode.SHUTTING_DOWN : ErrorCode.UNKNOWN);
             }
             finally
             {
@@ -570,25 +620,7 @@ namespace Modio.FileIO
 
             try
             {
-                if (DoesDirectoryExist(installDirectoryPath)) 
-                    DeleteDirectoryAndContents(installDirectoryPath);
-
-                // This ensures Root/Installed exists
-                string parentPath = Path.GetDirectoryName(installDirectoryPath);
-
-                if (!DoesDirectoryExist(parentPath))
-                {
-                    error = CreateDirectory(parentPath);
-                    
-                    if (error)
-                    {
-                        if (!error.IsSilent) ModioLog.Error?.Log($"Install operation for Modfile {mod.Id} aborted. Failed to create directory {parentPath} with error {error}");
-
-                        return error;
-                    }
-                }
-
-                Directory.Move(temporaryDirectoryPath, installDirectoryPath);
+                return MoveTempInstallToCorrectLocation(mod, installDirectoryPath, temporaryDirectoryPath);
             }
             catch (Exception exception)
             {
@@ -603,7 +635,152 @@ namespace Modio.FileIO
                 OngoingTaskCount--;
             }
 
+            Error LogTaskCancelAndCleanup()
+            {
+                error = new Error(IsShuttingDown ? ErrorCode.SHUTTING_DOWN : ErrorCode.OPERATION_CANCELLED);
+
+                ModioLog.Verbose?.Log(
+                    $"Cancelled installing mod: \nInstall Path: {installDirectoryPath}\nTemp Path: {temporaryDirectoryPath}\n"
+                );
+
+                Error cleanupError = DeleteDirectoryAndContents(temporaryDirectoryPath);
+
+                if (cleanupError)
+                    ModioLog.Message?.Log(
+                        $"Error cleaning up temporary download location: {cleanupError.GetMessage()}\nAt: {temporaryDirectoryPath}"
+                    );
+                return error;
+            }
+        }
+        
+        /// <summary>
+        /// Validates the entries in the zip stream against the entries that were written during extraction.
+        /// </summary>
+        /// <param name="zipStream">The zip stream to validate.</param>
+        /// <param name="writtenEntries">The list of entries that were written during extraction.</param>
+        /// <param name="path">The path where the files were extracted.</param>
+        /// <returns>Error.None if validation is successful, otherwise an error indicating the issue.</returns>
+        async Task<Error> ValidateZipEntries(ModioZipInputStream zipStream, List<ZipEntry> writtenEntries, string path)
+        {
+            Error error = Error.None;
+            MemoryStream headerStream = zipStream.GetHeaderStream();
+
+            //This maintains current behavior of no validation when the stream is null.
+            if (headerStream == null)
+                return Error.None;
+
+            await using var zipHelperStream = new ZipHelperStream(headerStream);
+            //capacity should never be more than the number of entries written
+            var centralDirectoryEntries = new List<ZipEntry>(writtenEntries.Count);
+
+            while (zipHelperStream.ReadEntry() is { } entry)
+            {
+                if (entry.IsDirectory)
+                    continue;
+
+                if (string.IsNullOrEmpty(entry.Name))
+                    continue;
+
+                centralDirectoryEntries.Add(entry);
+            }
+
+            foreach (ZipEntry writtenEntry in writtenEntries)
+            {
+                ZipEntry matching = centralDirectoryEntries.FirstOrDefault(e=> e.Name == writtenEntry.Name);
+                
+
+                if (matching == null)
+                {
+                    ModioLog.Warning?.Log(
+                        $"Extracted file not in central directory: {writtenEntry.Name}\n"
+                        + $"Deleting file at: {path}{writtenEntry.Name}"
+                    );
+
+                    error = DeleteFile($@"{path}{writtenEntry.Name}");
+
+                    if (error)
+                        return error;
+                }
+                else if (matching.Crc != writtenEntry.Crc)
+                {
+                    ModioLog.Error?.Log(
+                        $"Error installing: crc mismatch {writtenEntry.Crc} != {matching.Crc}"
+                    );
+
+                    error = new Error(ErrorCode.CRCDOES_NOT_MATCH);
+                }
+            }
+
             return error;
+        }
+        
+        protected virtual Error MoveTempInstallToCorrectLocation(Mod mod, string installDirectoryPath, string temporaryDirectoryPath)
+        {
+            if (DoesDirectoryExist(installDirectoryPath)) 
+                DeleteDirectoryAndContents(installDirectoryPath);
+
+            // This ensures Root/Installed exists
+            string parentPath = Path.GetDirectoryName(installDirectoryPath);
+
+            if (!DoesDirectoryExist(parentPath))
+            {
+                Error error = CreateDirectory(parentPath);
+                    
+                if (error)
+                {
+                    if (!error.IsSilent) ModioLog.Error?.Log($"Install operation for Modfile {mod.Id} aborted. Failed to create directory {parentPath} with error {error}");
+                    return error;
+                }
+            }
+
+            Directory.Move(temporaryDirectoryPath, installDirectoryPath);
+            
+            return Error.None;
+        }
+
+        protected virtual async Task<(Error error, long crc)> ExtractFileFromZipStream(
+            ZipInputStream zipStream,
+            ZipEntry entry,
+            string filePath,
+            ModInstallProgressTracker progressTracker,
+            CancellationToken token
+        )
+        {
+            if(entry.Name.Contains(".."))
+            {
+                ModioLog.Error?.Log($"Invalid file path detected in zip entry: {entry.Name}");
+                return (new Error(ErrorCode.BAD_PARAMETER),0);
+            }
+            if (!DoesDirectoryExist(filePath))
+            {
+                Error error = CreateDirectory(filePath);
+
+                if (error)
+                {
+                    if (!error.IsSilent) ModioLog.Error?.Log($"Extraction operation for mod aborted. Failed to create directory {filePath} with error {error}");
+
+                    return (error, 0);
+                }
+            }
+
+            await using Stream writerStream = CreateFileStream(filePath, FileMode.Create);
+            await using CRCComputingStreamWrapper crcStream = CRCComputingStreamWrapper.WriteOnly(writerStream);
+            
+            var buffer = new byte[1024 * 1024]; // 1 MB
+
+            await using (crcStream)
+                while (true)
+                {
+                    int readSize = await zipStream.ReadAsync(buffer, 0, buffer.Length, token);
+                    progressTracker?.Update();
+
+                    if (readSize > 0)
+                        await crcStream.WriteAsync(buffer, 0, readSize, token);
+                    else
+                        break;
+                    
+                }
+            return (Error.None, crcStream.GetCrcValue());
         }
 
         public virtual Task<Error> DeleteInstalledMod(Mod mod, long modfileId)
@@ -709,7 +886,10 @@ namespace Modio.FileIO
             Error error;
             byte[] output = Array.Empty<byte>();
 
-            if (!IsValidPath(path)) return (new Error(ErrorCode.BAD_PARAMETER), output);
+            if (string.IsNullOrEmpty(path)) return (new Error(ErrorCode.FILE_NOT_FOUND), output);
+            Error validPathError = IsValidPath(path);
+            if (validPathError) return (validPathError, output);
+            
             if (!DoesFileExist(path)) return (new Error(ErrorCode.FILE_NOT_FOUND), output);
 
             (error, output) = await ReadFile(path);
@@ -725,9 +905,11 @@ namespace Modio.FileIO
 
             string path = GetImageDataFilePath(serverPath);
 
-            if (!IsValidPath(path) || data == null) return new Error(ErrorCode.BAD_PARAMETER);
-
-            Error error = await WriteFile(path, data);
+            if (data == null) return new Error(ErrorCode.BAD_PARAMETER);
+            Error validPathError = IsValidPath(path);
+            if (validPathError) return validPathError;
+            
+            Error error = await WriteFile(path, data, data.Length);
 
             if (error) ModioLog.Warning?.Log($"Error writing image: {error.GetMessage()}\nAt: {path}");
 
@@ -823,21 +1005,24 @@ namespace Modio.FileIO
         );
 #endif
 
-        protected virtual bool IsValidPath(string filePath)
+        protected virtual Error IsValidPath(string filePath)
         {
-            if (string.IsNullOrEmpty(filePath)) return false;
+            if (string.IsNullOrEmpty(filePath)) return new Error(ErrorCode.BAD_PARAMETER);
 
             try
             {
                 string fullPath = Path.GetFullPath(filePath);
                 string root = Path.GetPathRoot(fullPath);
 
-                return root == "/" || !string.IsNullOrEmpty(root.Trim('\\', '/'));
+                if (root != "/" && string.IsNullOrEmpty(root.Trim('\\', '/')))
+                    return new Error(ErrorCode.BAD_PARAMETER);
             }
             catch
             {
-                return false;
+                return new Error(ErrorCode.BAD_PARAMETER);
             }
+
+            return Error.None;
         }
 
         protected virtual bool DoesDirectoryExist(string filePath) => Directory.Exists(filePath);
@@ -846,8 +1031,9 @@ namespace Modio.FileIO
 
         protected virtual Error CreateDirectory(string filePath)
         {
-            if (!IsValidPath(filePath)) return new Error(ErrorCode.BAD_PARAMETER);
-
+            Error validPathError = IsValidPath(filePath);
+            if (validPathError) return validPathError;
+            
             string directoryPath = Path.GetDirectoryName(filePath);
 
             if (string.IsNullOrEmpty(directoryPath)) return new Error(ErrorCode.BAD_PARAMETER);
@@ -866,7 +1052,9 @@ namespace Modio.FileIO
 
         protected virtual Error DeleteDirectoryAndContents(string filePath)
         {
-            if (!IsValidPath(filePath)) return new Error(ErrorCode.BAD_PARAMETER);
+            Error validPathError = IsValidPath(filePath);
+            if (validPathError) return validPathError;
+            
             if (!DoesDirectoryExist(filePath)) return Error.None;
 
             try
@@ -883,7 +1071,9 @@ namespace Modio.FileIO
 
         protected virtual Error DeleteFile(string filePath)
         {
-            if (!IsValidPath(filePath)) return new Error(ErrorCode.BAD_PARAMETER);
+            Error validPathError = IsValidPath(filePath);
+            if (validPathError) return validPathError;
+            
             if (!DoesFileExist(filePath)) return Error.None;
 
             try
@@ -900,9 +1090,12 @@ namespace Modio.FileIO
 
 #region File Read/Write
 
-        protected virtual async Task<Error> WriteFile(string path, byte[] data)
+        protected virtual async Task<Error> WriteFile(string path, byte[] data, int bytesToWrite)
         {
-            if (!IsValidPath(path) || data == null) return new Error(ErrorCode.BAD_PARAMETER);
+            Error validPathError = IsValidPath(path);
+            if (validPathError) return validPathError;
+            
+            if (data == null) return new Error(ErrorCode.BAD_PARAMETER);
 
             Error error = CreateDirectory(path);
             if (error) return error;
@@ -913,7 +1106,7 @@ namespace Modio.FileIO
             {
                 await using FileStream fileStream = File.Open(path, FileMode.Create);
                 fileStream.Position = 0;
-                await fileStream.WriteAsync(data, 0, data.Length);
+                await fileStream.WriteAsync(data, 0, bytesToWrite, CancellationToken.None);
 
                 return Error.None;
             }
@@ -931,7 +1124,9 @@ namespace Modio.FileIO
         {
             byte[] output = Array.Empty<byte>();
 
-            if (!IsValidPath(path)) return (new Error(ErrorCode.BAD_PARAMETER), output);
+            Error validPathError = IsValidPath(path);
+            if (validPathError) return (validPathError, output);
+            
             if (!DoesFileExist(path)) return (new Error(ErrorCode.FILE_NOT_FOUND), output);
 
             OngoingTaskCount++;
@@ -956,13 +1151,16 @@ namespace Modio.FileIO
 
         protected virtual async Task<Error> WriteTextFile(string path, string data)
         {
-            if (!IsValidPath(path) || string.IsNullOrEmpty(data)) return new Error(ErrorCode.BAD_PARAMETER);
+            Error validPathError = IsValidPath(path);
+            if (validPathError) return validPathError;
+            
+            if (string.IsNullOrEmpty(data)) return new Error(ErrorCode.BAD_PARAMETER);
 
             (Error error, byte[] result) = ConvertUTF8Data(data);
 
             if (error) return error;
 
-            return await WriteFile(path, result);
+            return await WriteFile(path, result, result.Length);
         }
 
         protected virtual async Task<(Error error, string result)> ReadTextFile(string path)
@@ -970,7 +1168,10 @@ namespace Modio.FileIO
             var output = string.Empty;
 
             if (ShutdownToken.IsCancellationRequested) return (new Error(ErrorCode.SHUTTING_DOWN), output);
-            if (!IsValidPath(path)) return (new Error(ErrorCode.BAD_PARAMETER), output);
+            
+            Error validPathError = IsValidPath(path);
+            if (validPathError) return (validPathError, output);
+            
             if (!DoesFileExist(path)) return (new Error(ErrorCode.FILE_NOT_FOUND), output);
 
             (Error error, byte[] data) = await ReadFile(path);
@@ -1057,7 +1258,11 @@ namespace Modio.FileIO
 
         public virtual async Task<Error> CompressToZip(string filePath, Stream outputTo)
         {
-            if (!DoesDirectoryExist(filePath) && !DoesFileExist(filePath)) return new Error(ErrorCode.FILE_NOT_FOUND);
+            if (!DoesDirectoryExist(filePath) && !DoesFileExist(filePath))
+            {
+                ModioLog.Error?.Log($"Unable to compress to zip: Directory doesn't exist: {filePath}");
+                return new Error(ErrorCode.FILE_NOT_FOUND);
+            }
 
             Error returnError = Error.None;
 
@@ -1080,6 +1285,33 @@ namespace Modio.FileIO
             }
 
             return returnError;
+        }
+
+        public virtual async Task<(Error, Stream)> CompressToZipStream(string filePath, long modId)
+        {
+            string temporaryDirectoryPath = ModioClient.DataStorage.GetInstallPath(modId, 0);
+            Directory.CreateDirectory(temporaryDirectoryPath);
+            var temporaryFilePath = Path.Combine(temporaryDirectoryPath, "upload.zip");
+
+            await using (Stream writerStream = File.Open(temporaryFilePath, FileMode.Create))
+            {
+                Error error = await ModioClient.DataStorage.CompressToZip(filePath, writerStream);
+
+                if (error) 
+                    return (error, null);
+            }
+
+            Stream readStream = File.Open(temporaryFilePath, FileMode.Open);
+
+            return (Error.None, readStream);
+        }
+
+        public virtual Task CleanUpCompressToZipStream(long modId)
+        {
+            string temporaryDirectoryPath = ModioClient.DataStorage.GetInstallPath(modId, 0);
+            string temporaryFilePath = Path.Combine(temporaryDirectoryPath, "upload.zip");
+            File.Delete(temporaryFilePath);
+            return Task.CompletedTask;
         }
 
         protected virtual async Task CompressStream(string entryName, Stream stream, ZipOutputStream zipStream)

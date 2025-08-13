@@ -22,67 +22,61 @@ namespace Modio.Editor.Common
         {
             Type[] types = AppDomain.CurrentDomain.GetAssemblies().SelectMany(assembly => assembly.GetTypes().Where(type => !type.IsAbstract && typeof(T).IsAssignableFrom(type))).OrderBy(type => type.Name).ToArray();
             int prefixLength = removeClassNamePrefix ? GetPrefixLength(types) : 0;
-
+            
             return new ReorderableList(serializedProperty.serializedObject, serializedProperty, true, false, true, true)
             {
-                elementHeightCallback = index => EditorGUI.GetPropertyHeight(serializedProperty.GetArrayElementAtIndex(index)) + Padding,
-                drawElementBackgroundCallback = (rect, index, isActive, isFocused) =>
-                {
-                    rect.y -= Padding * 0.5f;
-
-                    if (index % 2 == 0 || isActive || isFocused || serializedProperty.arraySize == 0)
-                        ReorderableList.defaultBehaviours.DrawElementBackground(rect, index, isActive, isFocused, true);
-                    else
-                        EditorGUI.DrawRect(rect, new Color(0, 0, 0, 0.15f));
-                },
-                drawElementCallback = (rect, index, isActive, isFocused) =>
-                {
-                    var element = serializedProperty.GetArrayElementAtIndex(index);
-                    string heading = GetElementHeading(element, prefixLength, nameHintPropertyName);
-
-                    rect.height = EditorGUIUtility.singleLineHeight;
-                    rect.xMin += 10;
-                    element.isExpanded = EditorGUI.Foldout(rect, element.isExpanded, heading);
-                    rect.y += rect.height + EditorGUIUtility.standardVerticalSpacing;
-
-                    if (!element.isExpanded) return;
-
-                    IEnumerator enumerator = element.Copy().GetEnumerator();
-
-                    while (enumerator.MoveNext())
-                    {
-                        if (!(enumerator.Current is SerializedProperty property) || property.depth > element.depth + 1)
-                            continue;
-
-                        rect.height = EditorGUI.GetPropertyHeight(property);
-                        EditorGUI.PropertyField(rect, property);
-                        rect.y += rect.height + EditorGUIUtility.standardVerticalSpacing;
-                    }
-
-                    (enumerator as IDisposable)?.Dispose();
-                },
-                onAddDropdownCallback = (buttonRect, list) =>
-                {
-                    var menu = new GenericMenu();
-
-                    foreach (Type type in types)
-                        menu.AddItem(
-                            new GUIContent(ObjectNames.NicifyVariableName(type.Name.Substring(prefixLength))),
-                            false,
-                            () => {
-                                list.serializedProperty.arraySize += 1;
-
-                                var element = list.serializedProperty.GetArrayElementAtIndex(list.serializedProperty.arraySize - 1);
-                                element.managedReferenceValue = Activator.CreateInstance(type);
-                                element.isExpanded = true;
-
-                                serializedProperty.serializedObject.ApplyModifiedProperties();
-                            }
-                        );
-
-                    menu.ShowAsContext();
-                },
+                elementHeightCallback = index => EditorGUI.GetPropertyHeight(serializedProperty.GetArrayElementAtIndex(index), true) + Padding,
+                drawElementBackgroundCallback = DrawElementBackgroundCallback,
+                drawElementCallback = DrawElementCallback,
+                onAddDropdownCallback = AddDropdownCallback,
             };
+            
+            void AddDropdownCallback(Rect buttonRect, ReorderableList list)
+            {
+                var menu = new GenericMenu();
+
+                foreach (Type type in types)
+                    menu.AddItem(
+                        new GUIContent(ObjectNames.NicifyVariableName(type.Name.Substring(prefixLength))),
+                        false,
+                        () =>
+                        {
+                            list.serializedProperty.arraySize += 1;
+
+                            var element = list.serializedProperty.GetArrayElementAtIndex(list.serializedProperty.arraySize - 1);
+                            element.managedReferenceValue = Activator.CreateInstance(type);
+                            element.isExpanded = true;
+
+                            serializedProperty.serializedObject.ApplyModifiedProperties();
+                        }
+                    );
+
+                menu.ShowAsContext();
+            }
+
+            void DrawElementCallback(Rect rect, int index, bool isActive, bool isFocused)
+            {
+                //Foldout Arrow
+                rect.width -= 10;
+                rect.x += 10;
+                
+                SerializedProperty element = serializedProperty.GetArrayElementAtIndex(index);
+
+                string heading = GetElementHeading(element, prefixLength, nameHintPropertyName);
+                EditorGUI.PropertyField(rect,element,new GUIContent(heading), true);
+                
+            }
+
+            void DrawElementBackgroundCallback(Rect rect, int index, bool isActive, bool isFocused)
+            {
+                rect.y -= Padding * 0.5f;
+
+                if (index % 2 == 0 || isActive || isFocused || serializedProperty.arraySize == 0)
+                    ReorderableList.defaultBehaviours.DrawElementBackground(rect, index, isActive, isFocused, true);
+                else
+                    EditorGUI.DrawRect(rect, new Color(0, 0, 0, 0.15f));
+            }
+            
 
             static int GetPrefixLength(IReadOnlyList<Type> sortedTypes)
             {

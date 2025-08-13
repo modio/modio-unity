@@ -83,10 +83,12 @@ namespace Modio.API
             apiInterfaceBinding.OnNewBinding += SetAPIInterface;
             
             var authServiceBinding = ModioServices.GetBindings<IModioAuthService>();
-            SetPortalFromAuthService(authServiceBinding.Resolve());
+            var portalProviderBinding = ModioServices.GetBindings<IGetPortalProvider>();
+            
+            SetPortalFromPortalProvider(portalProviderBinding.Resolve());
             // We need to handle the api interface changing mostly for unit tests
-            authServiceBinding.OnNewBinding -= SetPortalFromAuthService;
-            authServiceBinding.OnNewBinding += SetPortalFromAuthService;
+            portalProviderBinding.OnNewBinding -= SetPortalFromPortalProvider;
+            portalProviderBinding.OnNewBinding += SetPortalFromPortalProvider;
         }
 
 #region Language
@@ -152,9 +154,9 @@ namespace Modio.API
             if (header != null) _apiInterface.SetDefaultHeader(HEADER_PORTAL, header);
         }
 
-        static void SetPortalFromAuthService(IModioAuthService authService)
+        static void SetPortalFromPortalProvider(IGetPortalProvider portalProvider)
         {
-            SetPortal(authService?.Portal ?? Portal.None);
+            SetPortal(portalProvider?.Portal ?? Portal.None);
         }
 
         /// <summary>

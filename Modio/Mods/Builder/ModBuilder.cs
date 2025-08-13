@@ -8,6 +8,7 @@ using Modio.API;
 using Modio.API.SchemaDefinitions;
 using Modio.Caching;
 using Modio.Errors;
+using Modio.Users;
 
 namespace Modio.Mods.Builder
 {
@@ -375,6 +376,9 @@ namespace Modio.Mods.Builder
             await PublishRemainingChanges();
             await mod.GetModDetailsFromServer();
             
+            // Ensure we're not caching searches without the new mod (especially on the /me endpoint)
+            ModCache.ClearModSearchCache();
+            
             return (Error.None, mod);
         }
 
@@ -389,7 +393,7 @@ namespace Modio.Mods.Builder
                 if (error) 
                     ModioLog.Error?.Log($"Couldn't create Logo file from file path {LogoFilePath}, cannot publish edits");
             }
-            else if (_logoBytes.Length > 0)
+            else if (_logoBytes != null && _logoBytes.Length > 0)
                 logo = LogoFromByteArray();
             else
             {
@@ -439,46 +443,56 @@ namespace Modio.Mods.Builder
                     return (error, EditTarget);
                 }
             }
-            
-            var body = new EditModRequest(
-                _pendingChanges.HasFlag(ChangeFlags.Name) ? Name : null,
-                _pendingChanges.HasFlag(ChangeFlags.Name) ? nameId : null,
-                _pendingChanges.HasFlag(ChangeFlags.Summary) ? Summary: null,
-                _pendingChanges.HasFlag(ChangeFlags.Description) ? Description : null,
-                logo,
-                _pendingChanges.HasFlag(ChangeFlags.Visibility) 
-                    ? Visible ? 0 : 1 
-                    : null,
-                _pendingChanges.HasFlag(ChangeFlags.MaturityOptions) ? (long)MaturityOptions : null,
-                _pendingChanges.HasFlag(ChangeFlags.CommunityOptions) ? (long)CommunityOptions : null,
-                _pendingChanges.HasFlag(ChangeFlags.MetadataBlob) ? MetadataBlob : null,
-                _pendingChanges.HasFlag(ChangeFlags.Tags) ? Tags : null,
-                _pendingChanges.HasFlag(ChangeFlags.MonetizationConfig) ? (long)_monetizationOptions : null,
-                _pendingChanges.HasFlag(ChangeFlags.MonetizationConfig) ? Price : null,
-                _pendingChanges.HasFlag(ChangeFlags.MonetizationConfig) ? Stock : null
-            );
 
-            ModObject? modObject;
-            (error, modObject) = await ModioAPI.Mods.EditMod(EditTarget.Id, body);
-
-            _commitErrors[ChangeFlags.EditFlags] = error;
-            
-            if (error)
+            if((_pendingChanges & ChangeFlags.EditFlags) != 0)
             {
-                if (!error.IsSilent) ModioLog.Error?.Log($"Error publishing changes for mod {EditTarget.Name}: {error}");
-                return (error, EditTarget);
+                var body = new EditModRequest(
+                    _pendingChanges.HasFlag(ChangeFlags.Name) ? Name : null,
+                    _pendingChanges.HasFlag(ChangeFlags.Name) ? nameId : null,
+                    _pendingChanges.HasFlag(ChangeFlags.Summary) ? Summary : null,
+                    _pendingChanges.HasFlag(ChangeFlags.Description) ? Description : null,
+                    logo,
+                    _pendingChanges.HasFlag(ChangeFlags.Visibility)
+                        ? Visible ? 0 : 1
+                        : null,
+                    _pendingChanges.HasFlag(ChangeFlags.MaturityOptions) ? (long)MaturityOptions : null,
+                    _pendingChanges.HasFlag(ChangeFlags.CommunityOptions) ? (long)CommunityOptions : null,
+                    _pendingChanges.HasFlag(ChangeFlags.MetadataBlob) ? MetadataBlob : null,
+                    _pendingChanges.HasFlag(ChangeFlags.Tags) ? Tags : null,
+                    _pendingChanges.HasFlag(ChangeFlags.MonetizationConfig) ? (long)_monetizationOptions : null,
+                    _pendingChanges.HasFlag(ChangeFlags.MonetizationConfig) ? Price : null,
+                    _pendingChanges.HasFlag(ChangeFlags.MonetizationConfig) ? Stock : null
+                );
+
+                ModObject? modObject;
+                (error, modObject) = await ModioAPI.Mods.EditMod(EditTarget.Id, body);
+
+                _commitErrors[ChangeFlags.EditFlags] = error;
+
+                if (error)
+                {
+                    if (!error.IsSilent)
+                        ModioLog.Error?.Log($"Error publishing changes for mod {EditTarget.Name}: {error}");
+
+                    return (error, EditTarget);
+                }
+
+                // We want to reset the change flags for the ones we uploaded
+                // See notes for logic behind silly business here
+                _pendingChanges &= ~ChangeFlags.EditFlags;
+
+                EditTarget.ApplyDetailsFromModObject(modObject.Value);
             }
-            
-            // We want to reset the change flags for the ones we uploaded
-            // See notes for logic behind silly business here
-            _pendingChanges &= ~ChangeFlags.EditFlags;
-            
-            Mod mod = ModCache.GetMod(modObject.Value);
-
             await PublishRemainingChanges();
-            await mod.GetModDetailsFromServer();
+            await EditTarget.GetModDetailsFromServer();
+            
+            foreach ((ChangeFlags _, Error commitError) in _commitErrors)
+            {
+                if (commitError)
+                    return (commitError, EditTarget);
+            }
 
-            return (Error.None, mod);
+            return (Error.None, EditTarget);
         }
 
         async Task<Error> PublishGallery()
@@ -512,7 +526,7 @@ namespace Modio.Mods.Builder
             }
             
             var body = new AddModMetadataRequest(MetadataKvps
-                                                 .Select(kvp => string.Concat(kvp.Key, kvp.Value))
+                                                 .Select(kvp => $"{kvp.Key}:{kvp.Value}")
                                                  .ToArray());
 
             (Error error, _)
@@ -566,6 +580,32 @@ namespace Modio.Mods.Builder
             if (error && !error.IsSilent)
                 ModioLog.Error?.Log($"Error publishing Monetization changes for {EditTarget.Id}: {error}");
 
+            return error;
+        }
+
+        /// <summary>
+        /// Delete a mod on the mod.io backend. Note that this puts it into
+        /// an 'archived' state, and mods can only be permanently deleted
+        /// from the mod.io website
+        /// </summary>
+        public async Task<Error> ArchiveMod()
+        {
+            if (!IsEditMode)
+            {
+                ModioLog.Error?.Log($"Can't archive a mod that has never been published");
+                return Error.Unknown;
+            }
+
+            (Error error, Response204? _) = await ModioAPI.Mods.DeleteMod(EditTarget.Id);
+
+            if (error)
+                return error;
+            
+            ModCache.ClearMod(EditTarget.Id);
+            
+            User.Current?.ModRepository?.RemoveMod(EditTarget);
+            ModInstallationManagement.WakeUp();
+            
             return error;
         }
 
@@ -665,8 +705,9 @@ namespace Modio.Mods.Builder
                 return (new Error(ErrorCode.BAD_PARAMETER), default(ModioAPIFileParameter));
             }
 
-            await using var memStream = new MemoryStream();
+            var memStream = new MemoryStream();
             await using var zipStream = new ZipOutputStream(memStream);
+            zipStream.IsStreamOwner = false;
             
             foreach (string imageFilePath in imageFilePaths)
             {
@@ -680,6 +721,8 @@ namespace Modio.Mods.Builder
                 
                 zipStream.CloseEntry();
             }
+            
+            zipStream.Finish();
 
             memStream.Position = 0;
 

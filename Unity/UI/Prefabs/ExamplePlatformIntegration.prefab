@@ -51,7 +51,7 @@ MonoBehaviour:
     - ModioV3PlatformExampleSteamworks
   - platforms: 08000000
     prefabNames:
-    - ModioPlatformExampleIos
+    - ModioIosExample
   - platforms: 0200000007000000
     prefabNames:
     - ModioV3PlatformExampleGalaxy
@@ -59,6 +59,7 @@ MonoBehaviour:
     prefabNames:
     - ModioPlatformExampleOculus
     - ModioPlatformExampleAndroid
+    - ModioGooglePlayGamesExample
   - platforms: 19000000
     prefabNames:
     - ModioPlatformExamplePlayStation4
@@ -71,3 +72,6 @@ MonoBehaviour:
   - platforms: 20000000
     prefabNames:
     - ModioPlatformExampleSwitch
+  - platforms: 0b00000008000000
+    prefabNames:
+    - MobilePurchasingExample

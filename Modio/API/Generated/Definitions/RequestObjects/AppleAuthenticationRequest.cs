@@ -7,12 +7,13 @@ using Newtonsoft.Json.Linq;
 
 namespace Modio.API.SchemaDefinitions{
     [JsonObject]
-    internal readonly partial struct AppleAuthenticationRequest : IApiRequest
+    public readonly partial struct AppleAuthenticationRequest : IApiRequest
     {
         static readonly Dictionary<string, object> _bodyParameters = new Dictionary<string, object>();
 
         /// <summary>Sign in with Apple ID Token.</summary>
         internal readonly string IdToken;
+        internal readonly string Email;
         /// <summary></summary>
         internal readonly bool TermsAgreed;
         /// <summary></summary>
@@ -24,12 +25,14 @@ namespace Modio.API.SchemaDefinitions{
         [JsonConstructor]
         public AppleAuthenticationRequest(
             string id_token,
+            string email,
             bool terms_agreed,
             long date_expires
         ) {
             IdToken = id_token;
             TermsAgreed = terms_agreed;
             DateExpires = date_expires;
+            Email = email;
         }
 
         public IReadOnlyDictionary<string, object> GetBodyParameters()
@@ -37,6 +40,7 @@ namespace Modio.API.SchemaDefinitions{
             _bodyParameters.Clear();
 
             _bodyParameters.Add("id_token", IdToken);
+            if (!string.IsNullOrEmpty(Email)) _bodyParameters.Add("email", Email);
             _bodyParameters.Add("terms_agreed", TermsAgreed);
             _bodyParameters.Add("date_expires", DateExpires);
 

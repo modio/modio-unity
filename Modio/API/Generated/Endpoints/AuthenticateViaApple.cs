@@ -14,7 +14,7 @@ namespace Modio.API
         public static partial class Authentication
         {
             /// <summary>Request an access token on behalf of a 'Sign in with Apple' user. To use this functionality you *must* add your games Bundle ID from Apple, to the [*Game Admin > Settings*](/platforms/apple/authentication/) page of your games profile on mod.io. A Successful request will return an [Access Token Object](#access-token-object).</summary>
-            internal static async Task<(Error error, JToken accessTokenObject)> AuthenticateViaAppleAsJToken(
+            public static async Task<(Error error, JToken accessTokenObject)> AuthenticateViaAppleAsJToken(
                 AppleAuthenticationRequest? body = null
             ) {
                 if (!IsInitialized()) return (new Error(ErrorCode.API_NOT_INITIALIZED), null);
@@ -28,7 +28,7 @@ namespace Modio.API
 
             /// <summary>Request an access token on behalf of a 'Sign in with Apple' user. To use this functionality you *must* add your games Bundle ID from Apple, to the [*Game Admin > Settings*](/platforms/apple/authentication/) page of your games profile on mod.io. A Successful request will return an [Access Token Object](#access-token-object).</summary>
             /// <param name="body"></param>
-            internal static async Task<(Error error, AccessTokenObject? accessTokenObject)> AuthenticateViaApple(
+            public static async Task<(Error error, AccessTokenObject? accessTokenObject)> AuthenticateViaApple(
                 AppleAuthenticationRequest? body = null
             ) {
                 if (!IsInitialized()) return (new Error(ErrorCode.API_NOT_INITIALIZED), null);
