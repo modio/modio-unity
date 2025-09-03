@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Modio.API;
 using Modio.Authentication;
 using Modio.Extensions;
 using Plugins.Modio.Unity.Platforms.Android;
@@ -25,6 +26,12 @@ namespace Modio.Unity.Examples.Android
                 Destroy(gameObject);
                 return;
             }
+            
+            // `IGetPortalProvider` is needed before authentication for API configuration, so this lives in a separate
+            // place
+            ModioServices.Bind<GoogleGamesPortalProvider>()
+                         .WithInterfaces<IGetPortalProvider>()
+                         .FromNew<GoogleGamesPortalProvider>();
             
             ModioLog.Verbose?.Log("Attempting Google Play Games sign-in");
             
@@ -53,5 +60,10 @@ namespace Modio.Unity.Examples.Android
                          .FromNew<GoogleGamesAuthService>();
 #endif
         }
+    }
+
+    public class GoogleGamesPortalProvider : IGetPortalProvider
+    {
+        public ModioAPI.Portal Portal => ModioAPI.Portal.Google;
     }
 }

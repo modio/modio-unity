@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 4901895851997437559}
   - component: {fileID: 2845508178308460949}
   - component: {fileID: 6408677959645408468}
+  - component: {fileID: 1876114494134140216}
   m_Layer: 5
   m_Name: Text (Version Label)
   m_TagString: Untagged
@@ -29,6 +30,7 @@ RectTransform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 659261388815486548}
   m_RootOrder: 0
@@ -151,6 +153,22 @@ MonoBehaviour:
   _key: modio_modview_version
   _tmpText: {fileID: 2845508178308460949}
   _splitFormatArgs: []
+--- !u!114 &1876114494134140216
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 566396925534011768}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e990c13f9f24324a4a5a1d8cb151528, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _styleTarget: 1
+  _targetComponents:
+  - Component: {fileID: 2845508178308460949}
+    Option: 11
 --- !u!1 &4053711281271426386
 GameObject:
   m_ObjectHideFlags: 0
@@ -180,6 +198,7 @@ RectTransform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 6098333559007273705}
   - {fileID: 659261388815486548}
@@ -250,11 +269,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _properties:
-  - id: 0
+  - rid: 0
   references:
-    version: 1
-    00000000:
-      type: {class: ModPropertyVersion, ns: Modio.Unity.UI.Components.ModProperties, asm: Modio.Unity.UI}
+    version: 2
+    RefIds:
+    - rid: 0
+      type: {class: ModPropertyVersion, ns: Modio.Unity.UI.Components.ModProperties,
+        asm: Modio.Unity.UI}
       data:
         _text: {fileID: 8429721839303988334}
         _disableIfNoVersionInfo: {fileID: 4412265702923427981}
@@ -286,6 +307,7 @@ RectTransform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 3668645848025470777}
   - {fileID: 1460329163501683571}
@@ -359,6 +381,7 @@ RectTransform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 6098333559329968840}
   m_Father: {fileID: 0}
@@ -398,16 +421,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _properties:
-  - id: 0
-  - id: 1
+  - rid: 0
+  - rid: 1
   references:
-    version: 1
-    00000000:
-      type: {class: ModPropertyName, ns: Modio.Unity.UI.Components.ModProperties, asm: Modio.Unity.UI}
+    version: 2
+    RefIds:
+    - rid: 0
+      type: {class: ModPropertyName, ns: Modio.Unity.UI.Components.ModProperties,
+        asm: Modio.Unity.UI}
       data:
         _text: {fileID: 6098333559007273711}
-    00000001:
-      type: {class: ModPropertyLogo, ns: Modio.Unity.UI.Components.ModProperties, asm: Modio.Unity.UI}
+    - rid: 1
+      type: {class: ModPropertyLogo, ns: Modio.Unity.UI.Components.ModProperties,
+        asm: Modio.Unity.UI}
       data:
         _image: {fileID: 6098333558097089625}
         _resolution: 1
@@ -443,6 +469,7 @@ RectTransform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 6098333559329968840}
   m_RootOrder: 3
@@ -518,6 +545,7 @@ GameObject:
   - component: {fileID: 6098333559007273705}
   - component: {fileID: 6098333559007273704}
   - component: {fileID: 6098333559007273711}
+  - component: {fileID: 356923269389292990}
   m_Layer: 5
   m_Name: Text (Mod Name)
   m_TagString: Untagged
@@ -535,6 +563,7 @@ RectTransform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2083770472152892897}
   m_RootOrder: 0
@@ -644,6 +673,22 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!114 &356923269389292990
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6098333559007273706}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e990c13f9f24324a4a5a1d8cb151528, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _styleTarget: 1
+  _targetComponents:
+  - Component: {fileID: 6098333559007273711}
+    Option: 12
 --- !u!1 &6098333559033233319
 GameObject:
   m_ObjectHideFlags: 0
@@ -657,6 +702,7 @@ GameObject:
   - component: {fileID: 6098333559033233316}
   - component: {fileID: 6098333559033233317}
   - component: {fileID: 6200467156701335223}
+  - component: {fileID: 8793042391257369913}
   m_Layer: 5
   m_Name: Text (Description)
   m_TagString: Untagged
@@ -674,13 +720,14 @@ RectTransform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 6098333559329968840}
   m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 320, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 320, y: -492.415}
   m_SizeDelta: {x: 512, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &6098333559033233323
@@ -810,6 +857,22 @@ MonoBehaviour:
   _key: modio_report_reason
   _tmpText: {fileID: 6098333559033233316}
   _splitFormatArgs: []
+--- !u!114 &8793042391257369913
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6098333559033233319}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e990c13f9f24324a4a5a1d8cb151528, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _styleTarget: 1
+  _targetComponents:
+  - Component: {fileID: 6098333559033233316}
+    Option: 10
 --- !u!1 &6098333559329968841
 GameObject:
   m_ObjectHideFlags: 0
@@ -838,6 +901,7 @@ RectTransform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1463911809031343063}
   - {fileID: 533567402797979265}
@@ -921,6 +985,7 @@ RectTransform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 8473069754903554342}
   - {fileID: 8473069755207022646}
@@ -1016,6 +1081,7 @@ GameObject:
   - component: {fileID: 1460329163501683571}
   - component: {fileID: 5623316524015029235}
   - component: {fileID: 8429721839303988334}
+  - component: {fileID: 1628421637280426114}
   m_Layer: 5
   m_Name: Text (Version Value)
   m_TagString: Untagged
@@ -1033,6 +1099,7 @@ RectTransform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 659261388815486548}
   m_RootOrder: 1
@@ -1140,6 +1207,22 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!114 &1628421637280426114
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7419576904450592680}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e990c13f9f24324a4a5a1d8cb151528, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _styleTarget: 1
+  _targetComponents:
+  - Component: {fileID: 8429721839303988334}
+    Option: 11
 --- !u!1001 &6098333557992880678
 PrefabInstance:
   m_ObjectHideFlags: 0

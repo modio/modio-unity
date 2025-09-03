@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 8476588132430461211}
   - component: {fileID: 2951543291325120219}
   - component: {fileID: 6565529753727459328}
+  - component: {fileID: 1059481578451343713}
   m_Layer: 5
   m_Name: Label
   m_TagString: Untagged
@@ -28,6 +29,7 @@ RectTransform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4417937106979249276}
   m_RootOrder: 3
@@ -135,6 +137,22 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!114 &1059481578451343713
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3244100854017510213}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e990c13f9f24324a4a5a1d8cb151528, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _styleTarget: 1
+  _targetComponents:
+  - Component: {fileID: 6565529753727459328}
+    Option: 10
 --- !u!1 &4417937106979249279
 GameObject:
   m_ObjectHideFlags: 0
@@ -163,6 +181,7 @@ RectTransform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 6810578631018169484}
   - {fileID: 5958899767287267517}
@@ -608,6 +627,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Color.a
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8787874319581544293, guid: a2d0cdbf7f0c3a846961e9d647c99422,
+        type: 3}
+      propertyPath: _styleTarget
+      value: 300
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: a2d0cdbf7f0c3a846961e9d647c99422, type: 3}

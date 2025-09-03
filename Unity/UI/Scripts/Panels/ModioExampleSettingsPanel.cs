@@ -4,6 +4,7 @@ using Modio.Authentication;
 using Modio.Extensions;
 using Modio.FileIO;
 using Modio.Unity.Settings;
+using Modio.Unity.UI.Scripts.Themes;
 using UnityEngine;
 
 namespace Modio.Unity.UI.Panels
@@ -13,6 +14,7 @@ namespace Modio.Unity.UI.Panels
         bool _hasDoneSetup;
         ModioSettings _settings = new ModioSettings();
         ModioDebugMenu _debugMenu;
+        ModioUIThemeSheet _currentlySelectedSheet = null;
 
         void OnEnable()
         {
@@ -176,8 +178,29 @@ namespace Modio.Unity.UI.Panels
                                      }
                 );
             }
-            
-            
+
+            var sheets = Resources.LoadAll<ModioUIThemeSheet>("mod.io/ThemeSheets");
+
+            if (sheets.Length > 0)
+            {
+                
+                _debugMenu.AddLabel("\nTheme Sheets");
+
+                foreach (ModioUIThemeSheet sheet in sheets)
+                {
+                    _debugMenu.AddToggle(
+                        ModioDebugMenu.Nicify(sheet.name),
+                        () => ModioThemeController.Theme is not null &&
+                              ReferenceEquals(ModioThemeController.Theme, sheet),
+                        on =>
+                        {
+                            if (on) ModioThemeController.SetThemeSheet(sheet);
+                            _debugMenu.SetToDefaults();
+                        }
+                    );
+                }
+            }
+
             _debugMenu.AddLabel("\nMisc Discovered Settings");
             _debugMenu.AddAllMethodsOrPropertiesWithAttribute<ModioDebugMenuAttribute>(attribute => attribute.ShowInSettingsMenu);
             

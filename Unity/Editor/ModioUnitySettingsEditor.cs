@@ -30,6 +30,9 @@ namespace Modio.Editor.Unity
             Properties.DoLayoutList();
 
             serializedObject.ApplyModifiedProperties();
+            
+            if (GUI.changed)
+                ((ModioUnitySettings)serializedObject.targetObject).InvokeOnChanged();
         }
     }
 }

@@ -66,6 +66,7 @@ namespace Modio.Mods
         public ModCommunityOptions CommunityOptions { get; private set; }
         public ModMaturityOptions MaturityOptions { get; private set; }
         public Modfile File { get; private set; }
+        public ModPlatform[] SupportedPlatforms { get; private set; }
         public ModStats Stats { get; private set; }
         public long Price { get; private set; }
         public bool IsMonetized { get; private set; }
@@ -142,6 +143,7 @@ namespace Modio.Mods
                 File = new Modfile(modObject.Modfile);
             else if (modObject.Modfile.Id != 0) // We get a blank Modfile from some operations like Subscribe
                 File.ApplyDetailsFromModfileObject(modObject.Modfile);
+            SupportedPlatforms = modObject.Platforms.Select(platformObject => new ModPlatform(platformObject, Id)).ToArray();
 
             Stats = new ModStats(modObject.Stats, CurrentUserRating);
             IsMonetized = ((int)modObject.MonetizationOptions & (int)ModMonetizationOption.Enabled) != 0

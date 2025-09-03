@@ -319,7 +319,8 @@ MonoBehaviour:
         _localisedText: {fileID: 0}
         _dependenciesAreConfirmed: 0
     - rid: 1
-      type: {class: ModPropertyEnabled, ns: Modio.Unity.UI.Components.ModProperties, asm: Modio.Unity.UI}
+      type: {class: ModPropertyEnabled, ns: Modio.Unity.UI.Components.ModProperties,
+        asm: Modio.Unity.UI}
       data:
         _enabledToggle: {fileID: 0}
         _enableButton: {fileID: 6215768132437906837}
@@ -448,6 +449,7 @@ GameObject:
   - component: {fileID: 2590345402989053333}
   - component: {fileID: 2590345402989053334}
   - component: {fileID: 2590345402989053335}
+  - component: {fileID: 235678059405910280}
   m_Layer: 5
   m_Name: Image (PopupBackground)
   m_TagString: Untagged
@@ -533,6 +535,22 @@ MonoBehaviour:
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
+--- !u!114 &235678059405910280
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2590345402989053337}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e990c13f9f24324a4a5a1d8cb151528, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _styleTarget: 202
+  _targetComponents:
+  - Component: {fileID: 2590345402989053334}
+    Option: 0
 --- !u!1 &2590345403089484348
 GameObject:
   m_ObjectHideFlags: 0
@@ -602,6 +620,16 @@ PrefabInstance:
         type: 3}
       propertyPath: _key
       value: modio_btn_viewmod
+      objectReference: {fileID: 0}
+    - target: {fileID: 3723470963664545866, guid: b6503cc0fab0a0a4094de7a28d4973ef,
+        type: 3}
+      propertyPath: _targetComponents.Array.data[0].Option
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3723470963664545866, guid: b6503cc0fab0a0a4094de7a28d4973ef,
+        type: 3}
+      propertyPath: _targetComponents.Array.data[1].Option
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7003784986547306821, guid: b6503cc0fab0a0a4094de7a28d4973ef,
         type: 3}
@@ -850,6 +878,16 @@ PrefabInstance:
       propertyPath: _key
       value: modio_btn_prioritizemod
       objectReference: {fileID: 0}
+    - target: {fileID: 3723470963664545866, guid: b6503cc0fab0a0a4094de7a28d4973ef,
+        type: 3}
+      propertyPath: _targetComponents.Array.data[0].Option
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3723470963664545866, guid: b6503cc0fab0a0a4094de7a28d4973ef,
+        type: 3}
+      propertyPath: _targetComponents.Array.data[1].Option
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7003784986547306821, guid: b6503cc0fab0a0a4094de7a28d4973ef,
         type: 3}
       propertyPath: m_Name
@@ -1074,6 +1112,16 @@ PrefabInstance:
         type: 3}
       propertyPath: _key
       value: modio_btn_morefromcreator
+      objectReference: {fileID: 0}
+    - target: {fileID: 3723470963664545866, guid: b6503cc0fab0a0a4094de7a28d4973ef,
+        type: 3}
+      propertyPath: _targetComponents.Array.data[0].Option
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3723470963664545866, guid: b6503cc0fab0a0a4094de7a28d4973ef,
+        type: 3}
+      propertyPath: _targetComponents.Array.data[1].Option
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7003784986547306821, guid: b6503cc0fab0a0a4094de7a28d4973ef,
         type: 3}
@@ -1322,6 +1370,16 @@ PrefabInstance:
       propertyPath: _key
       value: modio_btn_reportmod
       objectReference: {fileID: 0}
+    - target: {fileID: 3723470963664545866, guid: b6503cc0fab0a0a4094de7a28d4973ef,
+        type: 3}
+      propertyPath: _targetComponents.Array.data[0].Option
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3723470963664545866, guid: b6503cc0fab0a0a4094de7a28d4973ef,
+        type: 3}
+      propertyPath: _targetComponents.Array.data[1].Option
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7003784986547306821, guid: b6503cc0fab0a0a4094de7a28d4973ef,
         type: 3}
       propertyPath: m_Name
@@ -1563,6 +1621,16 @@ PrefabInstance:
         type: 3}
       propertyPath: _key
       value: modio_btn_enablemod
+      objectReference: {fileID: 0}
+    - target: {fileID: 3723470963664545866, guid: b6503cc0fab0a0a4094de7a28d4973ef,
+        type: 3}
+      propertyPath: _targetComponents.Array.data[0].Option
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3723470963664545866, guid: b6503cc0fab0a0a4094de7a28d4973ef,
+        type: 3}
+      propertyPath: _targetComponents.Array.data[1].Option
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7003784986547306821, guid: b6503cc0fab0a0a4094de7a28d4973ef,
         type: 3}
@@ -1811,6 +1879,16 @@ PrefabInstance:
       propertyPath: _key
       value: modio_btn_disablemod
       objectReference: {fileID: 0}
+    - target: {fileID: 3723470963664545866, guid: b6503cc0fab0a0a4094de7a28d4973ef,
+        type: 3}
+      propertyPath: _targetComponents.Array.data[0].Option
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3723470963664545866, guid: b6503cc0fab0a0a4094de7a28d4973ef,
+        type: 3}
+      propertyPath: _targetComponents.Array.data[1].Option
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7003784986547306821, guid: b6503cc0fab0a0a4094de7a28d4973ef,
         type: 3}
       propertyPath: m_Name
@@ -2057,6 +2135,16 @@ PrefabInstance:
         type: 3}
       propertyPath: _key
       value: modio_btn_unsubscribe
+      objectReference: {fileID: 0}
+    - target: {fileID: 3723470963664545866, guid: b6503cc0fab0a0a4094de7a28d4973ef,
+        type: 3}
+      propertyPath: _targetComponents.Array.data[0].Option
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3723470963664545866, guid: b6503cc0fab0a0a4094de7a28d4973ef,
+        type: 3}
+      propertyPath: _targetComponents.Array.data[1].Option
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7003784986547306821, guid: b6503cc0fab0a0a4094de7a28d4973ef,
         type: 3}
@@ -2305,6 +2393,16 @@ PrefabInstance:
       propertyPath: _key
       value: modio_btn_subscribe
       objectReference: {fileID: 0}
+    - target: {fileID: 3723470963664545866, guid: b6503cc0fab0a0a4094de7a28d4973ef,
+        type: 3}
+      propertyPath: _targetComponents.Array.data[0].Option
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3723470963664545866, guid: b6503cc0fab0a0a4094de7a28d4973ef,
+        type: 3}
+      propertyPath: _targetComponents.Array.data[1].Option
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7003784986547306821, guid: b6503cc0fab0a0a4094de7a28d4973ef,
         type: 3}
       propertyPath: m_Name
@@ -2552,6 +2650,16 @@ PrefabInstance:
       propertyPath: _key
       value: modio_btn_retrydownload
       objectReference: {fileID: 0}
+    - target: {fileID: 3723470963664545866, guid: b6503cc0fab0a0a4094de7a28d4973ef,
+        type: 3}
+      propertyPath: _targetComponents.Array.data[0].Option
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3723470963664545866, guid: b6503cc0fab0a0a4094de7a28d4973ef,
+        type: 3}
+      propertyPath: _targetComponents.Array.data[1].Option
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7003784986547306821, guid: b6503cc0fab0a0a4094de7a28d4973ef,
         type: 3}
       propertyPath: m_Name
@@ -2794,6 +2902,16 @@ PrefabInstance:
         type: 3}
       propertyPath: _key
       value: modio_btn_uninstall
+      objectReference: {fileID: 0}
+    - target: {fileID: 3723470963664545866, guid: b6503cc0fab0a0a4094de7a28d4973ef,
+        type: 3}
+      propertyPath: _targetComponents.Array.data[0].Option
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3723470963664545866, guid: b6503cc0fab0a0a4094de7a28d4973ef,
+        type: 3}
+      propertyPath: _targetComponents.Array.data[1].Option
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7003784986547306821, guid: b6503cc0fab0a0a4094de7a28d4973ef,
         type: 3}

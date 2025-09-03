@@ -558,6 +558,21 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5580275590612072968, guid: ab9cc274bb6e6db4b9f0cb1983b07bb7,
+        type: 3}
+      propertyPath: _styleTarget
+      value: 201
+      objectReference: {fileID: 0}
+    - target: {fileID: 5580275590612072968, guid: ab9cc274bb6e6db4b9f0cb1983b07bb7,
+        type: 3}
+      propertyPath: _targetComponents.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5580275590612072968, guid: ab9cc274bb6e6db4b9f0cb1983b07bb7,
+        type: 3}
+      propertyPath: _targetComponents.Array.data[2].Option
+      value: 12
+      objectReference: {fileID: 0}
     - target: {fileID: 7654613268509074829, guid: ab9cc274bb6e6db4b9f0cb1983b07bb7,
         type: 3}
       propertyPath: m_MinWidth
@@ -980,6 +995,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3298875764196220479, guid: ab9cc274bb6e6db4b9f0cb1983b07bb7,
         type: 3}
+      propertyPath: m_text
+      value: mods
+      objectReference: {fileID: 0}
+    - target: {fileID: 3298875764196220479, guid: ab9cc274bb6e6db4b9f0cb1983b07bb7,
+        type: 3}
       propertyPath: m_fontSize
       value: 30
       objectReference: {fileID: 0}
@@ -1052,6 +1072,21 @@ PrefabInstance:
         type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5580275590612072968, guid: ab9cc274bb6e6db4b9f0cb1983b07bb7,
+        type: 3}
+      propertyPath: _styleTarget
+      value: 201
+      objectReference: {fileID: 0}
+    - target: {fileID: 5580275590612072968, guid: ab9cc274bb6e6db4b9f0cb1983b07bb7,
+        type: 3}
+      propertyPath: _targetComponents.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5580275590612072968, guid: ab9cc274bb6e6db4b9f0cb1983b07bb7,
+        type: 3}
+      propertyPath: _targetComponents.Array.data[2].Option
+      value: 12
       objectReference: {fileID: 0}
     - target: {fileID: 7654613268509074829, guid: ab9cc274bb6e6db4b9f0cb1983b07bb7,
         type: 3}
@@ -3107,6 +3142,10 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+      propertyPath: _themeSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: c5a5548d8ad18114c8284c0981ff7174,
+        type: 2}
     - target: {fileID: 849338157843584640, guid: bcdff931d967d1a4482addd645013d6b,
         type: 3}
       propertyPath: m_AnchorMax.y

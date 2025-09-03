@@ -216,6 +216,23 @@ namespace Modio.API
 
 #region GetHeader Extensions
 
+        public static Platform PlatformFromHeader(string platform) => platform switch
+        {
+            "source"      => Platform.Source,
+            "windows"     => Platform.Windows,
+            "mac"         => Platform.Mac,
+            "linux"       => Platform.Linux,
+            "android"     => Platform.Android,
+            "ios"         => Platform.IOS,
+            "xboxone"     => Platform.XboxOne,
+            "xboxseriesx" => Platform.XboxSeriesX,
+            "ps4"         => Platform.PlayStation4,
+            "ps5"         => Platform.PlayStation5,
+            "switch"      => Platform.Switch,
+            "oculus"      => Platform.Oculus,
+            _             => Platform.None,
+        };
+        
         static string GetHeader(this Platform platform) => platform switch
             {
                 Platform.Source       => "source",

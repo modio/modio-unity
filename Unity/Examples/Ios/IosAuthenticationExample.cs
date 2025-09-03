@@ -17,6 +17,13 @@ namespace Modio.Unity.Examples.Ios
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
         static void OnAssemblyLoaded()
         {
+            if (Application.isEditor)
+                return;
+            BindServices();
+        }
+        
+        static void BindServices()
+        {
             ModioServices.Bind<IModioDataStorage>()
                          .FromNew<IosDataStorage>();
         }

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using Modio.API.SchemaDefinitions;
 using Modio.Errors;
+using Modio.Extensions;
 
 namespace Modio.API
 {
@@ -125,7 +126,7 @@ namespace Modio.API
                 /// <param name="condition"><see cref="Filtering"/></param>
                 public GetUserGamesFilter DateAdded(long dateAdded, Filtering condition = Filtering.None)
                 {
-                    Parameters[$"date_added{condition.ClearText()}"] = dateAdded;
+                    Parameters[$"date_added{condition.ClearText()}"] = dateAdded.RoundTimestampToHour();
                     return this;
                 }
 
@@ -133,7 +134,7 @@ namespace Modio.API
                 /// <param name="condition"><see cref="Filtering"/></param>
                 public GetUserGamesFilter DateAdded(ICollection<long> dateAdded, Filtering condition = Filtering.None)
                 {
-                    Parameters[$"date_added{condition.ClearText()}"] = dateAdded;
+                    Parameters[$"date_added{condition.ClearText()}"] = dateAdded.RoundTimestampsToHour();
                     return this;
                 }
                 
@@ -142,7 +143,7 @@ namespace Modio.API
                 /// <param name="condition"><see cref="Filtering"/></param>
                 public GetUserGamesFilter DateUpdated(long dateUpdated, Filtering condition = Filtering.None)
                 {
-                    Parameters[$"date_updated{condition.ClearText()}"] = dateUpdated;
+                    Parameters[$"date_updated{condition.ClearText()}"] = dateUpdated.RoundTimestampToHour();
                     return this;
                 }
 
@@ -150,7 +151,7 @@ namespace Modio.API
                 /// <param name="condition"><see cref="Filtering"/></param>
                 public GetUserGamesFilter DateUpdated(ICollection<long> dateUpdated, Filtering condition = Filtering.None)
                 {
-                    Parameters[$"date_updated{condition.ClearText()}"] = dateUpdated;
+                    Parameters[$"date_updated{condition.ClearText()}"] = dateUpdated.RoundTimestampsToHour();
                     return this;
                 }
                 
@@ -159,7 +160,7 @@ namespace Modio.API
                 /// <param name="condition"><see cref="Filtering"/></param>
                 public GetUserGamesFilter DateLive(long dateLive, Filtering condition = Filtering.None)
                 {
-                    Parameters[$"date_live{condition.ClearText()}"] = dateLive;
+                    Parameters[$"date_live{condition.ClearText()}"] = dateLive.RoundTimestampToHour();
                     return this;
                 }
 
@@ -167,7 +168,7 @@ namespace Modio.API
                 /// <param name="condition"><see cref="Filtering"/></param>
                 public GetUserGamesFilter DateLive(ICollection<long> dateLive, Filtering condition = Filtering.None)
                 {
-                    Parameters[$"date_live{condition.ClearText()}"] = dateLive;
+                    Parameters[$"date_live{condition.ClearText()}"] = dateLive.RoundTimestampsToHour();
                     return this;
                 }
                 

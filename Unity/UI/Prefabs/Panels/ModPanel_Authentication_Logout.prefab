@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 6792981838031660600}
   - component: {fileID: 6792981838031660601}
   - component: {fileID: 7370272278053221987}
+  - component: {fileID: 97334685417962940}
   m_Layer: 5
   m_Name: Text (Are you sure)
   m_TagString: Untagged
@@ -29,6 +30,7 @@ RectTransform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 6792981839061228618}
   m_RootOrder: 2
@@ -151,6 +153,22 @@ MonoBehaviour:
   _key: modio_auth_logout_description
   _tmpText: {fileID: 6792981838031660601}
   _splitFormatArgs: []
+--- !u!114 &97334685417962940
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6792981838031660604}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e990c13f9f24324a4a5a1d8cb151528, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _styleTarget: 1
+  _targetComponents:
+  - Component: {fileID: 6792981838031660601}
+    Option: 10
 --- !u!1 &6792981838868706995
 GameObject:
   m_ObjectHideFlags: 0
@@ -178,6 +196,7 @@ RectTransform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 9183476252496289345}
   - {fileID: 9183476253116907874}
@@ -242,6 +261,7 @@ RectTransform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 6792981839061228618}
   m_Father: {fileID: 0}
@@ -297,6 +317,7 @@ RectTransform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2212669272191950541}
   - {fileID: 973826778639614826}

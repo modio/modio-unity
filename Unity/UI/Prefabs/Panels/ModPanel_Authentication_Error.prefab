@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 2834973748716194867}
   - component: {fileID: 2834973748716194866}
   - component: {fileID: 4176749330401324805}
+  - component: {fileID: 7252270596772560160}
   m_Layer: 5
   m_Name: Text (Something went wrong)
   m_TagString: Untagged
@@ -29,6 +30,7 @@ RectTransform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2834973749030159735}
   m_RootOrder: 2
@@ -151,6 +153,22 @@ MonoBehaviour:
   _key: modio_error_generic
   _tmpText: {fileID: 2834973748716194866}
   _splitFormatArgs: []
+--- !u!114 &7252270596772560160
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2834973748716194871}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e990c13f9f24324a4a5a1d8cb151528, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _styleTarget: 1
+  _targetComponents:
+  - Component: {fileID: 2834973748716194866}
+    Option: 10
 --- !u!1 &2834973749030159734
 GameObject:
   m_ObjectHideFlags: 0
@@ -179,6 +197,7 @@ RectTransform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 7468841328842711040}
   - {fileID: 8399748960251530465}
@@ -245,6 +264,7 @@ GameObject:
   - component: {fileID: 2834973749386783933}
   - component: {fileID: 2834973749386783932}
   - component: {fileID: 8708957646949585367}
+  - component: {fileID: 2714779553850477031}
   m_Layer: 5
   m_Name: Text (Error code)
   m_TagString: Untagged
@@ -262,6 +282,7 @@ RectTransform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2834973749030159735}
   m_RootOrder: 3
@@ -384,6 +405,22 @@ MonoBehaviour:
   _key: modio_error_code
   _tmpText: {fileID: 2834973749386783932}
   _splitFormatArgs: []
+--- !u!114 &2714779553850477031
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2834973749386783921}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e990c13f9f24324a4a5a1d8cb151528, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _styleTarget: 1
+  _targetComponents:
+  - Component: {fileID: 2834973749386783932}
+    Option: 10
 --- !u!1 &2834973749739521837
 GameObject:
   m_ObjectHideFlags: 0
@@ -411,6 +448,7 @@ RectTransform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2834973749030159735}
   m_Father: {fileID: 0}
@@ -437,9 +475,13 @@ MonoBehaviour:
   _selectOnOpen: {fileID: 1766598869407099657}
   _startHidden: 1
   _openOnTopOf: {fileID: 0}
+  _titleLocalised: {fileID: 0}
   _errorCode: {fileID: 2834973749386783932}
   _errorCodeLocalised: {fileID: 8708957646949585367}
   _errorMessageLocalised: {fileID: 4176749330401324805}
+  _showWhenActionProvided: {fileID: 0}
+  _actionMessageLocalised: {fileID: 0}
+  _errorMessageResponses: []
 --- !u!1 &2834973749807207240
 GameObject:
   m_ObjectHideFlags: 0
@@ -467,6 +509,7 @@ RectTransform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 459401908115120177}
   m_Father: {fileID: 2834973749030159735}

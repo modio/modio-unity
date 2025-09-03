@@ -8,6 +8,7 @@ namespace Modio.Unity.UI.Components.Selectables
 {
     public class ModioUISelectableTransitions : MonoBehaviour
     {
+        public ToggleFilter FilteredToggle => _toggleFilter;
         public enum ToggleFilter
         {
             Any     = OnlyOn | OnlyOff,
@@ -25,6 +26,8 @@ namespace Modio.Unity.UI.Components.Selectables
 
         IModioUISelectable _owner;
         ModioUIToggle _toggle;
+        
+        public ISelectableTransition[] SelectableTransitions => _transitions;
 
         void Awake()
         {
@@ -101,6 +104,13 @@ namespace Modio.Unity.UI.Components.Selectables
         {
             if (_owner != null && _owner.State == IModioUISelectable.SelectionState.Highlighted)
                 OnSelectionStateChanged(IModioUISelectable.SelectionState.Highlighted, false);
+        }
+
+        public void RefreshCurrentState()
+        {
+            if (_owner is null) return;
+            
+            OnSelectionStateChanged(_owner.State, true);
         }
     }
 }

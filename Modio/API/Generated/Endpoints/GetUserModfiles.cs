@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using Modio.API.SchemaDefinitions;
 using Modio.Errors;
+using Modio.Extensions;
 
 namespace Modio.API
 {
@@ -114,7 +115,7 @@ namespace Modio.API
                 /// <param name="condition"><see cref="Filtering"/></param>
                 public GetUserModfilesFilter DateAdded(long dateAdded, Filtering condition = Filtering.None)
                 {
-                    Parameters[$"date_added{condition.ClearText()}"] = dateAdded;
+                    Parameters[$"date_added{condition.ClearText()}"] = dateAdded.RoundTimestampToHour();
                     return this;
                 }
 
@@ -122,7 +123,7 @@ namespace Modio.API
                 /// <param name="condition"><see cref="Filtering"/></param>
                 public GetUserModfilesFilter DateAdded(ICollection<long> dateAdded, Filtering condition = Filtering.None)
                 {
-                    Parameters[$"date_added{condition.ClearText()}"] = dateAdded;
+                    Parameters[$"date_added{condition.ClearText()}"] = dateAdded.RoundTimestampsToHour();
                     return this;
                 }
                 
@@ -131,7 +132,7 @@ namespace Modio.API
                 /// <param name="condition"><see cref="Filtering"/></param>
                 public GetUserModfilesFilter DateScanned(long dateScanned, Filtering condition = Filtering.None)
                 {
-                    Parameters[$"date_scanned{condition.ClearText()}"] = dateScanned;
+                    Parameters[$"date_scanned{condition.ClearText()}"] = dateScanned.RoundTimestampToHour();
                     return this;
                 }
 
@@ -139,7 +140,7 @@ namespace Modio.API
                 /// <param name="condition"><see cref="Filtering"/></param>
                 public GetUserModfilesFilter DateScanned(ICollection<long> dateScanned, Filtering condition = Filtering.None)
                 {
-                    Parameters[$"date_scanned{condition.ClearText()}"] = dateScanned;
+                    Parameters[$"date_scanned{condition.ClearText()}"] = dateScanned.RoundTimestampsToHour();
                     return this;
                 }
                 

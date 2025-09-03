@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 7889013622706200080}
   - component: {fileID: 7017175965404399494}
   - component: {fileID: 2223504206110804702}
+  - component: {fileID: 7056070146552280616}
   m_Layer: 5
   m_Name: Background
   m_TagString: Untagged
@@ -97,6 +98,22 @@ MonoBehaviour:
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
+--- !u!114 &7056070146552280616
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 165953862837596682}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e990c13f9f24324a4a5a1d8cb151528, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _styleTarget: 400
+  _targetComponents:
+  - Component: {fileID: 7017175965404399494}
+    Option: 4
 --- !u!1 &203430777040778622
 GameObject:
   m_ObjectHideFlags: 0
@@ -183,11 +200,13 @@ MonoBehaviour:
     version: 2
     RefIds:
     - rid: 0
-      type: {class: ModPropertyName, ns: Modio.Unity.UI.Components.ModProperties, asm: Modio.Unity.UI}
+      type: {class: ModPropertyName, ns: Modio.Unity.UI.Components.ModProperties,
+        asm: Modio.Unity.UI}
       data:
         _text: {fileID: 413171403248016775}
     - rid: 1
-      type: {class: ModPropertyPrice, ns: Modio.Unity.UI.Components.ModProperties, asm: Modio.Unity.UI}
+      type: {class: ModPropertyPrice, ns: Modio.Unity.UI.Components.ModProperties,
+        asm: Modio.Unity.UI}
       data:
         _text: {fileID: 3372110050513452359}
         _format: 1
@@ -523,7 +542,8 @@ MonoBehaviour:
     version: 2
     RefIds:
     - rid: 0
-      type: {class: ModPropertyLogo, ns: Modio.Unity.UI.Components.ModProperties, asm: Modio.Unity.UI}
+      type: {class: ModPropertyLogo, ns: Modio.Unity.UI.Components.ModProperties,
+        asm: Modio.Unity.UI}
       data:
         _image: {fileID: 7842755930582237433}
         _resolution: 0
@@ -737,7 +757,8 @@ MonoBehaviour:
         _invertProgressFill: 0
         _downloadSpeed: {fileID: 0}
     - rid: 2
-      type: {class: ModPropertyEnabled, ns: Modio.Unity.UI.Components.ModProperties, asm: Modio.Unity.UI}
+      type: {class: ModPropertyEnabled, ns: Modio.Unity.UI.Components.ModProperties,
+        asm: Modio.Unity.UI}
       data:
         _enabledToggle: {fileID: 3640108189717895019}
         _enableButton: {fileID: 0}
@@ -1001,6 +1022,7 @@ GameObject:
   - component: {fileID: 3805366264382977323}
   - component: {fileID: 3805366264382977322}
   - component: {fileID: 3805366264382977317}
+  - component: {fileID: 3636560241134368877}
   m_Layer: 5
   m_Name: ButtonBackground
   m_TagString: Untagged
@@ -1086,6 +1108,22 @@ MonoBehaviour:
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
+--- !u!114 &3636560241134368877
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3805366264382977318}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e990c13f9f24324a4a5a1d8cb151528, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _styleTarget: 400
+  _targetComponents:
+  - Component: {fileID: 3805366264382977322}
+    Option: 0
 --- !u!1 &3969342374308282917
 GameObject:
   m_ObjectHideFlags: 0
@@ -1098,6 +1136,7 @@ GameObject:
   - component: {fileID: 3268912598202822892}
   - component: {fileID: 8426302410127678791}
   - component: {fileID: 1006191180756082678}
+  - component: {fileID: 1938329393501936750}
   m_Layer: 5
   m_Name: Text (Downloads)
   m_TagString: Untagged
@@ -1239,6 +1278,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_HorizontalFit: 2
   m_VerticalFit: 0
+--- !u!114 &1938329393501936750
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3969342374308282917}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e990c13f9f24324a4a5a1d8cb151528, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _styleTarget: 303
+  _targetComponents:
+  - Component: {fileID: 8426302410127678791}
+    Option: 11
 --- !u!1 &4441799423207590048
 GameObject:
   m_ObjectHideFlags: 0
@@ -1738,6 +1793,7 @@ GameObject:
   - component: {fileID: 7508299624215625638}
   - component: {fileID: 2063118680426002577}
   - component: {fileID: 3655287536601028187}
+  - component: {fileID: 8470450722213566372}
   m_Layer: 5
   m_Name: ButtonBackground
   m_TagString: Untagged
@@ -1885,6 +1941,24 @@ MonoBehaviour:
           m_DisabledColor: {r: 1, g: 1, b: 1, a: 0.5019608}
           m_ColorMultiplier: 1
           m_FadeDuration: 0.1
+--- !u!114 &8470450722213566372
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5975216534571484303}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e990c13f9f24324a4a5a1d8cb151528, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _styleTarget: 110
+  _targetComponents:
+  - Component: {fileID: 2063118680426002577}
+    Option: 0
+  - Component: {fileID: 3655287536601028187}
+    Option: 0
 --- !u!1 &5982258085119644181
 GameObject:
   m_ObjectHideFlags: 0
@@ -2250,6 +2324,7 @@ GameObject:
   - component: {fileID: 4765691948456672989}
   - component: {fileID: 7303749331942273312}
   - component: {fileID: 6403149562143266481}
+  - component: {fileID: 513551339648118127}
   m_Layer: 5
   m_Name: Text (RatingsPositive)
   m_TagString: Untagged
@@ -2389,6 +2464,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_HorizontalFit: 2
   m_VerticalFit: 0
+--- !u!114 &513551339648118127
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6562461123855132477}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e990c13f9f24324a4a5a1d8cb151528, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _styleTarget: 303
+  _targetComponents:
+  - Component: {fileID: 7303749331942273312}
+    Option: 11
 --- !u!1 &6599154280875037819
 GameObject:
   m_ObjectHideFlags: 0
@@ -2759,6 +2850,7 @@ GameObject:
   - component: {fileID: 9028441255753874946}
   - component: {fileID: 9213631837630339079}
   - component: {fileID: 86454834868080719}
+  - component: {fileID: 8907832513008298205}
   m_Layer: 5
   m_Name: Icon
   m_TagString: Untagged
@@ -2886,6 +2978,24 @@ MonoBehaviour:
           m_DisabledColor: {r: 0.23921569, g: 0.26666668, b: 0.29411766, a: 0.39215687}
           m_ColorMultiplier: 1
           m_FadeDuration: 0.1
+--- !u!114 &8907832513008298205
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7390298022864302640}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e990c13f9f24324a4a5a1d8cb151528, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _styleTarget: 110
+  _targetComponents:
+  - Component: {fileID: 9213631837630339079}
+    Option: 3
+  - Component: {fileID: 86454834868080719}
+    Option: 3
 --- !u!1 &7654096202968089127
 GameObject:
   m_ObjectHideFlags: 0
@@ -2898,6 +3008,7 @@ GameObject:
   - component: {fileID: 5150336960484137575}
   - component: {fileID: 6652314087642758181}
   - component: {fileID: 7931403556372287638}
+  - component: {fileID: 6384533734837237496}
   m_Layer: 5
   m_Name: Text (Filesize)
   m_TagString: Untagged
@@ -3037,6 +3148,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_HorizontalFit: 2
   m_VerticalFit: 0
+--- !u!114 &6384533734837237496
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7654096202968089127}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e990c13f9f24324a4a5a1d8cb151528, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _styleTarget: 303
+  _targetComponents:
+  - Component: {fileID: 6652314087642758181}
+    Option: 11
 --- !u!1 &7999377513292493409
 GameObject:
   m_ObjectHideFlags: 0
@@ -3111,7 +3238,8 @@ MonoBehaviour:
         _invertProgressFill: 0
         _downloadSpeed: {fileID: 0}
     - rid: 1
-      type: {class: ModPropertyPrice, ns: Modio.Unity.UI.Components.ModProperties, asm: Modio.Unity.UI}
+      type: {class: ModPropertyPrice, ns: Modio.Unity.UI.Components.ModProperties,
+        asm: Modio.Unity.UI}
       data:
         _text: {fileID: 0}
         _format: 1
@@ -3366,19 +3494,22 @@ MonoBehaviour:
     version: 2
     RefIds:
     - rid: 0
-      type: {class: ModPropertyFileSize, ns: Modio.Unity.UI.Components.ModProperties, asm: Modio.Unity.UI}
+      type: {class: ModPropertyFileSize, ns: Modio.Unity.UI.Components.ModProperties,
+        asm: Modio.Unity.UI}
       data:
         _text: {fileID: 6652314087642758181}
         _format: 2
         _customFormat: 
     - rid: 1
-      type: {class: ModPropertyDownloads, ns: Modio.Unity.UI.Components.ModProperties, asm: Modio.Unity.UI}
+      type: {class: ModPropertyDownloads, ns: Modio.Unity.UI.Components.ModProperties,
+        asm: Modio.Unity.UI}
       data:
         _text: {fileID: 8426302410127678791}
         _format: 2
         _customFormat: 
     - rid: 6626630414196539392
-      type: {class: ModPropertyRating, ns: Modio.Unity.UI.Components.ModProperties, asm: Modio.Unity.UI}
+      type: {class: ModPropertyRating, ns: Modio.Unity.UI.Components.ModProperties,
+        asm: Modio.Unity.UI}
       data:
         _text: {fileID: 7303749331942273312}
         _format: '{0}%'
@@ -3453,6 +3584,7 @@ GameObject:
   - component: {fileID: 264871144638568493}
   - component: {fileID: 7529673500407538570}
   - component: {fileID: 8189567333751665072}
+  - component: {fileID: 7513115102117714333}
   m_Layer: 5
   m_Name: ButtonOutline
   m_TagString: Untagged
@@ -3600,6 +3732,24 @@ MonoBehaviour:
           m_DisabledColor: {r: 0.027450982, g: 0.7568628, b: 0.8470589, a: 0}
           m_ColorMultiplier: 1
           m_FadeDuration: 0.1
+--- !u!114 &7513115102117714333
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8767423794942725715}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e990c13f9f24324a4a5a1d8cb151528, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _styleTarget: 400
+  _targetComponents:
+  - Component: {fileID: 7529673500407538570}
+    Option: 4
+  - Component: {fileID: 8189567333751665072}
+    Option: 4
 --- !u!1 &8779459962790431883
 GameObject:
   m_ObjectHideFlags: 0
@@ -3841,6 +3991,7 @@ GameObject:
   - component: {fileID: 1936087083525686382}
   - component: {fileID: 8856613617063135049}
   - component: {fileID: 7331415791425926460}
+  - component: {fileID: 3232846530224914666}
   m_Layer: 5
   m_Name: Background
   m_TagString: Untagged
@@ -3926,6 +4077,22 @@ MonoBehaviour:
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
+--- !u!114 &3232846530224914666
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9026838627230855581}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e990c13f9f24324a4a5a1d8cb151528, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _styleTarget: 400
+  _targetComponents:
+  - Component: {fileID: 8856613617063135049}
+    Option: 4
 --- !u!1 &9090756356346267031
 GameObject:
   m_ObjectHideFlags: 0
@@ -4311,6 +4478,16 @@ PrefabInstance:
         type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5681405893648574736, guid: 00396c498781f3f41bf79b53668e5349,
+        type: 3}
+      propertyPath: _targetComponents.Array.data[0].Option
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 5681405893648574736, guid: 00396c498781f3f41bf79b53668e5349,
+        type: 3}
+      propertyPath: _targetComponents.Array.data[2].Option
+      value: 12
       objectReference: {fileID: 0}
     - target: {fileID: 5756642250720423447, guid: 00396c498781f3f41bf79b53668e5349,
         type: 3}
@@ -4778,6 +4955,16 @@ PrefabInstance:
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5681405893648574736, guid: 00396c498781f3f41bf79b53668e5349,
+        type: 3}
+      propertyPath: _styleTarget
+      value: 400
+      objectReference: {fileID: 0}
+    - target: {fileID: 5681405893648574736, guid: 00396c498781f3f41bf79b53668e5349,
+        type: 3}
+      propertyPath: _targetComponents.Array.data[2].Option
+      value: 10
+      objectReference: {fileID: 0}
     - target: {fileID: 5756642250720423447, guid: 00396c498781f3f41bf79b53668e5349,
         type: 3}
       propertyPath: m_Pivot.x
@@ -5136,6 +5323,21 @@ PrefabInstance:
         type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5681405893648574736, guid: 00396c498781f3f41bf79b53668e5349,
+        type: 3}
+      propertyPath: _targetComponents.Array.data[0].Option
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 5681405893648574736, guid: 00396c498781f3f41bf79b53668e5349,
+        type: 3}
+      propertyPath: _targetComponents.Array.data[1].Option
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 5681405893648574736, guid: 00396c498781f3f41bf79b53668e5349,
+        type: 3}
+      propertyPath: _targetComponents.Array.data[2].Option
+      value: 12
       objectReference: {fileID: 0}
     - target: {fileID: 5756642250720423447, guid: 00396c498781f3f41bf79b53668e5349,
         type: 3}
@@ -6084,6 +6286,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_PreferredHeight
       value: -1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7388087578725291873, guid: d7c3d3f59838ab6459042d9399d6de86,
+        type: 3}
+      propertyPath: _targetComponents.Array.data[0].Option
+      value: 8
       objectReference: {fileID: 0}
     - target: {fileID: 9210771163027777667, guid: d7c3d3f59838ab6459042d9399d6de86,
         type: 3}
