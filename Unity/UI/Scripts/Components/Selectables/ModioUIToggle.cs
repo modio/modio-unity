@@ -22,6 +22,9 @@ namespace Modio.Unity.UI.Components.Selectables
             State = (IModioUISelectable.SelectionState)state;
             StateChanged?.Invoke(State, instant);
         }
+        
+        public void DoVisualOnlyStateTransition(IModioUISelectable.SelectionState state, bool instant)
+            => DoStateTransition((SelectionState)state, instant);
 
         public void FakeClicked()
         {

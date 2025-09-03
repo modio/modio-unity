@@ -50,6 +50,7 @@ namespace Modio.Unity.UI.Panels
 
         public void AddLabel(string text)
         {
+            if(_labelPrefab == null) return;
             TMP_Text label = Instantiate(_labelPrefab, _labelPrefab.transform.parent, false);
             label.gameObject.SetActive(true);
             label.text = text;
@@ -103,6 +104,8 @@ namespace Modio.Unity.UI.Panels
                     MethodInfo[] allMethods = type.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
                     PropertyInfo[] allProperties = type.GetProperties(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
 
+                    bool hasDoneTypeLabel = false;
+                    
                     foreach (MethodInfo methodInfo in allMethods)
                     {
                         var attribute = methodInfo.GetCustomAttribute<T>();
@@ -116,7 +119,13 @@ namespace Modio.Unity.UI.Panels
                             continue;
                         }
 
-                        AddButton(Nicify($"{type.Name}: {methodInfo.Name}"), () => methodInfo.Invoke(null, null));
+                        if (!hasDoneTypeLabel)
+                        {
+                            AddLabel(type.Name);
+                            hasDoneTypeLabel = true;
+                        }
+
+                        AddButton(Nicify($"{methodInfo.Name}"), () => methodInfo.Invoke(null, null));
                     }
 
                     foreach (var propertyInfo in allProperties)
@@ -124,17 +133,23 @@ namespace Modio.Unity.UI.Panels
                         var attribute = propertyInfo.GetCustomAttribute<T>();
                         if (attribute == null || (predicate != null && !predicate(attribute))) continue;
 
-                        string propertyName = Nicify($"{type.Name}: {propertyInfo.Name}");
+                        if (!hasDoneTypeLabel)
+                        {
+                            AddLabel(type.Name);
+                            hasDoneTypeLabel = true;
+                        }
+                        
+                        string propertyName = Nicify($"{propertyInfo.Name}");
                         if (propertyInfo.PropertyType == typeof(bool))
                             AddToggle(propertyName, 
                                                     () => (bool)propertyInfo.GetValue(null),
                                                     b => propertyInfo.SetValue(null, b));
                         
-                        if (propertyInfo.PropertyType == typeof(string))
+                        else if (propertyInfo.PropertyType == typeof(string))
                             HookUpField(o => (string)o, s => s);
-                        if (propertyInfo.PropertyType == typeof(int))
+                        else if (propertyInfo.PropertyType == typeof(int))
                             HookUpField(o => o.ToString(), s => int.Parse(s));
-                        if (propertyInfo.PropertyType == typeof(long))
+                        else if (propertyInfo.PropertyType == typeof(long))
                             HookUpField(o => o.ToString(), s => long.Parse(s));
                         else
                             Debug.LogWarning($"{nameof(ModioDebugMenu)} hit property of unhandled type {propertyInfo.PropertyType}");

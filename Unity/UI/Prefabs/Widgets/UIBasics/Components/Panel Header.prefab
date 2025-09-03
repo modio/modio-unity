@@ -28,6 +28,7 @@ RectTransform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 5257946789813709087}
   - {fileID: 7739609673474246889}
@@ -85,6 +86,7 @@ GameObject:
   - component: {fileID: 7739609673474246889}
   - component: {fileID: 6391591142968731204}
   - component: {fileID: 7280013312620452480}
+  - component: {fileID: 1672661498835019442}
   m_Layer: 5
   m_Name: Text (TMP)
   m_TagString: Untagged
@@ -102,6 +104,7 @@ RectTransform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 6036581304000938901}
   m_RootOrder: 1
@@ -209,6 +212,22 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!114 &1672661498835019442
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3819406694574722520}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e990c13f9f24324a4a5a1d8cb151528, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _styleTarget: 200
+  _targetComponents:
+  - Component: {fileID: 7280013312620452480}
+    Option: 12
 --- !u!1 &5475604764301873875
 GameObject:
   m_ObjectHideFlags: 0
@@ -220,6 +239,7 @@ GameObject:
   - component: {fileID: 5257946789813709087}
   - component: {fileID: 9156093108922355664}
   - component: {fileID: 1219687814048266249}
+  - component: {fileID: 5220275654296863610}
   m_Layer: 5
   m_Name: Background
   m_TagString: Untagged
@@ -237,6 +257,7 @@ RectTransform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 6036581304000938901}
   m_RootOrder: 0
@@ -284,3 +305,19 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &5220275654296863610
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5475604764301873875}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e990c13f9f24324a4a5a1d8cb151528, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _styleTarget: 200
+  _targetComponents:
+  - Component: {fileID: 1219687814048266249}
+    Option: 1

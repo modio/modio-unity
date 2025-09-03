@@ -30,6 +30,7 @@ RectTransform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3657931337634003915}
   m_RootOrder: 1
@@ -91,10 +92,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _toggleFilter: 2
   _transitions:
-  - id: 0
+  - rid: 0
   references:
-    version: 1
-    00000000:
+    version: 2
+    RefIds:
+    - rid: 0
       type: {class: SelectableTransitionColorTint, ns: Modio.Unity.UI.Components.Selectables.Transitions,
         asm: Modio.Unity.UI}
       data:
@@ -121,10 +123,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _toggleFilter: 1
   _transitions:
-  - id: 0
+  - rid: 0
   references:
-    version: 1
-    00000000:
+    version: 2
+    RefIds:
+    - rid: 0
       type: {class: SelectableTransitionColorTint, ns: Modio.Unity.UI.Components.Selectables.Transitions,
         asm: Modio.Unity.UI}
       data:
@@ -163,6 +166,7 @@ RectTransform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 5564991448887925360}
   - {fileID: 194026426764177545}
@@ -187,6 +191,7 @@ GameObject:
   - component: {fileID: 3909223970931643804}
   - component: {fileID: 3741676091707724963}
   - component: {fileID: 4166996205122205160}
+  - component: {fileID: 1273520397222505373}
   m_Layer: 5
   m_Name: ToggleBackground
   m_TagString: Untagged
@@ -204,6 +209,7 @@ RectTransform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3657931337634003915}
   m_RootOrder: 0
@@ -265,10 +271,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _toggleFilter: 2
   _transitions:
-  - id: 0
+  - rid: 0
   references:
-    version: 1
-    00000000:
+    version: 2
+    RefIds:
+    - rid: 0
       type: {class: SelectableTransitionColorTint, ns: Modio.Unity.UI.Components.Selectables.Transitions,
         asm: Modio.Unity.UI}
       data:
@@ -295,10 +302,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _toggleFilter: 1
   _transitions:
-  - id: 0
+  - rid: 0
   references:
-    version: 1
-    00000000:
+    version: 2
+    RefIds:
+    - rid: 0
       type: {class: SelectableTransitionColorTint, ns: Modio.Unity.UI.Components.Selectables.Transitions,
         asm: Modio.Unity.UI}
       data:
@@ -311,3 +319,21 @@ MonoBehaviour:
           m_DisabledColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 0.49019608}
           m_ColorMultiplier: 1
           m_FadeDuration: 0.1
+--- !u!114 &1273520397222505373
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9060388081018005919}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e990c13f9f24324a4a5a1d8cb151528, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _styleTarget: 300
+  _targetComponents:
+  - Component: {fileID: 3741676091707724963}
+    Option: 3
+  - Component: {fileID: 4166996205122205160}
+    Option: 3

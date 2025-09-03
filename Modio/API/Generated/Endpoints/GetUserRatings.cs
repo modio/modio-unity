@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using Modio.API.SchemaDefinitions;
 using Modio.Errors;
+using Modio.Extensions;
 
 namespace Modio.API
 {
@@ -125,7 +126,7 @@ namespace Modio.API
                 /// <param name="condition"><see cref="Filtering"/></param>
                 public GetUserRatingsFilter DateAdded(long dateAdded, Filtering condition = Filtering.None)
                 {
-                    Parameters[$"date_added{condition.ClearText()}"] = dateAdded;
+                    Parameters[$"date_added{condition.ClearText()}"] = dateAdded.RoundTimestampToHour();
                     return this;
                 }
 
@@ -133,7 +134,7 @@ namespace Modio.API
                 /// <param name="condition"><see cref="Filtering"/></param>
                 public GetUserRatingsFilter DateAdded(ICollection<long> dateAdded, Filtering condition = Filtering.None)
                 {
-                    Parameters[$"date_added{condition.ClearText()}"] = dateAdded;
+                    Parameters[$"date_added{condition.ClearText()}"] = dateAdded.RoundTimestampsToHour();
                     return this;
                 }
                 

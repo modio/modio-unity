@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 14926200375744663}
   - component: {fileID: 6080265789559248753}
   - component: {fileID: 6606787411256989216}
+  - component: {fileID: 7075233671450711501}
   m_Layer: 5
   m_Name: Image (On)
   m_TagString: Untagged
@@ -28,6 +29,7 @@ RectTransform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 8458766848358549220}
   m_RootOrder: 0
@@ -75,6 +77,22 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &7075233671450711501
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 172707002396547204}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e990c13f9f24324a4a5a1d8cb151528, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _styleTarget: 400
+  _targetComponents:
+  - Component: {fileID: 6606787411256989216}
+    Option: 4
 --- !u!1 &907463613121068705
 GameObject:
   m_ObjectHideFlags: 0
@@ -87,6 +105,7 @@ GameObject:
   - component: {fileID: 4991699199910100905}
   - component: {fileID: 4363992401676640647}
   - component: {fileID: 9104638214001342620}
+  - component: {fileID: 2591493468298603837}
   m_Layer: 5
   m_Name: DisabledText (TMP)
   m_TagString: Untagged
@@ -104,6 +123,7 @@ RectTransform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4271123801792952860}
   m_RootOrder: 1
@@ -226,6 +246,22 @@ MonoBehaviour:
   _key: modio_btn_disabled
   _tmpText: {fileID: 4363992401676640647}
   _splitFormatArgs: []
+--- !u!114 &2591493468298603837
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 907463613121068705}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e990c13f9f24324a4a5a1d8cb151528, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _styleTarget: 400
+  _targetComponents:
+  - Component: {fileID: 4363992401676640647}
+    Option: 11
 --- !u!1 &2060649078926412904
 GameObject:
   m_ObjectHideFlags: 0
@@ -255,6 +291,7 @@ RectTransform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 14926200375744663}
   - {fileID: 4271123801792952860}
@@ -288,12 +325,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _toggleFilter: 2
   _transitions:
-  - id: 0
-  - id: 1
-  - id: 2
+  - rid: 0
+  - rid: 1
+  - rid: 2
   references:
-    version: 1
-    00000000:
+    version: 2
+    RefIds:
+    - rid: 0
       type: {class: SelectableTransitionColorTint, ns: Modio.Unity.UI.Components.Selectables.Transitions,
         asm: Modio.Unity.UI}
       data:
@@ -306,7 +344,7 @@ MonoBehaviour:
           m_DisabledColor: {r: 0, g: 0, b: 0, a: 0}
           m_ColorMultiplier: 1
           m_FadeDuration: 0.1
-    00000001:
+    - rid: 1
       type: {class: SelectableTransitionActive, ns: Modio.Unity.UI.Components.Selectables.Transitions,
         asm: Modio.Unity.UI}
       data:
@@ -316,7 +354,7 @@ MonoBehaviour:
         _pressed: 1
         _selected: 1
         _disabled: 1
-    00000002:
+    - rid: 2
       type: {class: SelectableTransitionActive, ns: Modio.Unity.UI.Components.Selectables.Transitions,
         asm: Modio.Unity.UI}
       data:
@@ -340,12 +378,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _toggleFilter: 1
   _transitions:
-  - id: 0
-  - id: 1
-  - id: 2
+  - rid: 0
+  - rid: 1
+  - rid: 2
   references:
-    version: 1
-    00000000:
+    version: 2
+    RefIds:
+    - rid: 0
       type: {class: SelectableTransitionColorTint, ns: Modio.Unity.UI.Components.Selectables.Transitions,
         asm: Modio.Unity.UI}
       data:
@@ -358,7 +397,7 @@ MonoBehaviour:
           m_DisabledColor: {r: 0, g: 0, b: 0, a: 0}
           m_ColorMultiplier: 1
           m_FadeDuration: 0.1
-    00000001:
+    - rid: 1
       type: {class: SelectableTransitionActive, ns: Modio.Unity.UI.Components.Selectables.Transitions,
         asm: Modio.Unity.UI}
       data:
@@ -368,7 +407,7 @@ MonoBehaviour:
         _pressed: 0
         _selected: 0
         _disabled: 0
-    00000002:
+    - rid: 2
       type: {class: SelectableTransitionActive, ns: Modio.Unity.UI.Components.Selectables.Transitions,
         asm: Modio.Unity.UI}
       data:
@@ -406,6 +445,7 @@ RectTransform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 8127385001640032220}
   - {fileID: 6709573765027709623}
@@ -486,6 +526,7 @@ RectTransform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4271123801792952860}
   m_RootOrder: 0
@@ -580,6 +621,7 @@ RectTransform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 8458766848358549220}
   m_Father: {fileID: 0}

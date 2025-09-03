@@ -6,6 +6,8 @@ namespace Modio
     [Serializable]
     public class ModioSettings
     {
+        public static event Action<ModioSettings> OnSettingsUpdated;
+        
         public long GameId;
         public string APIKey;
         public string ServerURL;
@@ -48,5 +50,7 @@ namespace Modio
         }
 
         public ModioSettings ShallowClone() => MemberwiseClone() as ModioSettings;
+
+        public void InvokeOnChanged() => OnSettingsUpdated?.Invoke(this);
     }
 }

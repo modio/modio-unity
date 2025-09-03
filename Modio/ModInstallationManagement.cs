@@ -10,6 +10,7 @@ using Modio.Caching;
 using Modio.Errors;
 using Modio.Mods;
 using Modio.Collections;
+using Modio.Extensions;
 using Modio.Settings;
 using Modio.Users;
 
@@ -248,6 +249,9 @@ namespace Modio
             {
                 while (ModioClient.IsInitialized || ModioClient.IsCurrentlyInitializing)
                 {
+                    //catch a rare edge case when doing a shutdown/init
+                    if(_index == null) break;
+                    
                     await EnqueueJobs();
 
                     if (_index.IsDirty)
@@ -399,6 +403,33 @@ namespace Modio
             }
         }
 
+        [ModioDebugMenu(ShowInSettingsMenu = false)]
+        static string TempMods { get; set; }
+        [ModioDebugMenu(ShowInSettingsMenu = false)]
+        static bool TempModsAppendCurrentSession { get; set; }
+
+        [ModioDebugMenu(ShowInSettingsMenu = false)]
+        static void StartTempModSession()
+        {
+            List<ModId> modIds = TempMods?.Split(',').Select(s =>
+            {
+                if (long.TryParse(s.Trim(), out long modId))
+                    return new ModId(modId);
+
+                ModioLog.Error?.Log($"Couldn't parse {s} to a modId. Please use comma separated ID numbers");
+                return default(ModId);
+            }).ToList();
+
+            if (modIds == null || modIds.Count == 0)
+            {
+                ModioLog.Error?.Log($"Couldn't parse modIds. Please use comma separated ID numbers");
+                return;
+            }
+            
+            StartTempModSession(modIds, TempModsAppendCurrentSession).ForgetTaskSafely();
+        }
+
+        
         /// <summary>
         /// Will start a temporary mod session.
         /// </summary>
@@ -429,6 +460,7 @@ namespace Modio
         /// <summary>
         /// Will end the current temp mod session started by <see cref="StartTempModSession"/>
         /// </summary>
+        [ModioDebugMenu(ShowInSettingsMenu = false)]
         public static void EndCurrentTempModSession()
         {
             _currentSessionMods.Clear();

@@ -11,6 +11,12 @@ namespace Modio.Unity.UI.Components.Selectables.Transitions
         [SerializeField] Graphic _target;
         [SerializeField] ColorBlock _colorBlock = ColorBlock.defaultColorBlock;
         Coroutine _coroutine;
+        
+        public ColorBlock ColorBlock
+        {
+            get => _colorBlock;
+            set => _colorBlock = value;
+        }
 
         public void OnSelectionStateChanged(IModioUISelectable.SelectionState state, bool instant)
         {
@@ -52,4 +58,5 @@ namespace Modio.Unity.UI.Components.Selectables.Transitions
             _coroutine = null;
         }
     }
+
 }

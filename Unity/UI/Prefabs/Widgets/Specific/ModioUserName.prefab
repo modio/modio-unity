@@ -27,6 +27,7 @@ RectTransform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 628106395735661840}
   m_RootOrder: 4
@@ -83,6 +84,7 @@ RectTransform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 628106395735661840}
   m_RootOrder: 1
@@ -141,6 +143,7 @@ RectTransform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 7382594518086731278}
   - {fileID: 4757468476570911506}
@@ -187,18 +190,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _properties:
-  - id: 0
-  - id: 1
+  - rid: 0
+  - rid: 1
   references:
-    version: 1
-    00000000:
-      type: {class: UserPropertyName, ns: Modio.Unity.UI.Components.UserProperties, asm: Modio.Unity.UI}
+    version: 2
+    RefIds:
+    - rid: 0
+      type: {class: UserPropertyName, ns: Modio.Unity.UI.Components.UserProperties,
+        asm: Modio.Unity.UI}
       data:
         _text: {fileID: 0}
         _localisedText: {fileID: 1054081675481627600}
         _userLoggedInFormat: BY {0}
         _noUserLoggedIn: 
-    00000001:
+    - rid: 1
       type: {class: UserPropertyPlatformName, ns: Modio.Unity.UI.Components.UserProperties,
         asm: Modio.Unity.UI}
       data:
@@ -266,12 +271,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3345754084887186727, guid: 00396c498781f3f41bf79b53668e5349,
         type: 3}
-      propertyPath: m_fontAsset
-      value: 
-      objectReference: {fileID: 11400000, guid: 238b5e92e52b395458d09c295d5bc30c,
-        type: 2}
-    - target: {fileID: 3345754084887186727, guid: 00396c498781f3f41bf79b53668e5349,
-        type: 3}
       propertyPath: m_fontStyle
       value: 0
       objectReference: {fileID: 0}
@@ -282,19 +281,8 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3345754084887186727, guid: 00396c498781f3f41bf79b53668e5349,
         type: 3}
-      propertyPath: m_sharedMaterial
-      value: 
-      objectReference: {fileID: 2702232400126733190, guid: 238b5e92e52b395458d09c295d5bc30c,
-        type: 2}
-    - target: {fileID: 3345754084887186727, guid: 00396c498781f3f41bf79b53668e5349,
-        type: 3}
       propertyPath: m_characterSpacing
       value: -2
-      objectReference: {fileID: 0}
-    - target: {fileID: 3345754084887186727, guid: 00396c498781f3f41bf79b53668e5349,
-        type: 3}
-      propertyPath: m_VerticalAlignment
-      value: 4096
       objectReference: {fileID: 0}
     - target: {fileID: 3345754084887186727, guid: 00396c498781f3f41bf79b53668e5349,
         type: 3}
@@ -408,12 +396,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 00396c498781f3f41bf79b53668e5349, type: 3}
---- !u!224 &6270534928041299317 stripped
-RectTransform:
-  m_CorrespondingSourceObject: {fileID: 5756642250720423447, guid: 00396c498781f3f41bf79b53668e5349,
-    type: 3}
-  m_PrefabInstance: {fileID: 1794361108596188002}
-  m_PrefabAsset: {fileID: 0}
 --- !u!114 &3929487942118387269 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 3345754084887186727, guid: 00396c498781f3f41bf79b53668e5349,
@@ -426,6 +408,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!224 &6270534928041299317 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 5756642250720423447, guid: 00396c498781f3f41bf79b53668e5349,
+    type: 3}
+  m_PrefabInstance: {fileID: 1794361108596188002}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &2997019357260572697
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -460,30 +448,8 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3345754084887186727, guid: 00396c498781f3f41bf79b53668e5349,
         type: 3}
-      propertyPath: m_fontAsset
-      value: 
-      objectReference: {fileID: 11400000, guid: 238b5e92e52b395458d09c295d5bc30c,
-        type: 2}
-    - target: {fileID: 3345754084887186727, guid: 00396c498781f3f41bf79b53668e5349,
-        type: 3}
-      propertyPath: m_fontStyle
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3345754084887186727, guid: 00396c498781f3f41bf79b53668e5349,
-        type: 3}
-      propertyPath: m_sharedMaterial
-      value: 
-      objectReference: {fileID: 2702232400126733190, guid: 238b5e92e52b395458d09c295d5bc30c,
-        type: 2}
-    - target: {fileID: 3345754084887186727, guid: 00396c498781f3f41bf79b53668e5349,
-        type: 3}
       propertyPath: m_characterSpacing
       value: -2
-      objectReference: {fileID: 0}
-    - target: {fileID: 3345754084887186727, guid: 00396c498781f3f41bf79b53668e5349,
-        type: 3}
-      propertyPath: m_VerticalAlignment
-      value: 4096
       objectReference: {fileID: 0}
     - target: {fileID: 3345754084887186727, guid: 00396c498781f3f41bf79b53668e5349,
         type: 3}
@@ -597,12 +563,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 00396c498781f3f41bf79b53668e5349, type: 3}
---- !u!224 &7382594518086731278 stripped
-RectTransform:
-  m_CorrespondingSourceObject: {fileID: 5756642250720423447, guid: 00396c498781f3f41bf79b53668e5349,
-    type: 3}
-  m_PrefabInstance: {fileID: 2997019357260572697}
-  m_PrefabAsset: {fileID: 0}
 --- !u!114 &574504329906431294 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 3345754084887186727, guid: 00396c498781f3f41bf79b53668e5349,
@@ -615,6 +575,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!224 &7382594518086731278 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 5756642250720423447, guid: 00396c498781f3f41bf79b53668e5349,
+    type: 3}
+  m_PrefabInstance: {fileID: 2997019357260572697}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &6862621430616048989
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -654,12 +620,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3345754084887186727, guid: 00396c498781f3f41bf79b53668e5349,
         type: 3}
-      propertyPath: m_fontAsset
-      value: 
-      objectReference: {fileID: 11400000, guid: 238b5e92e52b395458d09c295d5bc30c,
-        type: 2}
-    - target: {fileID: 3345754084887186727, guid: 00396c498781f3f41bf79b53668e5349,
-        type: 3}
       propertyPath: m_fontStyle
       value: 0
       objectReference: {fileID: 0}
@@ -670,19 +630,8 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3345754084887186727, guid: 00396c498781f3f41bf79b53668e5349,
         type: 3}
-      propertyPath: m_sharedMaterial
-      value: 
-      objectReference: {fileID: 2702232400126733190, guid: 238b5e92e52b395458d09c295d5bc30c,
-        type: 2}
-    - target: {fileID: 3345754084887186727, guid: 00396c498781f3f41bf79b53668e5349,
-        type: 3}
       propertyPath: m_characterSpacing
       value: -2
-      objectReference: {fileID: 0}
-    - target: {fileID: 3345754084887186727, guid: 00396c498781f3f41bf79b53668e5349,
-        type: 3}
-      propertyPath: m_VerticalAlignment
-      value: 4096
       objectReference: {fileID: 0}
     - target: {fileID: 3345754084887186727, guid: 00396c498781f3f41bf79b53668e5349,
         type: 3}
@@ -936,11 +885,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4161437228510101601, guid: e1e8f8c15a85fb141ad83e0a6f5206c5,
-        type: 3}
-      propertyPath: _properties.Array.data[0]._testAsPlatform
-      value: 11
-      objectReference: {fileID: 0}
     - target: {fileID: 6784457081008180689, guid: e1e8f8c15a85fb141ad83e0a6f5206c5,
         type: 3}
       propertyPath: m_Enabled
@@ -948,15 +892,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e1e8f8c15a85fb141ad83e0a6f5206c5, type: 3}
---- !u!1 &6808803010503083810 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 2823761848046429121, guid: e1e8f8c15a85fb141ad83e0a6f5206c5,
-    type: 3}
-  m_PrefabInstance: {fileID: 8740851581970162915}
-  m_PrefabAsset: {fileID: 0}
 --- !u!224 &6808803010503083809 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 2823761848046429122, guid: e1e8f8c15a85fb141ad83e0a6f5206c5,
+    type: 3}
+  m_PrefabInstance: {fileID: 8740851581970162915}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &6808803010503083810 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2823761848046429121, guid: e1e8f8c15a85fb141ad83e0a6f5206c5,
     type: 3}
   m_PrefabInstance: {fileID: 8740851581970162915}
   m_PrefabAsset: {fileID: 0}

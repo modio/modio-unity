@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using Modio.API.SchemaDefinitions;
 using Modio.Errors;
+using Modio.Extensions;
 
 namespace Modio.API
 {
@@ -181,7 +182,7 @@ namespace Modio.API
                 /// <param name="condition"><see cref="Filtering"/></param>
                 public GetModsFilter DateAdded(long dateAdded, Filtering condition = Filtering.None)
                 {
-                    Parameters[$"date_added{condition.ClearText()}"] = dateAdded;
+                    Parameters[$"date_added{condition.ClearText()}"] = dateAdded.RoundTimestampToHour();
                     return this;
                 }
 
@@ -189,16 +190,15 @@ namespace Modio.API
                 /// <param name="condition"><see cref="Filtering"/></param>
                 public GetModsFilter DateAdded(ICollection<long> dateAdded, Filtering condition = Filtering.None)
                 {
-                    Parameters[$"date_added{condition.ClearText()}"] = dateAdded;
+                    Parameters[$"date_added{condition.ClearText()}"] = dateAdded.RoundTimestampsToHour();
                     return this;
                 }
-                
 
                 /// <param name="dateUpdated">Unix timestamp of date mod was updated.</param>
                 /// <param name="condition"><see cref="Filtering"/></param>
                 public GetModsFilter DateUpdated(long dateUpdated, Filtering condition = Filtering.None)
                 {
-                    Parameters[$"date_updated{condition.ClearText()}"] = dateUpdated;
+                    Parameters[$"date_updated{condition.ClearText()}"] = dateUpdated.RoundTimestampToHour();
                     return this;
                 }
 
@@ -206,16 +206,15 @@ namespace Modio.API
                 /// <param name="condition"><see cref="Filtering"/></param>
                 public GetModsFilter DateUpdated(ICollection<long> dateUpdated, Filtering condition = Filtering.None)
                 {
-                    Parameters[$"date_updated{condition.ClearText()}"] = dateUpdated;
+                    Parameters[$"date_updated{condition.ClearText()}"] = dateUpdated.RoundTimestampsToHour();
                     return this;
                 }
-                
 
                 /// <param name="dateLive">Unix timestamp of date mod was set live.</param>
                 /// <param name="condition"><see cref="Filtering"/></param>
                 public GetModsFilter DateLive(long dateLive, Filtering condition = Filtering.None)
                 {
-                    Parameters[$"date_live{condition.ClearText()}"] = dateLive;
+                    Parameters[$"date_live{condition.ClearText()}"] = dateLive.RoundTimestampToHour();
                     return this;
                 }
 
@@ -223,10 +222,9 @@ namespace Modio.API
                 /// <param name="condition"><see cref="Filtering"/></param>
                 public GetModsFilter DateLive(ICollection<long> dateLive, Filtering condition = Filtering.None)
                 {
-                    Parameters[$"date_live{condition.ClearText()}"] = dateLive;
+                    Parameters[$"date_live{condition.ClearText()}"] = dateLive.RoundTimestampsToHour();
                     return this;
                 }
-                
 
                 /// <param name="communityOptions">Community features enabled for this mod:<br/><br/>__0__ = All the options below are disabled<br/>__1__ = Enable comments<br/>__64__ = Enable previews<br/>__128__ = Enable preview URLs<br/>__1024__ = Allow dependencies<br/>__?__ = Add the options you want together, to enable multiple options (see [BITWISE fields](#bitwise-and-bitwise-and))</param>
                 /// <param name="condition"><see cref="Filtering"/></param>
@@ -243,7 +241,6 @@ namespace Modio.API
                     Parameters[$"community_options{condition.ClearText()}"] = communityOptions;
                     return this;
                 }
-                
 
                 /// <param name="maturityOption">Maturity options set by the mod creator:<br/><br/>__0__ = None<br/>__1__ = Alcohol<br/>__2__ = Drugs<br/>__4__ = Violence<br/>__8__ = Explicit<br/>__?__ = Combine to find mods with multiple options enabled (see [BITWISE fields](#bitwise-and-bitwise-and))</param>
                 /// <param name="condition"><see cref="Filtering"/></param>
@@ -260,7 +257,6 @@ namespace Modio.API
                     Parameters[$"maturity_option{condition.ClearText()}"] = maturityOption;
                     return this;
                 }
-                
 
                 /// <param name="monetizationOptions">Monetization options enabled for this mod:<br/><br/>__0__ = Access to monetization features disabled<br/>__1__ = Access to monetization features enabled by the game for this mod<br/>__2__ = Marketplace enabled<br/>__8__ = Quantity of this mod is limited<br/>__?__ = Combine to find mods with multiple options enabled (see [BITWISE fields](#bitwise-and-bitwise-and))</param>
                 /// <param name="condition"><see cref="Filtering"/></param>
@@ -277,7 +273,6 @@ namespace Modio.API
                     Parameters[$"monetization_options{condition.ClearText()}"] = monetizationOptions;
                     return this;
                 }
-                
 
                 /// <param name="name">Name of the mod.</param>
                 /// <param name="condition"><see cref="Filtering"/></param>
@@ -294,7 +289,6 @@ namespace Modio.API
                     Parameters[$"name{condition.ClearText()}"] = name;
                     return this;
                 }
-                
 
                 /// <param name="nameId">Path for the mod on mod.io. For example: https://mod.io/g/gamename/m/__mod-name-id-here__</param>
                 /// <param name="condition"><see cref="Filtering"/></param>
@@ -311,7 +305,6 @@ namespace Modio.API
                     Parameters[$"name_id{condition.ClearText()}"] = nameId;
                     return this;
                 }
-                
 
                 /// <param name="modfile">Unique id of the file that is the current active release (see [mod files](#files)).</param>
                 /// <param name="condition"><see cref="Filtering"/></param>
@@ -328,7 +321,6 @@ namespace Modio.API
                     Parameters[$"modfile{condition.ClearText()}"] = modfile;
                     return this;
                 }
-                
 
                 /// <param name="metadataBlob">Metadata that is designed to be handled by the game client and is recommended to not be exposed to content creators when submitting their mods. As an example, this may include properties as to how the item works, or other information you need to display. Metadata can also be stored as searchable [key value pairs](#metadata), and to individual [mod files](#get-modfiles).</param>
                 /// <param name="condition"><see cref="Filtering"/></param>
@@ -345,7 +337,6 @@ namespace Modio.API
                     Parameters[$"metadata_blob{condition.ClearText()}"] = metadataBlob;
                     return this;
                 }
-                
 
                 /// <param name="metadataKvp">Colon-separated values representing the key-value pairs you want to filter the results by. If you supply more than one key-pair, separate the pairs by a comma. Will only filter by an exact key-pair match.</param>
                 /// <param name="condition"><see cref="Filtering"/></param>
@@ -362,7 +353,6 @@ namespace Modio.API
                     Parameters[$"metadata_kvp{condition.ClearText()}"] = metadataKvp;
                     return this;
                 }
-                
 
                 /// <param name="tags">Comma-separated values representing the tags you want to filter the results by. If you specify multiple tags, only mods which have all tags will be returned, and only tags that are supported by the parent game can be applied. To determine what tags are eligible, see the tags values within `tag_options` column on the parent [Game Object](#game-object). If you want to ensure mods returned do not contain particular tag(s), you can use the `tags-not-in` filter either independently or alongside this filter.</param>
                 /// <param name="condition"><see cref="Filtering"/></param>
@@ -379,7 +369,6 @@ namespace Modio.API
                     Parameters[$"tags{condition.ClearText()}"] = tags;
                     return this;
                 }
-                
 
                 /// <param name="platformStatus">If the parent game has enabled per-platform files, by default only mods with files which are approved and live for the [target platform](#targeting-a-platform) will be returned.<br/><br/>To QA mods with pending files, you can filter results by their current platform status, using `pending_only` or `live_and_pending`.<br/><br/>__NOTE:__ only game admins can filter by this field.</param>
                 /// <param name="condition"><see cref="Filtering"/></param>
@@ -396,7 +385,6 @@ namespace Modio.API
                     Parameters[$"platform_status{condition.ClearText()}"] = platformStatus;
                     return this;
                 }
-                
 
                 /// <param name="revenueType">Finds all mods with or without a price. Defaults to free. <br/><br/>__0__ = Free<br/>__1__ = Paid<br/>__2__ = Free and Paid</param>
                 /// <param name="condition"><see cref="Filtering"/></param>
@@ -413,7 +401,6 @@ namespace Modio.API
                     Parameters[$"revenue_type{condition.ClearText()}"] = revenueType;
                     return this;
                 }
-                
 
                 /// <param name="stock">Finds all mods that are in/out of stock. <br/><br/>__0__ = Sold Out<br/>__1__ = In Stock</param>
                 /// <param name="condition"><see cref="Filtering"/></param>
@@ -430,7 +417,6 @@ namespace Modio.API
                     Parameters[$"stock{condition.ClearText()}"] = stock;
                     return this;
                 }
-                
 
                 public GetModsFilter SortByStringType(string key, bool ascending = true)
                 {
@@ -439,7 +425,6 @@ namespace Modio.API
                 }
             }
 #endregion
-        
         }
     }
 }

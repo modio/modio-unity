@@ -28,6 +28,7 @@ RectTransform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2368953437380592601}
   m_Father: {fileID: 4774647037252785787}
@@ -87,6 +88,7 @@ GameObject:
   - component: {fileID: 8881018112724888618}
   - component: {fileID: 7151993889696087768}
   - component: {fileID: 8342484847141910746}
+  - component: {fileID: 7189183009938906959}
   m_Layer: 5
   m_Name: Text (Mod Name)
   m_TagString: Untagged
@@ -104,6 +106,7 @@ RectTransform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 7602448167726505768}
   m_RootOrder: 2
@@ -211,6 +214,22 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!114 &7189183009938906959
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 755477890820892804}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e990c13f9f24324a4a5a1d8cb151528, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _styleTarget: 1
+  _targetComponents:
+  - Component: {fileID: 8342484847141910746}
+    Option: 12
 --- !u!1 &995886838596093443
 GameObject:
   m_ObjectHideFlags: 0
@@ -238,6 +257,7 @@ RectTransform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 7602448167726505768}
   m_RootOrder: 3
@@ -297,6 +317,7 @@ RectTransform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1298556259990229894}
   m_Father: {fileID: 7602448167726505768}
@@ -355,11 +376,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _properties:
-  - id: 0
+  - rid: 0
   references:
-    version: 1
-    00000000:
-      type: {class: ModPropertyLogo, ns: Modio.Unity.UI.Components.ModProperties, asm: Modio.Unity.UI}
+    version: 2
+    RefIds:
+    - rid: 0
+      type: {class: ModPropertyLogo, ns: Modio.Unity.UI.Components.ModProperties,
+        asm: Modio.Unity.UI}
       data:
         _image: {fileID: 8848378302965594611}
         _resolution: 0
@@ -415,6 +438,7 @@ RectTransform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 8359921436769165445}
   - {fileID: 4774647037252785787}
@@ -491,29 +515,34 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _properties:
-  - id: 0
-  - id: 1
-  - id: 2
-  - id: 3
+  - rid: 0
+  - rid: 1
+  - rid: 2
+  - rid: 3
   references:
-    version: 1
-    00000000:
-      type: {class: ModPropertyName, ns: Modio.Unity.UI.Components.ModProperties, asm: Modio.Unity.UI}
+    version: 2
+    RefIds:
+    - rid: 0
+      type: {class: ModPropertyName, ns: Modio.Unity.UI.Components.ModProperties,
+        asm: Modio.Unity.UI}
       data:
         _text: {fileID: 8342484847141910746}
-    00000001:
-      type: {class: ModPropertyFileSize, ns: Modio.Unity.UI.Components.ModProperties, asm: Modio.Unity.UI}
+    - rid: 1
+      type: {class: ModPropertyFileSize, ns: Modio.Unity.UI.Components.ModProperties,
+        asm: Modio.Unity.UI}
       data:
         _text: {fileID: 8611355507606203534}
         _format: 2
         _customFormat: 
-    00000002:
-      type: {class: ModPropertySubscribed, ns: Modio.Unity.UI.Components.ModProperties, asm: Modio.Unity.UI}
+    - rid: 2
+      type: {class: ModPropertySubscribed, ns: Modio.Unity.UI.Components.ModProperties,
+        asm: Modio.Unity.UI}
       data:
         _notSubscribedActive: {fileID: 5859706139768981893}
         _subscribedActive: {fileID: 0}
-    00000003:
-      type: {class: ModPropertySubscribed, ns: Modio.Unity.UI.Components.ModProperties, asm: Modio.Unity.UI}
+    - rid: 3
+      type: {class: ModPropertySubscribed, ns: Modio.Unity.UI.Components.ModProperties,
+        asm: Modio.Unity.UI}
       data:
         _notSubscribedActive: {fileID: 0}
         _subscribedActive: {fileID: 2308083953872460856}
@@ -545,6 +574,7 @@ RectTransform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 5153552130527749285}
   - {fileID: 394227646678261728}
@@ -631,6 +661,7 @@ RectTransform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 7602448167726505768}
   m_RootOrder: 6
@@ -709,6 +740,7 @@ GameObject:
   - component: {fileID: 8511703385254598779}
   - component: {fileID: 5914824554880780686}
   - component: {fileID: 8611355507606203534}
+  - component: {fileID: 4458797552235728455}
   m_Layer: 5
   m_Name: Text (FileSize)
   m_TagString: Untagged
@@ -726,6 +758,7 @@ RectTransform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 7602448167726505768}
   m_RootOrder: 5
@@ -833,6 +866,22 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!114 &4458797552235728455
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5859706139768981893}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e990c13f9f24324a4a5a1d8cb151528, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _styleTarget: 1
+  _targetComponents:
+  - Component: {fileID: 8611355507606203534}
+    Option: 10
 --- !u!1 &5937019203230414933
 GameObject:
   m_ObjectHideFlags: 0
@@ -845,6 +894,7 @@ GameObject:
   - component: {fileID: 5677781191949644917}
   - component: {fileID: 3723261807488662825}
   - component: {fileID: 3694572562126350058}
+  - component: {fileID: 6364530820154647487}
   m_Layer: 5
   m_Name: Text (Installed)
   m_TagString: Untagged
@@ -862,6 +912,7 @@ RectTransform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4572241375739832487}
   m_RootOrder: 1
@@ -984,6 +1035,22 @@ MonoBehaviour:
   _key: modio_modstate_installed
   _tmpText: {fileID: 3723261807488662825}
   _splitFormatArgs: []
+--- !u!114 &6364530820154647487
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5937019203230414933}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e990c13f9f24324a4a5a1d8cb151528, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _styleTarget: 1
+  _targetComponents:
+  - Component: {fileID: 3723261807488662825}
+    Option: 10
 --- !u!1 &7761710599267868464
 GameObject:
   m_ObjectHideFlags: 0
@@ -1013,6 +1080,7 @@ RectTransform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1298556259990229894}
   m_RootOrder: 0
@@ -1110,6 +1178,7 @@ RectTransform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4572241375739832487}
   m_RootOrder: 0

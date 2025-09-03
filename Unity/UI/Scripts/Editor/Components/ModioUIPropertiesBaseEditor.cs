@@ -3,6 +3,7 @@ using Modio.Unity.UI.Components.ModProperties;
 using Modio.Unity.UI.Components.SearchProperties;
 using Modio.Unity.UI.Components.UserProperties;
 using Modio.Unity.UI.Editor.Common;
+using Modio.Unity.UI.Scripts.Themes;
 using UnityEditor;
 using UnityEditorInternal;
 

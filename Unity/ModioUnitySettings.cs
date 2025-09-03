@@ -4,9 +4,9 @@ using UnityEngine;
 
 namespace Modio.Unity
 {
-    [CreateAssetMenu(fileName = "config.asset", menuName = "ModIo/v3/config")]
+    [CreateAssetMenu(fileName = "config.asset", menuName = "Modio/v3/config")]
     public class ModioUnitySettings : ScriptableObject
-    {    
+    {
         public const string DefaultResourceName = "mod.io/v3_config";
         public const string DefaultResourceNameOverride = "mod.io/v3_config_local";
 
@@ -24,5 +24,7 @@ namespace Modio.Unity
                 return _settings;
             }
         }
+
+        public void InvokeOnChanged() => Settings.InvokeOnChanged();
     }
 }

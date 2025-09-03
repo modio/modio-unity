@@ -51,7 +51,7 @@ namespace Modio.Unity.UI.Editor.Common
                             continue;
 
                         rect.height = EditorGUI.GetPropertyHeight(property);
-                        EditorGUI.PropertyField(rect, property);
+                        EditorGUI.PropertyField(rect, property, true);
                         rect.y += rect.height + EditorGUIUtility.standardVerticalSpacing;
                     }
 

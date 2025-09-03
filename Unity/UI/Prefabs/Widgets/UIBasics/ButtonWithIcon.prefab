@@ -31,6 +31,7 @@ RectTransform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2831911097028279611}
   - {fileID: 2831911094925249264}
@@ -168,58 +169,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: ButtonText (TMP)
       objectReference: {fileID: 0}
-    - target: {fileID: 2191413758870393356, guid: 00396c498781f3f41bf79b53668e5349,
-        type: 3}
-      propertyPath: _transitions.Array.data[0]._colorBlock.m_DisabledColor.a
-      value: 0.3137255
-      objectReference: {fileID: 0}
-    - target: {fileID: 2191413758870393359, guid: 00396c498781f3f41bf79b53668e5349,
-        type: 3}
-      propertyPath: _transitions.Array.data[0]._colorBlock.m_DisabledColor.a
-      value: 0.3137255
-      objectReference: {fileID: 0}
-    - target: {fileID: 3345754084887186727, guid: 00396c498781f3f41bf79b53668e5349,
-        type: 3}
-      propertyPath: m_text
-      value: MODS
-      objectReference: {fileID: 0}
-    - target: {fileID: 3345754084887186727, guid: 00396c498781f3f41bf79b53668e5349,
-        type: 3}
-      propertyPath: m_fontSize
-      value: 18
-      objectReference: {fileID: 0}
-    - target: {fileID: 3345754084887186727, guid: 00396c498781f3f41bf79b53668e5349,
-        type: 3}
-      propertyPath: m_fontAsset
-      value: 
-      objectReference: {fileID: 11400000, guid: 238b5e92e52b395458d09c295d5bc30c,
-        type: 2}
-    - target: {fileID: 3345754084887186727, guid: 00396c498781f3f41bf79b53668e5349,
-        type: 3}
-      propertyPath: m_fontSizeBase
-      value: 18
-      objectReference: {fileID: 0}
-    - target: {fileID: 3345754084887186727, guid: 00396c498781f3f41bf79b53668e5349,
-        type: 3}
-      propertyPath: m_sharedMaterial
-      value: 
-      objectReference: {fileID: 2702232400126733190, guid: 238b5e92e52b395458d09c295d5bc30c,
-        type: 2}
-    - target: {fileID: 3345754084887186727, guid: 00396c498781f3f41bf79b53668e5349,
-        type: 3}
-      propertyPath: m_characterSpacing
-      value: -2
-      objectReference: {fileID: 0}
-    - target: {fileID: 3345754084887186727, guid: 00396c498781f3f41bf79b53668e5349,
-        type: 3}
-      propertyPath: m_VerticalAlignment
-      value: 4096
-      objectReference: {fileID: 0}
-    - target: {fileID: 3345754084887186727, guid: 00396c498781f3f41bf79b53668e5349,
-        type: 3}
-      propertyPath: m_hasFontAssetChanged
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 5756642250720423447, guid: 00396c498781f3f41bf79b53668e5349,
         type: 3}
       propertyPath: m_Pivot.x
@@ -327,12 +276,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 00396c498781f3f41bf79b53668e5349, type: 3}
---- !u!224 &5497422048843988239 stripped
-RectTransform:
-  m_CorrespondingSourceObject: {fileID: 5756642250720423447, guid: 00396c498781f3f41bf79b53668e5349,
-    type: 3}
-  m_PrefabInstance: {fileID: 263873558978810648}
-  m_PrefabAsset: {fileID: 0}
 --- !u!114 &3298875764196220479 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 3345754084887186727, guid: 00396c498781f3f41bf79b53668e5349,
@@ -345,6 +288,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!224 &5497422048843988239 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 5756642250720423447, guid: 00396c498781f3f41bf79b53668e5349,
+    type: 3}
+  m_PrefabInstance: {fileID: 263873558978810648}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &3625660268353014587
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -472,6 +421,11 @@ PrefabInstance:
       propertyPath: _transitions.Array.data[0]._colorBlock.m_DisabledColor.a
       value: 0.3137255
       objectReference: {fileID: 0}
+    - target: {fileID: 8529219528984917855, guid: f608eb9bff0f106408ef4db12ca5e0a2,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: f608eb9bff0f106408ef4db12ca5e0a2, type: 3}
 --- !u!224 &2831911097028279611 stripped
@@ -596,11 +550,6 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 9210771163027777667, guid: d7c3d3f59838ab6459042d9399d6de86,
-        type: 3}
-      propertyPath: _transitions.Array.data[0]._colorBlock.m_DisabledColor.a
-      value: 0.3137255
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d7c3d3f59838ab6459042d9399d6de86, type: 3}

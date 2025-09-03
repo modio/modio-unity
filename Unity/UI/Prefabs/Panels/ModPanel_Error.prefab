@@ -389,6 +389,7 @@ GameObject:
   - component: {fileID: 3007746447917905425}
   - component: {fileID: 3007746447917905422}
   - component: {fileID: 1419896365610888490}
+  - component: {fileID: 6333169704084338071}
   m_Layer: 5
   m_Name: Text (Something went wrong)
   m_TagString: Untagged
@@ -529,6 +530,22 @@ MonoBehaviour:
   _key: modio_error_generic
   _tmpText: {fileID: 3007746447917905422}
   _splitFormatArgs: []
+--- !u!114 &6333169704084338071
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3007746447917905421}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e990c13f9f24324a4a5a1d8cb151528, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _styleTarget: 1
+  _targetComponents:
+  - Component: {fileID: 3007746447917905422}
+    Option: 10
 --- !u!1 &3007746447934803229
 GameObject:
   m_ObjectHideFlags: 0
@@ -590,24 +607,24 @@ MonoBehaviour:
   _showWhenActionProvided: {fileID: 9171532352864321653}
   _actionMessageLocalised: {fileID: 6412643603961861067}
   _errorMessageResponses:
-  - errorCode: 20442
-    apiCode: 0
+  - errorCode: 
+    apiCode: 
     windowTitleLocalised: modio_error_storage_header
     windowMessageLocalised: modio_error_storage_description
     actionPromptLocalised: modio_page_library
     onActionPressed:
       m_PersistentCalls:
         m_Calls: []
-  - errorCode: 11008
-    apiCode: 11008
+  - errorCode: 
+    apiCode: 
     windowTitleLocalised: modio_error_ratelimited_header
     windowMessageLocalised: modio_error_ratelimited_description
     actionPromptLocalised: 
     onActionPressed:
       m_PersistentCalls:
         m_Calls: []
-  - errorCode: 11009
-    apiCode: 11009
+  - errorCode: 
+    apiCode: 
     windowTitleLocalised: modio_error_ratelimited_header
     windowMessageLocalised: modio_error_ratelimited_description
     actionPromptLocalised: 
@@ -626,6 +643,7 @@ GameObject:
   - component: {fileID: 3007746448046714440}
   - component: {fileID: 3007746448046714438}
   - component: {fileID: 1240125036451688634}
+  - component: {fileID: 7190825625706074833}
   m_Layer: 5
   m_Name: Text (Error code)
   m_TagString: Untagged
@@ -766,6 +784,22 @@ MonoBehaviour:
   _key: modio_error_code
   _tmpText: {fileID: 3007746448046714438}
   _splitFormatArgs: []
+--- !u!114 &7190825625706074833
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3007746448046714439}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e990c13f9f24324a4a5a1d8cb151528, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _styleTarget: 1
+  _targetComponents:
+  - Component: {fileID: 1240125036451688634}
+    Option: 10
 --- !u!1001 &1548519342474438138
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -29,6 +29,7 @@ RectTransform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4246246970602618050}
   m_Father: {fileID: 0}
@@ -125,6 +126,36 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2191413758870393356, guid: 00396c498781f3f41bf79b53668e5349,
         type: 3}
+      propertyPath: managedReferences[0]._colorBlock.m_SelectedColor.b
+      value: 0.84705883
+      objectReference: {fileID: 0}
+    - target: {fileID: 2191413758870393356, guid: 00396c498781f3f41bf79b53668e5349,
+        type: 3}
+      propertyPath: managedReferences[0]._colorBlock.m_SelectedColor.g
+      value: 0.75686276
+      objectReference: {fileID: 0}
+    - target: {fileID: 2191413758870393356, guid: 00396c498781f3f41bf79b53668e5349,
+        type: 3}
+      propertyPath: managedReferences[0]._colorBlock.m_SelectedColor.r
+      value: 0.02745098
+      objectReference: {fileID: 0}
+    - target: {fileID: 2191413758870393356, guid: 00396c498781f3f41bf79b53668e5349,
+        type: 3}
+      propertyPath: managedReferences[0]._colorBlock.m_HighlightedColor.b
+      value: 0.84705883
+      objectReference: {fileID: 0}
+    - target: {fileID: 2191413758870393356, guid: 00396c498781f3f41bf79b53668e5349,
+        type: 3}
+      propertyPath: managedReferences[0]._colorBlock.m_HighlightedColor.g
+      value: 0.75686276
+      objectReference: {fileID: 0}
+    - target: {fileID: 2191413758870393356, guid: 00396c498781f3f41bf79b53668e5349,
+        type: 3}
+      propertyPath: managedReferences[0]._colorBlock.m_HighlightedColor.r
+      value: 0.02745098
+      objectReference: {fileID: 0}
+    - target: {fileID: 2191413758870393356, guid: 00396c498781f3f41bf79b53668e5349,
+        type: 3}
       propertyPath: _transitions.Array.data[0]._colorBlock.m_SelectedColor.b
       value: 0.84705883
       objectReference: {fileID: 0}
@@ -189,6 +220,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5681405893648574736, guid: 00396c498781f3f41bf79b53668e5349,
+        type: 3}
+      propertyPath: _styleTarget
+      value: 106
       objectReference: {fileID: 0}
     - target: {fileID: 5756642250720423447, guid: 00396c498781f3f41bf79b53668e5349,
         type: 3}

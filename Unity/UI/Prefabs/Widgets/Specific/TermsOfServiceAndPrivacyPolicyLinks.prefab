@@ -28,6 +28,7 @@ RectTransform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 8747805604160122527}
   - {fileID: 3011808196152295371}
@@ -89,6 +90,11 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 4864776915981807272}
     m_Modifications:
+    - target: {fileID: 4311748252141697989, guid: 74d7608239d705c4d9d4a3fa4d2062f3,
+        type: 3}
+      propertyPath: _styleTarget
+      value: 106
+      objectReference: {fileID: 0}
     - target: {fileID: 5758796270013285115, guid: 74d7608239d705c4d9d4a3fa4d2062f3,
         type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.size
@@ -236,18 +242,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 74d7608239d705c4d9d4a3fa4d2062f3, type: 3}
---- !u!1 &8747805604160122526 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 5758796270013285117, guid: 74d7608239d705c4d9d4a3fa4d2062f3,
-    type: 3}
-  m_PrefabInstance: {fileID: 3930842491265100899}
-  m_PrefabAsset: {fileID: 0}
---- !u!224 &8747805604160122527 stripped
-RectTransform:
-  m_CorrespondingSourceObject: {fileID: 5758796270013285116, guid: 74d7608239d705c4d9d4a3fa4d2062f3,
-    type: 3}
-  m_PrefabInstance: {fileID: 3930842491265100899}
-  m_PrefabAsset: {fileID: 0}
 --- !u!114 &7921173452796965777 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 6584404641833394162, guid: 74d7608239d705c4d9d4a3fa4d2062f3,
@@ -260,6 +254,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!1 &8747805604160122526 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5758796270013285117, guid: 74d7608239d705c4d9d4a3fa4d2062f3,
+    type: 3}
+  m_PrefabInstance: {fileID: 3930842491265100899}
+  m_PrefabAsset: {fileID: 0}
 --- !u!114 &3253019450010159305
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -275,6 +275,12 @@ MonoBehaviour:
   _key: modio_btn_termsofuse
   _tmpText: {fileID: 7921173452796965777}
   _splitFormatArgs: []
+--- !u!224 &8747805604160122527 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 5758796270013285116, guid: 74d7608239d705c4d9d4a3fa4d2062f3,
+    type: 3}
+  m_PrefabInstance: {fileID: 3930842491265100899}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &7360936962648767799
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -282,6 +288,11 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 4864776915981807272}
     m_Modifications:
+    - target: {fileID: 4311748252141697989, guid: 74d7608239d705c4d9d4a3fa4d2062f3,
+        type: 3}
+      propertyPath: _styleTarget
+      value: 106
+      objectReference: {fileID: 0}
     - target: {fileID: 5758796270013285115, guid: 74d7608239d705c4d9d4a3fa4d2062f3,
         type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.size
@@ -440,6 +451,21 @@ GameObject:
     type: 3}
   m_PrefabInstance: {fileID: 7360936962648767799}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &8054271760771884936
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3011808196152295370}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a42edbf03714a2c8e4848d82eae02c3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _key: modio_btn_privacy
+  _tmpText: {fileID: 4415722295420609221}
+  _splitFormatArgs: []
 --- !u!224 &3011808196152295371 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 5758796270013285116, guid: 74d7608239d705c4d9d4a3fa4d2062f3,
@@ -458,18 +484,3 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &8054271760771884936
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3011808196152295370}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8a42edbf03714a2c8e4848d82eae02c3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _key: modio_btn_privacy
-  _tmpText: {fileID: 4415722295420609221}
-  _splitFormatArgs: []
