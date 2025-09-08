@@ -485,7 +485,7 @@ namespace Modio.Unity
             string boundary = Guid.NewGuid().ToString().ToUpperInvariant();
             using var formData = new MemoryStream();
 
-            using (var writer = new StreamWriter(formData, Encoding.UTF8, 1024, true)) // Keeping stream open
+            using (var writer = new StreamWriter(formData, new UTF8Encoding(false), 1024, true)) // Keeping stream open
             {
                 writer.WriteLine($"--{boundary}");
 
