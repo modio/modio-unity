@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using ICSharpCode.SharpZipLib.Zip;
+using ICSharpCode.SharpZipLib.Zip.Compression.Streams;
 
 namespace Modio.FileIO
 {
@@ -64,10 +65,6 @@ namespace Modio.FileIO
 
             _centralDirectoryStream = new MemoryStream();
 
-            // If we are reading headers, we need to write the header bytes to the stream
-            StoreUntilEnd(inputBuffer.RawData, offset, inputBuffer.RawLength);
-
-           // _headerStream.Write(inputBuffer.RawData, offset, inputBuffer.Available);
             return null;
         }
 
@@ -151,7 +148,7 @@ namespace Modio.FileIO
                 return base.Read(buffer, offset, count);
             
             // need to read from the raw buffer
-            int read = inputBuffer.ReadRawBuffer(buffer, offset, count);
+            int read = ReadRawBufferFixed(inputBuffer, buffer, offset, count);
             
             //start reading from the offset
             int readOffset = offset;
@@ -176,7 +173,34 @@ namespace Modio.FileIO
 
         }
 
+        /// <summary>
+        /// Very similar to <see cref="InflaterInputBuffer.ReadRawBuffer(byte[])"/>, but it doesn't return 0 when it shouldn't
+        /// </summary>
+        static int ReadRawBufferFixed(InflaterInputBuffer buffer, byte[] outBuffer, int offset, int length)
+        {
+            if (length < 0)
+                throw new ArgumentOutOfRangeException(nameof(length));
 
+            int currentOffset = offset;
+            int currentLength = length;
+
+            while (currentLength > 0)
+            {
+                if (buffer.Available <= 0)
+                {
+                    buffer.Fill();
+                    if (buffer.Available <= 0)
+                        break;
+                }
+                int toCopy = Math.Min(currentLength, buffer.Available);
+                Array.Copy(buffer.RawData, buffer.RawLength - buffer.Available, outBuffer, currentOffset, toCopy);
+                currentOffset += toCopy;
+                currentLength -= toCopy;
+                buffer.Available -= toCopy;
+            }
+            return length - currentLength;
+        } 
+        
         int SeekHeader(byte[] buffer, int offset, int count)
         {
             int offsetToHeader = -1;
