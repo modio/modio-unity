@@ -487,8 +487,6 @@ namespace Modio.Unity
 
             using (var writer = new StreamWriter(formData, new UTF8Encoding(false), 1024, true)) // Keeping stream open
             {
-                writer.WriteLine($"--{boundary}");
-
                 foreach (KeyValuePair<string, string> formParameter in options.FormParameters)
                 {
                     writer.WriteLine($"--{boundary}");
