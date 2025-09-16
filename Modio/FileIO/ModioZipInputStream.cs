@@ -96,10 +96,6 @@ namespace Modio.FileIO
                 // write the byte we just popped off the array;
                 _centralDirectoryStream.WriteByte(lastByte);
             }
-            
-            // If we have not found the end of the central directory, we need to write the last 4 bytes
-            if(!_foundEndOfCentralDirectory)
-                _centralDirectoryStream.Write(_headerBytes, 0, 4);
         }
 
         public async Task ReadUntilEndAsync(CancellationToken token)
