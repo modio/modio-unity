@@ -10,10 +10,11 @@ using Newtonsoft.Json.Linq;
 
 namespace Modio.Platforms.Wss
 {
-    public class WssAuthService : IModioAuthService, IGetActiveUserIdentifier, IGetPortalProvider
+    public class WssAuthService : IModioAuthService, 
+                                  IGetActiveUserIdentifier
     {
         
-        public async Task<Error> Authenticate(bool displayedTerms, string thirdPartyEmail = null)
+        public async Task<Error> Authenticate(bool displayedTerms, string thirdPartyEmail = null, bool sync = true)
         {
             if (!ModioClient.Settings.TryGetPlatformSettings(out WssSettings _))
                 return new WssError(ErrorCode.WSS_NOT_CONFIGURED);
@@ -46,7 +47,7 @@ namespace Modio.Platforms.Wss
             if (!message.TryGetValue(out WssLoginSuccess loginSuccess))
                 return new WssError(ErrorCode.WSS_FAILED_TO_DESERIALIZE);
 
-            User.Current.OnAuthenticated(loginSuccess.access_token);
+            User.Current.OnAuthenticated(loginSuccess.access_token, loginSuccess.date_expires, sync);
 
             await codePrompter.HideCodePrompt();
             

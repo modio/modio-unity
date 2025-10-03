@@ -112,6 +112,7 @@ public class ModioUnityExample : MonoBehaviour
         }
 #endif
 
+        authContainer.SetActive(true);
         // You can assign these using the Inspector if you prefer
         authRequest.onClick.AddListener(() => Authenticate());
     }

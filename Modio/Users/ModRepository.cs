@@ -16,7 +16,7 @@ namespace Modio.Users
         readonly HashSet<Mod> _disabled = new HashSet<Mod>();
         
         [Obsolete("GetCreatedMods should be called via User.Current.GetUserCreations, which is async", true)]
-        public IEnumerable<Mod> GetCreatedMods() => throw new NotImplementedException();
+        public IEnumerable<Mod> GetCreatedMods() => throw new NotSupportedException();
 
         public IEnumerable<Mod> GetSubscribed() => _subscribed;
         public IEnumerable<Mod> GetPurchased() => _purchased;

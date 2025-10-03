@@ -58,7 +58,7 @@ namespace Modio.API.Interfaces
         /// <p><c>error</c> is the error encountered during the task (if any)</p>
         /// <p><c>stream</c> is the current stream of the download. <see cref="UserProfile"/>.</p>
         /// </returns>
-        Task<(Error, Stream)> DownloadFile(string url, CancellationToken token = default);
+        Task<(Error, Stream)> DownloadFile(string url, CancellationToken token = default, bool allowReauth = true);
 
         /// <summary>
         /// Requests a response from the mod.io API
@@ -70,7 +70,7 @@ namespace Modio.API.Interfaces
         /// <p><c>error</c> is the error encountered during the task (if any)</p>
         /// <p><c>result</c> is the object on success.</p>
         /// </returns>
-        Task<(Error error, T? result)> GetJson<T>(ModioAPIRequest request) where T : struct;
+        Task<(Error error, T? result)> GetJson<T>(ModioAPIRequest request, bool allowReauth = true) where T : struct;
         
         /// <summary>
         /// Requests a response from the mod.io API
@@ -81,6 +81,6 @@ namespace Modio.API.Interfaces
         /// <p><c>error</c> is the error encountered during the task (if any)</p>
         /// <p><c>result</c> is the object.</p>
         /// </returns>
-        Task<(Error error, JToken)>    GetJson(ModioAPIRequest request);
+        Task<(Error error, JToken)>    GetJson(ModioAPIRequest request, bool allowReauth = true);
     }
 }

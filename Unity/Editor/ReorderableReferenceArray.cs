@@ -8,10 +8,6 @@ using UnityEngine;
 
 namespace Modio.Editor.Common
 {
-    /// <summary>
-    /// COPIED FROM ModioUI.Editor.Common.ReorderableReferenceArray
-    /// TODO: Unify them
-    /// </summary>
     internal static class ReorderableReferenceArray
     {
         static readonly float Padding = EditorGUIUtility.singleLineHeight * 0.5f;

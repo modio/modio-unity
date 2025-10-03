@@ -202,7 +202,7 @@ namespace Modio
                 var binding = new Binding<T>(value, priority, condition);
                 Bindings.Add(binding);
 
-                InvokeNewBindingIfHighestPriority(priority);
+                InvokeNewBinding();
                 return binding;
             }
             
@@ -211,7 +211,7 @@ namespace Modio
                 var binding = new Binding<T>(factory, priority, condition);
                 Bindings.Add(binding);
                 
-                InvokeNewBindingIfHighestPriority(priority);
+                InvokeNewBinding();
                 return binding;
             }
 
@@ -332,13 +332,9 @@ namespace Modio
                 }
             }
 
-            void InvokeNewBindingIfHighestPriority(ModioServicePriority priority)
+            void InvokeNewBinding()
             {
                 if (OnNewBinding == null) return;
-
-                foreach (Binding<T> binding in Bindings)
-                    if(binding.Priority > priority)
-                        return;
 
                 if(TryResolve(out T value))
                     OnNewBinding(value);

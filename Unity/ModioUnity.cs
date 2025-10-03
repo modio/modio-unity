@@ -45,7 +45,9 @@ namespace Modio.Unity
 
             var environmentDetails = $"Unity; {Application.unityVersion}; {Application.platform}";
             ModioLog.Verbose?.Log(environmentDetails);
-
+            
+            Error.StoreStackTraceWhenCreated = true;
+            
             Version.AddEnvironmentDetails(environmentDetails);
 
             if (modioUnitySettings != null)
@@ -90,13 +92,12 @@ namespace Modio.Unity
             ModioServices.Bind<WssAuthService>()
                          .WithInterfaces<IModioAuthService>()
                          .WithInterfaces<IGetActiveUserIdentifier>()
-                         .WithInterfaces<IGetPortalProvider>()
                          .FromNew<WssAuthService>(
                              ModioServicePriority.PlatformProvided,
                              () => ModioServices.Resolve<ModioSettings>()?.TryGetPlatformSettings(out WssSettings _)
                                    ?? false
                          );
-
+            
             ModioServices.BindErrorMessage<ModioSettings>(
                 "Please ensure you've bound a ModioSettings."
                 + " You can create one using the menu item 'Tools/mod.io/Edit Settings'",

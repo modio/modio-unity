@@ -480,7 +480,7 @@ namespace Modio.Unity.UI.Search
                     return false;
             }
 
-            foreach (var searchPhrase in LastSearchFilter.GetSearchPhrase(Filtering.None))
+            foreach (var searchPhrase in LastSearchFilter.GetSearchPhrase(Filtering.Like))
             {
                 //Essentially !contains, but with an invariant, case insensitive culture
                 if (mod.Name.IndexOf(searchPhrase, StringComparison.InvariantCultureIgnoreCase) < 0) return false;

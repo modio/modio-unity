@@ -11,13 +11,13 @@ namespace Modio.API.SchemaDefinitions{
     {
         /// <summary>Tag name.</summary>
         internal readonly string Name;
-        /// <summary>The localized tag name influenced by the [Accept-Language](https://docs.mod.io/restapiref/#localization) header, defaults to English.</summary>
+        /// <summary>The localized tag name influenced by the [Accept-Language](https://docs.mod.io/restapi/localization) header, defaults to English.</summary>
         internal readonly string NameLocalized;
         /// <summary>**Deprecated:** Unix timestamp of date tag was applied.</summary>
         internal readonly long DateAdded;
 
         /// <param name="name">Tag name.</param>
-        /// <param name="nameLocalized">The localized tag name influenced by the [Accept-Language](https://docs.mod.io/restapiref/#localization) header, defaults to English.</param>
+        /// <param name="nameLocalized">The localized tag name influenced by the [Accept-Language](https://docs.mod.io/restapi/localization) header, defaults to English.</param>
         /// <param name="dateAdded">**Deprecated:** Unix timestamp of date tag was applied.</param>
         [JsonConstructor]
         public ModTagObject(

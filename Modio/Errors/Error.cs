@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Modio.API.SchemaDefinitions;
 using Modio.Errors;
 
 namespace Modio
@@ -14,6 +15,8 @@ namespace Modio
         public static readonly Error Unknown = new Error(ErrorCode.UNKNOWN);
 
         public readonly ErrorCode Code;
+
+        
         readonly StackTrace _stackTrace;
         protected List<(string memberName, string sourceFilePath, int sourceLineNumber, string message)>
             _callInformation;
@@ -21,7 +24,6 @@ namespace Modio
         public Error(ErrorCode code)
         {
             Code = code;
-
             if (StoreStackTraceWhenCreated)
                 _stackTrace = new StackTrace(1, true);
         }

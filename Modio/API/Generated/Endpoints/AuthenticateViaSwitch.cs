@@ -18,7 +18,7 @@ namespace Modio.API
     {
         public static partial class Authentication
         {
-            /// <summary>Request an access token on behalf of a Nintendo Switch user. To use this endpoint you will need to setup some additional settings prior to being able to authenticate Nintendo Switch users. [Head here](/platforms/switch/#authentication) for these instructions. A Successful request will return an [Access Token Object](#access-token-object).</summary>
+            /// <summary>Request an access token on behalf of a Nintendo Switch user. To use this endpoint you will need to setup some additional settings prior to being able to authenticate Nintendo Switch users. [Head here](/platforms/switch#authentication) for these instructions. A Successful request will return an [Access Token Object](#access-token-object).</summary>
             public static async Task<(Error error, JToken accessTokenObject)> AuthenticateViaSwitchAsJToken(
                 SwitchAuthenticationRequest? body = null
             ) {
@@ -31,7 +31,7 @@ namespace Modio.API
                 return await _apiInterface.GetJson(request);
             }
 
-            /// <summary>Request an access token on behalf of a Nintendo Switch user. To use this endpoint you will need to setup some additional settings prior to being able to authenticate Nintendo Switch users. [Head here](/platforms/switch/#authentication) for these instructions. A Successful request will return an [Access Token Object](#access-token-object).</summary>
+            /// <summary>Request an access token on behalf of a Nintendo Switch user. To use this endpoint you will need to setup some additional settings prior to being able to authenticate Nintendo Switch users. [Head here](/platforms/switch#authentication) for these instructions. A Successful request will return an [Access Token Object](#access-token-object).</summary>
             /// <param name="body"></param>
             public static async Task<(Error error, AccessTokenObject? accessTokenObject)> AuthenticateViaSwitch(
                 SwitchAuthenticationRequest? body = null

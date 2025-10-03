@@ -27,6 +27,7 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
@@ -43,12 +44,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a94e276117549a394fa60a568b852f0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  DisplayAs: User
-  searchType: 8
+  DisplayAs: User Creations
+  DisplayAsLocalisedKey: modio_filter_user_creations
+  Icon: {fileID: 0}
+  HiddenIfMonetizationDisabled: 0
+  searchType: 9
   searchPhrase: 
   searchTags: []
   sortModsBy: 0
-  maturityOptions: 0
+  showMatureContent: 0
   isAscending: 1
-  userId: 0
   filterRevenueType: 2
+  shareFilterSettingsWith: {fileID: 0}

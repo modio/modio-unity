@@ -6,7 +6,6 @@ namespace Modio.FileIO
     {
         protected override long GetAvailableFreeSpace()
         {
-            // TODO: Figure out the native implementation below
             // Likely the UnixStatsFs object is in a different format to the Linux version, investigate
             /*if (ModioClient.Settings.TryGetPlatformSettings(out ModioDiskTestSettings settings)
                 && settings.OverrideDiskSpaceRemaining)

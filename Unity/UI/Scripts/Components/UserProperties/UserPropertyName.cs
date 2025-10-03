@@ -18,16 +18,17 @@ namespace Modio.Unity.UI.Components.UserProperties
         {
             if (user?.Username != null)
             {
+                string nameToUse = string.IsNullOrEmpty(user.PortalUsername) ? user.Username : user.PortalUsername;
+                
                 if (_localisedText != null)
                 {
-                    _localisedText.SetFormatArgs(user.Username);
+                    _localisedText.SetFormatArgs(nameToUse);
 
                     return;
                 }
 
-                var username = user.Username;
-                if (!string.IsNullOrEmpty(_userLoggedInFormat)) username = string.Format(_userLoggedInFormat, username);
-                _text.text = username;
+                if (!string.IsNullOrEmpty(_userLoggedInFormat)) nameToUse = string.Format(_userLoggedInFormat, nameToUse);
+                _text.text = nameToUse;
             }
             else
             {

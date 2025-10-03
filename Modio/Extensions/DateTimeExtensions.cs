@@ -9,5 +9,10 @@ namespace Modio.Extensions
             DateTime dateTime = DateTime.UnixEpoch.AddSeconds(timeStamp);
             return dateTime;
         }
+        public static DateTime GetLocalDateTime(this long timeStamp)
+        {
+            DateTime dateTime = DateTime.UnixEpoch.AddSeconds(timeStamp).ToLocalTime();
+            return dateTime;
+        }
     }
 }

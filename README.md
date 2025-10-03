@@ -2,12 +2,12 @@
 id: unity-introduction
 title: Unity Introduction
 sidebar_label: Unity Introduction
-slug: /unity/unity-introduction/
+slug: /unity/unity-introduction
 sidebar_position: 0
 ---
 
 <a href="https://mod.io"><img src="https://mod.io/images/branding/modio-logo-bluewhite.svg" alt="mod.io" width="360" align="right"/></a>
-# mod.io Unity Plugin v2025.9.2
+# mod.io Unity Plugin v2025.10
 [![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)](https://github.com/modio/modio-unity/blob/master/Documentation/LICENSE.md)
 [![Discord](https://img.shields.io/discord/389039439487434752.svg?label=Discord&logo=discord&color=7289DA&labelColor=2C2F33)](https://discord.mod.io)
 [![Master docs](https://img.shields.io/badge/docs-master-green.svg)](https://docs.mod.io/unity/)
@@ -23,7 +23,7 @@ mod.io enables game developers of all sizes to integrate user-generated content 
 - Completely cross-platform: content uploaded can be enjoyed by players on PlayStation®4, PlayStation®5, Xbox, Switch, VR and mobile
 - One-click mod installs, synced to a single mod.io account across all platforms
 - Independent API: integrate mod.io into your game's launcher or your homepage using our Embedded UGC Hub. It can also be used by community fan sites and Discord bots
-- Founded by the [ModDB.com](https://moddb.com) team, with over two decades of experience in the UGC space
+- Founded by the [ModDB.com](https://www.moddb.com) team, with over two decades of experience in the UGC space
 - Constantly evolving - we continue to work alongside our partners to iterate and improve our plugin support
 
 The mod.io Unity Engine plugin is the simplest and fastest way to integrate UGC into your Unity **2021.3+** game. It handles all of the common tasks, allowing game developers to quickly and easily implement a solution that enables players to access and discover user-generated content for their games.
@@ -34,7 +34,7 @@ The mod.io Unity Engine plugin is the simplest and fastest way to integrate UGC 
 >![Auth Form Example](Unity/Examples/Images/template_ui_example.png)
 
 ## Platform Support
-To access console platforms and documentation, see [Supporting Console Platforms](https://docs.mod.io/platforms/). If a platform you require isn't available yet, please reach out to us.
+To access console platforms and documentation, see [Supporting Console Platforms](https://docs.mod.io/platforms/console). If a platform you require isn't available yet, please reach out to us.
 
 | Platform          | Support |
 |-------------------|:-------:|
@@ -284,7 +284,7 @@ If you change the highest priority auth service to another one, then the user wo
 
 ### Steam Single Sign-On
 
-Alternatively SSO methods with other platforms can be used to authenticate the user with mod.io. Check out our [documentation](https://docs.mod.io/restapiref/?http#authentication-2) to see a list of all platforms we support SSO with. For this example we're going to use Steam with the [Facepunch Steamworks library](https://wiki.facepunch.com/steamworks/).
+Alternatively SSO methods with other platforms can be used to authenticate the user with mod.io. Check out our [documentation](https://docs.mod.io/restapi/introduction#authentication) to see a list of all platforms we support SSO with. For this example we're going to use Steam with the [Facepunch Steamworks library](https://wiki.facepunch.com/steamworks/).
 
 Feel free to come back to this section later! Authentication is agnostic of the rest of this guide's behavior.
 
@@ -673,7 +673,7 @@ async void SetRandomMod()
 > [!WARNING]  
 > The code above relies on `allMods`, which is set in the first [searching for mods](#searching-for-mods) section. **Ensure that `allMods` has been set before running this method.**
 
-This method is downloading the smallest version of the logo, `320x180`. However, Mods have a number of sizes for each image as defined in `Mod.LogoResolution` &amp; `Mod.GalleryResolution`. See the [documentation](https://sdkdocs.mod.io/unity/) (or use code completion in your IDE) to view available options. 
+This method is downloading the smallest version of the logo, `320x180`. However, Mods have a number of sizes for each image as defined in `Mod.LogoResolution` &amp; `Mod.GalleryResolution`. See the [documentation](https://docs.mod.io/unity/cs-ref) (or use code completion in your IDE) to view available options. 
 
 ## Getting Subscribed Mods
 
@@ -805,7 +805,7 @@ void Update()
 In a real implementation, you'll likely track the `modId`'s download and install progress separately to display in your UI. But, this should give you an idea of what's possible with the mod management feature.
 
 > [!NOTE]  
-> There are a number of mod management events available. See the [documentation](https://sdkdocs.mod.io/unity/) (or use code completion in your IDE) for a complete list.
+> There are a number of mod management events available. See the [documentation](https://docs.mod.io/unity/cs-ref) (or use code completion in your IDE) for a complete list.
 
 ## Using Mods
 

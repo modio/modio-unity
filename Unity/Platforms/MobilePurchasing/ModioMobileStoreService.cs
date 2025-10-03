@@ -128,9 +128,7 @@ namespace Modio.Unity.Platforms.MobilePurchasing
             await User.Current.SyncWallet();
         }
 #endif
-
-
-        // TODO: Convert into IReceiptToPurchaseDataConverter
+        
 #if MODIO_MOBILE_IAP
         static PurchaseData ConvertProductToPurchaseData(Product purchasedProduct)
         {

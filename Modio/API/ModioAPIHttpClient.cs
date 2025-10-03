@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Modio.API.Interfaces;
 using Modio.API.SchemaDefinitions;
+using Modio.Authentication;
 using Modio.Errors;
 using Modio.Users;
 using Newtonsoft.Json;
@@ -23,6 +24,9 @@ namespace Modio.API.HttpClient
         readonly List<string> _defaultParameters = new List<string>();
         readonly Dictionary<string, string> _pathParameters = new Dictionary<string, string>();
         string _basePath = string.Empty;
+
+        static Task<Error> _reauthTask;
+        DateTime _timeOfLastReauthentication;
         
         CancellationTokenSource _cancellationTokenSource;
 
@@ -67,7 +71,7 @@ namespace Modio.API.HttpClient
             _cancellationTokenSource?.Cancel();
         }
 
-        public async Task<(Error, Stream)> DownloadFile(string url, CancellationToken token = default)
+        public async Task<(Error, Stream)> DownloadFile(string url, CancellationToken token = default, bool allowReauth = true)
         {
             Error error = await CheckFakeErrorsForTest(url);
             
@@ -88,8 +92,8 @@ namespace Modio.API.HttpClient
             var httpRequest = new HttpRequestMessage(method, target);
             httpRequest.Content = content;
 
-            error = EnforceAuthentication(downloadRequest, httpRequest);
-
+            error = await EnforceAuthentication(downloadRequest, httpRequest);
+            
             if (!httpRequest.Headers.UserAgent.TryParseAdd(Version.GetCurrent()))
                 ModioLog.Error?.Log($"Failed to set user agent to {Version.GetCurrent()}");
 
@@ -104,15 +108,22 @@ namespace Modio.API.HttpClient
             {
                 if(token == default(CancellationToken))
                     token = cachedShutdownToken;
-                    
+                
                 HttpResponseMessage response = await _client.SendAsync(
                     httpRequest,
                     HttpCompletionOption.ResponseHeadersRead,
                     token
                 );
-
+                
                 stream = await response.Content.ReadAsStreamAsync();
 
+                if (allowReauth && response.StatusCode == HttpStatusCode.Unauthorized)
+                {
+                    await stream.DisposeAsync();
+                    response.Dispose();
+                    return await ReauthenticateWithResponse(() => DownloadFile(url, token, false));
+                }
+                
                 if ((int)response.StatusCode < 200 || (int)response.StatusCode >= 300)
                 {
                     using var streamReader = new StreamReader(stream);
@@ -151,15 +162,26 @@ namespace Modio.API.HttpClient
             return (Error.None, stream);
         }
 
-        static Error EnforceAuthentication(ModioAPIRequest downloadRequest, HttpRequestMessage httpRequest)
+        static async Task<Error> EnforceAuthentication(ModioAPIRequest downloadRequest, HttpRequestMessage httpRequest)
         {
-            if (downloadRequest.Options.RequiresAuthentication && !User.Current.IsAuthenticated)
+            Error error = Error.None;
+            
+            // If we don't need authentication, we skip all this
+            if (!downloadRequest.Options.RequiresAuthentication)
+                return Error.None;
+            
+            // If we need authentication but the user isn't authenticated, we return an error
+            // ie; never authenticated
+            if (!User.Current.IsAuthenticated)
                 return new Error(ErrorCode.USER_NOT_AUTHENTICATED);
 
-            if(User.Current.IsAuthenticated)
-                httpRequest.Headers.Add("Authorization", $"Bearer {User.Current?.GetAuthToken()}");
+            // If we have a reauth task that is still running, we wait for it to complete
+            if(_reauthTask is {IsCompleted:false,})
+                error = await _reauthTask;
+            
+            httpRequest.Headers.Add("Authorization", $"Bearer {User.Current?.GetAuthToken()}");
 
-            return Error.None;
+            return error;
         }
 
         Task<Error> CheckFakeErrorsForTest(string url)
@@ -213,7 +235,7 @@ namespace Modio.API.HttpClient
                     byteArrayContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                     return byteArrayContent;
 
-                default: throw new NotImplementedException();
+                default: throw new NotSupportedException($"{nameof(ModioAPIRequestContentType)} value of {request.ContentType} is not supported.");
             }
         }
 
@@ -223,10 +245,10 @@ namespace Modio.API.HttpClient
             ModioAPIRequestMethod.Put    => HttpMethod.Put,
             ModioAPIRequestMethod.Get    => HttpMethod.Get,
             ModioAPIRequestMethod.Delete => HttpMethod.Delete,
-            _                            => throw new NotImplementedException(),
+            _                            => throw new NotSupportedException($"{nameof(ModioAPIRequestMethod)} value of {method} is not supported."),
         };
 
-        async Task<(Error error, T)> GetJson<T>(ModioAPIRequest request, Func<JsonTextReader, Task<T>> reader)
+        async Task<(Error error, T)> GetJson<T>(ModioAPIRequest request, Func<JsonTextReader, Task<T>> reader, bool allowReauth = true)
         {
             string target = BuildPath(request);
 
@@ -243,7 +265,8 @@ namespace Modio.API.HttpClient
                 var httpRequest = new HttpRequestMessage(method, target);
                 httpRequest.Content = content;
 
-                error = EnforceAuthentication(request, httpRequest);
+                error =  await EnforceAuthentication(request, httpRequest);
+                
                 if(error) return (error, default(T));
 
                 if (!httpRequest.Headers.UserAgent.TryParseAdd(Version.GetCurrent()))
@@ -262,7 +285,7 @@ namespace Modio.API.HttpClient
                 }
 
                 await LogRequest(httpRequest);
-                HttpResponseMessage response = await _client.SendAsync(httpRequest, cachedShutdownToken);
+                using HttpResponseMessage response = await _client.SendAsync(httpRequest, cachedShutdownToken);
 
                 if (response.StatusCode == HttpStatusCode.NoContent)
                 {
@@ -274,6 +297,9 @@ namespace Modio.API.HttpClient
 
                 await using Stream stream = await response.Content.ReadAsStreamAsync();
                 using var streamReader = new StreamReader(stream);
+
+                if (allowReauth && response.StatusCode == HttpStatusCode.Unauthorized)
+                    return await ReauthenticateWithResponse(() => GetJson(request, reader, false));
 
                 if ((int)response.StatusCode < 200 || (int)response.StatusCode >= 300)
                 {
@@ -319,6 +345,41 @@ namespace Modio.API.HttpClient
                 ModioLog.Error?.Log($"Exception in {target}: {e}");
                 return (new ErrorException(e), default(T));
             }
+        }
+        
+        async Task<(Error, T)> ReauthenticateWithResponse<T>(Func<Task<(Error,T)>> callback)
+        {
+            Error error = Error.None;
+            if (!User.Current.IsAuthenticated)
+            {
+                ModioLog.Message?.Log("Not re-authenticating because user was never authenticated");
+                return (new Error(ErrorCode.USER_NOT_AUTHENTICATED), default(T));
+            }
+
+            ModioLog.Message?.Log("Re-authenticating due to 401 Unauthorized response");
+            // If we have a reauth task that is still running, we wait for it to complete
+            if(_reauthTask is { IsCompleted: false, })
+                error = await _reauthTask;
+            // If we don't have a reauth task, we create one
+            else if (ModioServices.Resolve<IModioAuthService>() is { } authService)
+            {
+                // If we have reauth'd within the last 3 seconds, we return an error
+                if ((DateTime.Now - _timeOfLastReauthentication).TotalSeconds < 3)
+                {
+                    ModioLog.Verbose?.Log("Attempting to re-authenticate too quickly, returning error");
+                    return (new Error(ErrorCode.USER_NOT_AUTHENTICATED), default(T));
+                }
+                
+                _reauthTask = authService.Authenticate(false, null, false);
+                _timeOfLastReauthentication = DateTime.Now;
+                
+                error = await _reauthTask;
+            }
+
+            if(error)
+                return (error, default(T));
+            
+            return await callback();
         }
 
         static async Task<Error> GetErrorAndLogBadResponse(StreamReader streamReader)
@@ -369,21 +430,21 @@ namespace Modio.API.HttpClient
                     + $"{errorToken.Error.Code}: {errorToken.Error.Message}"
                 );
 
-                return new Error(ErrorCode.UNKNOWN);
+                return new ErrorEmbedded(errorToken.Error);
             }
 
             overrideStream?.Dispose();
-            return new Error((ErrorCode)errorToken.Error.ErrorRef);
+            return new ErrorEmbedded(errorToken.Error);
         }
 
-        public Task<(Error error, T? result)> GetJson<T>(ModioAPIRequest request) where T : struct
+        public Task<(Error error, T? result)> GetJson<T>(ModioAPIRequest request, bool allowReauth = true) where T : struct
         {
-            return GetJson(request, reader => Task.FromResult((T?)new JsonSerializer().Deserialize<T>(reader)));
+            return GetJson(request, reader => Task.FromResult((T?)new JsonSerializer().Deserialize<T>(reader)), allowReauth);
         }
 
-        public Task<(Error error, JToken)> GetJson(ModioAPIRequest request)
+        public Task<(Error error, JToken)> GetJson(ModioAPIRequest request, bool allowReauth = true)
         {
-            return GetJson(request, reader => JToken.ReadFromAsync(reader));
+            return GetJson(request, reader => JToken.ReadFromAsync(reader), allowReauth);
         }
 
 

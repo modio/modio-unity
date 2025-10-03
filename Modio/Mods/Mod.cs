@@ -122,17 +122,16 @@ namespace Modio.Mods
 
             Creator = UserProfile.Get(modObject.SubmittedBy);
 
-            DateLive = modObject.DateLive.GetUtcDateTime();
-            DateUpdated = modObject.DateUpdated.GetUtcDateTime();
+            DateLive = modObject.DateLive.GetLocalDateTime();
+            DateUpdated = modObject.DateUpdated.GetLocalDateTime();
 
-            Tags = modObject.Tags.Select(ModTag.Get).ToArray();
+            Tags = modObject.Tags?.Select(ModTag.Get).ToArray() ?? Array.Empty<ModTag>();
 
             MetadataBlob = modObject.MetadataBlob;
 
             MetadataKvps ??= new Dictionary<string, string>();
             MetadataKvps.Clear();
             // Note that the server can store duplicate keys; we're only tracking the most recent one here
-            // TODO: swap to a more robust structure that allows fetching those duplicate keys
             foreach (MetadataKvpObject metadataKvpObject in modObject.MetadataKvp)
                 MetadataKvps[metadataKvpObject.Metakey] = metadataKvpObject.Metavalue;
 
@@ -168,7 +167,8 @@ namespace Modio.Mods
                                )
                                .ToArray();
 
-            Dependencies = new ModDependencies(this, modObject.Dependencies);
+            if(Dependencies == null || !Dependencies.HasDependencies)
+                Dependencies = new ModDependencies(this, modObject.Dependencies);
 
             LastModObject = modObject;
             

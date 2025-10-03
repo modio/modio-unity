@@ -55,6 +55,7 @@ namespace Modio.Users
         public Wallet Wallet { get; private set; }
         public ModRepository ModRepository { get; private set; }
         public ModCollectionRepository ModCollectionRepository { get; private set; }
+        public ModioAPI.Portal AuthenticatedPortal { get; private set; }
 
         readonly Authentication _authentication;
         bool _isWritingToDisk;
@@ -73,6 +74,14 @@ namespace Modio.Users
             Current.LocalUserId = await ModioServices.Resolve<IGetActiveUserIdentifier>().GetActiveUserIdentifier();
             
             (Error error, UserSaveObject userObject) = await ModioClient.DataStorage.ReadUserData(Current.LocalUserId);
+
+            if (!error && (userObject == null || userObject.LocalUserId == null))
+            {
+                ModioLog.Verbose?.Log($"{nameof(UserSaveObject)} corrupted, cleaning user data.");
+                await ModioClient.DataStorage.DeleteUserData(Current.LocalUserId);
+
+                error = new Error(ErrorCode.FILE_NOT_FOUND);
+            }
 
             if (!error)
             {
@@ -107,6 +116,7 @@ namespace Modio.Users
         {
             Profile.Username = userObject.Username;
             Profile.UserId = userObject.UserId;
+            AuthenticatedPortal = (ModioAPI.Portal)userObject.UserPortal;
 
             if (userObject.SubscribedMods != null)
                 foreach (long subscribedMod in userObject.SubscribedMods)
@@ -139,6 +149,7 @@ namespace Modio.Users
             //For now just store the OAuthToken, we'll clarify if we're actually authenticated in Sync()
             _authentication.OAuthToken = userObject.AuthToken;
             
+
             OnUserChanged?.Invoke(this);
         }
 
@@ -147,21 +158,34 @@ namespace Modio.Users
             HasAcceptedTermsOfUse = true;
         }
 
-        public void OnAuthenticated(string oAuthToken)
+        public void OnAuthenticated(string oAuthToken, long dateExpires, bool sync = true)
         {
             _authentication.OAuthToken = oAuthToken;
             HasAcceptedTermsOfUse = true;
+            bool hasAuthenticated = IsAuthenticated;
             IsAuthenticated = true;
+            AuthenticatedPortal = ModioAPI.CurrentPortal;
             InternalOnUserChanged?.Invoke();
 
             // Using Task.Run() causes this to run in another thread, breaking sync completely as event subscribers
             // exist on main thread. By requiring it run synchronously we keep it on the Unity main thread.
-            Sync().ForgetTaskSafely();
+            
+            // if Sync only runs if the user has not authenticated before,
+            // or we are forcing a sync
+            // this is to avoid a re-authenticating user causing a sync
+            // if a user is re-authenticating the endpoint triggering this
+            // will sync the correct user data
+            // ie; subscribing to a mod does not need to sync subscriptions
+            // as the user has already been synced before, and only the subscription they're changing
+            // needs to be updated
+            
+            if(sync || !hasAuthenticated)
+                Sync().ForgetTaskSafely();
         }
         
         
         internal string GetAuthToken() => _authentication.OAuthToken;
-
+        
         /// <summary>
         /// Syncs the user profile, subscriptions, purchases, wallet, ratings and entitlements with changes made from the Web Interface.
         /// </summary>
@@ -674,6 +698,16 @@ namespace Modio.Users
         }
 
         /// <summary>
+        /// Sets the current user's auth token to an invalid value
+        /// Used for testing error handling
+        /// </summary>
+        [ModioDebugMenu(ShowInBrowserMenu = true, ShowInSettingsMenu = false)]
+        public static void InvalidateAuthToken()
+        {
+            Current._authentication.OAuthToken = "INVALID_TOKEN"; // Invalid token
+        }
+
+        /// <summary>
         /// Crawls all pages
         /// </summary>
         /// <param name="filter"></param>
@@ -749,6 +783,7 @@ namespace Modio.Users
                 DisabledMods = ModRepository.GetDisabled().Select(mod => (long)mod.Id).ToList(),
                 PurchasedMods = ModRepository.GetPurchased().Select(mod => (long)mod.Id).ToList(),
                 FollowedCollections = ModCollectionRepository.GetFollowed().Select(collection => (long)collection.Id).ToList(),
+                UserPortal = (int)AuthenticatedPortal,
             };
     }
     
@@ -759,10 +794,10 @@ namespace Modio.Users
         public string Username;
         public long UserId;
         public string AuthToken;
-        public long AuthExpiration;
         public List<long> SubscribedMods;
         public List<long> DisabledMods;
         public List<long> PurchasedMods;
         public List<long> FollowedCollections;
+        public int UserPortal;
     }
 }

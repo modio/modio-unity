@@ -22,7 +22,7 @@ namespace Modio.API
         public static partial class Authentication
         {
             /// <summary>
-            /// <p>Request an access token on behalf of a Google user. To use this functionality you *must* add your games Client ID, Secret and Redirect URI from Google, to the [*Game Admin > Settings*](/platforms/google/authentication/) page of your games profile on mod.io. A Successful request will return an [Access Token Object](#access-token-object).</p>
+            /// <p>Request an access token on behalf of a Google user. To use this functionality you *must* add your games Client ID, Secret and Redirect URI from Google, to the [*Game Admin > Settings*](/platforms/google/authentication) page of your games profile on mod.io. A Successful request will return an [Access Token Object](#access-token-object).</p>
             /// <p>*</p>
             /// <p>__HINT:__ If you want to overlay the mod.io site in-game on Android, we recommend you add `?portal=google` to the end of the URL you open which will prompt the user to login with Google. See [Web Overlay Authentication](#web-overlay-authentication) for details.</p>
             /// </summary>
@@ -39,7 +39,7 @@ namespace Modio.API
             }
 
             /// <summary>
-            /// <p>Request an access token on behalf of a Google user. To use this functionality you *must* add your games Client ID, Secret and Redirect URI from Google, to the [*Game Admin > Settings*](/platforms/google/authentication/) page of your games profile on mod.io. A Successful request will return an [Access Token Object](#access-token-object).</p>
+            /// <p>Request an access token on behalf of a Google user. To use this functionality you *must* add your games Client ID, Secret and Redirect URI from Google, to the [*Game Admin > Settings*](/platforms/google/authentication) page of your games profile on mod.io. A Successful request will return an [Access Token Object](#access-token-object).</p>
             /// <p>*</p>
             /// <p>__HINT:__ If you want to overlay the mod.io site in-game on Android, we recommend you add `?portal=google` to the end of the URL you open which will prompt the user to login with Google. See [Web Overlay Authentication](#web-overlay-authentication) for details.</p>
             /// </summary>

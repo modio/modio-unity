@@ -20,31 +20,31 @@ namespace Modio.API.SchemaDefinitions{
         static readonly Dictionary<string, object> _bodyParameters = new Dictionary<string, object>();
         
 #nullable enable
-        // TODO: Document
+        /// <summary>Name of your mod. Cannot exceed 50 characters.</summary> 
         internal readonly string? Name;
         /// <summary>The name ID is used in the URL to identify the mod. It must be unique and contain only lowercase letters, numbers, and dashes.</summary>
         internal readonly string? NameId;
-        // TODO: Document
+        /// <summary>Summary for your mod, giving a brief overview of what it's about. Cannot exceed 250 characters.</summary> 
         internal readonly string? Summary;
-        // TODO: Document
+        /// <summary>Detailed description for your mod, which can include details such as 'About', 'Features', 'Install Instructions', 'FAQ', etc. HTML supported and encouraged.</summary> 
         internal readonly string? Description;
-        // TODO: Document
+        /// <summary>Image file which will represent your mods logo. Must be jpg, jpeg or png format and cannot exceed 8MB in filesize. Dimensions must be at least 512x288 and we recommended you supply a high resolution image with a 16 / 9 ratio. mod.io will use this image to make three thumbnails for the dimensions 320x180, 640x360 and 1280x720.</summary> 
         internal readonly ModioAPIFileParameter? Logo;
-        // TODO: Document
+        /// <summary>Visibility of the mod</summary> 
         internal readonly long? Visible;
-        // TODO: Document
+        /// <summary>Mature content found in this mod.</summary> 
         internal readonly long? MaturityOption;
-        // TODO: Document
+        /// <summary>Community features enabled for this mod</summary> 
         internal readonly long? CommunityOptions;
         /// <summary>Metadata that accepts any string-based arbitrary value, up to a maximum of 50,000 characters.</summary>
         internal readonly string? MetadataBlob;
         /// <summary>When providing this attribute, if the input array contains tags, they will entirely replace any existing tags assigned to the mod. If an empty array is passed, all currently assigned tags will be removed. If null or omitted, no changes will be made to the assigned tags.</summary>
         internal readonly string[]? Tags;
-        // TODO: Document
+        /// <summary>Monetization options enabled for this mod</summary> 
         internal readonly long? MonetizationOptions;
-        // TODO: Document
+        /// <summary>The price of the mod.</summary> 
         internal readonly long? Price;
-        // TODO: Document
+        /// <summary>Maximum number of times this mod can be sold.</summary> 
         internal readonly long? Stock;
 #nullable disable
 

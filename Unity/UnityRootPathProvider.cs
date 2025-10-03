@@ -11,7 +11,7 @@ namespace Modio.Unity
         /// <summary>
         /// Path to the shared public folder;
         /// <returns>
-        /// Typically returns "C:\Users\Public\"
+        /// Returns a value based on <c>Application.persistentDataPath</c>
         /// </returns>
         /// </summary>
         public string Path => Application.persistentDataPath;
@@ -19,7 +19,7 @@ namespace Modio.Unity
         /// <summary>
         /// Path to the local user app data folder;
         /// <returns>
-        /// Typically returns "C:\Users\&lt;UserName&gt;\AppData\Roaming"
+        /// Typically returns <c>Application.persistentDataPath</c>
         /// </returns>
         /// </summary>
         public string UserPath  => System.IO.Path.Combine(Application.persistentDataPath, "UserData");

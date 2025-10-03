@@ -6,7 +6,7 @@ using Modio.API.SchemaDefinitions;
 using Modio.Authentication;
 using Modio.Users;
 
-#if UNITY_ANDROID
+#if UNITY_ANDROID && MODIO_GOOGLE_PLAY_GAMES
 using GooglePlayGames;
 using GooglePlayGames.BasicApi;
 #endif
@@ -16,7 +16,7 @@ namespace Plugins.Modio.Unity.Platforms.Android
     public class GoogleGamesAuthService : IModioAuthService,
                                           IGetActiveUserIdentifier
     {
-#if UNITY_ANDROID
+#if UNITY_ANDROID && MODIO_GOOGLE_PLAY_GAMES
         static readonly List<AuthScope> RequiredAuthScopes = new List<AuthScope>
         {
             AuthScope.EMAIL,
@@ -25,9 +25,9 @@ namespace Plugins.Modio.Unity.Platforms.Android
         };
 #endif
         
-        public async Task<Error> Authenticate(bool displayedTerms, string thirdPartyEmail = null)
+        public async Task<Error> Authenticate(bool displayedTerms, string thirdPartyEmail = null, bool sync = true)
         {
-#if UNITY_ANDROID
+#if UNITY_ANDROID && MODIO_GOOGLE_PLAY_GAMES
             var authCodeTcs = new TaskCompletionSource<AuthResponse>();
             
             PlayGamesPlatform.Instance.RequestServerSideAccess(false,
@@ -52,7 +52,7 @@ namespace Plugins.Modio.Unity.Platforms.Android
                 );
 
             if (!error)
-                User.Current.OnAuthenticated(tokenObejct.Value.AccessToken);
+                User.Current.OnAuthenticated(tokenObejct.Value.AccessToken, accessTokenObject.Value.DateExpires, sync);
 
             return error;
 #else
@@ -63,7 +63,7 @@ namespace Plugins.Modio.Unity.Platforms.Android
         public ModioAPI.Portal Portal => ModioAPI.Portal.Google;
 
         public Task<string> GetActiveUserIdentifier()
-#if UNITY_ANDROID
+#if UNITY_ANDROID && MODIO_GOOGLE_PLAY_GAMES
             => Task.FromResult(PlayGamesPlatform.Instance.localUser.id);
 #else
             => Task.FromResult(string.Empty);

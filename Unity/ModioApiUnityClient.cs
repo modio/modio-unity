@@ -11,6 +11,7 @@ using UnityEngine.Networking;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Modio.API.SchemaDefinitions;
+using Modio.Authentication;
 using Modio.Errors;
 using Modio.Extensions;
 using Modio.Users;
@@ -19,6 +20,8 @@ namespace Modio.Unity
 {
     public class ModioAPIUnityClient : IModioAPIInterface
     {
+        const long UNAUTHORIZED_RESPONSE = 401;
+        
         string _basePath = string.Empty;
         readonly List<string> _defaultParameters = new List<string>();
         readonly Dictionary<string, string> _pathParameters = new Dictionary<string, string>();
@@ -26,7 +29,9 @@ namespace Modio.Unity
         readonly List<UnityWebRequest> _webRequests = new List<UnityWebRequest>();
         
         CancellationTokenSource _cancellationTokenSource;
-        
+        static Task<Error> _reauthTask;
+        DateTime _timeOfLastReauthentication;
+
         public void SetBasePath(string value) => _basePath = value;
 
         public void AddDefaultPathParameter(string key, string value) => _pathParameters[key] = value;
@@ -56,7 +61,7 @@ namespace Modio.Unity
             _cancellationTokenSource?.Cancel();
         }
 
-        public async Task<(Error, Stream)> DownloadFile(string url, CancellationToken token = default)
+        public async Task<(Error, Stream)> DownloadFile(string url, CancellationToken token = default, bool allowReauth = true)
         {
             Error testError = await CheckFakeErrorsForTest(url);
 
@@ -80,7 +85,7 @@ namespace Modio.Unity
             _webRequests.Add(webRequest);
             
             handler.SetCallingRequest(webRequest);
-            Error error = EnforceAuthentication(downloadRequest, webRequest);
+            Error error = await EnforceAuthentication(downloadRequest, webRequest);
 
             if (error)
                 return (error, null);
@@ -93,21 +98,25 @@ namespace Modio.Unity
             {
                 //webRequest.responseCode is -1;
                 requestAsyncOperation = webRequest.SendWebRequest();
-
+                requestAsyncOperation.completed += handler.DownloadCompleted;
                 await handler.ResponseReceived(token);
-
                 long responseCode = webRequest.responseCode;
 
                 //This is an unusual case that happens on certain platforms
                 if (responseCode == 0)
                     responseCode = await GetResponseCodeFromHeadRequest(responseCode);
 
+                if (allowReauth && responseCode == UNAUTHORIZED_RESPONSE)
+                    return await ReauthenticateWithResponse(
+                        () => DownloadFile(url, token, false)
+                    );
+
                 if (responseCode is < 200 or >= 300)
                 {
 
                     if (!IsResponseConnectionFailure(responseCode))
                     {
-                        await handler.WaitForComplete(token);
+                        await handler.WaitForComplete();
                         Stream jsonResponseStream = handler.GetStream();
                         var streamReader = new StreamReader(jsonResponseStream);
                         return (await GetErrorAndLogBadResponse(streamReader), null);
@@ -156,8 +165,8 @@ namespace Modio.Unity
             async Task<long> GetResponseCodeFromHeadRequest(long responseCode)
             {
                 using UnityWebRequest headRequest = CreateWebRequest(downloadRequest, url, new DownloadHandlerBuffer(), true);
-                error = EnforceAuthentication(downloadRequest, headRequest);
-                    
+                error = await EnforceAuthentication(downloadRequest, headRequest);
+                
                 if (error)
                     return responseCode;
                     
@@ -178,6 +187,42 @@ namespace Modio.Unity
             _webRequests.Remove(webRequest);
         
             DisposeWayLater(webRequest).ForgetTaskSafely();
+        }
+
+        async Task<(Error, T)> ReauthenticateWithResponse<T>(Func<Task<(Error,T)>> callback)
+        {
+
+            Error error = Error.None;
+            if (!User.Current.IsAuthenticated)
+            {
+                ModioLog.Message?.Log("Not re-authenticating because user was never authenticated");
+                return (new Error(ErrorCode.USER_NOT_AUTHENTICATED), default(T));
+            }
+
+            ModioLog.Message?.Log("Re-authenticating due to 401 Unauthorized response");
+            // If we have a reauth task that is still running, we wait for it to complete
+            if(_reauthTask is { IsCompleted: false, })
+                error = await _reauthTask;
+            // If we don't have a reauth task, we create one
+            else if (ModioServices.Resolve<IModioAuthService>() is { } authService)
+            {
+                // If we have attempted to auth within the last 3 seconds, we return an error
+                if ((DateTime.Now - _timeOfLastReauthentication).TotalSeconds < 3)
+                {
+                    ModioLog.Verbose?.Log("Attempting to re-authenticate too quickly, returning error");
+                    return (new Error(ErrorCode.USER_NOT_AUTHENTICATED), default(T));
+                }
+                
+                _reauthTask = authService.Authenticate(false, null, false);
+                _timeOfLastReauthentication = DateTime.Now;
+                
+                error = await _reauthTask;
+            }
+
+            if(error)
+                return (error, default(T));
+            
+            return await callback();
         }
 
         /// <summary>
@@ -248,21 +293,31 @@ namespace Modio.Unity
             return webRequest;
         }
         
-        static Error EnforceAuthentication(ModioAPIRequest downloadRequest, UnityWebRequest webRequest)
+        static async Task<Error> EnforceAuthentication(ModioAPIRequest downloadRequest, UnityWebRequest webRequest)
         {
-           
-            if (downloadRequest.Options.RequiresAuthentication && !User.Current.IsAuthenticated)
+            Error error = Error.None;
+            
+            // If we don't need authentication, we skip all this
+            if (!downloadRequest.Options.RequiresAuthentication)
+                return Error.None;
+            
+            // If we need authentication but the user isn't authenticated, we return an error
+            // ie; never authenticated
+            if (!User.Current.IsAuthenticated)
                 return new Error(ErrorCode.USER_NOT_AUTHENTICATED);
+            
+            // If we have a reauth task that is still running, we wait for it to complete
+            if(_reauthTask is {IsCompleted:false,})
+                error = await _reauthTask;
+            
+            webRequest.SetRequestHeader("Authorization", $"Bearer {User.Current?.GetAuthToken()}");
 
-            if(User.Current.IsAuthenticated)
-                webRequest.SetRequestHeader("Authorization", $"Bearer {User.Current?.GetAuthToken()}");
-
-            return Error.None;
+            return error;
         }
-
-        async Task<(Error error, T)> GetJson<T>(ModioAPIRequest request, Func<JsonTextReader, Task<T>> reader)
+        async Task<(Error error, T)> GetJson<T>(ModioAPIRequest request, Func<JsonTextReader, Task<T>> reader, bool allowReauth = true)
         {
             string target = BuildPath(request);
+            
             
             Error error = await CheckFakeErrorsForTest(target);
             if(error)
@@ -270,29 +325,41 @@ namespace Modio.Unity
             
             using UnityWebRequest webRequest = CreateWebRequest(request, target);
 
-            error = EnforceAuthentication(request, webRequest);
-
+            error = await EnforceAuthentication(request, webRequest);
+            if (request.Options.RequiresAuthentication)
+            {
+                if(_reauthTask is {IsCompleted:false,})
+                    error = await _reauthTask;
+                else if (!User.Current.IsAuthenticated)
+                    return (new Error(ErrorCode.USER_NOT_AUTHENTICATED), default(T));
+                    
+            }
             if (error)
                 return (error, default(T));
-
+            
             _webRequests.Add(webRequest);
 
             CancellationToken cachedShutdownToken = _cancellationTokenSource?.Token ?? CancellationToken.None;
-            
+
             try
             {
                 await LogRequest(webRequest, request);
                 error = await SendRequest(webRequest, cachedShutdownToken);
 
-                if(error) return (error, default(T));
-                
+                if (error)
+                    return (error, default(T));
+
                 string jsonResponse = webRequest.downloadHandler.text;
 
-                if (webRequest.responseCode == 204) return (Error.None, (T)(object)new Response204());
+                ModioLog.Verbose?.Log($"Response from {target}:\n{jsonResponse}");
 
-                ModioLog.Verbose?.Log(jsonResponse);
+                if (webRequest.responseCode == 204)
+                    return (Error.None, (T)(object)new Response204());
 
-                if (webRequest.responseCode < 200 || webRequest.responseCode >= 300)
+                if (allowReauth && webRequest.responseCode == UNAUTHORIZED_RESPONSE)
+                    return await ReauthenticateWithResponse(() => GetJson(request, reader, false));
+
+                if (webRequest.responseCode is < 200 or >= 300)
                 {
                     if (IsResponseConnectionFailure(webRequest.responseCode))
                     {
@@ -301,19 +368,18 @@ namespace Modio.Unity
                         return (new Error(ErrorCode.CANNOT_OPEN_CONNECTION), default(T));
                     }
 
-                    if (webRequest.responseCode == 429
-                        && webRequest.GetResponseHeaders().TryGetValue("retry-after", out string retryHeader)
-                        && !string.IsNullOrEmpty(retryHeader)
-                        && int.TryParse(retryHeader, out int retryAfterSeconds))
-                    {
-                        GetErrorAndLogBadResponse(jsonResponse);
-                        return (new RateLimitError(RateLimitErrorCode.RATELIMITED, retryAfterSeconds), default(T));
-                    }
-                    
-                    return (GetErrorAndLogBadResponse(jsonResponse), default(T));
+                    if (webRequest.responseCode != 429
+                        || !webRequest.GetResponseHeaders().TryGetValue("retry-after", out string retryHeader)
+                        || string.IsNullOrEmpty(retryHeader)
+                        || !int.TryParse(retryHeader, out int retryAfterSeconds))
+                        return (GetErrorAndLogBadResponse(jsonResponse), default(T));
+
+                    GetErrorAndLogBadResponse(jsonResponse);
+                    return (new RateLimitError(RateLimitErrorCode.RATELIMITED, retryAfterSeconds), default(T));
                 }
 
-                if (ModioAPI.IsOffline) ModioAPI.SetOfflineStatus(false);
+                if (ModioAPI.IsOffline)
+                    ModioAPI.SetOfflineStatus(false);
 
                 using var stringReader = new StringReader(jsonResponse);
                 using var jsonTextReader = new JsonTextReader(stringReader);
@@ -383,15 +449,21 @@ namespace Modio.Unity
                     + $"{errorToken.Error.Code}: {errorToken.Error.Message}"
                 );
 
-                return new Error(ErrorCode.UNKNOWN);
+                return new ErrorEmbedded(ErrorCode.UNKNOWN,errorToken.Error);
             }
 
             overrideStream?.Dispose();
-            return new Error((ErrorCode)errorToken.Error.ErrorRef);
+            return new ErrorEmbedded(errorToken.Error);
         }
         
         static Error GetErrorAndLogBadResponse(string jsonResponse)
         {
+            if (string.IsNullOrEmpty(jsonResponse))
+            {
+                ModioLog.Error?.Log($"There is an error with the json response.");
+                return new Error(ErrorCode.INVALID_JSON);
+            }
+            
             // It's possible (though hopefully rare) for the server to return a different error before our JSON ErrorObject
             if (!string.IsNullOrEmpty(jsonResponse) && jsonResponse[0] != '{')
             {
@@ -423,21 +495,21 @@ namespace Modio.Unity
                     "Invalid error returned from API, please contact mod.io support.\n"
                     + $"{errorToken.Error.Code}: {errorToken.Error.Message}"
                 );
-                return new Error(ErrorCode.UNKNOWN);
+                return new ErrorEmbedded(ErrorCode.UNKNOWN,errorToken.Error);
 
             }
 
-            return new Error((ErrorCode)errorToken.Error.ErrorRef);
+            return new ErrorEmbedded(errorToken.Error);
         }
 
-        public Task<(Error error, T? result)> GetJson<T>(ModioAPIRequest request) where T : struct
+        public Task<(Error error, T? result)> GetJson<T>(ModioAPIRequest request, bool allowReauth = true) where T : struct
         {
-            return GetJson(request, reader => Task.FromResult((T?)new JsonSerializer().Deserialize<T>(reader)));
+            return GetJson(request, reader => Task.FromResult((T?)new JsonSerializer().Deserialize<T>(reader)), allowReauth);
         }
         
-        public Task<(Error error, JToken)> GetJson(ModioAPIRequest request)
+        public Task<(Error error, JToken)> GetJson(ModioAPIRequest request, bool allowReauth = true)
         {
-            return GetJson(request, reader => JToken.ReadFromAsync(reader));
+            return GetJson(request, reader => JToken.ReadFromAsync(reader), allowReauth);
         }
 
 
@@ -476,7 +548,7 @@ namespace Modio.Unity
                 case ModioAPIRequestContentType.Stream:
 
                 default:
-                    throw new NotImplementedException();
+                    throw new NotSupportedException($"{nameof(ModioAPIRequestContentType)} value of {request.ContentType} is not supported.");
             }
         }
 
@@ -567,7 +639,7 @@ namespace Modio.Unity
                 ModioAPIRequestMethod.Put    => UnityWebRequest.kHttpVerbPUT,
                 ModioAPIRequestMethod.Get    => UnityWebRequest.kHttpVerbGET,
                 ModioAPIRequestMethod.Delete => UnityWebRequest.kHttpVerbDELETE,
-                _                            => throw new NotImplementedException(),
+                _                            => throw new NotSupportedException($"{nameof(ModioAPIRequestMethod)} value of {method} is not supported."),
             };
         }
 
@@ -614,8 +686,11 @@ namespace Modio.Unity
 
         Task LogRequest(UnityWebRequest request, ModioAPIRequest modioRequest = null)
         {
-            if (ModioLog.Verbose == null) return Task.CompletedTask;
-            if (request == null) return Task.CompletedTask;
+
+            if (ModioLog.Verbose == null){return Task.CompletedTask;}
+
+            if (request == null)
+                return Task.CompletedTask;
 
             var builder = new StringBuilder();
             builder.AppendLine($"{request.method} {request.uri.PathAndQuery} HTTP/1.1");

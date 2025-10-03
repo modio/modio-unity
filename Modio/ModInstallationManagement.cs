@@ -84,7 +84,7 @@ namespace Modio
             // The only team we can have this missing data is from reading/scanning the index
             await Mod.GetMods(_index.Index.Keys);
 
-            foreach (KeyValuePair<long, ModIndex.IndexEntry> entryPair in index.Index)
+            foreach (KeyValuePair<long, ModIndex.IndexEntry> entryPair in _index.Index)
             {
                 Mod mod = GetModRespectingIndexCache(entryPair.Key);
 
@@ -350,7 +350,14 @@ namespace Modio
                 if (mod.File == null) continue;
 
                 //don't retry a failed file operation without external input, as we'll likely just fail again and get rate limited
-                if (mod.File.State == ModFileState.FileOperationFailed) continue;
+                if (mod.File.State == ModFileState.FileOperationFailed)
+                {
+                    // If no one wants it, we can reset it
+                    if (!anyOtherSubscribers)
+                        mod.File.State = ModFileState.None;
+
+                    continue;
+                }
 
                 if ((!anyOtherSubscribers && !tempModIsValid)
                     || (!tempModIsValid && !localUserIsSubscribed && mod.File.State is not ModFileState.Installed and not ModFileState.Uninstalling)

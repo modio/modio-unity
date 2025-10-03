@@ -13,7 +13,7 @@ namespace Modio.API
     {
         public static partial class Authentication
         {
-            /// <summary>Request an access token on behalf of an Epic Games user. Additional instructions for configuing your Epic Account Services Application to use this endpoint can be [found here](/platforms/epic/authentication/). A Successful request will return an [Access Token Object](#access-token-object).</summary>
+            /// <summary>Request an access token on behalf of an Epic Games user. Additional instructions for configuing your Epic Account Services Application to use this endpoint can be [found here](/platforms/epic/authentication). A Successful request will return an [Access Token Object](#access-token-object).</summary>
             internal static async Task<(Error error, JToken accessTokenObject)> AuthenticateViaEpicgamesAsJToken(
                 EpicGamesAuthenticationRequest? body = null
             ) {
@@ -26,7 +26,7 @@ namespace Modio.API
                 return await _apiInterface.GetJson(request);
             }
 
-            /// <summary>Request an access token on behalf of an Epic Games user. Additional instructions for configuing your Epic Account Services Application to use this endpoint can be [found here](/platforms/epic/authentication/). A Successful request will return an [Access Token Object](#access-token-object).</summary>
+            /// <summary>Request an access token on behalf of an Epic Games user. Additional instructions for configuing your Epic Account Services Application to use this endpoint can be [found here](/platforms/epic/authentication). A Successful request will return an [Access Token Object](#access-token-object).</summary>
             /// <param name="body"></param>
             internal static async Task<(Error error, AccessTokenObject? accessTokenObject)> AuthenticateViaEpicgames(
                 EpicGamesAuthenticationRequest? body = null
