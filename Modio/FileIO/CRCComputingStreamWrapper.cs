@@ -154,7 +154,7 @@ namespace Modio.FileIO
         public override long Position
         {
             get => _baseStream.Position;
-            set => throw new NotImplementedException("Setting position is not supported in CRCComputingStreamWrapper.");
+            set => throw new NotSupportedException("Setting position is not supported in CRCComputingStreamWrapper.");
         }
     }
 }

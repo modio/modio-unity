@@ -66,7 +66,7 @@ namespace Modio.Mods.Builder
             Name = editTarget.Name;
             Summary = editTarget.Summary;
             Description = editTarget.Description;
-            Tags = editTarget.Tags.Select(tag => tag.ApiName).ToArray();
+            Tags = editTarget.Tags?.Select(tag => tag.ApiName).ToArray() ?? Array.Empty<string>();
             MetadataBlob = editTarget.MetadataBlob;
             MetadataKvps = editTarget.MetadataKvps;
 
@@ -329,9 +329,7 @@ namespace Modio.Mods.Builder
                 ModioLog.Error?.Log($"Can't publish mod [{Name}], mod must have the Name, Summary & Logo all filled before it can be added.");
                 return (new Error(ErrorCode.BAD_PARAMETER), null);
             }
-
-            string nameId = Name.ToLowerInvariant().Replace(' ', '-');
-
+            
             (Error error, ModioAPIFileParameter logo) = TryGetLogoFileParameter();
 
             if (error)
@@ -342,12 +340,12 @@ namespace Modio.Mods.Builder
 
             var body = new AddModRequest(
                 Name,
-                nameId,
+                null,
                 Summary,
                 Description,
                 logo,
                 _pendingChanges.HasFlag(ChangeFlags.Visibility) 
-                    ? Visible ? 0 : 1 
+                    ? Visible ? 1 : 0 
                     : null,
                 _pendingChanges.HasFlag(ChangeFlags.MaturityOptions) ? (long)MaturityOptions : null,
                 _pendingChanges.HasFlag(ChangeFlags.CommunityOptions) ? (long)CommunityOptions : null,

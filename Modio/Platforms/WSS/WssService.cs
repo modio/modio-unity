@@ -15,31 +15,44 @@ namespace Modio.Platforms.Wss
 {
     public class WssService
     {
-        
         readonly Mutex _sending = new Mutex();
         readonly Mutex _receiving = new Mutex();
 
         readonly byte[] _buffer = new byte[4096];
-        
-        bool _shuttingDown;
-        WssSettings _platformSettings;
 
-        WssSettings Settings { get; }
-        WssMessageDispatcher WssMessageDispatcher { get; }
-        WssConnectionManager WssConnectionManager { get; }
-        
+        bool _shuttingDown;
+        WssSettings Settings { get; set; }
+        WssMessageDispatcher WssMessageDispatcher { get; set; }
+        WssConnectionManager WssConnectionManager { get; set; }
+
         public WssService()
         {
-            if (!ModioClient.Settings.TryGetPlatformSettings(out WssSettings setting))
-                ModioLog.Error?.Log(
-                    "WSS Settings not found. Please ensure you have initialized the WSS platform settings."
-                );
+            ModioServices.AddBindingChangedListener<ModioSettings>(OnSettingsChanged);
+        }
 
-            Settings = setting;
+        void OnSettingsChanged(ModioSettings s)
+        {
+            bool changed = s.TryGetPlatformSettings(out WssSettings newSettings)
+                           && (Settings == null || Settings.ServerURL != newSettings.ServerURL);
+
+            if (!changed)
+                return;
+
+            Settings = newSettings;
+
+            if (WssConnectionManager is { IsConnected: true, })
+            {
+                                WssMessageDispatcher.CancelAllAwaitingMessages();
+
+                WssConnectionManager.Disconnect().ForgetTaskSafely();
+            }
+
+            if (Settings == null)
+                return;
+            
             WssConnectionManager = new WssConnectionManager(Settings);
             WssMessageDispatcher = new WssMessageDispatcher();
         }
-        
 
         internal async Task<(Error error, WssMessage message)> WaitForMessage(
             string messageOperation,
@@ -47,12 +60,13 @@ namespace Modio.Platforms.Wss
         )
         {
             Error error = Error.None;
+
             if (!WssConnectionManager.IsConnected)
                 error = await StartService();
 
-            if(error)
+            if (error)
                 return (error, default(WssMessage));
-            
+
             TaskCompletionSource<WssMessage> tcs = await WssMessageDispatcher.WaitForMessages(
                 messageOperation,
                 checkPreviousUnhandledMessages
@@ -155,6 +169,9 @@ namespace Modio.Platforms.Wss
         internal async Task<(Error, TResponse)> DoMessageHandshake<TResponse>(string operation, WssMessage message)
             where TResponse : struct
         {
+            if(WssConnectionManager == null)
+                return (new WssError(ErrorCode.WSS_NOT_CONFIGURED), default(TResponse));
+            
             if (!WssConnectionManager.IsConnected)
                 await StartService();
 
@@ -223,12 +240,12 @@ namespace Modio.Platforms.Wss
 
         async Task<Error> StartService()
         {
-
             if (WssConnectionManager.IsConnected)
             {
                 ModioLog.Error?.Log("[Socket] WSS Gateway is already connected.");
                 return Error.None;
             }
+
             try
             {
                 Error error = await WssConnectionManager.Connect();
@@ -238,6 +255,7 @@ namespace Modio.Platforms.Wss
                     OnShutdown();
                     return error;
                 }
+
                 ProcessMessages().ForgetTaskSafely();
                 ModioClient.OnShutdown += OnShutdown;
             }
@@ -254,11 +272,11 @@ namespace Modio.Platforms.Wss
         {
             if (!WssConnectionManager.IsConnected && !_shuttingDown)
                 return;
-            
+
             // already shutting down
             if (_shuttingDown)
                 return;
-            
+
             try
             {
                 _shuttingDown = true;
@@ -276,23 +294,7 @@ namespace Modio.Platforms.Wss
                 ModioClient.OnShutdown -= OnShutdown;
             }
         }
-        
-#region Debug Tools
 
-        [ModioDebugMenu]
-        public static void UseWssService()
-        {
-            if (!ModioServices.Resolve<ModioSettings>().TryGetPlatformSettings(out WssSettings _))
-                ModioServices.Resolve<ModioSettings>().PlatformSettings = ModioServices.Resolve<ModioSettings>()
-                                                                                       .PlatformSettings.Append(
-                                                                                           new WssSettings()
-                                                                                       ).ToArray();
-            ModioServices.Bind<WssAuthService>()
-                         .WithInterfaces<IModioAuthService>()
-                         .WithInterfaces<IGetActiveUserIdentifier>()
-                         .WithInterfaces<IGetPortalProvider>()
-                         .FromNew<WssAuthService>(ModioServicePriority.DeveloperOverride + 10);
-        }
-#endregion
+
     }
 }

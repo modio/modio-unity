@@ -89,7 +89,7 @@ namespace Modio.Unity.Platforms.MobilePurchasing
             _storeController.InitiatePurchase(productId);
             return _purchaseTaskCompletionSource.Task;
 #else
-            return false;
+            return Task.FromResult(false);
 #endif
         }
 

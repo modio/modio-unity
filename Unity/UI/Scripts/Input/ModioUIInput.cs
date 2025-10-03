@@ -92,6 +92,7 @@ namespace Modio.Unity.UI.Input
             SearchPageRight,
             MoreFromThisCreator,
             DeveloperMenu,
+            Logout,
         }
 
         public static void PressedAction(ModioAction action)

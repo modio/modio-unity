@@ -196,7 +196,6 @@ namespace Modio
             ModioServices.Bind<ModioEmailAuthService>()
                          .WithInterfaces<IGetActiveUserIdentifier>()
                          .WithInterfaces<IModioAuthService>()
-                         .WithInterfaces<IGetPortalProvider>()
                          .FromNew<ModioEmailAuthService>(ModioServicePriority.Default);
             
             

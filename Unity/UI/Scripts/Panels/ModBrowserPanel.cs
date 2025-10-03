@@ -36,6 +36,9 @@ namespace Modio.Unity.UI.Panels
             ModioUIInput.AddHandler(ModioUIInput.ModioAction.Filter, OpenFilter);
             ModioUIInput.AddHandler(ModioUIInput.ModioAction.Sort,   OpenSort);
 
+            if (ModioUnityMultiplatformAuthResolver.IsSupportedPlatform) 
+                ModioUIInput.AddHandler(ModioUIInput.ModioAction.Logout, OpenLogout);
+
             ModioUISearch.Default.OnSearchUpdatedUnityEvent.AddListener(HookUpCancelOrClearFilter);
 
             base.OnGainedFocus(selectionBehaviour);
@@ -165,6 +168,11 @@ namespace Modio.Unity.UI.Panels
         void OpenSort()
         {
             ModioPanelManager.GetPanelOfType<ModSortPanel>()?.OpenPanel();
+        }
+
+        void OpenLogout()
+        {
+            ModioPanelManager.GetPanelOfType<ModioAuthenticationLogOutPanel>()?.OpenPanel();
         }
     }
 }

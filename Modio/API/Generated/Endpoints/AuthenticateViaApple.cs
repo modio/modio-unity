@@ -13,7 +13,7 @@ namespace Modio.API
     {
         public static partial class Authentication
         {
-            /// <summary>Request an access token on behalf of a 'Sign in with Apple' user. To use this functionality you *must* add your games Bundle ID from Apple, to the [*Game Admin > Settings*](/platforms/apple/authentication/) page of your games profile on mod.io. A Successful request will return an [Access Token Object](#access-token-object).</summary>
+            /// <summary>Request an access token on behalf of a 'Sign in with Apple' user. To use this functionality you *must* add your games Bundle ID from Apple, to the [*Game Admin > Settings*](/platforms/apple/authentication) page of your games profile on mod.io. A Successful request will return an [Access Token Object](#access-token-object).</summary>
             public static async Task<(Error error, JToken accessTokenObject)> AuthenticateViaAppleAsJToken(
                 AppleAuthenticationRequest? body = null
             ) {
@@ -26,7 +26,7 @@ namespace Modio.API
                 return await _apiInterface.GetJson(request);
             }
 
-            /// <summary>Request an access token on behalf of a 'Sign in with Apple' user. To use this functionality you *must* add your games Bundle ID from Apple, to the [*Game Admin > Settings*](/platforms/apple/authentication/) page of your games profile on mod.io. A Successful request will return an [Access Token Object](#access-token-object).</summary>
+            /// <summary>Request an access token on behalf of a 'Sign in with Apple' user. To use this functionality you *must* add your games Bundle ID from Apple, to the [*Game Admin > Settings*](/platforms/apple/authentication) page of your games profile on mod.io. A Successful request will return an [Access Token Object](#access-token-object).</summary>
             /// <param name="body"></param>
             public static async Task<(Error error, AccessTokenObject? accessTokenObject)> AuthenticateViaApple(
                 AppleAuthenticationRequest? body = null

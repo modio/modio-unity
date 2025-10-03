@@ -45,12 +45,6 @@ namespace Modio.Unity.UI.Components
 
         void OpenTokens()
         {
-            if (ModioClient.AuthService == null)
-            {
-                ModioLog.Error?.Log($"No {nameof(IModioAuthService)} is bound! Cannot auth");
-                return;
-            }
-            
             //Implement below when we have a platform that needs it
             if (ModioServices.TryResolve(out IModioVirtualCurrencyProviderService vcProvider))
             {

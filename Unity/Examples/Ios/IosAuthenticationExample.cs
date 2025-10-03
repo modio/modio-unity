@@ -45,7 +45,7 @@ namespace Modio.Unity.Examples.Ios
                              .FromInstance(_appleAuthManager);
 
                 ModioServices.Bind<IosAuthenticationService>()
-                             .WithInterfaces<IModioAuthService, IGetActiveUserIdentifier, IGetPortalProvider>()
+                             .WithInterfaces<IModioAuthService, IGetActiveUserIdentifier>()
                              .FromNew<IosAuthenticationService>();
                 
                 ModioLog.Verbose?.Log($"Successfully initialized Apple Auth");

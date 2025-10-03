@@ -3,6 +3,7 @@ using Modio.API;
 using Modio.Authentication;
 using Modio.Extensions;
 using Modio.FileIO;
+using Modio.Platforms.Wss;
 using Modio.Unity.Settings;
 using Modio.Unity.UI.Scripts.Themes;
 using UnityEngine;
@@ -109,6 +110,9 @@ namespace Modio.Unity.UI.Panels
             _debugMenu.AddToggle("Fallback to email authentication", 
                     () => Get<ModioComponentUISettings>().FallbackToEmailAuthentication,
                     on => Get<ModioComponentUISettings>().FallbackToEmailAuthentication = on);
+            _debugMenu.AddToggle("Enable auth selection", 
+                                 () => Get<ModioComponentUISettings>().EnableAuthSelection,
+                                 on => Get<ModioComponentUISettings>().EnableAuthSelection = on);
             
             _debugMenu.AddLabel("\nDisk Settings");
             _debugMenu.AddToggle("Override Disk Space Remaining", 
@@ -163,15 +167,32 @@ namespace Modio.Unity.UI.Panels
                                     _debugMenu.SetToDefaults();
                                 });
             
+            _debugMenu.AddLabel("\n WSS Settings");
+
+            _debugMenu.AddToggle(
+                "Enable",
+                () => _settings.TryGetPlatformSettings(out WssSettings _),
+                on =>
+                {
+                    if (on)
+                        Get<WssSettings>();
+                    else
+                        _settings.PlatformSettings = _settings.PlatformSettings
+                                                              .Where(s => s is not ModioEnableDebugMenu)
+                                                              .ToArray();
+                }
+            );
             _debugMenu.AddLabel("\nAuth Platform");
-            ModioMultiplatformAuthResolver.Initialize();
-            foreach (IModioAuthService modioAuthPlatform in ModioMultiplatformAuthResolver.AuthBindings)
+            if (!ModioServices.TryResolve(out ModioUnityMultiplatformAuthResolver authResolver)) 
+                authResolver = new ModioUnityMultiplatformAuthResolver();
+
+            foreach (IModioAuthService modioAuthPlatform in authResolver.AuthBindings)
             {
                 _debugMenu.AddToggle(ModioDebugMenu.Nicify(modioAuthPlatform.GetType().Name), 
-                                     () => ModioMultiplatformAuthResolver.ServiceOverride == modioAuthPlatform,
+                                     () => authResolver.ServiceOverride == modioAuthPlatform,
                                      on =>
                                      {
-                                         if (on) ModioMultiplatformAuthResolver.ServiceOverride = modioAuthPlatform;
+                                         if (on) authResolver.ServiceOverride = modioAuthPlatform;
                                          _debugMenu.SetToDefaults();
                                          if(ModioClient.IsInitialized)
                                              ModioClient.Shutdown().ForgetTaskSafely();

@@ -13,7 +13,7 @@ namespace Modio.Unity
     internal class StreamingDownloadHandler : DownloadHandlerScript
     {
         readonly ChunkedStreamBuffer _streamBuffer;
-        readonly CancellationToken _cancellationToken;
+        readonly CancellationTokenSource _cancellationTokenSource;
         readonly TaskCompletionSource<bool> _hasReceivedHeaders =  new TaskCompletionSource<bool>();
 
         UnityWebRequest _callingRequest;
@@ -35,8 +35,8 @@ namespace Modio.Unity
         /// <param name="token"> Cancellation token to cancel the download operation.</param>
         StreamingDownloadHandler(byte[] buffer, CancellationToken token = default) : base(buffer)
         {
-            _streamBuffer = new ChunkedStreamBuffer(token);
-            _cancellationToken = token;
+            _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(token);
+            _streamBuffer = new ChunkedStreamBuffer(_cancellationTokenSource.Token);
         }
 
         public void SetCallingRequest(UnityWebRequest request)
@@ -51,7 +51,7 @@ namespace Modio.Unity
 
         protected override bool ReceiveData(byte[] dataReceived, int dataLength)
         {
-            if(_cancellationToken.IsCancellationRequested){
+            if(_cancellationTokenSource.Token.IsCancellationRequested){
                 _callingRequest.Abort();
                 _streamBuffer.Flush();
                 _hasReceivedHeaders.TrySetCanceled();
@@ -83,21 +83,36 @@ namespace Modio.Unity
             _streamBuffer.Complete();
         }
 
-        public async Task WaitForComplete(CancellationToken token)
+        public async Task WaitForComplete()
         {
             while (!_callingRequest.isDone)
             {
-                if (token.IsCancellationRequested)
+                if (_cancellationTokenSource.Token.IsCancellationRequested)
                 {
                     _callingRequest.Abort();
                     _streamBuffer.Flush();
-                    _hasReceivedHeaders.TrySetCanceled(token);
+                    _hasReceivedHeaders.TrySetCanceled(_cancellationTokenSource.Token);
                     return;
                 }
                 await Task.Yield();
             }
 
             _streamBuffer.Complete();
+        }
+
+        /// <summary>
+        /// Event called when the download is completed.
+        /// </summary>
+        /// <param name="_">The AsyncOperation that completed the download.</param>
+        public void DownloadCompleted(AsyncOperation _)
+        {
+            
+            if (_callingRequest.result == UnityWebRequest.Result.Success)
+                return;
+
+            //Ensure the stream throws an error on read if the request failed
+            _streamBuffer.ThrowException = new IOException($"Download failed: {_callingRequest.error}");
+            _cancellationTokenSource.Cancel();
         }
 
         /// <summary>
@@ -112,14 +127,25 @@ namespace Modio.Unity
             
             internal ChunkedStreamBuffer(CancellationToken shutdownToken) => _shutdownToken = shutdownToken;
 
+            protected override void Dispose(bool disposing)
+            {
+                ModioLog.Verbose?.Log("Disposing ChunkedStreamBuffer and its data chunks.");
+                while (_dataQueue.TryDequeue(out BufferChunk data))
+                    data.Dispose();
+
+                _dataQueue.Clear();
+                _signal.Set();
+            }
+
             /// <summary>
             /// Clears the stream, disposing of all queued data.
             /// </summary>
             public override void Flush()
             {
+                // Only clear buffered data, do not dispose the stream itself
+                ModioLog.Verbose?.Log("Flushing ChunkedStreamBuffer: clearing data chunks.");
                 while (_dataQueue.TryDequeue(out BufferChunk data))
                     data.Dispose();
-
                 _dataQueue.Clear();
                 _signal.Set();
             }
@@ -134,10 +160,18 @@ namespace Modio.Unity
                 CancellationToken cancellationToken
             )
             {
+              
                 
                 if (cancellationToken == CancellationToken.None)
                     cancellationToken = _shutdownToken;
 
+                
+                // Create a timeout cancellation token to avoid hanging indefinitely
+                TimeSpan timeout = TimeSpan.FromSeconds(10);
+                using var timeoutTokenSource = new CancellationTokenSource(timeout);
+                using var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutTokenSource.Token);
+                
+                
                 var totalBytesRead = 0;
 
                 while (totalBytesRead < count)
@@ -147,9 +181,18 @@ namespace Modio.Unity
                     // Wait for data to be available in the queue
                     while (!_dataQueue.TryPeek(out data))
                     {
+                        
+                        if (linkedTokenSource.Token.IsCancellationRequested)
+                        {
+                            if(ThrowException != null)
+                                throw ThrowException;
+                            
+                            if(timeoutTokenSource.Token.IsCancellationRequested)
+                                throw new TimeoutException("Read operation timed out after 10 seconds of inactivity.");
+                            
+                            linkedTokenSource.Token.ThrowIfCancellationRequested();
+                        }
 
-                        if (cancellationToken.IsCancellationRequested)
-                            cancellationToken.ThrowIfCancellationRequested();
 
                         if (IsDone && _dataQueue.IsEmpty)
                             return totalBytesRead;
@@ -157,7 +200,7 @@ namespace Modio.Unity
                         if (totalBytesRead > 0)
                             return totalBytesRead;
                         
-                        await _signal.WaitAsync(_shutdownToken);
+                        await _signal.WaitAsync(linkedTokenSource.Token);
 
                     }
 
@@ -202,7 +245,8 @@ namespace Modio.Unity
 
             public override long Position { get; set; } = -1;
             bool IsDone { get; set; }
-            
+            public IOException ThrowException { get; set; }
+
             class BufferChunk : IDisposable
             {
                 internal NativeArray<byte> Data { get; }
@@ -222,59 +266,13 @@ namespace Modio.Unity
                 
                 public void Dispose() => Data.Dispose();
             }
-            
-            //TODO: Useful class, refactor into a separate file 
-            class AsyncAutoResetEvent
-            {
-                struct Empty { }
-                readonly Queue<TaskCompletionSource<Empty>> _signalWaiters = new Queue<TaskCompletionSource<Empty>>();
-                bool _signaled;
-
-                public Task WaitAsync(CancellationToken cancellationToken = default)
-                {
-                    if (cancellationToken.IsCancellationRequested)
-                        return Task.FromCanceled(cancellationToken);
-
-                    lock (_signalWaiters)
-                    {
-                        if (_signaled)
-                        {
-                            _signaled = false;
-                            return Task.CompletedTask;
-                        }
-
-                        var tcs = new TaskCompletionSource<Empty>(TaskCreationOptions.RunContinuationsAsynchronously);
-
-                        if (cancellationToken.IsCancellationRequested)
-                        {
-                            tcs.TrySetCanceled(cancellationToken);
-                            return tcs.Task;
-                        }
-                        
-                        _signalWaiters.Enqueue(tcs);
-                        return tcs.Task;
-                    }
-                }
-
-                public void Set()
-                {
-                    TaskCompletionSource<Empty> toRelease = null;
-                    lock (_signalWaiters)
-                    {
-                        if (_signalWaiters.Count > 0)
-                            toRelease = _signalWaiters.Dequeue();
-                        else
-                            _signaled = true;
-                    }
-                    toRelease?.TrySetResult(default(Empty));
-                }
-            }
 
             public void Complete()
             {
                 IsDone = true;
                 _signal.Set();
             }
+
         }
         
     }

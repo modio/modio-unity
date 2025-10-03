@@ -20,7 +20,7 @@ namespace Modio.API
         public static partial class Authentication
         {
             /// <summary>
-            /// <p>Request an access token on behalf of an Xbox Live user. To use this endpoint you will need to setup some additional settings prior to being able to authenticate Xbox Live users. [Head here](/platforms/gdk/#authentication) for these instructions. A Successful request will return an [Access Token Object](#access-token-object).</p>
+            /// <p>Request an access token on behalf of an Xbox Live user. To use this endpoint you will need to setup some additional settings prior to being able to authenticate Xbox Live users. [Head here](/platforms/gdk#authentication) for these instructions. A Successful request will return an [Access Token Object](#access-token-object).</p>
             /// <p>__HINT:__ If you want to overlay the mod.io site in-game on Xbox, we recommend you add `?portal=xboxlive` to the end of the URL you open which will prompt the user to login with Xbox Live. See [Web Overlay Authentication](#web-overlay-authentication) for details.</p>
             /// </summary>
             public static async Task<(Error error, JToken accessTokenObject)> AuthenticateViaXboxLiveAsJToken(
@@ -36,7 +36,7 @@ namespace Modio.API
             }
 
             /// <summary>
-            /// <p>Request an access token on behalf of an Xbox Live user. To use this endpoint you will need to setup some additional settings prior to being able to authenticate Xbox Live users. [Head here](/platforms/gdk/#authentication) for these instructions. A Successful request will return an [Access Token Object](#access-token-object).</p>
+            /// <p>Request an access token on behalf of an Xbox Live user. To use this endpoint you will need to setup some additional settings prior to being able to authenticate Xbox Live users. [Head here](/platforms/gdk#authentication) for these instructions. A Successful request will return an [Access Token Object](#access-token-object).</p>
             /// <p>__HINT:__ If you want to overlay the mod.io site in-game on Xbox, we recommend you add `?portal=xboxlive` to the end of the URL you open which will prompt the user to login with Xbox Live. See [Web Overlay Authentication](#web-overlay-authentication) for details.</p>
             /// </summary>
             /// <param name="body"></param>

@@ -5,7 +5,7 @@ using Modio.Extensions;
 using Plugins.Modio.Unity.Platforms.Android;
 using UnityEngine;
 
-#if UNITY_ANDROID
+#if UNITY_ANDROID && MODIO_GOOGLE_PLAY_GAMES
 using GooglePlayGames;
 using GooglePlayGames.BasicApi;
 #endif
@@ -27,11 +27,9 @@ namespace Modio.Unity.Examples.Android
                 return;
             }
             
-            // `IGetPortalProvider` is needed before authentication for API configuration, so this lives in a separate
-            // place
-            ModioServices.Bind<GoogleGamesPortalProvider>()
-                         .WithInterfaces<IGetPortalProvider>()
-                         .FromNew<GoogleGamesPortalProvider>();
+            ModioServices.Bind<GoogleGamesAuthService>()
+                         .WithInterfaces<IModioAuthService, IGetActiveUserIdentifier>()
+                         .FromNew<GoogleGamesAuthService>();
             
             ModioLog.Verbose?.Log("Attempting Google Play Games sign-in");
             
@@ -40,7 +38,7 @@ namespace Modio.Unity.Examples.Android
 
         async Task SignInGooglePlayGames()
         {
-#if UNITY_ANDROID
+#if UNITY_ANDROID && MODIO_GOOGLE_PLAY_GAMES
             var signInTcs = new TaskCompletionSource<SignInStatus>();
             
             PlayGamesPlatform.DebugLogEnabled = true;
@@ -54,16 +52,7 @@ namespace Modio.Unity.Examples.Android
                 ModioLog.Error?.Log($"Error signing into Google Play Games: {result}. Please restart the app or try again");
                 return;
             }
-            
-            ModioServices.Bind<GoogleGamesAuthService>()
-                         .WithInterfaces<IModioAuthService, IGetActiveUserIdentifier>()
-                         .FromNew<GoogleGamesAuthService>();
 #endif
         }
-    }
-
-    public class GoogleGamesPortalProvider : IGetPortalProvider
-    {
-        public ModioAPI.Portal Portal => ModioAPI.Portal.Google;
     }
 }

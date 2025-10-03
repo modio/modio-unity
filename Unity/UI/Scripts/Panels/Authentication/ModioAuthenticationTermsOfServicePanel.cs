@@ -1,4 +1,5 @@
-﻿using Modio.Extensions;
+﻿using Modio.Authentication;
+using Modio.Extensions;
 
 namespace Modio.Unity.UI.Panels.Authentication
 {
@@ -9,7 +10,9 @@ namespace Modio.Unity.UI.Panels.Authentication
         /// </summary>
         public void OnPressAgreeTOS()
         {
-            ModioPanelManager.GetPanelOfType<ModioAuthenticationPanel>().AttemptSso(true).ForgetTaskSafely();
+            var service = ModioServices.Resolve<IModioAuthService>();
+
+            ModioPanelManager.GetPanelOfType<ModioAuthenticationPanel>().AttemptSso(service, true).ForgetTaskSafely();
         }
     }
 }

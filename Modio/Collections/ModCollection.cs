@@ -195,9 +195,9 @@ namespace Modio.Collections
 
             Creator = UserProfile.Get(modObject.SubmittedBy);
 
-            DateAdded = modObject.DateAdded.GetUtcDateTime();
-            DateLive = modObject.DateLive.GetUtcDateTime();
-            DateUpdated = modObject.DateUpdated.GetUtcDateTime();
+            DateAdded = modObject.DateAdded.GetLocalDateTime();
+            DateLive = modObject.DateLive.GetLocalDateTime();
+            DateUpdated = modObject.DateUpdated.GetLocalDateTime();
 
             Tags = modObject.Tags.Select(ModTag.Get).ToArray();
 

@@ -16,12 +16,14 @@ using AppleAuth.Interfaces;
 namespace Modio.Unity.Platforms.Ios
 {
     public class IosAuthenticationService : IModioAuthService,
-                                            IGetActiveUserIdentifier,
-                                            IGetPortalProvider
+                                            IGetActiveUserIdentifier
     {
-        public async Task<Error> Authenticate(bool displayedTerms, string thirdPartyEmail = null)
+
+        bool _sync = true;
+        public async Task<Error> Authenticate(bool displayedTerms, string thirdPartyEmail = null, bool sync = true)
         {
 #if UNITY_IOS
+            _sync = sync;
             if (!ModioServices.TryResolve(out IAppleAuthManager authManager))
             {
                 ModioLog.Error?.Log(
@@ -112,7 +114,7 @@ namespace Modio.Unity.Platforms.Ios
                     );
 
                 if (!error)
-                    User.Current.OnAuthenticated(accessTokenObject.Value.AccessToken);
+                    User.Current.OnAuthenticated(accessTokenObject.Value.AccessToken,  accessTokenObject.Value.DateExpires, _sync);
 
                 return error;
             }

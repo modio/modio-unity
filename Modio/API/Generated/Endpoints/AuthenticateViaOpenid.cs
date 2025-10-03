@@ -14,7 +14,7 @@ namespace Modio.API
         public static partial class Authentication
         {
             /// <summary>
-            /// <p>Request an access token on behalf of an OpenID identity provider. To use this method of authentication, you must configure the OpenID config in your [game's authentication admin page](/web-services/authentication/openid/). A Successful request will return an [Access Token Object](#access-token-object).</p>
+            /// <p>Request an access token on behalf of an OpenID identity provider. To use this method of authentication, you must configure the OpenID config in your [game's authentication admin page](/authentication/openid). A Successful request will return an [Access Token Object](#access-token-object).</p>
             /// <p>__NOTE:__ The ability to authenticate players using your identity provider is a premium feature. If you are interested in accessing premium features via your games dashboard, please [contact us](mailto:developers@mod.io?subject=OpenID SSO Request).</p>
             /// <p>__HINT:__ If you want to overlay the mod.io site in-game, we recommend you add `?portal=studio` to the end of the URL you open which will prompt the user to login with your auth provider if they are on your games page. See [Web Overlay Authentication](#web-overlay-authentication) for details.</p>
             /// </summary>
@@ -31,7 +31,7 @@ namespace Modio.API
             }
 
             /// <summary>
-            /// <p>Request an access token on behalf of an OpenID identity provider. To use this method of authentication, you must configure the OpenID config in your [game's authentication admin page](/web-services/authentication/openid/). A Successful request will return an [Access Token Object](#access-token-object).</p>
+            /// <p>Request an access token on behalf of an OpenID identity provider. To use this method of authentication, you must configure the OpenID config in your [game's authentication admin page](/authentication/openid). A Successful request will return an [Access Token Object](#access-token-object).</p>
             /// <p>__NOTE:__ The ability to authenticate players using your identity provider is a premium feature. If you are interested in accessing premium features via your games dashboard, please [contact us](mailto:developers@mod.io?subject=OpenID SSO Request).</p>
             /// <p>__HINT:__ If you want to overlay the mod.io site in-game, we recommend you add `?portal=studio` to the end of the URL you open which will prompt the user to login with your auth provider if they are on your games page. See [Web Overlay Authentication](#web-overlay-authentication) for details.</p>
             /// </summary>

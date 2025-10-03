@@ -6,7 +6,6 @@ namespace Modio.Errors
         NONE,
         UNKNOWN = int.MinValue,
 
-        // TODO: Move V3 error codes to ModioErrorCodes.json
         API_NOT_INITIALIZED,
         HTTP_EXCEPTION,
         

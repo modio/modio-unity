@@ -41,7 +41,9 @@ namespace Modio.Authentication
     /// }
     /// </code>
     /// </example>
-    public class ModioEmailAuthService : IModioAuthService, IGetActiveUserIdentifier, IPotentialModioEmailAuthService, IGetPortalProvider
+    public class ModioEmailAuthService : IModioAuthService, 
+                                         IGetActiveUserIdentifier, 
+                                         IPotentialModioEmailAuthService
     {
         public bool IsEmailPlatform => true;
         public ModioAPI.Portal Portal => ModioAPI.Portal.None;
@@ -58,17 +60,25 @@ namespace Modio.Authentication
         /// <remarks>You must call <see cref="SetCodePrompter"/> before calling <see cref="Authenticate"/> when using this constructor.</remarks>
         public ModioEmailAuthService() { }
 
+        string _cachedEmail;
+        
+        bool _sync = true;
         /// <summary>Begins the email authentication process. This will invoke the <c>codePrompter</c> passed either
         /// into the constructor of this class or with <see cref="SetCodePrompter"/> to enter the security code.</summary>
         /// <returns><c>Error.None</c> if the authentication completed successfully.</returns>
         public async Task<Error> Authenticate(
             bool displayedTerms,
-            string thirdPartyEmail = null
+            string thirdPartyEmail = null,
+            bool sync = true
         ) {
             if (!_isAttemptInProgress)
                 _isAttemptInProgress = true;
             else
                 return new Error(ErrorCode.USER_AUTHENTICATION_IN_PROGRESS);
+
+            thirdPartyEmail ??= _cachedEmail;
+            
+            _sync = sync;
             
             Error error = ValidateAttempt();
             if (error) return ReturnErrorAndReset(error);
@@ -77,7 +87,10 @@ namespace Modio.Authentication
                 await ModioAPI.Authentication.RequestEmailSecurityCode(new EmailAuthenticationRequest(thirdPartyEmail));
 
             if (requestError) return ReturnErrorAndReset(requestError);
-
+            
+            // Cache the email for future attempts without email
+            _cachedEmail = thirdPartyEmail;
+            
             string code = await _codePrompter.ShowCodePrompt();
 
             if (string.IsNullOrEmpty(code)) return ReturnErrorAndReset(new Error(ErrorCode.OPERATION_CANCELLED));
@@ -106,7 +119,7 @@ namespace Modio.Authentication
                     new EmailAuthenticationSecurityCodeRequest(code)
                 );
 
-            if (!exchangeError) User.Current.OnAuthenticated(accessTokenObject.Value.AccessToken);
+            if (!exchangeError) User.Current.OnAuthenticated(accessTokenObject.Value.AccessToken, accessTokenObject.Value.DateExpires, _sync);
 
             return ReturnErrorAndReset(exchangeError);
         }

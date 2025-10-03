@@ -5,52 +5,58 @@ using Modio.API;
 
 namespace Modio.Authentication
 {
-    public class ModioMultiplatformAuthResolver : IModioAuthService, IGetActiveUserIdentifier, IPotentialModioEmailAuthService, IGetPortalProvider
+    public class ModioMultiplatformAuthResolver : IModioAuthService, 
+                                                  IGetActiveUserIdentifier, 
+                                                  IPotentialModioEmailAuthService
     {
-        const ModioServicePriority SERVICE_BINDING_PRIORITY = ModioServicePriority.PlatformProvided + 9;
-        
-        static bool _resolveUsingThis;
-        static bool _hasInitialized;
+        protected const ModioServicePriority SERVICE_BINDING_PRIORITY = ModioServicePriority.PlatformProvided + 9;
+        bool _resolveUsingThis;
 
-        public static IModioAuthService ServiceOverride { get; set; }
-        public static IReadOnlyList<IModioAuthService> AuthBindings { get; private set; }
-        
-        public static void Initialize()
+        public IModioAuthService ServiceOverride { get; set; }
+        public IReadOnlyList<IModioAuthService> AuthBindings { get; private set; }
+
+        public ModioMultiplatformAuthResolver()
         {
-            if (_hasInitialized) return;
-            _hasInitialized = true;
-            AuthBindings = ModioServices.GetBindings<IModioAuthService>()
-                                              .ResolveAll()
-                                              .OrderByDescending(platformPair => platformPair.priority)
-                                              .Select(platformPair => platformPair.service)
-                                              .Where(platform => platform is IGetActiveUserIdentifier)
-                                              .ToList();
-
-            foreach (IModioAuthService service in AuthBindings)
-            {
-                ModioLog.Warning?.Log(service.GetType().Name);
-            }
-            
-            ServiceOverride = AuthBindings.FirstOrDefault();
+            GetAllBindings();
             
             ModioServices.Bind<ModioMultiplatformAuthResolver>()
-                              .WithInterfaces<IModioAuthService>(IsActiveForConditional)
-                              .WithInterfaces<IGetActiveUserIdentifier>(IsActiveForConditional)
-                              .WithInterfaces<IGetPortalProvider>(IsActiveForConditional)
-                              .FromNew<ModioMultiplatformAuthResolver>(SERVICE_BINDING_PRIORITY);
-
+                         .WithInterfaces<IModioAuthService>(IsActiveForConditional)
+                         .WithInterfaces<IGetActiveUserIdentifier>(IsActiveForConditional)
+                         .FromInstance(this, SERVICE_BINDING_PRIORITY);
+            
+            ModioServices.AddBindingChangedListener<IModioAuthService>(OnAuthServiceBound);
             
             _resolveUsingThis = true;
         }
 
-        static bool IsActiveForConditional() => _resolveUsingThis;
+        ~ModioMultiplatformAuthResolver() 
+            => ModioServices.RemoveBindingChangedListener<IModioAuthService>(OnAuthServiceBound);
 
-        public Task<Error> Authenticate(bool displayedTerms, string thirdPartyEmail = null)
-            => Get<IModioAuthService>().Authenticate(displayedTerms, thirdPartyEmail);
+        void OnAuthServiceBound(IModioAuthService _) => GetAllBindings();
+
+        void GetAllBindings()
+        {
+            AuthBindings = ModioServices.GetBindings<IModioAuthService>()
+                                        .ResolveAll()
+                                        .OrderByDescending(platformPair => platformPair.priority)
+                                        .Select(platformPair => platformPair.service)
+                                        .Where(platform => platform is IGetActiveUserIdentifier)
+                                        .Where(service => service is not ModioMultiplatformAuthResolver)
+                                        .ToList();
+
+            if (ServiceOverride is null
+                || !AuthBindings.Contains(ServiceOverride))
+                ServiceOverride = AuthBindings.FirstOrDefault();
+        }
+
+        bool IsActiveForConditional() => _resolveUsingThis;
+
+        public Task<Error> Authenticate(bool displayedTerms, string thirdPartyEmail = null, bool sync = true)
+            => Get<IModioAuthService>().Authenticate(displayedTerms, thirdPartyEmail, sync);
 
         public Task<string> GetActiveUserIdentifier() => Get<IGetActiveUserIdentifier>().GetActiveUserIdentifier();
 
-        static T Get<T>()
+        protected T Get<T>()
         {
             if (ServiceOverride is T t) return t;
             
@@ -61,6 +67,6 @@ namespace Modio.Authentication
         }
 
         public bool IsEmailPlatform => Get<IModioAuthService>() is IPotentialModioEmailAuthService { IsEmailPlatform: true, };
-        public ModioAPI.Portal Portal => Get<IGetPortalProvider>()?.Portal ?? ModioAPI.Portal.None;
+        public ModioAPI.Portal Portal => Get<IModioAuthService>()?.Portal ?? ModioAPI.Portal.None;
     }
 }

@@ -40,11 +40,6 @@ namespace Modio.Users
         /// </summary>
         public string PortalUsername { get; private set; }
 
-        public Wallet GetWallet() => UserId == User.Current.Profile.UserId
-            ? //local user
-            User.Current.Wallet
-            : null;
-
         public enum AvatarResolution
         {
             X50_Y50,

@@ -13,7 +13,7 @@ namespace Modio.API
     {
         public static partial class Authentication
         {
-            /// <summary>Request an access token on behalf of a GOG Galaxy user. To use this functionality you *must* add your games [encrypted app ticket key](https://docs.gog.com/sdk-encrypted-tickets/) from GOG Galaxy, to the [*Game Admin > Settings*](/platforms/gog/authentication/) page of your games profile on mod.io. A Successful request will return an [Access Token Object](#access-token-object).</summary>
+            /// <summary>Request an access token on behalf of a GOG Galaxy user. To use this functionality you *must* add your games [encrypted app ticket key](https://docs.gog.com/sdk-encrypted-tickets/) from GOG Galaxy, to the [*Game Admin > Settings*](/platforms/gog/authentication) page of your games profile on mod.io. A Successful request will return an [Access Token Object](#access-token-object).</summary>
             public static async Task<(Error error, JToken accessTokenObject)> AuthenticateViaGogGalaxyAsJToken(
                 GogAuthenticationRequest? body = null
             ) {
@@ -26,7 +26,7 @@ namespace Modio.API
                 return await _apiInterface.GetJson(request);
             }
 
-            /// <summary>Request an access token on behalf of a GOG Galaxy user. To use this functionality you *must* add your games [encrypted app ticket key](https://docs.gog.com/sdk-encrypted-tickets/) from GOG Galaxy, to the [*Game Admin > Settings*](/platforms/gog/authentication/) page of your games profile on mod.io. A Successful request will return an [Access Token Object](#access-token-object).</summary>
+            /// <summary>Request an access token on behalf of a GOG Galaxy user. To use this functionality you *must* add your games [encrypted app ticket key](https://docs.gog.com/sdk-encrypted-tickets/) from GOG Galaxy, to the [*Game Admin > Settings*](/platforms/gog/authentication) page of your games profile on mod.io. A Successful request will return an [Access Token Object](#access-token-object).</summary>
             /// <param name="body"></param>
             public static async Task<(Error error, AccessTokenObject? accessTokenObject)> AuthenticateViaGogGalaxy(
                 GogAuthenticationRequest? body = null

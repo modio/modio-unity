@@ -485,83 +485,7 @@ namespace Modio.FileIO
                 using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(token, ShutdownToken);
                 token = combinedCts.Token;
 
-                await using var md5Stream = new MD5ComputingStreamWrapper(stream);
-                await using var zipStream = new ModioZipInputStream(md5Stream);
-                zipStream.IsStreamOwner = false;
-
-                // ReSharper disable once AccessToDisposedClosure
-                // tracker won't outlive the scope
-                var tracker = new ModInstallProgressTracker(
-                    mod,
-                    mod.File.FileSize,
-                    () => md5Stream.TotalBytesRead
-                );
-                
-                
-
-                var writtenEntries = new Dictionary<string,ZipEntry>();
-                
-                // Run the extraction on a background thread
-                // Note this isn't just an optimisation; this extract can lock the thread
-                // which will freeze unityWebRequest downloads if on the main thread
-                error = await Task.Run(async () =>
-                {
-                    while (zipStream.GetNextEntryWithBackTrack() is { } entry)
-                    {
-                        token.ThrowIfCancellationRequested();
-
-                        if (entry.IsDirectory)
-                            continue;
-
-                        if (string.IsNullOrEmpty(entry.Name))
-                            continue;
-                        long crc;
-                        Error extractFileError;
-                        (extractFileError, crc) = await ExtractFileFromZipStream(
-                            zipStream,
-                            entry,
-                            $@"{temporaryDirectoryPath}{entry.Name}",
-                            tracker,
-                            token
-                        );
-
-                        if (extractFileError)
-                        {
-                            Error cleanupError = DeleteDirectoryAndContents(temporaryDirectoryPath);
-
-                            if (cleanupError)
-                                ModioLog.Message?.Log(
-                                    $"Error cleaning up temporary download location: {cleanupError.GetMessage()}\nAt: {temporaryDirectoryPath}"
-                                );
-
-                            return extractFileError;
-                        }
-                        //update the entry with the extracted CRC
-                        entry.Crc = crc;
-                    
-                        writtenEntries[entry.Name] = entry;
-                    }
-
-                    return Error.None;
-                });
-
-                if (error)
-                    return error;
-
-                await zipStream.ReadUntilEndAsync(token);
-                string rawMd5Hash = await md5Stream.GetMD5HashAsync();
-                string actualMd5Hash = rawMd5Hash.Replace("-", "").ToLowerInvariant();
-
-                if (actualMd5Hash != md5Hash && !string.IsNullOrEmpty(md5Hash))
-                {
-                    ModioLog.Error?.Log(
-                        $"Error installing mod: md5 mismatch\n{actualMd5Hash} != {md5Hash}\nInstall Path: {installDirectoryPath}\nTemp Path: {temporaryDirectoryPath}\n"
-                    );
-
-                    error = new Error(ErrorCode.MD5DOES_NOT_MATCH);
-                }
-                else
-                    error = await ValidateZipEntries(zipStream, writtenEntries.Values.ToList(), temporaryDirectoryPath);
+                error = await InstallModFromStreamToTempDirectory(mod, stream, md5Hash, token, temporaryDirectoryPath);
             }
             catch (TaskCanceledException)
             {
@@ -652,7 +576,90 @@ namespace Modio.FileIO
                 return error;
             }
         }
-        
+
+        protected virtual async Task<Error> InstallModFromStreamToTempDirectory(Mod mod, Stream stream, string md5Hash, CancellationToken token,
+                                                                                                  string temporaryDirectoryPath)
+        {
+            await using var md5Stream = new MD5ComputingStreamWrapper(stream);
+            await using var zipStream = new ModioZipInputStream(md5Stream);
+            zipStream.IsStreamOwner = false;
+
+            // ReSharper disable once AccessToDisposedClosure
+            // tracker won't outlive the scope
+            var tracker = new ModInstallProgressTracker(
+                mod,
+                mod.File.FileSize,
+                () => md5Stream.TotalBytesRead
+            );
+
+            var writtenEntries = new Dictionary<string,ZipEntry>();
+
+            // Run the extraction on a background thread
+            // Note this isn't just an optimisation; this extract can lock the thread
+            // which will freeze unityWebRequest downloads if on the main thread
+            Error error = await Task.Run(async () =>
+            {
+                while (zipStream.GetNextEntryWithBackTrack() is { } entry)
+                {
+                    token.ThrowIfCancellationRequested();
+
+                    if (entry.IsDirectory)
+                        continue;
+
+                    if (string.IsNullOrEmpty(entry.Name))
+                        continue;
+                    long crc;
+                    Error extractFileError;
+                    (extractFileError, crc) = await ExtractFileFromZipStream(
+                        zipStream,
+                        entry,
+                        $@"{temporaryDirectoryPath}{entry.Name}",
+                        tracker,
+                        token
+                    );
+
+                    if (extractFileError)
+                    {
+                        Error cleanupError = DeleteDirectoryAndContents(temporaryDirectoryPath);
+
+                        if (cleanupError)
+                            ModioLog.Message?.Log(
+                                $"Error cleaning up temporary download location: {cleanupError.GetMessage()}\nAt: {temporaryDirectoryPath}"
+                            );
+
+                        return extractFileError;
+                    }
+
+                    //update the entry with the extracted CRC
+                    entry.Crc = crc;
+                    
+                    writtenEntries[entry.Name] = entry;
+                }
+
+                return Error.None;
+            });
+
+            if (error)
+                return error;
+
+            await zipStream.ReadUntilEndAsync(token);
+            string rawMd5Hash = await md5Stream.GetMD5HashAsync();
+            string actualMd5Hash = rawMd5Hash.Replace("-", "").ToLowerInvariant();
+
+            if (actualMd5Hash != md5Hash && !string.IsNullOrEmpty(md5Hash))
+            {
+                ModioLog.Error?.Log(
+                    $"Error installing mod: md5 mismatch\n{actualMd5Hash} != {md5Hash}\nTemp Path: {temporaryDirectoryPath}\n"
+                );
+
+                error = new Error(ErrorCode.MD5DOES_NOT_MATCH);
+            }
+            else
+                error = await ValidateZipEntries(zipStream, writtenEntries.Values.ToList(), temporaryDirectoryPath);
+
+            return error;
+        }
+
         /// <summary>
         /// Validates the entries in the zip stream against the entries that were written during extraction.
         /// </summary>
@@ -746,7 +753,7 @@ namespace Modio.FileIO
             CancellationToken token
         )
         {
-            if(entry.Name.Contains(".."))
+            if(entry.Name.Contains("../") || entry.Name.Contains("..\\"))
             {
                 ModioLog.Error?.Log($"Invalid file path detected in zip entry: {entry.Name}");
                 return (new Error(ErrorCode.BAD_PARAMETER),0);
