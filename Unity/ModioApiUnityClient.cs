@@ -106,20 +106,21 @@ namespace Modio.Unity
                 if (responseCode == 0)
                     responseCode = await GetResponseCodeFromHeadRequest(responseCode);
 
-                if (allowReauth && responseCode == UNAUTHORIZED_RESPONSE)
-                    return await ReauthenticateWithResponse(
-                        () => DownloadFile(url, token, false)
-                    );
-
                 if (responseCode is < 200 or >= 300)
                 {
-
                     if (!IsResponseConnectionFailure(responseCode))
                     {
                         await handler.WaitForComplete();
                         Stream jsonResponseStream = handler.GetStream();
                         var streamReader = new StreamReader(jsonResponseStream);
-                        return (await GetErrorAndLogBadResponse(streamReader), null);
+                        error = await GetErrorAndLogBadResponse(streamReader);
+                        
+                        if (allowReauth && error.Code == ErrorCode.EXPIRED_OR_REVOKED_ACCESS_TOKEN)
+                            return await ReauthenticateWithResponse(
+                                () => DownloadFile(url, token, false)
+                            );
+                        
+                        return (error, null);
                     }
                     
                     ModioLog.Error?.Log($"Unable to reach mod.io servers {webRequest.responseCode}");
@@ -299,7 +300,11 @@ namespace Modio.Unity
             
             // If we don't need authentication, we skip all this
             if (!downloadRequest.Options.RequiresAuthentication)
+            {
+                webRequest.SetRequestHeader("Authorization", $"Bearer {User.Current?.GetAuthToken()}");
+                
                 return Error.None;
+            }
             
             // If we need authentication but the user isn't authenticated, we return an error
             // ie; never authenticated
@@ -356,9 +361,6 @@ namespace Modio.Unity
                 if (webRequest.responseCode == 204)
                     return (Error.None, (T)(object)new Response204());
 
-                if (allowReauth && webRequest.responseCode == UNAUTHORIZED_RESPONSE)
-                    return await ReauthenticateWithResponse(() => GetJson(request, reader, false));
-
                 if (webRequest.responseCode is < 200 or >= 300)
                 {
                     if (IsResponseConnectionFailure(webRequest.responseCode))
@@ -372,7 +374,14 @@ namespace Modio.Unity
                         || !webRequest.GetResponseHeaders().TryGetValue("retry-after", out string retryHeader)
                         || string.IsNullOrEmpty(retryHeader)
                         || !int.TryParse(retryHeader, out int retryAfterSeconds))
-                        return (GetErrorAndLogBadResponse(jsonResponse), default(T));
+                    {
+                        error = GetErrorAndLogBadResponse(jsonResponse);
+                        
+                        if (allowReauth && error.Code == ErrorCode.EXPIRED_OR_REVOKED_ACCESS_TOKEN)
+                            return await ReauthenticateWithResponse(() => GetJson(request, reader, false));
+
+                        return (error, default(T));
+                    }
 
                     GetErrorAndLogBadResponse(jsonResponse);
                     return (new RateLimitError(RateLimitErrorCode.RATELIMITED, retryAfterSeconds), default(T));

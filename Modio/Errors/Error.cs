@@ -17,7 +17,7 @@ namespace Modio
         public readonly ErrorCode Code;
 
         
-        readonly StackTrace _stackTrace;
+        protected readonly StackTrace _stackTrace;
         protected List<(string memberName, string sourceFilePath, int sourceLineNumber, string message)>
             _callInformation;
 

@@ -116,19 +116,20 @@ namespace Modio.API.HttpClient
                 );
                 
                 stream = await response.Content.ReadAsStreamAsync();
-
-                if (allowReauth && response.StatusCode == HttpStatusCode.Unauthorized)
-                {
-                    await stream.DisposeAsync();
-                    response.Dispose();
-                    return await ReauthenticateWithResponse(() => DownloadFile(url, token, false));
-                }
                 
                 if ((int)response.StatusCode < 200 || (int)response.StatusCode >= 300)
                 {
                     using var streamReader = new StreamReader(stream);
                     error = await GetErrorAndLogBadResponse(streamReader);
                     cachedShutdownToken.ThrowIfCancellationRequested();
+                    
+                    if (allowReauth && error.Code == ErrorCode.EXPIRED_OR_REVOKED_ACCESS_TOKEN)
+                    {
+                        await stream.DisposeAsync();
+                        response.Dispose();
+                        return await ReauthenticateWithResponse(() => DownloadFile(url, token, false));
+                    }
+                    
                     return (error, null);
                 }
                 cachedShutdownToken.ThrowIfCancellationRequested();
@@ -168,7 +169,11 @@ namespace Modio.API.HttpClient
             
             // If we don't need authentication, we skip all this
             if (!downloadRequest.Options.RequiresAuthentication)
+            {
+                httpRequest.Headers.Add("Authorization", $"Bearer {User.Current?.GetAuthToken()}");
+                
                 return Error.None;
+            }
             
             // If we need authentication but the user isn't authenticated, we return an error
             // ie; never authenticated
@@ -298,14 +303,15 @@ namespace Modio.API.HttpClient
                 await using Stream stream = await response.Content.ReadAsStreamAsync();
                 using var streamReader = new StreamReader(stream);
 
-                if (allowReauth && response.StatusCode == HttpStatusCode.Unauthorized)
-                    return await ReauthenticateWithResponse(() => GetJson(request, reader, false));
 
                 if ((int)response.StatusCode < 200 || (int)response.StatusCode >= 300)
                 {
                     Error returnableError = await GetErrorAndLogBadResponse(streamReader);
                     
                     cachedShutdownToken.ThrowIfCancellationRequested();
+                    
+                    if (allowReauth && returnableError.Code == ErrorCode.EXPIRED_OR_REVOKED_ACCESS_TOKEN)
+                        return await ReauthenticateWithResponse(() => GetJson(request, reader, false));
 
                     if ((int)response.StatusCode == 429 &&
                         response.Headers.TryGetValues("retry-after", out IEnumerable<string> values) &&

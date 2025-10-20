@@ -45,7 +45,7 @@ namespace Modio.API
 
                 request.Options.AddBody(body);
 
-                return await _apiInterface.GetJson<AccessTokenObject>(request);
+                return await _apiInterface.GetJson<AccessTokenObject>(request, false);
             }
         }
     }
