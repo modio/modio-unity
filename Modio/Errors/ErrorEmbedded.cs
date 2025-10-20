@@ -1,4 +1,5 @@
-﻿using Modio.API.SchemaDefinitions;
+﻿using System.Linq;
+using Modio.API.SchemaDefinitions;
 using Modio.Errors;
 
 namespace Modio
@@ -12,7 +13,7 @@ namespace Modio
         {
         }
 
-        internal ErrorEmbedded(ErrorObject.EmbeddedError error) : this((ErrorCode)error.Code, error)
+        internal ErrorEmbedded(ErrorObject.EmbeddedError error) : this((ErrorCode)error.ErrorRef, error)
         {
         }
         
@@ -30,6 +31,22 @@ namespace Modio
         internal ErrorEmbedded(Error error, ErrorObject.EmbeddedError embeddedError) : this(error.Code, embeddedError)
         {
         }
-        
+
+        /// <summary>
+        /// Essentially the same logic as Error.GetMessage, but also includes the Message and validation Errors from the server
+        /// </summary>
+        public override string GetMessage()
+        {
+            if (_stackTrace != null)
+                return $"{Code.GetMessage()}\n{Message}\n{Errors}\n at:\n{_stackTrace}";
+            if(_callInformation != null)
+            {
+                string formattedCall = string.Join('\n', _callInformation.Select(
+                                                       a => $"{a.sourceFilePath}: {a.memberName}:{a.sourceLineNumber}:{a.message}"));
+                return $"{Code.GetMessage()}\n{Message}\n{Errors}\n at:\n{formattedCall}";
+            }
+
+            return $"{Code.GetMessage()}\n{Message}\n{Errors}";
+        }
     }
 }
