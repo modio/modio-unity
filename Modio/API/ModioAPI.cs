@@ -61,7 +61,7 @@ namespace Modio.API
         static ModioSettings _modioSettings;
 
         public static string LanguageCodeResponse { get; private set; } = "en";
-        static Platform _platform = Platform.None;
+        public static Platform CurrentPlatform { get; private set; } = Platform.None;
 
         static IModioAPIInterface _apiInterface;
 
@@ -131,7 +131,7 @@ namespace Modio.API
                     platform = Platform.Linux;
             }
 
-            _platform = platform;
+            CurrentPlatform = platform;
 
             if (_apiInterface == null) return;
 
@@ -172,7 +172,7 @@ namespace Modio.API
             SetResponseLanguage(LanguageCodeResponse);
             apiInterface.SetDefaultHeader("User-Agent", $"{Version.GetCurrent()}");
 
-            SetPlatform(_platform);
+            SetPlatform(CurrentPlatform);
             SetPortal(CurrentPortal);
 
             _apiInterface.AddDefaultParameter($"api_key={_modioSettings.APIKey}");

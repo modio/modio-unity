@@ -20,6 +20,7 @@ namespace Modio.Mods.Builder
         Modfile            = 1 << 11,
         MonetizationConfig = 1 << 12,
         Dependencies       = 1 << 13,
+        MonetizationTeam   = 1 << 14,
         
         AddFlags = Name
                    | Summary

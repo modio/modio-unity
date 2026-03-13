@@ -248,6 +248,7 @@ GameObject:
   - component: {fileID: 8590547754052556987}
   - component: {fileID: 5090838771279157660}
   - component: {fileID: 9045248455225781045}
+  - component: {fileID: 8336143013955706237}
   m_Layer: 5
   m_Name: Image (Cog)
   m_TagString: Untagged
@@ -349,3 +350,16 @@ MonoBehaviour:
   _targetComponents:
   - Component: {fileID: 8590547754052556987}
     Option: 3
+--- !u!114 &8336143013955706237
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8808815853920453051}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75cd20416f8247d79b7758a8b0671915, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _image: {fileID: 0}

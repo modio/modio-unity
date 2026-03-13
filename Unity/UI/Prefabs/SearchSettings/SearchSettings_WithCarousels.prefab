@@ -1,0 +1,74 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &5720165946152866720
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5720165946152866726}
+  - component: {fileID: 5720165946152866727}
+  m_Layer: 0
+  m_Name: SearchSettings_WithCarousels
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5720165946152866726
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5720165946152866720}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5720165946152866727
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5720165946152866720}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a94e276117549a394fa60a568b852f0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  DisplayAs: All Mods
+  DisplayAsLocalisedKey: modio_filter_allmods
+  Icon: {fileID: 21300000, guid: 1b4826362aea6a24aad38a202babee87, type: 3}
+  HiddenIfMonetizationDisabled: 0
+  searchType: 8
+  searchPhrase: 
+  searchTags: []
+  sortModsBy: 4
+  CollectionId: 0
+  showMatureContent: 0
+  isAscending: 0
+  filterRevenueType: 2
+  shareFilterSettingsWith: {fileID: 5720165946152866720}
+  hideTagCategories: []
+  Carousels:
+  - Search: {fileID: 7621208734324363746, guid: be72369e1fcf592458c16768d04f2c82,
+      type: 3}
+    Style: 1
+  - Search: {fileID: 3800897207940283596, guid: f27a4039d75f7964eb34ca367ab9885b,
+      type: 3}
+    Style: 2
+  - Search: {fileID: 1454246485091490756, guid: 82b82c4f1a636b94489c4eb517dbf6cc,
+      type: 3}
+    Style: 0
+  - Search: {fileID: 6229479649549915080, guid: 4d2504ea1939b8f42a3cf7482ec3d0b1,
+      type: 3}
+    Style: 0
+  ShowFeaturedReasonInCarousel: 0

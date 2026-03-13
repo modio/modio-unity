@@ -150,6 +150,7 @@ namespace Modio.Unity.UI.Search
             {
                 searchFilter.AddSearchPhrase(query, filterType);
             }
+            if (_searchPreset == SpecialSearchType.SubSearchesOnly) _searchPreset = SpecialSearchType.Nothing;
 
             searchFilter.PageIndex = 0;
             SetSearch(searchFilter).ForgetTaskSafely();
@@ -157,34 +158,68 @@ namespace Modio.Unity.UI.Search
 
         public void ApplyTagsToSearch(IEnumerable<ModTag> tags)
         {
+            ModTag[] hiddenTags = LastSearchFilter.GetTags().Where(t=>!t.IsVisible).Distinct().ToArray();
+
             LastSearchFilter.ClearTags();
             LastSearchFilter.AddCollectionCategory(null);
 
-            var tagNames = new List<string>();
+            var nonCategoryTags = new List<ModTag>(hiddenTags);
             
             foreach (ModTag modTag in tags)
             {
+                if(nonCategoryTags.Contains(modTag)) continue;
+                
                 if(modTag.TagType is ResourceTagType.CollectionCategory)
                     LastSearchFilter.AddCollectionCategory(modTag.ApiName);
                 else
-                    tagNames.Add(modTag.ApiName);
+                    nonCategoryTags.Add(modTag);
             }
 
-            LastSearchFilter.AddTags(tagNames);
+            LastSearchFilter.AddTags(nonCategoryTags);
 
-            //If we were doing a tag based search, and we just removed all tags, clear search instead
-            if (_searchPreset == SpecialSearchType.SearchForTag && !LastSearchFilter.GetTags().Any())
+            //If we were doing a tag based search, and we just removed all visible tags, clear search instead
+            if (_searchPreset == SpecialSearchType.SearchForTag && !HasCustomTags())
             {
                 ClearSearch();
                 return;
             }
+
+            if (_searchPreset == SpecialSearchType.SubSearchesOnly) _searchPreset = SpecialSearchType.Nothing;
             LastSearchFilter.PageIndex = 0;
             SetSearch(LastSearchFilter).ForgetTaskSafely();
         }
 
         public bool HasCustomSearch()
         {
+            return HasCustomSearchOrFiltering();
             return LastSearchFilter.GetUsers().Count > 0 ||
+                   LastSearchFilter.GetSearchPhrase(Filtering.Like).Count > 0 ||
+                   _searchPreset == SpecialSearchType.SearchForTag ||
+                   _searchPreset == SpecialSearchType.SearchForUser;
+        }
+
+        public bool HasCustomTags()
+        {
+            int tagCount = LastSearchFilter.TagAndCategoryCount;
+            
+            if(tagCount == 0) return false;
+            
+            SearchFilter prev = _resetToSearch.searchFilter;
+            
+            if(prev == null) return true;
+            
+            return prev.TagAndCategoryCount != tagCount;
+        }
+        
+        public bool HasCustomSearchOrFiltering()
+        {
+            SearchFilter prev = _resetToSearch.searchFilter;
+            
+            if(prev == null) return false;
+
+            return _resetToSearch.specialSearchType != _searchPreset ||
+                   prev.TagAndCategoryCount != LastSearchFilter.TagAndCategoryCount ||
+                   LastSearchFilter.GetUsers().Count > 0 ||
                    LastSearchFilter.GetSearchPhrase(Filtering.Like).Count > 0 ||
                    _searchPreset == SpecialSearchType.SearchForTag ||
                    _searchPreset == SpecialSearchType.SearchForUser;
@@ -198,7 +233,7 @@ namespace Modio.Unity.UI.Search
                 searchFilter.AddCollectionCategory(null);
 
                 searchFilter.PageIndex = 0;
-                SetSearch(searchFilter, _resetToSearch.specialSearchType);
+                SetSearch(searchFilter, _resetToSearch.specialSearchType, settingsFrom:LastSearchSettingsFrom);
             }
             else
             {
@@ -223,7 +258,7 @@ namespace Modio.Unity.UI.Search
             }
 
             searchFilter.AddUser(user);
-            SetSearch(searchFilter, SpecialSearchType.SearchForUser);
+            SetSearch(searchFilter, SpecialSearchType.SearchForUser, settingsFrom: LastSearchSettingsFrom);
         }
 
         public void SetSearchForTag(ModTag tag)
@@ -240,7 +275,7 @@ namespace Modio.Unity.UI.Search
                 if (tag.TagType is ResourceTagType.CollectionCategory)
                     searchFilter.AddCollectionCategory(tag.ApiName);
                 else
-                    searchFilter.AddTag(tag.ApiName);
+                    searchFilter.AddTag(tag);
 
                 SetSearch(searchFilter, SpecialSearchType.SearchCollections);
                 return;
@@ -252,13 +287,17 @@ namespace Modio.Unity.UI.Search
             }
             else
             {
+                var filterType = Filtering.Like;
+                LastSearchFilter.ClearSearchPhrases(filterType);
+                ApplyTagsToSearch(new []{tag,});
+                return;
                 searchFilter = new SearchFilter(0, _defaultPageSize) {
                     RevenueType = LastSearchFilter.RevenueType,
                     ShowMatureContent = LastSearchFilter.ShowMatureContent,
                 };
             }
 
-            searchFilter.AddTag(tag.ApiName);
+            searchFilter.AddTag(tag);
             SetSearch(searchFilter, SpecialSearchType.SearchForTag);
         }
 
@@ -276,6 +315,8 @@ namespace Modio.Unity.UI.Search
                                        .Take(totalResults)
                                        .ToList();
 
+                IsAdditiveSearch = true;
+                
                 OnSearchUpdatedUnityEvent.Invoke();
                 return;
             }
@@ -318,7 +359,7 @@ namespace Modio.Unity.UI.Search
 
             if (shareFiltersWith != null && shareFiltersWith == _shareFiltersWith)
             {
-                searchFilter.AddTags(LastSearchFilter.GetTags());
+                searchFilter.AddTags(LastSearchFilter.GetTags().Where(t => !searchFilter.GetTags().Contains(t)));
                 for(var f = Filtering.None; f <= Filtering.BitwiseAnd; f++)
                     searchFilter.AddSearchPhrases(LastSearchFilter.GetSearchPhrase(f), f);
             }
@@ -328,9 +369,35 @@ namespace Modio.Unity.UI.Search
             bool showMonetizationUI = ModioClient.Settings.TryGetPlatformSettings(out MonetizationSettings _);
             if (!showMonetizationUI) searchFilter.RevenueType = RevenueType.Free;
 
+            if (settingsFrom != null && _isDefault)
+            {
+                ApplyHiddenTags().ForgetTaskSafely();
+            }
+
             SetSearch(searchFilter).ForgetTaskSafely();
 
             AppliedSearchPreset?.Invoke();
+        }
+
+        async Task ApplyHiddenTags()
+        {
+            (Error error, GameTagCategory[] gameTagCategories) = await GameTagCategory.GetGameTagOptions();
+
+            if (LastSearchSettingsFrom == null || gameTagCategories == null) return;
+            
+            foreach (GameTagCategory gameTagCategory in gameTagCategories)
+            {
+                bool hide = LastSearchSettingsFrom.hideTagCategories.Contains(gameTagCategory.Name);
+
+                gameTagCategory.TempHidden = hide;
+
+                foreach (ModTag tag in gameTagCategory.Tags)
+                {
+                    tag.TempHidden = hide;
+                }
+            }
+            
+            OnSearchUpdatedUnityEvent.Invoke();
         }
 
         public void SetCustomSearchBase(SearchFilter searchFilter, SpecialSearchType searchType)
@@ -378,9 +445,15 @@ namespace Modio.Unity.UI.Search
                     case SpecialSearchType.SearchCollections:
                         await SetSearchForCollections(searchFilter, isAdditiveSearch);
                         return;
+                    case SpecialSearchType.SubSearchesOnly:
+                        queryResultAnd = (Error.None, Array.Empty<Mod>(), 0);
+                        break;
                     case SpecialSearchType.FollowedCollections:
                         await GetFollowCollectionsViaLocalQuery();
                         return;
+                    case SpecialSearchType.SearchModsInCollection:
+                        queryResultAnd = await GetModsInCollection(searchFilter, LastSearchSettingsFrom.CollectionId);
+                        break;
                     default:
                         queryResultAnd = await GetModsViaStandardQuery();
                         break;
@@ -518,6 +591,22 @@ namespace Modio.Unity.UI.Search
             return (error, page.Data, (int)page.TotalSearchResults);
         }
 
+        async Task<(Error error, IReadOnlyList<Mod> mods, int totalCount)> GetModsInCollection(SearchFilter searchFilter, long collectionId)
+        {
+            ModioAPI.Collections.GetCollectionModsFilter filter = ModioAPI.Collections.FilterGetCollectionMods(searchFilter.GetModsFilter());
+
+            (Error error, ModioPage<Mod> page) = await ModCollection.GetCollectionMods(collectionId, filter);
+            
+            if (error)
+            {
+                if(!error.IsSilent)
+                    ModioLog.Error?.Log($"Error getting mods: {error.GetMessage()}");
+                return (error, null, 0);
+            }
+
+            return (error, page.Data, (int)page.TotalSearchResults);
+        }
+
         async Task<(Error error, IReadOnlyList<Mod> mods, int totalCount)> GetCurrentUserCreationsQuery()
         {
             ModioAPI.Mods.GetModsFilter yeet = LastSearchFilter.GetModsFilter();
@@ -593,7 +682,7 @@ namespace Modio.Unity.UI.Search
         {
             foreach (var tag in LastSearchFilter.GetTags())
             {
-                if (mod.Tags.All(modTag => modTag.ApiName != tag)) 
+                if (mod.Tags.All(modTag => modTag != tag)) 
                     return false;
             }
 

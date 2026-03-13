@@ -397,6 +397,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8441047286948199267, guid: 1389902bd38654c479f7a8abf03cd82e,
         type: 3}
+      propertyPath: _hideIfNotController
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8441047286948199267, guid: 1389902bd38654c479f7a8abf03cd82e,
+        type: 3}
       propertyPath: _additionalToHideIfNoBindings.Array.size
       value: 1
       objectReference: {fileID: 0}

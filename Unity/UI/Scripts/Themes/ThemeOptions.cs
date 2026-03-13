@@ -15,6 +15,9 @@ namespace Modio.Unity.UI.Scripts.Themes
         FontStandard,
         FontMedium,
         FontBold,
+        DropShadowSize,
+        DropShadowColor,
+        DropShadowImage,
     }
 
     public enum StyleTarget
@@ -38,6 +41,7 @@ namespace Modio.Unity.UI.Scripts.Themes
         PanelModTileOptions,
         PanelModDisplayInfoBackground,
         PanelFilter,
+        BrowserHeader,
         FilterToggle = 300,
         TextSubdued,
         InputField,
@@ -46,5 +50,8 @@ namespace Modio.Unity.UI.Scripts.Themes
         ModDisplayLibraryStatusWarning,
         ModTile = 400,
         BrowserBackground,
+        ModTileFeatured,
+        ModTileFeaturedLarge,
+        ModTilePremiumBranding,
     }
 }

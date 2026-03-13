@@ -94,6 +94,8 @@ namespace Modio.API.SchemaDefinitions{
             internal readonly EmbeddedRefund Refund;
             /// <summary>Manage User Account link.</summary>
             internal readonly EmbeddedManage Manage;
+            /// <summary>Manage User Account link.</summary>
+            internal readonly EmbeddedMonetization Monetization;
 
             [JsonConstructor]
             public EmbeddedLinks(
@@ -101,13 +103,15 @@ namespace Modio.API.SchemaDefinitions{
                 EmbeddedTerms terms,
                 EmbeddedPrivacy privacy,
                 EmbeddedRefund refund,
-                EmbeddedManage manage
+                EmbeddedManage manage,
+                EmbeddedMonetization monetization
             ) {
                 Website = website;
                 Terms = terms;
                 Privacy = privacy;
                 Refund = refund;
                 Manage = manage;
+                Monetization = monetization;
             }
 
             [JsonObject(NamingStrategyType = typeof(SnakeCaseNamingStrategy))]
@@ -210,6 +214,28 @@ namespace Modio.API.SchemaDefinitions{
 
                 [JsonConstructor]
                 public EmbeddedManage(
+                    string text,
+                    string url,
+                    bool required
+                ) {
+                    Text = text;
+                    Url = url;
+                    Required = required;
+                }
+            }
+            
+            [JsonObject(NamingStrategyType = typeof(SnakeCaseNamingStrategy))]
+            internal readonly partial struct EmbeddedMonetization
+            {
+                /// <summary>Text for the link.</summary>
+                internal readonly string Text;
+                /// <summary>Link to the mod.io terms regarding monetization.</summary>
+                internal readonly string Url;
+                /// <summary>Is this link required.</summary>
+                internal readonly bool Required;
+
+                [JsonConstructor]
+                public EmbeddedMonetization(
                     string text,
                     string url,
                     bool required

@@ -13,6 +13,7 @@ namespace Modio.Unity.UI.Components
 
         public Mod Mod { get; private set; }
         Mod IModioUIResourceContainer<Mod>.Resource => Mod;
+        bool IModioUIResourceContainer<Mod>.IsPlaceholderUI { get; set; }
 
         void OnDestroy()
         {

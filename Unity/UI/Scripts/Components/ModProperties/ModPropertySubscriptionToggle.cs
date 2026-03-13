@@ -3,7 +3,6 @@ using Modio.Mods;
 using Modio.Monetization;
 using Modio.Unity.UI.Components.Localization;
 using Modio.Unity.UI.Panels;
-using Modio.Unity.UI.Panels.Authentication;
 using Modio.Unity.UI.Panels.Monetization;
 using TMPro;
 using UnityEngine;
@@ -40,9 +39,7 @@ namespace Modio.Unity.UI.Components.ModProperties
                     mod.IsSubscribed ? ModioUILocalizationKeys.Btn_Unsubscribe : ModioUILocalizationKeys.Btn_Subscribe
                 );
 
-
-
-            var availableForPurchase = mod.IsMonetized && !mod.IsPurchased;
+            var availableForPurchase = mod.IsMonetized && !mod.IsPurchased && !mod.IsCreated;
 
             // If we can't get a matching SKU for the portal, PortalSku will be null
             var disablePurchase =

@@ -349,6 +349,8 @@ namespace Modio.Errors
         MONETIZATION_ITEM_ALREADY_OWNED = 900034,
         /// <summary>The given display price does not match the price of the mod.</summary>
         MONETIZATION_INCORRECT_DISPLAY_PRICE = 900035,
+        /// <summary>The user has not agreed to the mod.io Monetization Terms. Please see terms_agreed parameter description and the Terms endpoint for more information.</summary>
+        MONETIZATION_TERMS_NOT_ACCEPTED = 900044,
         /// <summary>The account has insufficent funds to make this purchase.</summary>
         MONETIZATION_INSUFFICIENT_FUNDS = 900049,
         /// <summary>The mod does not have a SKU assigned for the given portal.</summary>
@@ -521,6 +523,7 @@ namespace Modio.Errors
                 ErrorCode.MONETIZATION_PAYMENT_FAILED => "The payment transaction failed. Please try again later.",
                 ErrorCode.MONETIZATION_ITEM_ALREADY_OWNED => "The account already owns this item.",
                 ErrorCode.MONETIZATION_INCORRECT_DISPLAY_PRICE => "The given display price does not match the price of the mod.",
+                ErrorCode.MONETIZATION_TERMS_NOT_ACCEPTED => "The user has not agreed to the mod.io Monetization Terms. Please see terms_agreed parameter description and the Terms endpoint for more information.",
                 ErrorCode.MONETIZATION_INSUFFICIENT_FUNDS => "The account has insufficent funds to make this purchase.",
                 ErrorCode.MONETIZATION_ENTITLEMENT_MAPPING_NOT_FOUND => "The mod does not have a SKU assigned for the given portal.",
                 ErrorCode.MONETIZATION_TRANSACTION_FINALIZE_FAILED  => "The transaction could not be finalized due to an unexpected error. The mod will still be issued to the user at this point as the portal entitlement was consumed (an irreversible operation)",

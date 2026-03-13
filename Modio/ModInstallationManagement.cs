@@ -127,11 +127,15 @@ namespace Modio
         internal static async Task Shutdown()
         {
             Mod.RemoveChangeListener(ModChangeType.IsSubscribed, OnModSubscriptionChange);
-
+            
+            EndCurrentTempModSession();
+            
+            _currentOperation?.Cancel();
+            
+            while (_currentOperation != null) await Task.Yield();
+            
             _index?.Shutdown();
             _index = null;
-
-            while (_currentOperation != null) await Task.Yield();
         }
 
         internal static void WakeUp()
@@ -450,7 +454,7 @@ namespace Modio
         /// <seealso cref="EndCurrentTempModSession"/>
         public static async Task<Error> StartTempModSession(List<ModioId> tempMods, bool appendCurrentSession = false)
         {
-            if (_currentSessionMods.Count == 0 && !appendCurrentSession)
+            if (_currentSessionMods?.Count > 0 && !appendCurrentSession)
             {
                 ModioLog.Message?.Log(
                     "Attempting to start new Temp Mod Session while one is active! Ending " +
@@ -461,8 +465,6 @@ namespace Modio
                 EndCurrentTempModSession();
             }
 
-            foreach (ModioId mod in tempMods) _currentSessionMods.Add(mod);
-
             return await AddTemporaryMods(tempMods, 0);
         }
 
@@ -472,7 +474,7 @@ namespace Modio
         [ModioDebugMenu(ShowInSettingsMenu = false)]
         public static void EndCurrentTempModSession()
         {
-            _currentSessionMods.Clear();
+            _currentSessionMods?.Clear();
 
             ExecuteJobs();
         }
@@ -503,18 +505,20 @@ namespace Modio
                 ModioLog.Warning?.Log($"AddTemporaryMods failed; only able to fetch {mods.Count} temporary mods. Expected {tempMods.Distinct().Count()}");
                 return new Error(ErrorCode.REQUESTED_MODFILE_NOT_FOUND);
             }
-
+            
             // If one mod is tainted the whole session is missing a dependency, so we early out
-            bool canInstall = !tempMods.Any(
-                modId =>
-                {
-                    if (!_index.TryGetEntry(modId, out ModIndex.IndexEntry entry)) return false;
+            bool canInstall = mods.All(mod => mod.File.State != ModFileState.FileOperationFailed);
 
-                    return entry.FileState == ModFileState.FileOperationFailed;
-                }
-            );
+            if (!canInstall) 
+                return new Error(ErrorCode.CANT_INSTALL_TAINTED_MOD);
 
-            if (!canInstall) return new Error(ErrorCode.CANT_INSTALL_TAINTED_MOD);
+            bool isThereAvailableSpace = await IsThereAvailableSpaceFor(mods);
+
+            if (!isThereAvailableSpace)
+            {
+                ModioLog.Error?.Log($"Insufficient space to install mods");
+                return new Error(ErrorCode.INSUFFICIENT_SPACE);
+            }
 
             foreach (Mod mod in mods) AddTemporaryMod(mod, lifeTimeDays);
 
@@ -524,11 +528,12 @@ namespace Modio
         /// <summary>
         /// Adds a mod to mod index
         /// </summary>
-        /// <param name="modId">The mod to be added</param>
+        /// <param name="mod">The mod to be added</param>
         /// <param name="lifetime">The number of days to keep the mod installed</param>
-        static void AddTemporaryMod(Mod modId, int lifetime)
+        static void AddTemporaryMod(Mod mod, int lifetime)
         {
-            ModIndex.IndexEntry indexEntry = _index.GetEntry(modId);
+            ModIndex.IndexEntry indexEntry = _index.GetEntry(mod);
+            _currentSessionMods.Add(mod.Id);
 
             switch (indexEntry.FileState)
             {
@@ -569,6 +574,10 @@ namespace Modio
 
         static void RetryInstallingTaintedMods()
         {
+            // In some cases when shutting down the plugin, this can still be triggered causing a null ref
+            if (_index == null)
+                return;
+            
             foreach (KeyValuePair<long, ModIndex.IndexEntry> entry in _index.Index)
             {
                 Mod mod = null;
@@ -1339,6 +1348,44 @@ namespace Modio
                 }
             }
             
+            _currentOperation?.GetPendingSpaceChange(ref spaceRequired, ref tempSpaceRequired);
+
+            foreach (Job job in _operationQueue) job.GetPendingSpaceChange(ref spaceRequired, ref tempSpaceRequired);
+            
+            if (DownloadAndExtractAsSingleJob)
+                return await ModioClient.DataStorage.IsThereAvailableFreeSpaceFor(
+                    tempSpaceRequired,
+                    spaceRequired + totalFileSize
+                );
+
+            return await ModioClient.DataStorage.IsThereAvailableFreeSpaceFor(
+                tempSpaceRequired + largestArchiveSize,
+                spaceRequired + totalFileSize
+            );
+        }
+        
+        public static async Task<bool> IsThereAvailableSpaceFor(IEnumerable<Mod> mods)
+        {
+            long spaceRequired = 0;
+            long tempSpaceRequired = 0;
+
+            long totalFileSize = 0;
+            long largestArchiveSize = 0;
+
+            foreach (Mod mod in mods)
+            {
+                //skip files that have a state other than None or FOF, as they're already in the operationQueue and we'll account for their space next
+                if (mod.File.State is not ModFileState.Installed
+                                      and not ModFileState.None
+                                      and not ModFileState.FileOperationFailed)
+                    continue;
+
+                if (mod.File.ArchiveFileSize > largestArchiveSize)
+                    largestArchiveSize = mod.File.ArchiveFileSize;
+
+                totalFileSize += mod.File.FileSize;
+            }
+
             _currentOperation?.GetPendingSpaceChange(ref spaceRequired, ref tempSpaceRequired);
 
             foreach (Job job in _operationQueue) job.GetPendingSpaceChange(ref spaceRequired, ref tempSpaceRequired);

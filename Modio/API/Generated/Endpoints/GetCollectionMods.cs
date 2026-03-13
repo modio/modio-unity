@@ -56,6 +56,22 @@ namespace Modio.API
                 pageSize
             );
             
+            
+            /// <summary>
+            /// Constructs a filter built for this request type based on a similar GetModsFilter
+            /// </summary>
+            public static GetCollectionModsFilter FilterGetCollectionMods(Mods.GetModsFilter modFilter)
+            {
+                var collectionsFilter = new GetCollectionModsFilter(modFilter.PageIndex, modFilter.PageSize);
+
+                foreach (KeyValuePair<string, object> modFilterParameter in modFilter.Parameters)
+                {
+                    collectionsFilter.Parameters[modFilterParameter.Key] = modFilterParameter.Value;
+                }
+                
+                return collectionsFilter;
+            }
+            
             /// <summary>
             /// Filter for GetCollectionMods, see <see cref="Collections.FilterGetCollectionMods"/>
             /// to construct this filter <br/>

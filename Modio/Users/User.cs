@@ -230,18 +230,18 @@ namespace Modio.Users
             ModRepository.OnContentsChanged -= OnAnyModRepositoryChange;
             IsUpdating = true;
             
+            ClearCachedUserCreations();
+            
             Task<Error> profileTask = SyncProfile();
             Task<Error> subscriptionTask = SyncSubscriptions();
             Task<Error> purchaseTask = SyncPurchases();
-
+            
             SyncModRatings().ForgetTaskSafely();
             SyncCollectionRatings().ForgetTaskSafely();
-            SyncWallet().ForgetTaskSafely();
             SyncEntitlements().ForgetTaskSafely();
             SyncCollections().ForgetTaskSafely();
             SyncUsersFollowing().ForgetTaskSafely();
-            
-            ClearCachedUserCreations();
+            SyncUserCreations().ForgetTaskSafely();
 
             if (ModioClient.Settings.TryGetPlatformSettings(out MonetizationSettings settings)
                 && settings.MonetizationType == ModioMonetizationType.UsdMarketplace
@@ -253,7 +253,7 @@ namespace Modio.Users
             IsUpdating = false;
 
             ModRepository.OnContentsChanged += OnAnyModRepositoryChange;
-            
+
             // We already log the errors in their methods, so we just return the first one here
             if (errors.Any(error => error)) 
                 return errors.First(error => error);
@@ -365,8 +365,10 @@ namespace Modio.Users
             ModioLog.Verbose?.Log($"Syncing Purchases for {UserId}");
 
             var settings = ModioServices.Resolve<ModioSettings>();
+            (Error gameDataError, GameData data) = await GameData.GetGameData();
 
-            if (!settings.TryGetPlatformSettings(out MonetizationSettings _))
+            if (!settings.TryGetPlatformSettings(out MonetizationSettings _)
+                || (!gameDataError && data.MonetizationOptions == 0))
             {
                 ModioLog.Message?.Log($"No {typeof(MonetizationSettings)} settings found, skipping SyncPurchases");
                 return Error.None;
@@ -470,14 +472,16 @@ namespace Modio.Users
             ModioLog.Verbose?.Log($"Syncing Entitlements {UserId}");
 
             var settings = ModioServices.Resolve<ModioSettings>();
+            (Error gameDataError, GameData data) = await GameData.GetGameData();
 
-            if (!settings.TryGetPlatformSettings(out MonetizationSettings monetizationSettings))
+            if (!settings.TryGetPlatformSettings(out MonetizationSettings monetizationSettings)
+                || (!gameDataError && data.MonetizationOptions == 0))
             {
                 ModioLog.Message?.Log($"No {typeof(MonetizationSettings)} settings found, skipping SyncEntitlements");
                 return Error.None;
             }
 
-            Error error;
+            Error error = Error.None;
             if (monetizationSettings.MonetizationType == ModioMonetizationType.UsdMarketplace)
             {
                 ModioLog.Message?.Log($"USD Marketplace monetization does not sync entitlements, caching platform entitlements");
@@ -487,25 +491,20 @@ namespace Modio.Users
                 
                 error  = await ModioFiatPrice.FetchSkuCache(ModioAPI.CurrentPortal);
                 
-                if (error && !error.IsSilent) ModioLog.Error?.Log($"Error Fetching SKU Cache for {UserId}: {error}");
-                
+                if (error && !error.IsSilent) 
+                    ModioLog.Error?.Log($"Error Fetching SKU Cache for {UserId}: {error}");
             }
             
-            if (!ModioServices.TryResolve(out IModioEntitlementService entitlementPlatform)) 
-                return Error.None;
+            if (ModioServices.TryResolve(out IModioEntitlementService entitlementPlatform))
+                error = await entitlementPlatform.SyncEntitlements();
 
-            error = await entitlementPlatform.SyncEntitlements();
+            if (error && !error.IsSilent) 
+                ModioLog.Error?.Log($"Error syncing Entitlements for {UserId}: {error}");
 
-            if (error)
-            {
-                if (!error.IsSilent) ModioLog.Error?.Log($"Error syncing Entitlements for {UserId}: {error}");
-                return error;
-            }
-            
             ModioLog.Verbose?.Log($"Finished Syncing Entitlements {LocalUserId} with result: {Error.None}");
 
             await SyncWallet();
-            return Error.None;
+            return error;
         }
 
         /// <summary>
@@ -519,8 +518,10 @@ namespace Modio.Users
             ModioLog.Verbose?.Log($"Syncing Wallet {UserId}");
 
             var settings = ModioServices.Resolve<ModioSettings>();
+            (Error gameDataError, GameData data) = await GameData.GetGameData();
 
-            if (!settings.TryGetPlatformSettings(out MonetizationSettings monSettings))
+            if (!settings.TryGetPlatformSettings(out MonetizationSettings _)
+                || (!gameDataError && data.MonetizationOptions == 0))
             {
                 ModioLog.Message?.Log($"No {typeof(MonetizationSettings)} settings found, skipping SyncWallet");
                 return Error.None;
@@ -648,6 +649,46 @@ namespace Modio.Users
             List<UserProfile> output = userObjects.Value.Data.Select(UserProfile.Get).ToList();
 
             return (Error.None, output);
+        }
+
+        public async Task<Error> SyncUserCreations()
+        {
+            var filter = ModioAPI.Me.FilterGetUserMods();
+            
+            filter.GameId(ModioClient.Settings.GameId);
+            //Don't show archived mods; those are only useful on the web interface
+            filter.Status(3, Filtering.Not);
+            
+            (Error error, List<ModObject> modObjects) = await ModioAPI.CrawlAllPages(filter, ModioAPI.Me.GetUserMods);
+
+            if (error)
+            {
+                if (!error.IsSilent) ModioLog.Error?.Log($"Error syncing User Creations for {UserId}: {error}");
+                return error;
+            }
+            
+            List<Mod> creations = modObjects
+                                  .Select(ModCache.GetMod)
+                                  .ToList();
+
+            // Get all previously, but not currently, subscribed mods and update their status
+            var cachedCreations = new HashSet<Mod>(ModRepository.GetCreatedMods());
+            
+            // Cull values that don't need to change
+            foreach (Mod creation in creations)
+            {
+                cachedCreations.Remove(creation);
+                creation.UpdateLocalCreationStatus(true);
+            }
+
+            foreach (Mod mod in cachedCreations) 
+                mod.UpdateLocalCreationStatus(false);
+
+            OnUserChanged?.Invoke(this);
+            
+            ModioLog.Verbose?.Log($"Finished Syncing User Creations for {LocalUserId} with result: {error}");
+
+            return Error.None;
         }
 
         /// <summary>Gets all mod creations by the User from the API.</summary>
@@ -846,8 +887,26 @@ namespace Modio.Users
         {
             ModioLog.Verbose?.Log($"Logging out {Current?.LocalUserId}");
             Current?.ModRepository.Dispose();
+
+            ResetModsStatus();
+            
             Current = new User();
             OnUserChanged?.Invoke(Current);
+        }
+
+        static void ResetModsStatus()
+        {
+            if (Current?.ModRepository == null)
+                return;
+
+            foreach (Mod mod in Current.ModRepository.GetSubscribed())
+                mod.UpdateLocalSubscriptionStatus(false);
+
+            foreach (Mod mod in Current.ModRepository.GetPurchased())
+                mod.UpdateLocalPurchaseStatus(false);
+
+            foreach (Mod mod in Current.ModRepository.GetDisabled())
+                mod.UpdateLocalEnabledStatus(true);
         }
 
         /// <summary>

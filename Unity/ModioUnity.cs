@@ -21,11 +21,8 @@ namespace Modio.Unity
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
         static void OnAfterAssembliesLoaded()
         {
-            var modioUnitySettings = Resources.Load<ModioUnitySettings>(ModioUnitySettings.DefaultResourceNameOverride);
-
-            if (modioUnitySettings == null)
-                modioUnitySettings = Resources.Load<ModioUnitySettings>(ModioUnitySettings.DefaultResourceName);
-
+            ModioUnitySettings modioUnitySettings = LoadSettings();
+            
             if (ModioCommandLine.TryGetArgument("gameid", out string gameId))
                 modioUnitySettings.Settings.GameId = int.Parse(gameId);
 
@@ -60,8 +57,22 @@ namespace Modio.Unity
             ModioLog.Verbose?.Log(environmentDetails);
             
             Error.StoreStackTraceWhenCreated = false;
-            
+             
             Version.AddEnvironmentDetails(environmentDetails);
+            
+            // If command line arg present we need to mutate the config
+            if (ModioCommandLine.TryGetArgument("log", out string logLevelText)
+                || ModioCommandLine.TryGetArgument("loglevel", out logLevelText))
+            {
+                if (Enum.TryParse(logLevelText, true, out LogLevel logLevelEnum))
+                {
+                    modioUnitySettings.Settings.LogLevel = logLevelEnum;
+                }
+                else
+                    // ReSharper disable once ExpressionIsAlwaysNull (it's set in ApplyLogLevel)
+                    // ReSharper disable once ConstantConditionalAccessQualifier
+                    ModioLog.Error?.Log($"Unrecognized log level: {logLevelText}");
+            }
 
             if (modioUnitySettings != null)
             {
@@ -125,6 +136,26 @@ namespace Modio.Unity
 
             InitPlatform();
         }
+
+        static ModioUnitySettings LoadSettings()
+        {
+            ModioUnitySettings foundSetting = null;
+
+            if (ModioCommandLine.TryGetArgument("unity-settings", out string target))
+            {
+                foundSetting = Resources.Load<ModioUnitySettings>($"mod.io/{target}");
+                if (foundSetting == null)
+                    foundSetting = Resources.Load<ModioUnitySettings>($"mod.io/v3_config_{target}");
+            }
+
+            if(foundSetting == null)
+                foundSetting = Resources.Load<ModioUnitySettings>(ModioUnitySettings.DefaultResourceNameOverride);
+            if (foundSetting == null)
+                foundSetting = Resources.Load<ModioUnitySettings>(ModioUnitySettings.DefaultResourceName);
+
+            return foundSetting;
+        }
+
 
 #if UNITY_EDITOR
         static void OnGameShuttingDown(PlayModeStateChange state)

@@ -14,6 +14,7 @@ namespace Modio.Unity.UI.Components
 
         public ModCollection Collection { get; private set; }
         ModCollection IModioUIResourceContainer<ModCollection>.Resource => Collection;
+        bool IModioUIResourceContainer<ModCollection>.IsPlaceholderUI { get; set; }
 
         void OnDestroy()
         {

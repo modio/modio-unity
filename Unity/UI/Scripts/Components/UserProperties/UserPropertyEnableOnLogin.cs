@@ -12,7 +12,7 @@ namespace Modio.Unity.UI.Components.UserProperties
 
         public void OnUserUpdate(UserProfile user)
         {
-            bool userLoggedIn = user != null;
+            bool userLoggedIn = user?.UserId != 0;
 
             foreach (GameObject go in _activeWhenLoggedOut)
             {

@@ -10,6 +10,7 @@ namespace Modio.Mods
         public GameTagCategory[] Categories;
         public string CurrencyName;
         public GameCommunityOptions CommunityOptions;
+        public GameMonetizationOptions MonetizationOptions;
 
         bool _hasFetchedWeb;
 
@@ -66,6 +67,7 @@ namespace Modio.Mods
             
             gameData.CurrencyName = gameObject.Value.TokenName;
             gameData.CommunityOptions = (GameCommunityOptions)gameObject.Value.CommunityOptions;
+            gameData.MonetizationOptions = (GameMonetizationOptions)gameObject.Value.MonetizationOptions;
             
             gameData._hasFetchedWeb = true;
 

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -65,6 +66,60 @@ namespace Modio.Unity.UI.Scripts.Themes
         }
 
         void OnValidate() => OnThemeSheetUpdated?.Invoke();
+
+        public void CompareAgainst(ModioUIThemeSheet compareTo)
+        {
+            var stringBuilder = new StringBuilder();
+            stringBuilder.AppendLine($"Comparing {name} to {compareTo.name}");
+            DoCompare(this, compareTo, "Added");
+            DoCompare(compareTo, this, "Removed");
+            
+            Debug.Log(stringBuilder.ToString());
+            return;
+
+            void DoCompare(ModioUIThemeSheet a, ModioUIThemeSheet b, string message)
+            {
+                foreach (Style style in a._styles)
+                {
+                    bool matchedStyle = false;
+                    foreach (Style compareStyle in b._styles)
+                    {
+                        if (compareStyle.Target != style.Target) continue;
+                        matchedStyle = true;
+                    }
+
+                    if (!matchedStyle)
+                    {
+                        stringBuilder.AppendLine($"{message} {style.Target} (extending {style.Extends})");
+                    }
+                    
+                    foreach (IStyleOption styleOption in style.StyleOptions)
+                    {
+                        bool foundMatch = false;
+                        foreach (Style compareStyle in b._styles)
+                        {
+                            if (compareStyle.Target != style.Target) continue;
+
+                            foreach (IStyleOption compareOption in compareStyle.StyleOptions)
+                            {
+                                if(compareOption.OptionType != styleOption.OptionType) continue;
+                                if(compareOption.GetType() != styleOption.GetType()) continue;
+                                foundMatch = true;
+                                break;
+                            }
+                        
+                            if(foundMatch) break;
+                        }
+                        if (!foundMatch)
+                        {
+                            stringBuilder.AppendLine(
+                                $"{message} {style.Target}.{styleOption.OptionType} of type {styleOption.GetType().Name}"
+                            );
+                        }
+                    }
+                }
+            }
+        }
     }
     
     [Serializable]
@@ -77,6 +132,8 @@ namespace Modio.Unity.UI.Scripts.Themes
         [SerializeField] StyleTarget _extends;
         [SerializeField, SerializeReference] IStyleOption[] _styleOptions = Array.Empty<IStyleOption>();
 
+        public IReadOnlyList<IStyleOption> StyleOptions => _styleOptions;
+        
         public void ApplyStyleToObject(Object component, ThemeOptions option)
         {
             foreach (IStyleOption style in _styleOptions)

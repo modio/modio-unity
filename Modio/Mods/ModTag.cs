@@ -17,9 +17,29 @@ namespace Modio.Mods
         static readonly Dictionary<(string, ResourceTagType), ModTag> Tags = new Dictionary<(string, ResourceTagType), ModTag>();
 
         public readonly string ApiName;
+        [JsonProperty]
         Dictionary<string, string> _translations;
         public string NameLocalized { get; private set; }
-        public bool IsVisible { get; private set; }
+        
+        [JsonProperty]
+        bool _isVisible;
+        [JsonIgnore]
+        public bool IsVisible
+        {
+            get => _isVisible && !TempHidden;
+            internal set => _isVisible = value;
+        }
+        
+        /// <summary>
+        /// Should this tag be hidden for the user temporarily
+        /// We use this when filtering the entire mods page for a particular search
+        ///
+        /// e.g. you want to have separate "maps" and "characters" pages using a tag filter,
+        /// but don't want the tags to be visible on those pages
+        /// </summary>
+        [JsonIgnore]
+        public bool TempHidden { private get; set; }
+        
         public ResourceTagType TagType { get; }
         public int Count { get; internal set; }
 
@@ -30,12 +50,12 @@ namespace Modio.Mods
         }
 
         [JsonConstructor]
-        public ModTag(string apiName, Dictionary<string, string> translations, string nameLocalized, bool isVisible, int count)
+        public ModTag(string apiName, Dictionary<string, string> _translations, string nameLocalized, bool _isVisible, int count)
         {
             ApiName = apiName;
-            _translations = translations;
+            this._translations = _translations;
             NameLocalized = nameLocalized;
-            IsVisible = isVisible;
+            this._isVisible = _isVisible;
             Count = count;
         }
 
@@ -52,7 +72,7 @@ namespace Modio.Mods
             return tag;
         }
         
-        internal static ModTag Get(string tagName, ResourceTagType tagType = ResourceTagType.ModTag)
+        public static ModTag Get(string tagName, ResourceTagType tagType = ResourceTagType.ModTag)
         {
             if (Tags.TryGetValue((tagName, tagType), out ModTag tag))
                 return tag;

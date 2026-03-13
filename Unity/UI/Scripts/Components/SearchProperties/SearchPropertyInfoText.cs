@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Modio.API;
+using Modio.Mods;
 using Modio.Unity.UI.Components.Localization;
 using Modio.Unity.UI.Search;
 using TMPro;
@@ -17,6 +19,8 @@ namespace Modio.Unity.UI.Components.SearchProperties
         [SerializeField] GameObject _disableWhileShowingCustomText;
         [SerializeField] GameObject _showWhileShowingCustomText;
 
+        [SerializeField] GameObject _disableWhenNoSearchCategoryName;
+        [SerializeField] bool _alsoDisableForCustomSearchOrFilter;
         [SerializeField] TMP_Text _searchCategoryName;
         [SerializeField] ModioUILocalizedText _searchCategoryNameLocalized;
         [SerializeField] Image _searchCategoryIcon;
@@ -33,17 +37,16 @@ namespace Modio.Unity.UI.Components.SearchProperties
                 _searchText.enabled = searchHasEntries;
                 if (searchHasEntries) _searchText.text = $"{string.Join(" ", searchPhrases)}";
 
-                if (search.LastSearchPreset == SpecialSearchType.SearchForTag ||
-                    (search.LastSearchPreset == SpecialSearchType.SearchCollections && filter.TagAndCategoryCount > 0))
+                if (search.HasCustomTags())
                 {
                     _searchText.enabled = true;
-                    IReadOnlyList<string> tags = filter.GetTags();
+                    IReadOnlyList<ModTag> tags = filter.GetTags();
                     string collectionCategory = filter.GetCollectionCategory();
 
                     if (!string.IsNullOrEmpty(collectionCategory)) 
-                        tags = new List<string>(tags) { collectionCategory, };
+                        tags = new List<ModTag>(tags) { ModTag.Get(collectionCategory, ResourceTagType.CollectionCategory), };
                     
-                    _searchText.text = $"{string.Join(" ", tags)}";
+                    _searchText.text = $"{string.Join(" ", tags.Where(t => t.IsVisible).Select(t => t.NameLocalized))}";
                 }
             }
 
@@ -75,10 +78,16 @@ namespace Modio.Unity.UI.Components.SearchProperties
                 if (_searchCategoryNameLocalized != null)
                     _searchCategoryNameLocalized.SetKey(search.LastSearchSettingsFrom.DisplayAsLocalisedKey);
 
+                if(_disableWhenNoSearchCategoryName != null)
+                    _disableWhenNoSearchCategoryName.SetActive(
+                        (!string.IsNullOrEmpty(search.LastSearchSettingsFrom.DisplayAsLocalisedKey) ||
+                         !string.IsNullOrEmpty(search.LastSearchSettingsFrom.DisplayAs))
+                        && (!_alsoDisableForCustomSearchOrFilter || !search.HasCustomSearchOrFiltering()));
+                
                 if (_searchCategoryIcon != null)
                 {
                     _searchCategoryIcon.sprite = search.LastSearchSettingsFrom.Icon;
-                    _searchCategoryIcon.enabled = search.LastSearchSettingsFrom.Icon != null;
+                    _searchCategoryIcon.gameObject.SetActive(search.LastSearchSettingsFrom.Icon != null);
                 }
             }
         }

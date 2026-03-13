@@ -46,8 +46,8 @@ namespace Modio.API
                 // Android/Oculus -> Quest
                 // PC Platform    -> Rift
                 // Rift is PCVR, so we can safely know if we're Rift or not based on if we're a PC or Android/Oculus platform
-                string device = ModioAPI._platform == Platform.Oculus
-                                || ModioAPI._platform == Platform.Android
+                string device = ModioAPI.CurrentPlatform == Platform.Oculus
+                                || ModioAPI.CurrentPlatform == Platform.Android
                     ? "quest"
                     : "rift";
                 

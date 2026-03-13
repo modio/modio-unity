@@ -8,6 +8,7 @@ using Modio.API;
 using Modio.API.SchemaDefinitions;
 using Modio.Caching;
 using Modio.Errors;
+using Modio.Extensions;
 using Modio.Users;
 
 namespace Modio.Mods.Builder
@@ -51,15 +52,21 @@ namespace Modio.Mods.Builder
 
         MonetizationOptions _monetizationOptions;
         public bool IsMonetized { get; private set; }
+
+        public List<(long userId, int split)> MonetizationTeam
+            => _monetizationTeamMembers.Select(kvp => (kvp.Key, kvp.Value)).ToList();
+        
         public bool IsLimitedStock { get; private set; }
         public int Price { get; private set; }
         public int Stock { get; private set; }
+        
+        Dictionary<long, int> _monetizationTeamMembers = new Dictionary<long, int>();
 
         public bool IsEditMode => EditTarget != null;
         public Mod EditTarget { get; private set; }
 
         internal ModBuilder() => EditTarget = null;
-
+        
         internal ModBuilder(Mod editTarget)
         {
             EditTarget = editTarget;
@@ -73,6 +80,12 @@ namespace Modio.Mods.Builder
             _monetizationOptions = editTarget.IsMonetized
                 ? MonetizationOptions.Enabled | MonetizationOptions.Live
                 : MonetizationOptions.None;
+
+            if (_monetizationOptions > 0)
+            {
+                // We want to download the team from the server
+                GetModMonetizationTeamMembers().ForgetTaskSafely();
+            }
 
             Price = editTarget.IsMonetized
                 ? (int)editTarget.Price
@@ -256,51 +269,71 @@ namespace Modio.Mods.Builder
                 _monetizationOptions &= ~(MonetizationOptions.Enabled | MonetizationOptions.Live);
 
             IsMonetized = isMonetized;
-            
             _pendingChanges |= ChangeFlags.MonetizationConfig;
             return this;
         }
 
+        /// <summary>
+        /// Setting this to 0 or below will disable monetization completely for this mod
+        /// </summary>
         public ModBuilder SetPrice(int price)
         {
-            if (!_monetizationOptions.HasFlag(MonetizationOptions.Enabled | MonetizationOptions.Live))
-            {
-                ModioLog.Error?.Log("Mod is not set for Monetization! Use SetMonetized(bool isMonetized) before setting a price.");
-                return this;
-            }
-            
-            Price = price;
-            
-            _pendingChanges |= ChangeFlags.MonetizationConfig;
-            return this;
-        }
-
-        public ModBuilder SetLimitedStock(bool isLimitedStock)
-        {
-            if (isLimitedStock)
-                _monetizationOptions |= MonetizationOptions.LimitedStock;
+            if (price > 0)
+                _monetizationOptions |= MonetizationOptions.Enabled | MonetizationOptions.Live;
             else
-                _monetizationOptions &= MonetizationOptions.LimitedStock;
+                _monetizationOptions &= ~(MonetizationOptions.Enabled | MonetizationOptions.Live);
 
-            IsLimitedStock = isLimitedStock;
-            
+            Price = price;
             _pendingChanges |= ChangeFlags.MonetizationConfig;
             return this;
         }
 
+        /// <summary>
+        /// Set this to 0 or below to disable limited stock
+        /// </summary>
         public ModBuilder SetStockAmount(int stockAmount)
         {
-            if (!_monetizationOptions.HasFlag(
-                    MonetizationOptions.Enabled 
-                    | MonetizationOptions.Live 
-                    | MonetizationOptions.LimitedStock)
-               ) {
-                ModioLog.Error?.Log("Mod is not set for Monetization or Limited Stock! Use SetMonetized(bool isMonetized) & SetLimtedStock(bool isLimitedStock) before setting a stock value.");
-                return this;
-            }
+            if (stockAmount > 0)
+                _monetizationOptions |= MonetizationOptions.LimitedStock;
+            else
+                _monetizationOptions &= ~MonetizationOptions.LimitedStock;
             
             Stock = stockAmount;
             _pendingChanges |= ChangeFlags.MonetizationConfig;
+            return this;
+        }
+        
+        /// <summary>
+        /// Set the earning split for a single team member
+        /// </summary>
+        /// <param name="split">Number between 0 to 1 to represent the propertion of split given to the user</param>
+        /// <remarks>Will overwrite existing split for the user. Total splits cannot exceed 100.</remarks>
+        public ModBuilder SetTeamMemberSplit(long userId, int split)
+            => SetTeamMembersSplits(new[] { (userId, split), });
+        
+        /// <summary>
+        /// Set the monetization team and their earning splits
+        /// </summary>
+        /// <param name="teamMembers.split">Number between 0 to 100 to represent the percentage of split given to the user.
+        /// All values must add up to 100 or the request will fail.</param>
+        /// <remarks>Will override existing splits for all users entered. Total splits cannot exceed 100.</remarks>
+        public ModBuilder SetTeamMembersSplits(IEnumerable<(long userId, int split)> teamMembers)
+        {
+            var teamMembersToSet = teamMembers as (long userId, int split)[] ?? teamMembers.ToArray();
+
+            if (!teamMembersToSet.Any())
+            {
+                ModioLog.Error?.Log($"No teamMembers value provided to method {nameof(SetTeamMembersSplits)}");
+                return this;
+            }
+
+            _pendingChanges |= ChangeFlags.MonetizationTeam;
+            
+            foreach (var teamMember in teamMembersToSet)
+            {
+                _monetizationTeamMembers[teamMember.userId] = teamMember.split;
+            }
+            
             return this;
         }
 
@@ -576,6 +609,13 @@ namespace Modio.Mods.Builder
 
         async Task<Error> PublishMonetization()
         {
+            if (_pendingChanges.HasFlag(ChangeFlags.MonetizationTeam))
+            {
+                // Uploading monetization changes without a monetization team uploaded causes issues with the
+                // monetization options. 
+                await PublishMonetizationTeam();
+            }
+            
             Error error;
             
             var body = new EditModRequest(
@@ -598,6 +638,29 @@ namespace Modio.Mods.Builder
 
             if (error && !error.IsSilent)
                 ModioLog.Error?.Log($"Error publishing Monetization changes for {EditTarget.Id}: {error}");
+
+            _pendingChanges &= ChangeFlags.MonetizationConfig;
+
+            return error;
+        }
+        
+        async Task<Error> PublishMonetizationTeam()
+        {
+            var kvpArray = _monetizationTeamMembers.ToArray();
+            long[] userIds = kvpArray.Select(kvp => kvp.Key).ToArray();
+            int[] splits = kvpArray.Select(kvp => kvp.Value).ToArray();
+
+            var body = new CreateModMonetizationTeamRequest(userIds, splits);
+
+            (Error error, MonetizationTeamAccountsObject? _) =
+                await ModioAPI.Monetization.CreateModMonetizationTeam(EditTarget.Id, body);
+
+            if (!error)
+                GetModMonetizationTeamMembers().ForgetTaskSafely();
+            else
+                ModioLog.Error?.Log($"Error creating mod monetization team for mod {EditTarget.Id}: {error}");
+
+            _pendingChanges &= ChangeFlags.MonetizationTeam;
 
             return error;
         }
@@ -636,6 +699,7 @@ namespace Modio.Mods.Builder
             ChangeFlags.MetadataKvps       => PublishMetadataKvps(),
             ChangeFlags.Modfile            => PublishModfile(),
             ChangeFlags.MonetizationConfig => PublishMonetization(),
+            ChangeFlags.MonetizationTeam   => PublishMonetizationTeam(),
             ChangeFlags.Dependencies       => PublishDependencies(),
             // The below are all covered by the Add/Edit endpoints, so should never be called
             ChangeFlags.Name             => throw new ArgumentException($"{flag} should be changed through the Mods endpoint"),
@@ -748,8 +812,38 @@ namespace Modio.Mods.Builder
             return (Error.None, new ModioAPIFileParameter(memStream, "images.zip", "application/zip"));
         }
         
+        async Task<(Error error, MonetizationTeamAccountsObject[] monetizationTeamObject)> GetModMonetizationTeamMembers()
+        {
+            (Error error, Pagination<MonetizationTeamAccountsObject[]>? monetizationTeamObject) =
+                await ModioAPI.Monetization.GetUsersInModMonetizationTeam(EditTarget.Id);
+
+            if (error)
+            {
+                ModioLog.Error?.Log($"Error retrieving Monetization team for mod {EditTarget.Id}: {error}");
+                return (error, Array.Empty<MonetizationTeamAccountsObject>());
+            }
+
+            if (!monetizationTeamObject.HasValue)
+            {
+                ModioLog.Error?.Log(
+                    $"Unknown error retrieving Monetization team for mod {EditTarget.Id}: team object is null"
+                );
+
+                return (Error.Unknown, Array.Empty<MonetizationTeamAccountsObject>());
+            }
+            
+            // This is assuming there's no more than 100 members of a monetized mod team
+            foreach (MonetizationTeamAccountsObject account in monetizationTeamObject.Value.Data)
+            {
+                // Value is between 0 to 100, so fine to cast from long to int
+                _monetizationTeamMembers[account.Id] = (int)account.Split;
+            }
+
+            return (Error.None, monetizationTeamObject.Value.Data);
+        }
+        
         [Flags]
-        enum MonetizationOptions
+        internal enum MonetizationOptions
         {
             None         = 0,
             Enabled      = 1,

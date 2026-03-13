@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Modio.Mods;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace Modio.Unity.UI.Search
 {
@@ -16,13 +18,29 @@ namespace Modio.Unity.UI.Search
         Purchased             = 10,
         SearchForTag,
         SearchForUser,
+        SubSearchesOnly,
         
         SearchCollections     = 100,
         FollowedCollections   = 101,
+        SearchModsInCollection,
     }
 
     public class ModioUISearchSettings : MonoBehaviour
     {
+        public enum CarouselStyle
+        {
+            Default,
+            FeaturedLarge,
+            Featured,
+        }
+        
+        [Serializable]
+        public class ModioUICarouselSettings
+        {
+            public ModioUISearchSettings Search;
+            public CarouselStyle Style;
+        }
+        
         public string DisplayAs;
         public string DisplayAsLocalisedKey;
         public Sprite Icon;
@@ -32,11 +50,16 @@ namespace Modio.Unity.UI.Search
         public string searchPhrase;
         public List<string> searchTags;
         public SortModsBy sortModsBy;
+        public long CollectionId;
         public bool showMatureContent;
         public bool isAscending;
         public RevenueType filterRevenueType = Modio.Mods.RevenueType.Free;
 
         public Object shareFilterSettingsWith;
+        public List<string> hideTagCategories;
+
+        public ModioUICarouselSettings[] Carousels;
+        public bool ShowFeaturedReasonInCarousel;
 
         public ModSearchFilter GetSearchFilter(int paginationSize)
         {
@@ -46,7 +69,7 @@ namespace Modio.Unity.UI.Search
                 IsSortAscending = (isAscending),
                 RevenueType = filterRevenueType, };
 
-            filter.AddTags(searchTags);
+            filter.AddTags(searchTags, searchType == SpecialSearchType.SearchCollections? ResourceTagType.CollectionTag : ResourceTagType.ModTag);
             filter.AddSearchPhrase(searchPhrase);
 
             return filter;

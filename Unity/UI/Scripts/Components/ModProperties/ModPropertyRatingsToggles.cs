@@ -24,7 +24,7 @@ namespace Modio.Unity.UI.Components.ModProperties
             _mod = mod;
             _modCollection = null;
             
-            OnThingUpdated(mod.CurrentUserRating);
+            OnRatingUpdated(mod.CurrentUserRating);
         }
 
         public void OnCollectionUpdate(ModCollection collection)
@@ -32,11 +32,15 @@ namespace Modio.Unity.UI.Components.ModProperties
             _mod = null;
             _modCollection = collection;
 
-            OnThingUpdated(collection.CurrentUserRating);
+            OnRatingUpdated(collection.CurrentUserRating);
         }
 
-        void OnThingUpdated(ModioRating currentRating)
+        void OnRatingUpdated(ModioRating currentRating)
         {
+            bool canBeVotedOn = _mod == null || !_mod.IsMonetized || _mod.IsPurchased;
+            _positiveVoteToggle.interactable = canBeVotedOn;
+            _negativeVoteToggle.interactable = canBeVotedOn;
+            
             _positiveVoteToggle.onValueChanged.RemoveListener(PositiveToggleValueChanged);
             _negativeVoteToggle.onValueChanged.RemoveListener(NegativeToggleValueChanged);
 

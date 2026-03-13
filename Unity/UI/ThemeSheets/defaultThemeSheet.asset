@@ -37,6 +37,7 @@ MonoBehaviour:
     - rid: 7330996276992933894
     - rid: 7330996276992933895
     - rid: 7330996276992933897
+    - rid: 7931681601538228224
   - _target: 101
     _extends: 100
     _styleOptions:
@@ -50,6 +51,10 @@ MonoBehaviour:
     _styleOptions:
     - rid: 7330996142239645718
     - rid: 7330996276992933889
+    - rid: 7330996614934560768
+    - rid: 7330996614934560769
+    - rid: 6551853948811608089
+    - rid: 6551853948811608090
   - _target: 200
     _extends: 1
     _styleOptions: []
@@ -114,6 +119,7 @@ MonoBehaviour:
     _styleOptions:
     - rid: 7330996276992933907
     - rid: 7330996276992933908
+    - rid: 7330996613620432896
   - _target: 109
     _extends: 100
     _styleOptions:
@@ -133,6 +139,36 @@ MonoBehaviour:
     _extends: 100
     _styleOptions:
     - rid: 7330996548925653006
+  - _target: 304
+    _extends: 1
+    _styleOptions:
+    - rid: 7330996614934560771
+    - rid: 7931681627741618177
+    - rid: 7330996614934560773
+    - rid: 7931681627741618178
+    - rid: 7931681627741618179
+    - rid: 7931681627741618181
+  - _target: 305
+    _extends: 1
+    _styleOptions:
+    - rid: 7023046983627046918
+    - rid: 7023046983627046919
+  - _target: 402
+    _extends: 400
+    _styleOptions: []
+  - _target: 403
+    _extends: 402
+    _styleOptions:
+    - rid: 7931681601538228226
+  - _target: 205
+    _extends: 1
+    _styleOptions:
+    - rid: 7931681601538228225
+  - _target: 404
+    _extends: 400
+    _styleOptions:
+    - rid: 7931681442575417344
+    - rid: 7931681442575417345
   references:
     version: 2
     RefIds:
@@ -209,6 +245,46 @@ MonoBehaviour:
       data:
         _option: 9
         _image: {fileID: 21300000, guid: 64d67717e3005c34c83b13fe437d0da0, type: 3}
+    - rid: 6551853948811608089
+      type: {class: ColorSchemeOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _option: 6
+        _isOn: 0
+        _colorBlock:
+          m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
+          m_HighlightedColor: {r: 0, g: 0, b: 0, a: 1}
+          m_PressedColor: {r: 0, g: 0, b: 0, a: 1}
+          m_SelectedColor: {r: 0, g: 0, b: 0, a: 1}
+          m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+          m_ColorMultiplier: 1
+          m_FadeDuration: 0.1
+    - rid: 6551853948811608090
+      type: {class: ColorSchemeOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _option: 8
+        _isOn: 1
+        _colorBlock:
+          m_NormalColor: {r: 0.05490196, g: 0.0627451, b: 0.105882354, a: 1}
+          m_HighlightedColor: {r: 0.05490196, g: 0.0627451, b: 0.105882354, a: 1}
+          m_PressedColor: {r: 0.05490196, g: 0.0627451, b: 0.105882354, a: 1}
+          m_SelectedColor: {r: 0.05490196, g: 0.0627451, b: 0.105882354, a: 1}
+          m_DisabledColor: {r: 0.05490196, g: 0.0627451, b: 0.105882354, a: 0.5019608}
+          m_ColorMultiplier: 1
+          m_FadeDuration: 0.1
+    - rid: 7023046983627046918
+      type: {class: SimpleColorOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _color: {r: 0.99607843, g: 0.9529412, b: 0.4627451, a: 1}
+        _option: 0
+    - rid: 7023046983627046919
+      type: {class: SimpleColorOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _color: {r: 0.05490196, g: 0.0627451, b: 0.101960786, a: 1}
+        _option: 6
     - rid: 7330996142239645696
       type: {class: TmpFontOption, ns: Modio.Unity.UI.Scripts.Themes.Options, asm: Modio.Unity.UI}
       data:
@@ -364,7 +440,7 @@ MonoBehaviour:
         asm: Modio.Unity.UI}
       data:
         _option: 11
-        _fontSize: 20
+        _fontSize: 16
     - rid: 7330996142239645720
       type: {class: SimpleColorOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
         asm: Modio.Unity.UI}
@@ -492,7 +568,7 @@ MonoBehaviour:
         _spacing:
           CharacterSpacing: -2
           WordSpacing: 0
-          LineSpacing: 10
+          LineSpacing: 0
           ParagraphSpacing: 0
     - rid: 7330996276992933891
       type: {class: TmpFontStyleOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
@@ -601,13 +677,13 @@ MonoBehaviour:
       type: {class: TmpFontSizeOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
         asm: Modio.Unity.UI}
       data:
-        _option: 12
+        _option: 11
         _fontSize: 14
     - rid: 7330996276992933908
       type: {class: TmpFontStyleOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
         asm: Modio.Unity.UI}
       data:
-        _option: 10
+        _option: 11
         _fontStyles: 16
         _spacing:
           CharacterSpacing: 0
@@ -716,3 +792,143 @@ MonoBehaviour:
           m_DisabledColor: {r: 0.23921569, g: 0.26666668, b: 0.29411766, a: 0.7176471}
           m_ColorMultiplier: 1
           m_FadeDuration: 0.1
+    - rid: 7330996613620432896
+      type: {class: ColorSchemeOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _option: 6
+        _isOn: 0
+        _colorBlock:
+          m_NormalColor: {r: 1, g: 1, b: 1, a: 0.6}
+          m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+          m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
+          m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+          m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+          m_ColorMultiplier: 1
+          m_FadeDuration: 0.1
+    - rid: 7330996614934560768
+      type: {class: ColorSchemeOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _option: 1
+        _isOn: 0
+        _colorBlock:
+          m_NormalColor: {r: 0.6, g: 0.6, b: 0.6, a: 0}
+          m_HighlightedColor: {r: 1, g: 1, b: 1, a: 1}
+          m_PressedColor: {r: 1, g: 1, b: 1, a: 1}
+          m_SelectedColor: {r: 1, g: 1, b: 1, a: 1}
+          m_DisabledColor: {r: 0.23921569, g: 0.26666668, b: 0.29411766, a: 0.7176471}
+          m_ColorMultiplier: 1
+          m_FadeDuration: 0.1
+    - rid: 7330996614934560769
+      type: {class: SimpleColorOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _color: {r: 0.1882353, g: 0.1882353, b: 0.1882353, a: 1}
+        _option: 0
+    - rid: 7330996614934560771
+      type: {class: ColorSchemeOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _option: 6
+        _isOn: 0
+        _colorBlock:
+          m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
+          m_HighlightedColor: {r: 1, g: 1, b: 1, a: 1}
+          m_PressedColor: {r: 1, g: 1, b: 1, a: 1}
+          m_SelectedColor: {r: 1, g: 1, b: 1, a: 1}
+          m_DisabledColor: {r: 1, g: 1, b: 1, a: 1}
+          m_ColorMultiplier: 1
+          m_FadeDuration: 0.1
+    - rid: 7330996614934560773
+      type: {class: TmpFontSizeOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _option: 10
+        _fontSize: 16
+    - rid: 7931681442575417344
+      type: {class: SimpleColorOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _color: {r: 0.02745098, g: 0.7529412, b: 0.84313726, a: 1}
+        _option: 1
+    - rid: 7931681442575417345
+      type: {class: SimpleColorOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _color: {r: 0, g: 0.44313726, b: 0.5019608, a: 1}
+        _option: 0
+    - rid: 7931681601538228224
+      type: {class: SimpleColorOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _color: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
+        _option: 4
+    - rid: 7931681601538228225
+      type: {class: TmpFontSizeOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _option: 12
+        _fontSize: 40
+    - rid: 7931681601538228226
+      type: {class: TmpFontSizeOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _option: 11
+        _fontSize: 40
+    - rid: 7931681627741618177
+      type: {class: ColorSchemeOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _option: 6
+        _isOn: 1
+        _colorBlock:
+          m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
+          m_HighlightedColor: {r: 1, g: 1, b: 1, a: 1}
+          m_PressedColor: {r: 1, g: 1, b: 1, a: 1}
+          m_SelectedColor: {r: 1, g: 1, b: 1, a: 1}
+          m_DisabledColor: {r: 1, g: 1, b: 1, a: 1}
+          m_ColorMultiplier: 0
+          m_FadeDuration: 0
+    - rid: 7931681627741618178
+      type: {class: ColorSchemeOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _option: 7
+        _isOn: 0
+        _colorBlock:
+          m_NormalColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
+          m_HighlightedColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
+          m_PressedColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
+          m_SelectedColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
+          m_DisabledColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
+          m_ColorMultiplier: 0
+          m_FadeDuration: 0
+    - rid: 7931681627741618179
+      type: {class: ColorSchemeOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _option: 7
+        _isOn: 1
+        _colorBlock:
+          m_NormalColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
+          m_HighlightedColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
+          m_PressedColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
+          m_SelectedColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
+          m_DisabledColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
+          m_ColorMultiplier: 0
+          m_FadeDuration: 0
+    - rid: 7931681627741618181
+      type: {class: ColorSchemeOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _option: 0
+        _isOn: 0
+        _colorBlock:
+          m_NormalColor: {r: 0, g: 0, b: 0, a: 0.6}
+          m_HighlightedColor: {r: 0, g: 0, b: 0, a: 0.6}
+          m_PressedColor: {r: 0, g: 0, b: 0, a: 0.6}
+          m_SelectedColor: {r: 0, g: 0, b: 0, a: 0.6}
+          m_DisabledColor: {r: 0, g: 0, b: 0, a: 0.6}
+          m_ColorMultiplier: 0
+          m_FadeDuration: 0

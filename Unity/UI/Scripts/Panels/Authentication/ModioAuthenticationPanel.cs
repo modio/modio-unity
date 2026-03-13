@@ -166,7 +166,11 @@ namespace Modio.Unity.UI.Panels.Authentication
                 waitingPanel?.ClosePanel();
                 ModioLog.Verbose?.Log($"Signed in successfully");
             }
-            else if (!agreedToTerms && error.Code == ErrorCode.USER_NO_ACCEPT_TERMS_OF_USE) // 11074
+            else if (!agreedToTerms &&
+                     (error.Code == ErrorCode.USER_NO_ACCEPT_TERMS_OF_USE // 11074
+                      ||
+                      error.Code == ErrorCode.MONETIZATION_TERMS_NOT_ACCEPTED //900044
+                     ))
             {
                 ModioLog.Message?.Log("User hasn't agreed to terms");
 

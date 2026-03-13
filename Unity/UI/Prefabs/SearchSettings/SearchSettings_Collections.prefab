@@ -45,14 +45,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   DisplayAs: Collections
-  DisplayAsLocalisedKey: modio_pageheader_collections
+  DisplayAsLocalisedKey: modio_filter_collections
   Icon: {fileID: 21300000, guid: 3e10064984da5564bb1f47c7e553564f, type: 3}
   HiddenIfMonetizationDisabled: 0
   searchType: 100
   searchPhrase: 
   searchTags: []
   sortModsBy: 3
+  CollectionId: 0
   showMatureContent: 0
   isAscending: 0
   filterRevenueType: 2
   shareFilterSettingsWith: {fileID: 0}
+  hideTagCategories: []
+  Carousels: []
+  ShowFeaturedReasonInCarousel: 0

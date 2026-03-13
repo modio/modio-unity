@@ -15,6 +15,7 @@
             TotalSearchResults = totalSearchResults;
         }
 
-        public bool HasMoreResults() => PageSize * PageIndex < TotalSearchResults;
+        // Page Index starts at 0 but we treat it like length here, so add 1
+        public bool HasMoreResults() => PageSize * (PageIndex + 1) < TotalSearchResults;
     }
 }

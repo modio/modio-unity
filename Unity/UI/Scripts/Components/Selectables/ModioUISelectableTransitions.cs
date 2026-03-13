@@ -40,10 +40,8 @@ namespace Modio.Unity.UI.Components.Selectables
 
             if (_owner == null && enabled)
             {
-                ModioLog.Verbose?.Log(
-                    $"{GetType().Name} {gameObject.name} could not find an {nameof(IModioUISelectable)}, disabling."
-                );
-
+                OnSelectionStateChanged(IModioUISelectable.SelectionState.Normal, true);
+                
                 enabled = false;
             }
         }
@@ -108,7 +106,12 @@ namespace Modio.Unity.UI.Components.Selectables
 
         public void RefreshCurrentState()
         {
-            if (_owner is null) return;
+            if (_owner is null)
+            {
+                OnSelectionStateChanged(IModioUISelectable.SelectionState.Normal, true);
+            
+                return;
+            }
             
             OnSelectionStateChanged(_owner.State, true);
         }

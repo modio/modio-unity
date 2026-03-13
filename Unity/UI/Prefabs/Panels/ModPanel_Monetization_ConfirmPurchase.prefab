@@ -980,6 +980,10 @@ MonoBehaviour:
         _disableIfFree: {fileID: 0}
         _alsoDisableIfPurchased: 0
         _enableIfPurchased: {fileID: 0}
+        _enableIfUsdMarketplace: {fileID: 0}
+        _enableIfVirtualCurrency: {fileID: 0}
+        _enableIfUnavailable: {fileID: 0}
+        _fiatPriceText: {fileID: 0}
     - rid: 2
       type: {class: ModPropertyLogo, ns: Modio.Unity.UI.Components.ModProperties,
         asm: Modio.Unity.UI}
@@ -1269,11 +1273,6 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 6867935901555807020}
     m_Modifications:
-    - target: {fileID: 3011808196152295370, guid: 1014306320023e64a9cae1cba4dd4a5a,
-        type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 3011808196152295371, guid: 1014306320023e64a9cae1cba4dd4a5a,
         type: 3}
       propertyPath: m_AnchorMax.y
@@ -2207,6 +2206,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: Button (Refund Policy)
+      objectReference: {fileID: 0}
+    - target: {fileID: 5758796270013285117, guid: 74d7608239d705c4d9d4a3fa4d2062f3,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6584404641833394162, guid: 74d7608239d705c4d9d4a3fa4d2062f3,
         type: 3}
