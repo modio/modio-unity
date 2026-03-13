@@ -83,6 +83,10 @@ namespace Modio.Mods
         public bool IsSubscribed { get; private set; }
         public bool IsPurchased { get; private set; }
         public bool IsEnabled { get; internal set; } = true;
+        /// <summary>
+        /// Is the mod a user creation for the currently authenticated user
+        /// </summary>
+        public bool IsCreated { get; private set; }
 
         /*  Mod Properties End  */
 
@@ -220,6 +224,9 @@ namespace Modio.Mods
 
         async Task<Error> SetSubscribed(bool subscribed, bool includeDependencies = true)
         {
+            if (!User.Current.IsAuthenticated)
+                return new Error(ErrorCode.USER_NOT_AUTHENTICATED);
+
             if (IsSubscribed == subscribed)
                 return Error.None;
 
@@ -318,6 +325,11 @@ namespace Modio.Mods
             InvokeModUpdated(ModChangeType.IsPurchased);  
         }
 
+        internal void UpdateLocalCreationStatus(bool isCreated)
+        {
+            IsCreated = isCreated;
+            InvokeModUpdated(ModChangeType.IsUserCreation);
+        }
 #endregion
 
 #region GetMods/Mod
@@ -566,47 +578,47 @@ namespace Modio.Mods
             if(!ModioServices.Resolve<ModioSettings>().TryGetPlatformSettings(out MonetizationSettings settings))
                 return new Error(ErrorCode.GAME_MONETIZATION_NOT_ENABLED);
 
-            error = settings.MonetizationType switch
+            PayObject? payObject;
+            ( error, payObject) = settings.MonetizationType switch
             {
                 ModioMonetizationType.VirtualCurrency => await PurchaseWithVirtualCurrency(subscribeOnPurchase),
                 ModioMonetizationType.UsdMarketplace  => await PurchaseWithUsdMarketplace(subscribeOnPurchase),
-                _                                     => new Error(ErrorCode.GAME_MONETIZATION_NOT_CONFIGURED),
+                _                                     => (new Error(ErrorCode.GAME_MONETIZATION_NOT_CONFIGURED), null),
             };
-            return error;
-
+            
+            if(error)
+                return error;
+            
+            ApplyPurchase(subscribeOnPurchase, payObject.Value);
+            return Error.None;
         }
 
-        async Task<Error> PurchaseWithUsdMarketplace(bool subscribeOnPurchase)
+        async Task<(Error error, PayObject? payObject)> PurchaseWithUsdMarketplace(bool subscribeOnPurchase)
         {
             if (PortalSku == null)
-                return new Error(ErrorCode.MONETIZATION_ENTITLEMENT_MAPPING_NOT_FOUND);
+                return (new Error(ErrorCode.MONETIZATION_ENTITLEMENT_MAPPING_NOT_FOUND), null);
             
             (Error error, PayObject? payObject) = await User.Current.PurchaseModWithUsdMarketplace(this, subscribeOnPurchase);
 
-            if (error)
-            {
-                if (!error.IsSilent)
-                    ModioLog.Error?.Log($"Error purchasing mod {Id}: {error}");
-                return error;
-            }
+            if (!error)
+                return (Error.None, payObject);
 
-            ApplyPurchase(subscribeOnPurchase, payObject.Value);
-            return Error.None;
+            if (!error.IsSilent)
+                ModioLog.Error?.Log($"Error purchasing mod {Id}: {error}");
+            return (error, null);
         }
 
-        async Task<Error> PurchaseWithVirtualCurrency(bool subscribeOnPurchase)
+        async Task<(Error error, PayObject? payObject)> PurchaseWithVirtualCurrency(bool subscribeOnPurchase)
         {
             (Error error, PayObject? payObject) = await User.Current.PurchaseModWithVirtualCurrency(this, subscribeOnPurchase);
 
-            if (error)
-            {
-                if (!error.IsSilent)
-                    ModioLog.Error?.Log($"Error purchasing mod {Id}: {error}");
-                return error;
-            }
+            if (!error)
+                return (Error.None, payObject);
 
-            ApplyPurchase(subscribeOnPurchase, payObject.Value);
-            return Error.None;
+            if (!error.IsSilent)
+                ModioLog.Error?.Log($"Error purchasing mod {Id}: {error}");
+            return (error, null);
+            
         }
 
         void ApplyPurchase(bool subscribe, PayObject payObject)

@@ -83,6 +83,7 @@ MonoBehaviour:
   _disagreeText: {fileID: 0}
   _termsOfUseLinkButtonText: {fileID: 7921173452796965777}
   _privacyPolicyLinkButtonText: {fileID: 4415722295420609221}
+  _termsLinkButton: {fileID: 5306396918714478451}
 --- !u!1001 &3930842491265100899
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -240,6 +241,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: Button (Terms & Conditions)
       objectReference: {fileID: 0}
+    - target: {fileID: 5758796270013285117, guid: 74d7608239d705c4d9d4a3fa4d2062f3,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 74d7608239d705c4d9d4a3fa4d2062f3, type: 3}
 --- !u!114 &7921173452796965777 stripped
@@ -267,7 +273,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8747805604160122526}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a42edbf03714a2c8e4848d82eae02c3, type: 3}
   m_Name: 
@@ -275,6 +281,20 @@ MonoBehaviour:
   _key: modio_btn_termsofuse
   _tmpText: {fileID: 7921173452796965777}
   _splitFormatArgs: []
+--- !u!114 &5306396918714478451
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8747805604160122526}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0745de1f94d89f845940af62fe3f1f7c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _text: {fileID: 7921173452796965777}
+  _button: {fileID: 0}
 --- !u!224 &8747805604160122527 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 5758796270013285116, guid: 74d7608239d705c4d9d4a3fa4d2062f3,
@@ -437,6 +457,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: Button (Privacy Policy)
+      objectReference: {fileID: 0}
+    - target: {fileID: 5758796270013285117, guid: 74d7608239d705c4d9d4a3fa4d2062f3,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6584404641833394162, guid: 74d7608239d705c4d9d4a3fa4d2062f3,
         type: 3}

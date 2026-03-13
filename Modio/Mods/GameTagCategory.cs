@@ -12,21 +12,48 @@ namespace Modio.Mods
     {
         static GameTagCategory[] _cachedTags;
         static GameTagCategory[] _cachedCollectionTags;
-        
+        static Task<(Error, GameTagCategory[])> _cachedGetTags;
+
         public readonly string Name;
         public readonly bool MultiSelect;
         public readonly ModTag[] Tags; 
-        public readonly bool Hidden;
         public readonly bool Locked;
 
+        [JsonProperty]
+        bool _hidden;
+        /// <summary>
+        /// Should this tag category be hidden from users in all UI?
+        /// Set on the mod.io website when configuring your game
+        /// </summary>
+        [JsonIgnore]
+        public bool Hidden
+        {
+            get => _hidden || TempHidden;
+            internal set => _hidden = value;
+        }
+        
+        /// <summary>
+        /// Should this tag category be hidden for the user temporarily
+        /// We use this when filtering the entire mods page for a particular search
+        ///
+        /// e.g. you want to have separate "maps" and "characters" pages using a tag filter,
+        /// but don't want the tags to be visible on those pages
+        /// </summary>
+        [JsonIgnore]
+        public bool TempHidden { private get; set; }        
+
         [JsonConstructor]
-        internal GameTagCategory(string name, bool multiSelect, ModTag[] tags, bool hidden, bool locked)
+        internal GameTagCategory(string name, bool multiSelect, ModTag[] tags, bool _hidden, bool locked)
         {
             Name = name;
             MultiSelect = multiSelect;
             Tags = tags;
-            Hidden = hidden;
+            this._hidden = _hidden;
             Locked = locked;
+
+            if (ModioClient.Settings.TryGetPlatformSettings(out ModioHiddenTagOverrideSettings tagSettings)
+                && tagSettings.HideTagCategories.Contains(Name))
+                Hidden = true;
         }
         
         internal GameTagCategory(GameTagOptionObject tagObject){
@@ -36,10 +63,15 @@ namespace Modio.Mods
             Locked = tagObject.Locked;
             Tags = tagObject.Tags.Select(tagName => ModTag.Get(tagName)).ToArray();
             
+            if (ModioClient.Settings.TryGetPlatformSettings(out ModioHiddenTagOverrideSettings tagSettings)
+                && tagSettings.HideTagCategories.Contains(Name))
+                Hidden = true;
+            
             foreach ((string tagName, int count) in tagObject.TagCountMap)
             {
                 ModTag tag = ModTag.Get(tagName);
                 tag.Count = count;
+                tag.IsVisible = !Hidden;
             }
 
             if (tagObject.TagsLocalization != null)
@@ -57,6 +89,14 @@ namespace Modio.Mods
         }
 
         public static async Task<(Error, GameTagCategory[])> GetGameTagOptions()
+        {
+            if (_cachedTags != null) return (Error.None, _cachedTags);
+            _cachedGetTags ??= GetGameTagOptionsInternal();
+            (Error, GameTagCategory[]) getTagsResult = await _cachedGetTags;
+            _cachedGetTags = null;
+            return getTagsResult;
+        }
+        public static async Task<(Error, GameTagCategory[])> GetGameTagOptionsInternal()
         {
             if (_cachedTags != null) return (Error.None, _cachedTags);
             

@@ -1709,10 +1709,20 @@ PrefabInstance:
       propertyPath: _transitions.Array.data[0]._colorBlock.m_SelectedColor.r
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 4701398585326587221, guid: f608eb9bff0f106408ef4db12ca5e0a2,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5309768221068274239, guid: f608eb9bff0f106408ef4db12ca5e0a2,
         type: 3}
       propertyPath: m_RootOrder
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5610795009404443796, guid: f608eb9bff0f106408ef4db12ca5e0a2,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 5912963950876961115, guid: f608eb9bff0f106408ef4db12ca5e0a2,
         type: 3}

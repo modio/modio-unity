@@ -12,6 +12,7 @@ namespace Modio.Unity.UI.Components
 
         protected override void UpdateProperties()
         {
+            if(!enabled) return;
             foreach (ISearchProperty property in _properties) property.OnSearchUpdate(Owner);
         }
     }

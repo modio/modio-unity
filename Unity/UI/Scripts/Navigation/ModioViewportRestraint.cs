@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Modio.Unity.UI.Navigation
 {
@@ -10,21 +11,33 @@ namespace Modio.Unity.UI.Navigation
 
         public bool adjustHorizontally = false;
         public bool adjustVertically = true;
-        static float transitionTime = 0.1f;
+        static float transitionTimeBase = 0.1f;
+        static float transitionTimeScreen = 0.4f;
+
+        [SerializeField] bool _snapToMin;
+        [SerializeField] bool _snapToMax;
 
         public RectTransform Viewport;
 
         // These containers are what is getting moved in the adjustment check
         public RectTransform DefaultViewportContainer;
         public RectTransform HorizontalViewportContainer;
-        static readonly Vector3[] CachedFourCornersArray = new Vector3[4];
         Vector3 _targetPosition;
         Coroutine _animCoroutine;
+        
+        ModioViewportRestraint _parentRestraint;
+
+        bool _suppressParentSnap;
+
+        void Awake()
+        {
+            _parentRestraint = transform.parent.GetComponentInParent<ModioViewportRestraint>();
+        }
 
         public void ChildSelected(RectTransform ensureFits)
         {
-            GetWorldAABB(ensureFits, out Vector3 childMin,    out Vector3 childMax);
-            GetWorldAABB(Viewport,   out Vector3 viewportMin, out Vector3 viewportMax);
+            ModioRectHelper.GetWorldAABB(ensureFits, out Vector3 childMin,    out Vector3 childMax);
+            ModioRectHelper.GetWorldAABB(Viewport,   out Vector3 viewportMin, out Vector3 viewportMax);
 
             var pendingAdjustment = DefaultViewportContainer.position - _targetPosition;
 
@@ -38,10 +51,19 @@ namespace Modio.Unity.UI.Navigation
                 viewportSize.y * PercentPaddingVertical
             );
 
-            var pos = Vector3.Max(Vector3.zero, childMax - (viewportMax - padding));
-            var neg = Vector3.Min(Vector3.zero, childMin - (viewportMin + padding));
+            Vector3 adjustment;
 
-            var adjustment = pos + neg + pendingAdjustment;
+            if(_snapToMin)
+                adjustment = pendingAdjustment + childMin - (viewportMin + padding);
+            else if(_snapToMax)
+                adjustment = pendingAdjustment + childMax - (viewportMax - padding);
+            else
+            {
+                var pos = Vector3.Max(Vector3.zero, childMax - (viewportMax - padding));
+                var neg = Vector3.Min(Vector3.zero, childMin - (viewportMin + padding));
+
+                adjustment = pos + neg + pendingAdjustment;
+            }
             adjustment.z = 0;
 
             if (!adjustHorizontally) adjustment.x = 0;
@@ -49,6 +71,8 @@ namespace Modio.Unity.UI.Navigation
 
             if (adjustment.sqrMagnitude < 1f)
             {
+                if (_parentRestraint != null && !_suppressParentSnap) _parentRestraint.ChildSelected(ensureFits);
+
                 return;
             }
 
@@ -56,42 +80,100 @@ namespace Modio.Unity.UI.Navigation
 
             if (_animCoroutine != null) StopCoroutine(_animCoroutine);
 
-            _animCoroutine = StartCoroutine(Transition(DefaultViewportContainer));
+            _animCoroutine = StartCoroutine(Transition(DefaultViewportContainer, Viewport));
 
-            return;
-
-            void GetWorldAABB(RectTransform rectTransform, out Vector3 min, out Vector3 max)
-            {
-                rectTransform.GetWorldCorners(CachedFourCornersArray);
-
-                min = Vector3.one * float.MaxValue;
-                max = Vector3.one * float.MinValue;
-
-                foreach (Vector3 corner in CachedFourCornersArray)
-                {
-                    min = Vector3.Min(min, corner);
-                    max = Vector3.Max(max, corner);
-                }
-            }
+            if (_parentRestraint != null && !_suppressParentSnap) _parentRestraint.ChildSelected(ensureFits);
         }
 
-        IEnumerator Transition(Transform parent)
+        public void SelectNextChildInDirection(bool right)
         {
-            Vector2 startPos = parent.position;
+            var children = GetComponentsInChildren<ModioViewportRestraintChild>();
 
-            for (float t = 0; t < 1; t += Time.unscaledDeltaTime / transitionTime)
+            ModioRectHelper.GetWorldAABB(Viewport, out Vector3 viewportMin, out Vector3 viewportMax);
+
+            float lowestDistance = float.MaxValue;
+
+            RectTransform best = null;
+
+            var padding = (viewportMax.x - viewportMin.x) * PercentPaddingHorizontal + 20;
+            
+            foreach (var child in children)
             {
-                parent.position = Vector3.Lerp(startPos, _targetPosition, t);
+                var childTransform = (RectTransform)child.transform;
+                ModioRectHelper.GetWorldAABB(childTransform, out Vector3 childMin, out Vector3 childMax);
+
+                bool offscreenRight = childMax.x > viewportMax.x + padding;
+                bool offscreenLeft = childMin.x < viewportMin.x - padding;
+                
+                if((right && !offscreenRight) || (!right && !offscreenLeft)) continue;
+
+                var distance = right ? childMin.x - (viewportMin.x - padding) : viewportMax.x + padding - childMax.x;
+                
+                if(distance > lowestDistance) continue;
+
+                lowestDistance = distance;
+                best = childTransform;
+            }
+
+            if (best == null) return;
+
+            var pendingMovement = right ? lowestDistance : -lowestDistance;
+
+            if (_snapToMin && !right)
+            {
+                lowestDistance = float.MaxValue;
+                
+                foreach (var child in children)
+                {
+                    var childTransform = (RectTransform)child.transform;
+                    ModioRectHelper.GetWorldAABB(childTransform, out Vector3 childMin, out Vector3 childMax);
+
+                    bool offscreenRight = childMax.x > viewportMax.x + padding + pendingMovement;
+                    bool offscreenLeft = childMin.x < viewportMin.x - padding + pendingMovement;
+                
+                    /*if((right && !offscreenRight) || (!right && !offscreenLeft)) continue;*/
+                    if(offscreenRight || (offscreenLeft)) continue;
+
+                    var distance = !right ? childMin.x - (viewportMin.x - padding) : viewportMax.x + padding - childMax.x;
+                
+                    if(distance > lowestDistance) continue;
+
+                    lowestDistance = distance;
+                    best = childTransform;
+                }
+            }
+
+            var selectable = best.GetComponent<Selectable>();
+
+            _suppressParentSnap = true;
+            if(selectable != null) selectable.Select();
+            _suppressParentSnap = false;
+        }
+
+        IEnumerator Transition(RectTransform container, RectTransform viewport)
+        {
+            Vector3 startPos = container.position;
+
+            var delta = _targetPosition - startPos;
+            
+            float maxDistPercent = Mathf.Max(Mathf.Abs(delta.x / viewport.rect.width),  Mathf.Abs(delta.y / viewport.rect.height));
+            if(maxDistPercent > 1f) maxDistPercent = 1f;
+            
+            var duration = transitionTimeBase + maxDistPercent * transitionTimeScreen;
+            
+            for (float t = 0; t < 1; t += Time.unscaledDeltaTime / duration)
+            {
+                container.position = Vector3.Lerp(startPos, _targetPosition, t);
 
                 yield return null; //wait one frame
 
                 if (!adjustHorizontally) //ensure we don't snap sideways in rare edge cases
-                {
-                    startPos.x = _targetPosition.x = parent.position.x;
-                }
+                    startPos.x = _targetPosition.x = container.position.x;
+                if (!adjustVertically)
+                    startPos.y = _targetPosition.y = container.position.y;
             }
 
-            parent.position = _targetPosition;
+            container.position = _targetPosition;
             _animCoroutine = null;
         }
     }

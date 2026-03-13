@@ -41,10 +41,15 @@ namespace Modio.Unity.UI.Components.SearchProperties
             {
                 var scrollRectTransform = (RectTransform)_scrollRect.transform;
 
-                var rectHeight = scrollRectTransform.rect.height;
-                var distanceFromBottom = -(rectHeight + _scrollRect.content.offsetMin.y);
+                bool vertical = _scrollRect.vertical;
 
-                if (distanceFromBottom < _distanceFromBottomToLoadContent &&
+                Rect rect = scrollRectTransform.rect;
+                float offset = vertical ? -_scrollRect.content.offsetMin.y : _scrollRect.content.offsetMax.x;
+                
+                var rectSize = vertical ? rect.height : rect.width;
+                var distanceFromEnd = (offset + -rectSize);
+
+                if (distanceFromEnd < _distanceFromBottomToLoadContent &&
                     _search != null &&
                     _search.CanGetMoreResults &&
                     !_search.IsSearching)

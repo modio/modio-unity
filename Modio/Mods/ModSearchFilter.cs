@@ -48,7 +48,7 @@ namespace Modio.Mods
         }
         #region Endpoint Parameters
         Dictionary<Filtering, List<string>> _searchPhrases;
-        List<string> _tags;
+        List<ModTag> _tags;
         List<UserProfile> _users;
         string _collectionCategory;
         
@@ -135,7 +135,18 @@ namespace Modio.Mods
         /// <seealso cref="GameTagCategory"/>
         public void AddTag(string tag)
         {
-            _tags ??= new List<string>();
+            AddTag(ModTag.Get(tag));
+        }
+        
+        /// <summary>
+        /// Adds a tag to be used in filtering mods for a request.
+        /// </summary>
+        /// <param name="tag">the tag to be added to the filter</param>
+        /// <seealso cref="ModTag"/>
+        /// <seealso cref="GameTagCategory"/>
+        public void AddTag(ModTag tag)
+        {
+            _tags ??= new List<ModTag>();
             _tags.Add(tag);
         }
 
@@ -143,11 +154,21 @@ namespace Modio.Mods
         /// Adds multiple tags used in filtering mods for a request.
         /// </summary>
         /// <param name="tags">the tags to be added to the filter</param>
+        /// <param name="tagType"></param>
+        /// <seealso cref="GameTagCategory"/>
+        public void AddTags(IEnumerable<string> tags, ResourceTagType tagType = ResourceTagType.ModTag)
+        {
+            AddTags(tags.Select(t => ModTag.Get(t, tagType)));
+        }
+        /// <summary>
+        /// Adds multiple tags used in filtering mods for a request.
+        /// </summary>
+        /// <param name="tags">the tags to be added to the filter</param>
         /// <seealso cref="ModTag"/>
         /// <seealso cref="GameTagCategory"/>
-        public void AddTags(IEnumerable<string> tags)
+        public void AddTags(IEnumerable<ModTag> tags)
         {
-            _tags ??= new List<string>();
+            _tags ??= new List<ModTag>();
             _tags.AddRange(tags);
         }
 
@@ -157,8 +178,10 @@ namespace Modio.Mods
         }
         
         public int TagAndCategoryCount => (_tags?.Count ?? 0) + (!string.IsNullOrEmpty(_collectionCategory) ? 1 : 0);
+        public int VisibleTagAndCategoryCount => (_tags?.Count(t => t.IsVisible) ?? 0) + (!string.IsNullOrEmpty(_collectionCategory) ? 1 : 0);
 
-        public IReadOnlyList<string> GetTags() => _tags ?? (IReadOnlyList<string>)Array.Empty<string>() ;
+        public IReadOnlyList<ModTag> GetTags() => _tags ?? (IReadOnlyList<ModTag>)Array.Empty<ModTag>() ;
+        public IReadOnlyList<string> GetTagNames() => _tags?.Select(t => t.ApiName).ToList() ?? (IReadOnlyList<string>)Array.Empty<string>() ;
 
         public void AddCollectionCategory(string category)
         {
@@ -190,7 +213,7 @@ namespace Modio.Mods
                 if (searchPhrases.Count > 0) filter.Name($"*{searchPhrases[0]}*", filtering);
             }
             
-            if (_tags != null && _tags.Count > 0) filter.Tags(_tags);
+            if (_tags != null && _tags.Count > 0) filter.Tags(_tags.Select(t => t.ApiName).ToArray());
             
             if(_users != null && _users.Count > 0) filter.SubmittedBy(_users.Select(u => u.UserId).ToArray());
             
@@ -234,7 +257,7 @@ namespace Modio.Mods
             var clone = (ModSearchFilter)MemberwiseClone();
             
             if (_searchPhrases != null) clone._searchPhrases = new Dictionary<Filtering, List<string>>(_searchPhrases);
-            if (_tags != null) clone._tags = new List<string>(_tags);
+            if (_tags != null) clone._tags = new List<ModTag>(_tags);
             if (_users != null) clone._users = new List<UserProfile>(_users);
             
             return clone;

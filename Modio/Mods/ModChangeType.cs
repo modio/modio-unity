@@ -15,6 +15,7 @@ namespace Modio.Mods
         IsPurchased         = 1 << 7,
         Generic           = 1 << 8,
         Dependencies      = 1 << 9,
+        IsUserCreation    = 1 << 10,
         Everything        = ~0,
     }
 }

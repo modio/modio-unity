@@ -10,5 +10,6 @@ namespace Modio.Mods
         EnablePreviews    = 64,
         EnablePreviewUrls = 128,
         AllowDependencies = 1024,
+        AllowCollections = 132096,
     }
 }

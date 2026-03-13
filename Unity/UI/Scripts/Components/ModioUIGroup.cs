@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Modio.Mods;
+using Modio.Unity.UI.Navigation;
 using Modio.Unity.UI.Panels;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -15,24 +16,38 @@ namespace Modio.Unity.UI.Components
     {
         static readonly Dictionary<TResource, TModioUIContainer> TempActive = new Dictionary<TResource, TModioUIContainer>();
 
+        [SerializeField]
         TModioUIContainer _template;
 
-        readonly List<TModioUIContainer> _active = new List<TModioUIContainer>();
-        readonly List<TModioUIContainer> _inactive = new List<TModioUIContainer>();
+        [SerializeField] bool _useCarouselSelectionLogic;
+
+        readonly List<TModioUIContainer> _active = new();
+        readonly Stack<TModioUIContainer> _inactive = new();
+        readonly Stack<TModioUIContainer> _inactivePlaceholders = new();
 
         (IReadOnlyList<TResource> mods, int selectionIndex) _displayOnEnable;
 
         [SerializeField, Tooltip("(Optional) The root layout to rebuild before performing selections")]
         RectTransform _layoutRebuilder;
+        ScrollRect _scrollRect;
+        LayoutGroup _layoutGroup;
 
         void Awake()
         {
-            _template = GetComponentInChildren<TModioUIContainer>();
+            if(_template == null)
+                _template = GetComponentInChildren<TModioUIContainer>();
 
             if (_template != null)
             {
+                _scrollRect = _template.GetComponentInParent<ScrollRect>();
+
+                if (_scrollRect != null) 
+                    _scrollRect.onValueChanged.AddListener(OnScrolled);
+                
+                _layoutGroup = _template.GetComponentInParent<LayoutGroup>();
+
                 _template.gameObject.SetActive(false);
-                _inactive.Add(_template);
+                _inactive.Push(_template);
             }
             else
             {
@@ -70,37 +85,71 @@ namespace Modio.Unity.UI.Components
 
             foreach (TModioUIContainer uiMod in _active)
             {
-                if (mods.Contains(uiMod.Resource) && !TempActive.ContainsKey(uiMod.Resource))
-                    TempActive.Add(uiMod.Resource, uiMod);
-                else
+                if (uiMod.IsPlaceholderUI 
+                    || !mods.Contains(uiMod.Resource)
+                    || !TempActive.TryAdd(uiMod.Resource, uiMod))
                 {
-                    uiMod.gameObject.SetActive(false);
-                    uiMod.SetResource(default(TResource));
-
-                    _inactive.Add(uiMod);
+                    Repool(uiMod);
                 }
             }
 
             _active.Clear();
 
+            ModioRectHelper.GetWorldAABB((RectTransform)_scrollRect.transform, out var scrollMin, out var scrollMax);
+            
+            var size = scrollMax - scrollMin;
+            scrollMin -= size;
+            scrollMax += size;
+            
+            var eventSystem = EventSystem.current;
+            GameObject currentSelectedGameObject = null;
+
+            if (eventSystem != null)
+                currentSelectedGameObject = eventSystem.currentSelectedGameObject;
+            else
+                ModioLog.Error?.Log(
+                    "You are missing an event system, which the Modio UI requires to work. Consider adding ModioUI_InputCapture to your scene"
+                );
+            
+            Vector3 selectionMax = Vector3.zero;
+            Vector3 selectionMin = Vector3.zero;
+
+            if (currentSelectedGameObject != null)
+            {
+                ModioRectHelper.GetWorldAABB((RectTransform)currentSelectedGameObject.transform, out selectionMin, out selectionMax);
+                
+                selectionMin -= Vector3.one * 100;
+                selectionMax += Vector3.one * 100;
+            }
+
             for (var i = 0; i < mods.Count; i++)
             {
                 bool active = TempActive.Remove(mods[i], out TModioUIContainer uiMod);
 
+                bool shouldUsePlaceholder = i != 0 && i != selectionIndex && (!active || currentSelectedGameObject == null || currentSelectedGameObject != uiMod.gameObject);
+
+                (Vector3 min, Vector3 max) = GetApproximatePositionFor(i, (RectTransform)_template.transform);
+                
+                shouldUsePlaceholder &= min.x > scrollMax.x ||
+                                        max.x < scrollMin.x ||
+                                        min.y > scrollMax.y ||
+                                        max.y < scrollMin.y;
+                shouldUsePlaceholder &= min.x > selectionMax.x ||
+                                        max.x < selectionMin.x ||
+                                        min.y > selectionMax.y ||
+                                        max.y < selectionMin.y;
+                
+                if (active && shouldUsePlaceholder)
+                {
+                    Repool(uiMod);
+
+                    active = false;
+                    uiMod = null;
+                }
+
                 if (!active)
                 {
-                    if (_inactive.Any())
-                    {
-                        int lastIndex = _inactive.Count - 1;
-                        uiMod = _inactive[lastIndex];
-
-                        _inactive.RemoveAt(lastIndex);
-                    }
-                    else
-                    {
-                        uiMod = Instantiate(_template.gameObject, _template.transform.parent)
-                            .GetComponent<TModioUIContainer>();
-                    }
+                    uiMod = GetFromPoolOrCreate(shouldUsePlaceholder);
 
                     uiMod.SetResource(mods[i]);
                 }
@@ -111,20 +160,21 @@ namespace Modio.Unity.UI.Components
                 _active.Add(uiMod);
             }
 
-            var eventSystem = EventSystem.current;
-            if (eventSystem == null)
-            {
-                ModioLog.Error?.Log("You are missing an event system, which the Modio UI requires to work. Consider adding ModioUI_InputCapture to your scene");
-                return;
-            }
+            if (eventSystem == null) return;
 
-            var currentSelectedGameObject = eventSystem.currentSelectedGameObject;
             var shouldDoSelection = currentSelectedGameObject == null || !currentSelectedGameObject.activeInHierarchy;
 
             if (!shouldDoSelection && _active.Count > 0 && selectionIndex == 0)
             {
                 // Force the selection if we have a child selected, and we should be setting to index 0 (as it's a new, non additive, search)
                 shouldDoSelection |= currentSelectedGameObject.transform.parent == _active[0].transform.parent;
+
+                // Hack that allows the first carousel to steal input selection priority from other carousels
+                if (_useCarouselSelectionLogic && transform.GetSiblingIndex() == 0)
+                {
+                    var panel = currentSelectedGameObject.GetComponentInParent<ModioPanelBase>();
+                    shouldDoSelection |= panel != null && panel.HasFocus;
+                }
             }
 
             if (shouldDoSelection)
@@ -141,8 +191,145 @@ namespace Modio.Unity.UI.Components
                 }
                 else
                 {
-                    if (currentFocusedPanel != null) currentFocusedPanel.DoDefaultSelection();
+                    if (currentFocusedPanel != null) currentFocusedPanel.DoDefaultSelectionAfterDelayIfStillNeeded();
                 }
+            }
+        }
+
+        (Vector3 min, Vector3 max) GetApproximatePositionFor(int i, RectTransform uiModTransform)
+        {
+            ModioRectHelper.GetWorldAABB(uiModTransform, out Vector3 min, out Vector3 max);
+
+            var size = max - min;
+            
+            if (_layoutGroup is HorizontalLayoutGroup horizontalLayout)
+            {
+                min.x = i * (horizontalLayout.spacing + size.x);
+                max = min + size;
+            }
+            else if (_layoutGroup is VerticalLayoutGroup verticalLayout)
+            {
+                min.y = i * (verticalLayout.spacing + size.y);
+                max = min + size;
+            }
+            else if (_layoutGroup is GridLayoutGroup gridLayout)
+            {
+                var gridLayoutTransform = (RectTransform)gridLayout.transform;
+                ModioRectHelper.GetWorldAABB(gridLayoutTransform, out Vector3 gridMin, out Vector3 gridMax);
+
+                var cellCountX = Mathf.Max(
+                    1,
+                    Mathf.FloorToInt((gridLayoutTransform.rect.width - gridLayout.padding.horizontal + gridLayout.spacing.x + 0.001f)
+                                     / (gridLayout.cellSize.x + gridLayout.spacing.x))
+                );
+
+                var scale = gridLayoutTransform.lossyScale; 
+
+                min.x = gridMin.x + (i % cellCountX) * (gridLayout.cellSize.x + gridLayout.spacing.x) * scale.x;
+                max.x = min.x + size.x;
+                max.y = gridMax.y - (i / cellCountX) * (gridLayout.cellSize.y + gridLayout.spacing.y) * scale.y;
+                min.y = max.y - size.y;
+            }
+            
+            return (min, max);
+        }
+
+        TModioUIContainer GetFromPoolOrCreate(bool shouldUsePlaceholder)
+        {
+            TModioUIContainer uiMod;
+            if (shouldUsePlaceholder)
+            {
+                if (!_inactivePlaceholders.TryPop(out uiMod))
+                {
+                    var go = new GameObject("Placeholder", typeof(RectTransform), typeof(TModioUIContainer));
+                    go.transform.SetParent(_template.transform.parent);
+                    go.transform.localScale =  Vector3.one;
+                    uiMod = go.GetComponent<TModioUIContainer>();
+
+                    uiMod.IsPlaceholderUI = true;
+
+                    var modioAspectRatioLayout = _template.GetComponent<ModioAspectRatioLayout>();
+
+                    if(modioAspectRatioLayout)
+                        go.AddComponent<ModioAspectRatioLayout>().CopySettingsFrom(modioAspectRatioLayout);
+                }
+
+                return uiMod;
+            }
+
+            if (!_inactive.TryPop(out uiMod))
+            {
+                uiMod = Instantiate(_template.gameObject, _template.transform.parent)
+                    .GetComponent<TModioUIContainer>();
+            }
+
+            return uiMod;
+        }
+
+        void Repool(TModioUIContainer uiMod)
+        {
+            uiMod.gameObject.SetActive(false);
+            uiMod.SetResource(default(TResource));
+            if(uiMod.IsPlaceholderUI)
+                _inactivePlaceholders.Push(uiMod);
+            else
+                _inactive.Push(uiMod);
+        }
+
+        void OnScrolled(Vector2 _)
+        {
+            EnsurePlaceholdersCorrect();
+        }
+
+        void EnsurePlaceholdersCorrect()
+        {
+            ModioRectHelper.GetWorldAABB((RectTransform)_scrollRect.transform, out var scrollMin, out var scrollMax);
+            
+            //Expand the area by 100% to each side, to allow selection and scrolling logic to work smoothly
+            var size = scrollMax - scrollMin;
+            scrollMin -= size;
+            scrollMax += size;
+            
+            var currentSelectedGameObject = EventSystem.current?.currentSelectedGameObject;
+
+            Vector3 selectionMax = Vector3.zero;
+            Vector3 selectionMin = Vector3.zero;
+
+            if (currentSelectedGameObject != null)
+            {
+                ModioRectHelper.GetWorldAABB((RectTransform)currentSelectedGameObject.transform, out selectionMin, out selectionMax);
+                
+                selectionMin -= Vector3.one * 100;
+                selectionMax += Vector3.one * 100;
+            }
+            
+            for (int i = 0; i < _active.Count; i++)
+            {
+                TModioUIContainer currentContainer = _active[i];    
+
+                var shouldBePlaceholder = i > 0;
+
+                ModioRectHelper.GetWorldAABB((RectTransform)currentContainer.transform, out var min, out var max);
+
+                shouldBePlaceholder &= min.x > scrollMax.x ||
+                                       max.x < scrollMin.x ||
+                                       min.y > scrollMax.y ||
+                                       max.y < scrollMin.y;
+                shouldBePlaceholder &= min.x > selectionMax.x ||
+                                       max.x < selectionMin.x ||
+                                       min.y > selectionMax.y ||
+                                       max.y < selectionMin.y;
+
+                if(currentContainer.IsPlaceholderUI == shouldBePlaceholder) continue;
+                
+                TModioUIContainer newContainer = GetFromPoolOrCreate(shouldBePlaceholder);
+                newContainer.transform.SetSiblingIndex(i);
+                newContainer.SetResource(currentContainer.Resource);
+                newContainer.gameObject.SetActive(true);
+                _active[i] = newContainer;
+                
+                currentContainer.transform.SetAsLastSibling();
+                Repool(currentContainer);
             }
         }
     }

@@ -1,6 +1,8 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using Modio.Extensions;
 using Modio.Platforms;
+using Modio.Unity.UI.Components.Selectables;
 using TMPro;
 using UnityEngine;
 
@@ -14,7 +16,10 @@ namespace Modio.Unity.UI.Components
 
         [SerializeField] TMP_Text _termsOfUseLinkButtonText;
         [SerializeField] TMP_Text _privacyPolicyLinkButtonText;
-
+        [SerializeField] ModioUITermsLinkButton _termsLinkButton;
+        
+        Dictionary<LinkType, ModioUITermsLinkButton> _linkButtons = new Dictionary<LinkType, ModioUITermsLinkButton>();
+        
         static TermsOfUse _termsOfUse = null;
         static IWebBrowserHandler _browserHandler = null;
 
@@ -61,9 +66,37 @@ namespace Modio.Unity.UI.Components
             if (_termsOfUseText != null) _termsOfUseText.text = _termsOfUse.TermsText;
             if (_agreeText != null) _agreeText.text = _termsOfUse.AgreeText;
             if (_disagreeText != null) _disagreeText.text = _termsOfUse.DisagreeText;
-
+            
             if (_termsOfUseLinkButtonText != null) _termsOfUseLinkButtonText.text = GetLinkButtonText(LinkType.Terms);
             if (_privacyPolicyLinkButtonText != null) _privacyPolicyLinkButtonText.text = GetLinkButtonText(LinkType.Privacy);
+
+            SetupLinkButtons();
+        }
+
+        void SetupLinkButtons()
+        {
+            foreach (TermsOfUseLink link in _termsOfUse.Links)
+            {
+                SetupLinkButton(link);
+            }
+        }
+
+        void SetupLinkButton(TermsOfUseLink link)
+        {
+            if(_linkButtons.TryGetValue(link.type, out ModioUITermsLinkButton existingButton))
+            {
+                existingButton.gameObject.SetActive(link.required);
+                existingButton.SetupButton(link.text, link.type, () => HyperlinkTo(link.type, link.url));
+
+                return;
+            }
+
+            // We don't have a button for this link type yet, so we need to make one.
+            ModioUITermsLinkButton button = Instantiate(_termsLinkButton, _termsLinkButton.transform.parent);
+            button.SetupButton(link.text, link.type, () => HyperlinkTo(link.type, link.url));
+            button.gameObject.SetActive(link.required);
+            button.name = $"Button ({link.type})";
+            _linkButtons[link.type] = button;
         }
 
         public void HyperLinkToTOS()

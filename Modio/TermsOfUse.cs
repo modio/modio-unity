@@ -94,6 +94,14 @@ namespace Modio
                 required = termsObject.Links.Privacy.Required,
             };
             
+            var refundLink = new TermsOfUseLink
+            {
+                type = LinkType.Refund,
+                text = termsObject.Links.Refund.Text,
+                url = termsObject.Links.Refund.Url,
+                required = termsObject.Links.Refund.Required,
+            };
+            
             var manageLink = new TermsOfUseLink
             {
                 type = LinkType.Manage,
@@ -101,8 +109,16 @@ namespace Modio
                 url = termsObject.Links.Manage.Url,
                 required = termsObject.Links.Manage.Required,
             };
-
-            output.Links = new[] { websiteLink, termsLink, privacyLink, manageLink, };
+            
+            var monetizationLink = new TermsOfUseLink
+            {
+                type = LinkType.Monetization,
+                text = termsObject.Links.Monetization.Text,
+                url = termsObject.Links.Monetization.Url,
+                required = termsObject.Links.Monetization.Required,
+            };
+            
+            output.Links = new[] { websiteLink, termsLink, privacyLink, manageLink, refundLink, monetizationLink, };
 
             return output;
         }
@@ -128,6 +144,7 @@ namespace Modio
         Manage,
         /// <summary>This cannot be gotten from this endpoint! This is here to help band-aid CUI</summary>
         Refund,
+        Monetization
     }
 }
 

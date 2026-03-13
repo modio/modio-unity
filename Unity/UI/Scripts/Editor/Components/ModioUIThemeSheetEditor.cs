@@ -17,6 +17,13 @@ namespace Modio.Unity.UI.Editor.Components
         public override void OnInspectorGUI()
         {
             serializedObject.Update();
+            
+            GUI.enabled = targets.Length == 1;
+            var compareTo = (ModioUIThemeSheet)EditorGUILayout.ObjectField("Compare to", null, typeof(ModioUIThemeSheet), false);
+            if(compareTo != null)
+                ((ModioUIThemeSheet)target).CompareAgainst(compareTo);
+            GUI.enabled = true;
+            
             DrawPropertiesExcluding(serializedObject, "_styles", "m_Script");
             
             SerializedProperty stylesProp = serializedObject.FindProperty("_styles");

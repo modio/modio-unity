@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using Modio.Unity.UI.Extensions;
 using UnityNavigation = UnityEngine.UI.Navigation;
 
 namespace Modio.Unity.UI.Navigation
@@ -18,6 +19,9 @@ namespace Modio.Unity.UI.Navigation
         bool _selectChildImmediately;
         bool _needsDelayedNavigationCorrection;
         GameObject _lastSelectedGameObject;
+        static GameObject _lastSuccessfulSelection;
+        ModioGridNavigation _parentNavigation;
+        MoveDirection? _lastMoveDirection;
 
         static readonly List<Selectable> ReusedSelectables = new List<Selectable>();
 
@@ -28,6 +32,8 @@ namespace Modio.Unity.UI.Navigation
         {
             base.OnEnable();
 
+            _parentNavigation = transform.parent.GetComponentInParent<ModioGridNavigation>();
+            
             _lastSelectedGameObject = null;
             LayoutRebuilder.MarkLayoutForRebuild((RectTransform)transform);
             _needsDelayedNavigationCorrection = true;
@@ -56,8 +62,14 @@ namespace Modio.Unity.UI.Navigation
 
             if (_needsDelayedNavigationCorrection)
             {
-                RecalculateNavigation();
-                _needsDelayedNavigationCorrection = false;
+                // Only recalculate if there's either no parent, or it's not pending
+                // Attempting to recalculate on the parent immediately caused issues
+                if (_parentNavigation == null 
+                    || !_parentNavigation._needsDelayedNavigationCorrection)
+                    RecalculateNavigation();
+                
+                //Don't attempt to select a child on the first frame (which is guaranteed to need a layout correction)
+                return;
             }
 
             // Do not perform child selection if selection has already been lost
@@ -130,9 +142,41 @@ namespace Modio.Unity.UI.Navigation
                 }
 
                 if (closestSelectable != null)
-                    EventSystem.current.SetSelectedGameObject(closestSelectable.gameObject);
+                    EventSystem.current.SetSelectedGameObject(
+                        closestSelectable.gameObject,
+                        _lastMoveDirection.ToAxisEventData()
+                    );
+                else if (_lastMoveDirection != null
+                         && _lastMoveDirection.Value != MoveDirection.None)
+                {
+                    Selectable neighbourInDir = GetNeighbourInDir(_lastMoveDirection.Value);
+
+                    if (neighbourInDir == null && _lastSuccessfulSelection != null)
+                    {
+                        EventSystem.current.SetSelectedGameObject(
+                            _lastSuccessfulSelection,
+                            _lastMoveDirection.ToAxisEventData()
+                        );
+                    }
+                    else if (neighbourInDir.gameObject.activeInHierarchy)
+                    {
+                        EventSystem.current.SetSelectedGameObject(
+                            neighbourInDir != null ? neighbourInDir.gameObject : _lastSelectedGameObject,
+                            _lastMoveDirection.ToAxisEventData()
+                        );                        
+                    }
+                    else if (_fallbackSelectionToIfNoValidChildren != null)
+                        EventSystem.current.SetSelectedGameObject(
+                            _fallbackSelectionToIfNoValidChildren,
+                            _lastMoveDirection.ToAxisEventData()
+                        );
+                    // oh no
+                }
                 else if (_fallbackSelectionToIfNoValidChildren != null)
-                    EventSystem.current.SetSelectedGameObject(_fallbackSelectionToIfNoValidChildren);
+                    EventSystem.current.SetSelectedGameObject(
+                        _fallbackSelectionToIfNoValidChildren,
+                        _lastMoveDirection.ToAxisEventData()
+                    );
                 else
                     EventSystem.current.SetSelectedGameObject(_lastSelectedGameObject);
             }
@@ -141,18 +185,26 @@ namespace Modio.Unity.UI.Navigation
 
             if (currentSelection != null && currentSelection.activeInHierarchy)
             {
+                if (currentSelection == _lastSelectedGameObject)
+                {
+                    _lastSuccessfulSelection = currentSelection;
+                }
+                
                 _lastSelectedGameObject = currentSelection;
             }
         }
 
         public override void OnSelect(BaseEventData eventData)
         {
+            _lastMoveDirection = (eventData as AxisEventData)?.moveDir;
             _selectChildImmediately = true;
         }
 
         void RecalculateNavigation()
         {
-            Selectable prev = null;
+            _needsDelayedNavigationCorrection = false;
+            
+            Selectable previousSelectable = null;
             Selectable lastOnPrevRow = null;
             bool isFirstRow = true;
             int countOnCurrentRow = 0;
@@ -188,31 +240,33 @@ namespace Modio.Unity.UI.Navigation
 
                     bool isToTheRight = false;
 
-                    if (prev != null)
+                    if (previousSelectable != null)
                     {
-                        if (prev.transform is RectTransform prevRectTransform &&
+                        if (previousSelectable.transform is RectTransform prevRectTransform &&
                             selectable.transform is RectTransform rectTransform)
                         {
-                            isToTheRight = IsToTheRight(prevRectTransform, rectTransform);
+                            isToTheRight = IsToTheRightOf(prevRectTransform, rectTransform);
                         }
                         else
                         {
-                            isToTheRight = prev.transform.position.x + 1f < selectable.transform.position.x;
+                            isToTheRight = previousSelectable.transform.position.x + 1f < selectable.transform.position.x;
                         }
 
+                        // If a previous element exists, and it's not to the right of the current element, then it exists
+                        // on a previous row, thus this is no longer the first row
                         isFirstRow &= isToTheRight;
                     }
 
                     if (isToTheRight)
                     {
                         countOnCurrentRow++;
-                        nav.selectOnLeft = prev;
+                        nav.selectOnLeft = previousSelectable;
 
-                        if (prev != null)
+                        if (previousSelectable != null)
                         {
-                            UnityNavigation prevNavigation = prev.navigation;
+                            UnityNavigation prevNavigation = previousSelectable.navigation;
                             prevNavigation.selectOnRight = selectable;
-                            prev.navigation = prevNavigation;
+                            previousSelectable.navigation = prevNavigation;
                         }
                     }
                     else
@@ -223,21 +277,21 @@ namespace Modio.Unity.UI.Navigation
                             var trailingElement = PrevRow.Dequeue();
 
                             UnityNavigation prevNavigation = trailingElement.navigation;
-                            prevNavigation.selectOnDown = prev;
+                            prevNavigation.selectOnDown = previousSelectable;
                             trailingElement.navigation = prevNavigation;
                         }
 
                         countOnCurrentRow = 1;
                         nav.selectOnLeft = GetNeighbourInDir(MoveDirection.Left);
 
-                        if (prev != null)
+                        if (previousSelectable != null)
                         {
-                            UnityNavigation prevNavigation = prev.navigation;
+                            UnityNavigation prevNavigation = previousSelectable.navigation;
                             prevNavigation.selectOnRight = GetNeighbourInDir(MoveDirection.Right);
-                            prev.navigation = prevNavigation;
+                            previousSelectable.navigation = prevNavigation;
                         }
 
-                        lastOnPrevRow = prev;
+                        lastOnPrevRow = previousSelectable;
                     }
 
                     if (isFirstRow)
@@ -263,8 +317,8 @@ namespace Modio.Unity.UI.Navigation
 
                     selectable.navigation = nav;
 
-                    prev = selectable;
-                    PrevRow.Enqueue(prev);
+                    previousSelectable = selectable;
+                    PrevRow.Enqueue(previousSelectable);
                 }
             }
 
@@ -277,7 +331,7 @@ namespace Modio.Unity.UI.Navigation
 
                 if (countOnPreviousRow-- > 0)
                 {
-                    prevNavigation.selectOnDown = prev;
+                    prevNavigation.selectOnDown = previousSelectable;
                 }
                 else
                 {
@@ -287,11 +341,11 @@ namespace Modio.Unity.UI.Navigation
                 bottomElement.navigation = prevNavigation;
             }
 
-            if (prev != null)
+            if (previousSelectable != null)
             {
-                UnityNavigation prevNavigation = prev.navigation;
+                UnityNavigation prevNavigation = previousSelectable.navigation;
                 prevNavigation.selectOnRight = GetNeighbourInDir(MoveDirection.Right);
-                prev.navigation = prevNavigation;
+                previousSelectable.navigation = prevNavigation;
             }
         }
 
@@ -300,7 +354,7 @@ namespace Modio.Unity.UI.Navigation
         /// <summary>
         /// Checks if all corners of the given rectTransform are right of all corners of the previous transform
         /// </summary>
-        static bool IsToTheRight(RectTransform prevRectTransform, RectTransform rectTransform)
+        static bool IsToTheRightOf(RectTransform prevRectTransform, RectTransform rectTransform)
         {
             prevRectTransform.GetWorldCorners(PrevCorners);
             rectTransform.GetWorldCorners(TransCorners);
@@ -320,6 +374,9 @@ namespace Modio.Unity.UI.Navigation
             return true;
         }
 
+        /// <summary>
+        /// Gets the neighbour for the parent grid navigation, not the child selectables within the grid
+        /// </summary>
         Selectable GetNeighbourInDir(MoveDirection moveDirection)
         {
             Selectable neighbour = this;

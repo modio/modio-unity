@@ -15,5 +15,7 @@ namespace Modio.Unity.UI.Components
         TResource Resource { get; }
         
         void SetResource(TResource resource);
+        
+        bool IsPlaceholderUI { get; set; }
     }
 }

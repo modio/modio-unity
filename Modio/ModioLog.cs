@@ -30,6 +30,7 @@ namespace Modio
 #nullable disable
 
         static IModioLogHandler _logHandler;
+        static ModioSettings _currentSettings;
 
         readonly LogLevel _logLevel;
 
@@ -40,25 +41,16 @@ namespace Modio
             ModioServices.Bind<IModioLogHandler>()
                          .FromNew<ModioConsoleLog>(ModioServicePriority.Default);
             ModioServices.AddBindingChangedListener<IModioLogHandler>(UpdateLogHandler);
-
-            if (ModioCommandLine.TryGetArgument("log", out string logLevelText) 
-                || ModioCommandLine.TryGetArgument("loglevel", out logLevelText))
-            {
-                if (Enum.TryParse(logLevelText, true, out LogLevel logLevelEnum))
-                    ApplyLogLevel(logLevelEnum);
-                else
-                    // ReSharper disable once ExpressionIsAlwaysNull (it's set in ApplyLogLevel)
-                    // ReSharper disable once ConstantConditionalAccessQualifier
-                    Error?.Log($"Unrecognized log level: {logLevelText}");
-            }
-            else
-                ModioServices.AddBindingChangedListener<ModioSettings>(GetLogLevelFromSettings);
+            ModioServices.AddBindingChangedListener<ModioSettings>(GetLogLevelFromSettings);
         }
 
         static void UpdateLogHandler(IModioLogHandler logHandler) => _logHandler = logHandler;
         
-        static void GetLogLevelFromSettings(ModioSettings settings) => ApplyLogLevel(settings.LogLevel);
-        
+        static void GetLogLevelFromSettings(ModioSettings settings)
+        {
+            ApplyLogLevel(settings.LogLevel);
+        }
+
         static void ApplyLogLevel(LogLevel logLevel)
         {
             Error   = logLevel < LogLevel.Error   ? null : Error   ?? new ModioLog(LogLevel.Error);

@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Modio.API;
+using Modio.Extensions;
+using Modio.Mods;
 using Modio.Monetization;
 using Modio.Unity.Settings;
 using UnityEngine;
@@ -44,15 +47,30 @@ namespace Modio.Unity.UI.Components
 
         void OnPluginInitialized()
         {
-            var settings = ModioServices.Resolve<ModioSettings>();
+            // Set to inactive to begin with so it'll update afterwards
+            gameObject.SetActive(false);
 
+            CheckMonetizationSettings().ForgetTaskSafely();
+
+        }
+
+        async Task CheckMonetizationSettings()
+        {
+            (Error error, GameData data) = await GameData.GetGameData();
+            
+            // If we can't get the option we don't want to alter behaviour, but if we can we need to enforce
+            bool isGameOptionDisabled = error || data.MonetizationOptions == 0;
+            
+            var settings = ModioServices.Resolve<ModioSettings>();
+            
             // Check if the current monetization type is enabled on this platform
             
             // If there are no monetization settings, monetization is disabled
             // Otherwise, check if the current monetization type is included in the shown types
             _isMonetizationDisabled = !settings.TryGetPlatformSettings(out MonetizationSettings platformMonetizationSettings)
-                || ((1 << (int)platformMonetizationSettings.MonetizationType) & (int)_shownOnMonetizationType) == 0;
-
+                                      || ((1 << (int)platformMonetizationSettings.MonetizationType) & (int)_shownOnMonetizationType) == 0
+                                      || isGameOptionDisabled;
+            
             ChangeActiveStateIfNeeded();
         }
 

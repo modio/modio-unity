@@ -141,7 +141,8 @@ namespace Modio.Unity.UI.Panels
         {
             ModioUIInput.RemoveHandler(ModioUIInput.ModioAction.Search,      OpenSearch);
             ModioUIInput.RemoveHandler(ModioUIInput.ModioAction.Filter,      OpenFilter);
-            ModioUIInput.RemoveHandler(ModioUIInput.ModioAction.Sort,        OpenSort);
+            ModioUIInput.RemoveHandler(ModioUIInput.ModioAction.Sort,          OpenSort);
+            ModioUIInput.RemoveHandler(ModioUIInput.ModioAction.Logout,      OpenLogout);
 
             ModioUIInput.RemoveHandler(ModioUIInput.ModioAction.SearchClear, ClearSearch);
             ModioUIInput.RemoveHandler(ModioUIInput.ModioAction.Cancel,      CancelPressed);

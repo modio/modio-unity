@@ -36,6 +36,8 @@ namespace Modio.Unity.UI.Components.ModProperties
             
             foreach (ModTag modTag in resource.Tags)
             {
+                if(!modTag.IsVisible) continue;
+                
                 if (visibleIndex >= _tags.Count)
                     _tags.Add(Object.Instantiate(_tags[0], _tags[0].transform.parent));
                 

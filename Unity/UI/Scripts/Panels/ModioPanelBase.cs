@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Threading.Tasks;
+using Modio.Extensions;
 using Modio.Unity.UI.Input;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -145,6 +147,22 @@ namespace Modio.Unity.UI.Panels
             {
                 _selectOnOpen.Select();
                 NewSelectionWhileFocused(_selectOnOpen.gameObject);
+            }
+        }
+
+        public void DoDefaultSelectionAfterDelayIfStillNeeded()
+        {
+            AsyncTask().ForgetTaskSafely();
+            return;
+
+            async Task AsyncTask()
+            {
+                await Task.Yield();
+                if(this == null || !HasFocus) return;
+                GameObject currentSelectedGameObject = EventSystem.current.currentSelectedGameObject;
+                bool shouldDoSelection = currentSelectedGameObject == null || !currentSelectedGameObject.activeInHierarchy;
+                if(shouldDoSelection)
+                   DoDefaultSelection();
             }
         }
 

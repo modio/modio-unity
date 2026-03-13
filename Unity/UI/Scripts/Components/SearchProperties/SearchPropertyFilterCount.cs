@@ -13,10 +13,10 @@ namespace Modio.Unity.UI.Components.SearchProperties
 
         public void OnSearchUpdate(ModioUISearch search)
         {
-            var tagCount = search.LastSearchFilter.TagAndCategoryCount;
+            var tagCount = search.LastSearchFilter.VisibleTagAndCategoryCount;
             if (_filterCount != null) _filterCount.text = tagCount.ToString();
 
-            if (_filterCountBackground != null) _filterCountBackground.SetActive(tagCount > 0);
+            if (_filterCountBackground != null) _filterCountBackground.SetActive(search.HasCustomTags());
         }
     }
 }

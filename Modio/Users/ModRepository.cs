@@ -14,10 +14,9 @@ namespace Modio.Users
         readonly HashSet<Mod> _subscribed = new HashSet<Mod>();
         readonly HashSet<Mod> _purchased = new HashSet<Mod>();
         readonly HashSet<Mod> _disabled = new HashSet<Mod>();
+        readonly HashSet<Mod> _creations = new HashSet<Mod>();
         
-        [Obsolete("GetCreatedMods should be called via User.Current.GetUserCreations, which is async", true)]
-        public IEnumerable<Mod> GetCreatedMods() => throw new NotSupportedException();
-
+        public IEnumerable<Mod> GetCreatedMods() => _creations;
         public IEnumerable<Mod> GetSubscribed() => _subscribed;
         public IEnumerable<Mod> GetPurchased() => _purchased;
         public IEnumerable<Mod> GetDisabled() => _disabled;
@@ -27,6 +26,7 @@ namespace Modio.Users
             Mod.AddChangeListener(ModChangeType.IsSubscribed, OnModSubscriptionChange);
             Mod.AddChangeListener(ModChangeType.IsEnabled, OnModEnabledChange);
             Mod.AddChangeListener(ModChangeType.IsPurchased, OnModPurchasedChange);
+            Mod.AddChangeListener(ModChangeType.IsUserCreation, OnModUserCreationStatusChange);
             ModioClient.OnShutdown += Dispose;
         }
 
@@ -63,6 +63,16 @@ namespace Modio.Users
             if(anyChange) OnContentsChanged?.Invoke();
         }
 
+        void OnModUserCreationStatusChange(Mod mod, ModChangeType changeType)
+        {
+            var anyChange = false;
+            if (mod.IsCreated)
+                anyChange |= _creations.Add(mod);
+            else
+                anyChange |= _creations.Remove(mod);
+            if(anyChange) OnContentsChanged?.Invoke();
+        }
+
         public void RemoveMod(Mod mod)
         {
             var anyChange = false;
@@ -81,6 +91,7 @@ namespace Modio.Users
             Mod.RemoveChangeListener(ModChangeType.IsSubscribed, OnModSubscriptionChange);
             Mod.RemoveChangeListener(ModChangeType.IsEnabled, OnModEnabledChange);
             Mod.RemoveChangeListener(ModChangeType.IsPurchased, OnModPurchasedChange);
+            Mod.RemoveChangeListener(ModChangeType.IsUserCreation, OnModUserCreationStatusChange);
             ModioClient.OnShutdown -= Dispose;
         }
     }

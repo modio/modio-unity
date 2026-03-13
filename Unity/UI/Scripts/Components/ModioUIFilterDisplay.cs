@@ -30,7 +30,10 @@ namespace Modio.Unity.UI.Components
         List<ModioUIFilterTagCategory> categoryItems = new List<ModioUIFilterTagCategory>();
         bool _hasRegisteredListener;
         bool _hasLocalChanges;
-        bool _showingCollectionTags;
+        bool? _showingCollectionTags;
+
+        readonly HashSet<int> _tempHashSet = new();
+        HashSet<int> _lastHidden;
 
         void Start()
         {
@@ -81,19 +84,15 @@ namespace Modio.Unity.UI.Components
 
             var currentFilter = ModioUISearch.Default.LastSearchFilter;
 
-            var collectionSearch = ModioUISearch.Default.LastSearchPreset == SpecialSearchType.SearchCollections;
-
-            if (collectionSearch != _showingCollectionTags)
-            {
-                UpdateTags(collectionSearch).ForgetTaskSafely();
-            }
+            if (ModioClient.IsInitialized) 
+                UpdateTags(ModioUISearch.Default.LastSearchPreset == SpecialSearchType.SearchCollections).ForgetTaskSafely();
 
             foreach (var tagItem in checkboxTagItems)
             {
                 if(tagItem.Tag.TagType == ResourceTagType.CollectionCategory)
                     tagItem.Toggle.isOn = currentFilter.GetCollectionCategory() == tagItem.Tag.ApiName;
                 else
-                    tagItem.Toggle.isOn = currentFilter.GetTags().Contains(tagItem.Tag.ApiName);
+                    tagItem.Toggle.isOn = currentFilter.GetTags().Contains(tagItem.Tag);
             }
 
             //Setting the toggles above will flag as local changes; reset that
@@ -116,9 +115,9 @@ namespace Modio.Unity.UI.Components
             _hasLocalChanges = false;
         }
 
-        void UpdateTags() => UpdateTags(false).ForgetTaskSafely();
+        void UpdateTags() => UpdateTags(false, true).ForgetTaskSafely();
         
-        async Task UpdateTags(bool collectionTags)
+        async Task UpdateTags(bool collectionTags, bool forceUpdate = false)
         {
             Error error;
             GameTagCategory[] tagCategories;
@@ -126,6 +125,8 @@ namespace Modio.Unity.UI.Components
                 (error, tagCategories) = await GameTagCategory.GetCollectionTagOptions();
             else
                 (error, tagCategories) = await GameTagCategory.GetGameTagOptions();
+            
+            bool shouldUpdate = collectionTags != _showingCollectionTags || forceUpdate;
 
             _showingCollectionTags = collectionTags;
             
@@ -138,10 +139,21 @@ namespace Modio.Unity.UI.Components
                 return;
             }
 
-            if (tagCategories.Length <= 0)
+            _tempHashSet.Clear();
+            for (int index = 0; index < tagCategories.Length; index++)
             {
-                return;
+                var tagCategory = tagCategories[index];
+
+                if (tagCategory.Hidden) _tempHashSet.Add(index);
             }
+
+            if (_lastHidden == null || !_lastHidden.SetEquals(_tempHashSet))
+            {
+                shouldUpdate |= _lastHidden != null || _tempHashSet.Count > 0;
+                _lastHidden = new HashSet<int>(_tempHashSet);
+            }
+            
+            if (!shouldUpdate) return;
 
             HideListCheckboxItems(checkboxTagItems);
             HideListItems(ref categoryItems);
