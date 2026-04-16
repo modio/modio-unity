@@ -27,6 +27,7 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
@@ -44,15 +45,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   DisplayAs: 
-  DisplayAsLocalisedKey: modio_filter_allmods
+  DisplayAsLocalisedKey: modio_btn_menu_browsemods
   Icon: {fileID: 21300000, guid: fe8c7b267ac06c14a84ee66bba332c26, type: 3}
   HiddenIfMonetizationDisabled: 0
   searchType: 8
   searchPhrase: 
   searchTags: []
   sortModsBy: 4
+  CollectionId: 0
   showMatureContent: 0
   isAscending: 1
-  userId: 0
   filterRevenueType: 2
   shareFilterSettingsWith: {fileID: 5720165946152866720}
+  hideTagCategories: []
+  Carousels: []
+  ShowFeaturedReasonInCarousel: 0

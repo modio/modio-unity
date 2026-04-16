@@ -496,6 +496,12 @@ namespace Modio.Mods
 
             if (error)
             {
+                if (error.Code is ErrorCode.USER_EXISTING_MOD_RATING or ErrorCode.USER_NO_MOD_RATING)
+                {
+                    ModioLog.Warning?.Log($"Mod {this}: couldn't rate {rating} due to {error}");
+                    return Error.None;
+                }
+
                 if (!error.IsSilent) ModioLog.Warning?.Log($"Error rating mod {Id}: {error.GetMessage()}");
                 UpdateStatsWithUserRating(previousRating);
                 InvokeModUpdated(ModChangeType.Rating);

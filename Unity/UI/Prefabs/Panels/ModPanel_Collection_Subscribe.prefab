@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 7785664470183521035}
   - component: {fileID: 87603229484131200}
   - component: {fileID: 2728613348168587579}
-  - component: {fileID: 4196555708918571141}
+  - component: {fileID: 7873359387005095258}
   m_Layer: 5
   m_Name: DependenciesScrollView
   m_TagString: Untagged
@@ -151,7 +151,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 0}
   _inputSpeed: 100.09
   _resetPositionOnEnable: 1
---- !u!114 &4196555708918571141
+--- !u!114 &7873359387005095258
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -160,23 +160,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 207682007995808980}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 30649d3a9faa99c48a7b1166b86bf2a0, type: 3}
+  m_Script: {fileID: 11500000, guid: b5a52b5eb04444bfaa92d2c29d468aad, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Padding:
-    m_Left: 0
-    m_Right: 0
-    m_Top: 0
-    m_Bottom: 0
-  m_ChildAlignment: 0
-  m_Spacing: 5
-  m_ChildForceExpandWidth: 0
-  m_ChildForceExpandHeight: 0
-  m_ChildControlWidth: 1
-  m_ChildControlHeight: 1
-  m_ChildScaleWidth: 0
-  m_ChildScaleHeight: 0
-  m_ReverseArrangement: 0
+  _layoutPriority: 0
+  _heightFrom: {fileID: 6884678751704787503}
+  _widthFrom: {fileID: 0}
 --- !u!1 &1697566576599813192
 GameObject:
   m_ObjectHideFlags: 0
@@ -1706,6 +1695,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4664722674e74bfe8bd8d17999fb0a53, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _template: {fileID: 0}
+  _useCarouselSelectionLogic: 0
   _layoutRebuilder: {fileID: 0}
 --- !u!114 &3525424680069023432
 MonoBehaviour:
@@ -1735,6 +1726,7 @@ MonoBehaviour:
         _errorHandler:
           m_PersistentCalls:
             m_Calls: []
+        _resetScrollRect: {fileID: 0}
 --- !u!114 &932774609990978423
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2207,17 +2199,17 @@ PrefabInstance:
     - target: {fileID: 4018048731362548278, guid: 6dd03184baab49743b590624104de49b,
         type: 3}
       propertyPath: m_AnchorMax.x
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4018048731362548278, guid: 6dd03184baab49743b590624104de49b,
         type: 3}
       propertyPath: m_AnchorMax.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4018048731362548278, guid: 6dd03184baab49743b590624104de49b,
         type: 3}
       propertyPath: m_AnchorMin.x
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4018048731362548278, guid: 6dd03184baab49743b590624104de49b,
         type: 3}
@@ -2227,7 +2219,7 @@ PrefabInstance:
     - target: {fileID: 4018048731362548278, guid: 6dd03184baab49743b590624104de49b,
         type: 3}
       propertyPath: m_SizeDelta.x
-      value: 0
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 4018048731362548278, guid: 6dd03184baab49743b590624104de49b,
         type: 3}
@@ -3012,6 +3004,12 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2629004931210365069, guid: b8635896ccda76a4e935933d07497f3b,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -76580068089955207, guid: a6487a22895c8aa4ab27e972c4bea7e4,
+        type: 2}
     - target: {fileID: 2847264682305664245, guid: b8635896ccda76a4e935933d07497f3b,
         type: 3}
       propertyPath: m_AnchorMax.y

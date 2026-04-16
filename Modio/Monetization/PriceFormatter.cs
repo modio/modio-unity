@@ -1,4 +1,6 @@
-﻿namespace Modio.Monetization
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace Modio.Monetization
 {
     public static class PriceFormatter
     {
@@ -8,6 +10,7 @@
         /// <param name="currency">The currency code.</param>
         /// <param name="price">The price amount.</param>
         /// <returns></returns>
+        [ExcludeFromCodeCoverage]
         public static string FormatPrice(string currency, double price)
         {
             var str = price.ToString("0.00");

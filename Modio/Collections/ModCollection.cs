@@ -473,6 +473,12 @@ namespace Modio.Collections
 
             if (error)
             {
+                if (error.Code is ErrorCode.USER_EXISTING_MOD_RATING or ErrorCode.USER_NO_MOD_RATING)
+                {
+                    ModioLog.Warning?.Log($"Collection {this}: couldn't rate {rating} due to {error}");
+                    return Error.None;
+                }
+
                 if (!error.IsSilent)
                     ModioLog.Warning?.Log($"Error rating mod {Id}: {error.GetMessage()}");
 

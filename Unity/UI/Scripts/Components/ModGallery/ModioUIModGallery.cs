@@ -11,6 +11,7 @@ namespace Modio.Unity.UI.Components.ModGallery
     public class ModioUIModGallery : ModioUIModProperties
     {
         [SerializeField] RawImage _image;
+        [SerializeField] AspectRatioFitter _aspectRatioFitter;
         [SerializeField] Mod.GalleryResolution _resolution = Mod.GalleryResolution.X1280_Y720;
         [SerializeField] bool _useHighestAvailableResolutionAsFallback = true;
         [SerializeField] ModioUIModGalleryPagination _paginationTemplate;
@@ -104,6 +105,10 @@ namespace Modio.Unity.UI.Components.ModGallery
                 texture2D =>
                 {
                     if (_image != null) _image.texture = texture2D;
+                    
+                    if(_aspectRatioFitter != null)
+                        _aspectRatioFitter.aspectRatio = (float)texture2D.width / texture2D.height;
+
                 },
                 isLoading =>
                 {

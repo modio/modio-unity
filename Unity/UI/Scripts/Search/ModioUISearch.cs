@@ -258,7 +258,10 @@ namespace Modio.Unity.UI.Search
             }
 
             searchFilter.AddUser(user);
-            SetSearch(searchFilter, SpecialSearchType.SearchForUser, settingsFrom: LastSearchSettingsFrom);
+            var specialSearchType = SpecialSearchType.SearchForUser;
+            if (LastSearchPreset == SpecialSearchType.SearchCollections)
+                specialSearchType = LastSearchPreset;
+            SetSearch(searchFilter, specialSearchType, settingsFrom: LastSearchSettingsFrom);
         }
 
         public void SetSearchForTag(ModTag tag)

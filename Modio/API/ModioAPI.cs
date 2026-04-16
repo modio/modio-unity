@@ -27,6 +27,7 @@ namespace Modio.API
             PlayStation4,
             PlayStation5,
             Switch,
+            Switch2,
             Oculus,
         }
 
@@ -275,11 +276,12 @@ namespace Modio.API
             "ps4"         => Platform.PlayStation4,
             "ps5"         => Platform.PlayStation5,
             "switch"      => Platform.Switch,
+            "switch2"     => Platform.Switch2,
             "oculus"      => Platform.Oculus,
             _             => Platform.None,
         };
         
-        static string GetHeader(this Platform platform) => platform switch
+        public static string GetHeader(this Platform platform) => platform switch
             {
                 Platform.Source       => "source",
                 Platform.Windows      => "windows",
@@ -292,6 +294,7 @@ namespace Modio.API
                 Platform.PlayStation4 => "ps4",
                 Platform.PlayStation5 => "ps5",
                 Platform.Switch       => "switch",
+                Platform.Switch2      => "switch2",
                 Platform.Oculus       => "oculus",
                 _                     => null,
             };
