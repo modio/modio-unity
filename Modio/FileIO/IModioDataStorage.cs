@@ -11,6 +11,13 @@ namespace Modio.FileIO
     /// <summary>Interface for the platform file IO services</summary>
     public interface IModioDataStorage
     {
+        /// <summary>
+        /// Instructs DataStorage to delete all data installed by the plugin (including user data) on shutdown. This ensures
+        /// the delete & shutdown operations happen safely, with DataStorage waiting for current operations to end before
+        /// deleting everything.
+        /// </summary>
+        internal bool DeleteDataOnShutdown { get; set; }
+        
         Task<Error> Init();
         
         /// <summary>Forces the file IO service to immediately stop all operations and shutdown.</summary>

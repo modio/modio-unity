@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Modio.API;
 using Modio.API.Interfaces;
@@ -19,6 +20,7 @@ namespace Modio.Unity
     internal static class ModioUnity
     {
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
+        [ExcludeFromCodeCoverage]
         static void OnAfterAssembliesLoaded()
         {
             ModioUnitySettings modioUnitySettings = LoadSettings();
@@ -137,6 +139,7 @@ namespace Modio.Unity
             InitPlatform();
         }
 
+        [ExcludeFromCodeCoverage]
         static ModioUnitySettings LoadSettings()
         {
             ModioUnitySettings foundSetting = null;
@@ -158,6 +161,7 @@ namespace Modio.Unity
 
 
 #if UNITY_EDITOR
+        [ExcludeFromCodeCoverage]
         static void OnGameShuttingDown(PlayModeStateChange state)
         {
             if (state == PlayModeStateChange.ExitingPlayMode)
@@ -165,18 +169,7 @@ namespace Modio.Unity
         }
 #endif
 
-        static void Log(LogLevel logLevel, object message)
-        {
-            Action<object> log = logLevel switch
-            {
-                LogLevel.Error   => Debug.LogError,
-                LogLevel.Warning => Debug.LogWarning,
-                _                => Debug.Log,
-            };
-
-            log(message);
-        }
-
+        [ExcludeFromCodeCoverage]
         static void InitPlatform()
         {
             // Only contains RuntimePlatforms that have a corresponding ModioAPI.Platform.
@@ -197,6 +190,9 @@ namespace Modio.Unity
                 RuntimePlatform.PS4                => ModioAPI.Platform.PlayStation4,
                 RuntimePlatform.XboxOne            => ModioAPI.Platform.XboxOne,
                 RuntimePlatform.Switch             => ModioAPI.Platform.Switch,
+#if UNITY_6000_0_OR_NEWER
+                RuntimePlatform.Switch2            => ModioAPI.Platform.Switch2,
+#endif
                 RuntimePlatform.GameCoreXboxSeries => ModioAPI.Platform.XboxSeriesX,
                 RuntimePlatform.GameCoreXboxOne    => ModioAPI.Platform.XboxOne,
                 RuntimePlatform.PS5                => ModioAPI.Platform.PlayStation5,

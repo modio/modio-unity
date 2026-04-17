@@ -43,8 +43,9 @@ namespace Modio.Unity.UI.Components
 
                 if (_scrollRect != null) 
                     _scrollRect.onValueChanged.AddListener(OnScrolled);
-                
-                _layoutGroup = _template.GetComponentInParent<LayoutGroup>();
+
+                Transform transformParent = _template.transform.parent;
+                if (transformParent != null) _layoutGroup = transformParent.GetComponentInParent<LayoutGroup>();
 
                 _template.gameObject.SetActive(false);
                 _inactive.Push(_template);
@@ -172,11 +173,11 @@ namespace Modio.Unity.UI.Components
                 // Hack that allows the first carousel to steal input selection priority from other carousels
                 if (_useCarouselSelectionLogic && transform.GetSiblingIndex() == 0)
                 {
-                    var panel = currentSelectedGameObject.GetComponentInParent<ModioPanelBase>();
+                    var panel = transform.GetComponentInParent<ModioPanelBase>();
                     shouldDoSelection |= panel != null && panel.HasFocus;
                 }
             }
-
+            
             if (shouldDoSelection)
             {
                 //Ensure layouts have been applied, otherwise we'll snap scrollviews to their old positions
@@ -252,6 +253,13 @@ namespace Modio.Unity.UI.Components
 
                     if(modioAspectRatioLayout)
                         go.AddComponent<ModioAspectRatioLayout>().CopySettingsFrom(modioAspectRatioLayout);
+
+                    var layoutElement = go.AddComponent<LayoutElement>();
+                    var templateTransform = (RectTransform)_template.transform;
+                    layoutElement.preferredHeight = templateTransform.rect.height;
+                    layoutElement.preferredWidth = templateTransform.rect.width;
+                    layoutElement.minHeight = templateTransform.rect.height;
+                    layoutElement.minWidth = templateTransform.rect.width;
                 }
 
                 return uiMod;

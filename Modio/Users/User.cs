@@ -58,13 +58,14 @@ namespace Modio.Users
         public ModioAPI.Portal AuthenticatedPortal { get; private set; }
 
         readonly Authentication _authentication;
-        bool _isWritingToDisk;
         bool _needsSavingToDisk;
         List<UserProfile> _followed = new List<UserProfile>();
         Dictionary<ModioId, ModioRating> _modRatings = new Dictionary<ModioId, ModioRating>();
         Dictionary<ModioId, ModioRating> _collectionRatings = new Dictionary<ModioId, ModioRating>();
         
         List<CachedEntitlement> _cachedEntitlements;
+        
+        TaskCompletionSource<Error> _writeTcs;
 
         public static async Task InitializeNewUser()
         {
@@ -102,7 +103,7 @@ namespace Modio.Users
                 InternalOnUserChanged?.Invoke();
                 error = await Current.Sync();
 
-                if (error.Code == ErrorCode.USER_NOT_AUTHENTICATED)
+                if (error.Code is ErrorCode.USER_NOT_AUTHENTICATED or ErrorCode.USER_NO_ACCEPT_TERMS_OF_USE)
                     Current.IsAuthenticated = false;
 
                 return;
@@ -198,6 +199,8 @@ namespace Modio.Users
             bool hasAuthenticated = IsAuthenticated;
             IsAuthenticated = true;
             AuthenticatedPortal = ModioAPI.CurrentPortal;
+
+            await SaveUserData();
             
             InternalOnUserChanged?.Invoke();
 
@@ -215,6 +218,8 @@ namespace Modio.Users
             
             if(sync || !hasAuthenticated)
                 Sync().ForgetTaskSafely();
+            else
+                IsUpdating = false;
         }
 
         internal string GetAuthToken() => _authentication.OAuthToken;
@@ -839,7 +844,7 @@ namespace Modio.Users
             var request = new FollowUserRequest(user.UserId);
             (Error error, Response204? _) = await ModioAPI.Followers.FollowUser(UserId, request);
 
-            if (error)
+            if (error && error.Code != ErrorCode.USER_TARGET_ALREADY_FOLLOWED)
                 return error;
 
             if (!_followed.Contains(user))
@@ -854,7 +859,7 @@ namespace Modio.Users
         {
             (Error error, Response204? _) = await ModioAPI.Followers.UnfollowUser(UserId, user.UserId);
             
-            if (error)
+            if (error && error.Code != ErrorCode.ALREADY_UNSUBSCRIBED)
                 return error;
 
             _followed.Remove(user);
@@ -917,27 +922,33 @@ namespace Modio.Users
         public static void InvalidateAuthToken()
         {
             Current._authentication.OAuthToken = "INVALID_TOKEN"; // Invalid token
+            Current.SaveUserData().ForgetTaskSafely();
         }
 
-        async Task SaveUserData()
+        internal async Task<Error> SaveUserData()
         {
-            if (_isWritingToDisk)
+            
+            if (_writeTcs is not null)
             {
                 _needsSavingToDisk = true;
-                return;
+                return await _writeTcs.Task;
             }
-            _isWritingToDisk = true;
+            
             _needsSavingToDisk = false;
-            
-            Error error = await ModioClient.DataStorage.WriteUserData(GetWritable());
-            
-            if (error) 
-                ModioLog.Message?.Log($"Error writing user data to disk: {error.GetMessage()}");
-            
-            _isWritingToDisk = false;
+            _writeTcs = new TaskCompletionSource<Error>();
+            Error error;
 
-            if (_needsSavingToDisk)
-                await SaveUserData();
+            do
+            {
+                _needsSavingToDisk = false;
+                error = await ModioClient.DataStorage.WriteUserData(GetWritable());
+            }
+            while (_needsSavingToDisk && !error);
+
+            _writeTcs.SetResult(error);
+            _writeTcs = null;
+
+            return error;
         }
 
         UserSaveObject GetWritable()

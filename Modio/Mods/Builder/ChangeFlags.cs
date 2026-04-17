@@ -21,6 +21,7 @@ namespace Modio.Mods.Builder
         MonetizationConfig = 1 << 12,
         Dependencies       = 1 << 13,
         MonetizationTeam   = 1 << 14,
+        NameId             = 1 << 15,
         
         AddFlags = Name
                    | Summary
@@ -30,7 +31,8 @@ namespace Modio.Mods.Builder
                    | MaturityOptions
                    | CommunityOptions
                    | MetadataBlob
-                   | Tags,
+                   | Tags
+                   | NameId,
         EditFlags = Name
                     | Summary
                     | Description
@@ -40,6 +42,7 @@ namespace Modio.Mods.Builder
                     | CommunityOptions
                     | MetadataBlob
                     | Tags
-                    | MonetizationConfig,
+                    | MonetizationConfig
+                    | NameId,
     }
 }

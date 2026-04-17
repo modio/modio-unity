@@ -29,11 +29,12 @@ namespace Modio.FileIO
         // This has to be called with Ansi char set or else we'll only get the stats for the root partition rather than
         // the actual partition our files live on.
         [DllImport("libc", SetLastError = true, CharSet = CharSet.Ansi)]
-        static extern short statvfs(
+        static extern int statvfs(
             string directory,
             out UnixStatsFs statsFs
         );
 
+        [StructLayout(LayoutKind.Sequential)]
         struct UnixStatsFs
         {
             public ulong f_bsize;   // file system block size
@@ -47,6 +48,14 @@ namespace Modio.FileIO
             public ulong f_fsid;    // file system id
             public ulong f_flag;    // mount flags
             public ulong f_namemax; // maximum filename length
+            
+            // 24 bytes of padding to match glibc's int __f_spare[6]
+            public uint spare0;
+            public uint spare1;
+            public uint spare2;
+            public uint spare3;
+            public uint spare4;
+            public uint spare5;
         }
     }
 }

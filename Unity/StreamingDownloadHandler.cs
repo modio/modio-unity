@@ -194,12 +194,12 @@ namespace Modio.Unity
                         }
 
 
-                        if (IsDone && _dataQueue.IsEmpty)
+                        if (IsDone && _dataQueue.IsEmpty || totalBytesRead > 0)
+                        {
+                            Position += totalBytesRead;
                             return totalBytesRead;
+                        }
 
-                        if (totalBytesRead > 0)
-                            return totalBytesRead;
-                        
                         await _signal.WaitAsync(linkedTokenSource.Token);
 
                     }
@@ -217,6 +217,7 @@ namespace Modio.Unity
                     data.Dispose();
                 }
 
+                Position += totalBytesRead;
                 return totalBytesRead;
             }
 
@@ -241,9 +242,9 @@ namespace Modio.Unity
             public override bool CanRead => true;
             public override bool CanSeek => false;
             public override bool CanWrite => true;
-            public override long Length => -1; // Length is unknown for this stream
+            public override long Length => throw new NotSupportedException(); // Length is unknown for this stream
 
-            public override long Position { get; set; } = -1;
+            public override long Position { get; set; } = 0;
             bool IsDone { get; set; }
             public IOException ThrowException { get; set; }
 

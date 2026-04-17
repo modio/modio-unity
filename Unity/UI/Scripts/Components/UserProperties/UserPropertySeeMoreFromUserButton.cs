@@ -38,8 +38,10 @@ namespace Modio.Unity.UI.Components.UserProperties
             {
                 ModioUISearch.Default.SetSearchForUser(_user);
 
-                var modDisplayPanel = ModioPanelManager.GetPanelOfType<ModDisplayPanel>();
-                if (modDisplayPanel != null && modDisplayPanel.HasFocus) modDisplayPanel.ClosePanel();
+                ModioPanelBase currentFocusedPanel = ModioPanelManager.GetInstance().CurrentFocusedPanel;
+
+                if (currentFocusedPanel is ModDisplayPanel or ModCollectionDisplayPanel)
+                    currentFocusedPanel.ClosePanel();
             }
         }
     }

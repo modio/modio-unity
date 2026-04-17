@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using Modio.API.SchemaDefinitions;
 using Modio.Mods;
 using Modio.Platforms.Wss;
@@ -12,6 +13,7 @@ namespace Modio.API
     /// You do not need to use this class. This is used to ensure specific types in API request
     /// objects and anything we serialize gets AOT code generated when using IL2CPP compilation.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public static class APITypeEnforcer
     {
         public static void Hello()

@@ -51,6 +51,7 @@ namespace Modio.Unity
             _pathParameters.Clear();
             _defaultHeaders.Clear();
             _basePath = string.Empty;
+            _timeOfLastReauthentication = DateTime.MinValue;
             
             ModioClient.OnShutdown -= Shutdown;
             ModioClient.OnShutdown += Shutdown;
@@ -63,7 +64,7 @@ namespace Modio.Unity
 
         public async Task<(Error, Stream)> DownloadFile(string url, CancellationToken token = default, bool allowReauth = true)
         {
-            Error testError = await CheckFakeErrorsForTest(url);
+            (Error testError, _) = await CheckFakeErrorsForTest(url);
 
             if (testError)
                 return (testError, null);
@@ -239,26 +240,28 @@ namespace Modio.Unity
             webRequest?.Dispose();
         }
 
-        Task<Error> CheckFakeErrorsForTest(string url)
+        Task<(Error, ModioAPITestSettings.FakeUnityApiResponse)> CheckFakeErrorsForTest(string url)
         {
             var testSettings = ModioClient.Settings.GetPlatformSettings<ModioAPITestSettings>();
             
             if(testSettings == null)
-                return Task.FromResult(Error.None);
+                return Task.FromResult((Error.None, default(ModioAPITestSettings.FakeUnityApiResponse)));
 
             if (testSettings.ShouldFakeDisconnected(url))
                 return FakeConnectionError();
 
             if (testSettings.ShouldFakeRateLimit(url))
-                return Task.FromResult<Error>(new RateLimitError(RateLimitErrorCode.RATELIMITED, 42));
+                return Task.FromResult<(Error, ModioAPITestSettings.FakeUnityApiResponse)>(
+                    (new RateLimitError(RateLimitErrorCode.RATELIMITED, 42), null));
 
-            return Task.FromResult(Error.None);
+            
+            return Task.FromResult((Error.None, testSettings.GetFakeUnityResponse(url)));
 
-            async Task<Error> FakeConnectionError()
+            async Task<(Error,ModioAPITestSettings.FakeUnityApiResponse)> FakeConnectionError()
             {
                 await Task.Delay((int)(testSettings.FakeDisconnectedTimeoutDuration * 1000));
             
-                return new Error(ErrorCode.CANNOT_OPEN_CONNECTION);
+                return (new Error(ErrorCode.CANNOT_OPEN_CONNECTION), null);
             }
         }
 
@@ -325,9 +328,9 @@ namespace Modio.Unity
         async Task<(Error error, T)> GetJson<T>(ModioAPIRequest request, Func<JsonTextReader, Task<T>> reader, bool allowReauth = true)
         {
             string target = BuildPath(request);
-            
-            
-            Error error = await CheckFakeErrorsForTest(target);
+
+
+            (Error error, ModioAPITestSettings.FakeUnityApiResponse fakeResponse) = await CheckFakeErrorsForTest(target);
             if(error)
                 return (error, default(T));
             
@@ -352,33 +355,37 @@ namespace Modio.Unity
             try
             {
                 await LogRequest(webRequest, request);
-                error = await SendRequest(webRequest, cachedShutdownToken);
+                
+                if(fakeResponse == null)
+                    error = await SendRequest(webRequest, cachedShutdownToken);
 
                 if (error)
                     return (error, default(T));
 
-                string jsonResponse = webRequest.downloadHandler.text;
+                string jsonResponse = fakeResponse?.JsonResponse ?? webRequest.downloadHandler.text;
 
                 ModioLog.Verbose?.Log($"Response from {target}:\n{jsonResponse}");
 
-                if (webRequest.responseCode == 204)
+                long responseCode = fakeResponse?.ResponseCode ?? webRequest.responseCode;
+
+                if (responseCode == 204)
                     return (Error.None, (T)(object)new Response204());
 
-                if (webRequest.responseCode is < 200 or >= 300)
+                if (responseCode is < 200 or >= 300)
                 {
-                    if (IsResponseConnectionFailure(webRequest.responseCode))
+                    if (IsResponseConnectionFailure(responseCode))
                     {
-                        ModioLog.Error?.Log($"Unable to reach mod.io servers {webRequest.responseCode}");
+                        ModioLog.Error?.Log($"Unable to reach mod.io servers {responseCode}");
                         ModioAPI.SetOfflineStatus(true);
                         return (new Error(ErrorCode.CANNOT_OPEN_CONNECTION), default(T));
                     }
 
-                    if (webRequest.responseCode != 429
-                        || !webRequest.GetResponseHeaders().TryGetValue("retry-after", out string retryHeader)
+                    if (responseCode != 429
+                        || !(fakeResponse?.ResponseHeaders ?? webRequest.GetResponseHeaders()).TryGetValue("retry-after", out string retryHeader)
                         || string.IsNullOrEmpty(retryHeader)
                         || !int.TryParse(retryHeader, out int retryAfterSeconds))
                     {
-                        error = GetErrorAndLogBadResponse(webRequest.responseCode, jsonResponse);
+                        error = GetErrorAndLogBadResponse(responseCode, jsonResponse);
                         
                         if (allowReauth && error.Code == ErrorCode.EXPIRED_OR_REVOKED_ACCESS_TOKEN)
                             return await ReauthenticateWithResponse(() => GetJson(request, reader, false));
@@ -386,7 +393,7 @@ namespace Modio.Unity
                         return (error, default(T));
                     }
 
-                    GetErrorAndLogBadResponse(webRequest.responseCode, jsonResponse);
+                    GetErrorAndLogBadResponse(responseCode, jsonResponse);
                     return (new RateLimitError(RateLimitErrorCode.RATELIMITED, retryAfterSeconds), default(T));
                 }
 
@@ -568,6 +575,18 @@ namespace Modio.Unity
         private UploadHandler CreateMultipartFormDataUploadHandler(ModioAPIRequestOptions options)
         {
             string boundary = Guid.NewGuid().ToString().ToUpperInvariant();
+            byte[] bytes = CreateMultipartFormDataByteArray(options, boundary);
+
+            var uploadHandler = new UploadHandlerRaw(bytes)
+            {
+                contentType = "multipart/form-data; boundary=" + boundary,
+            };
+
+            return uploadHandler;
+        }
+
+        internal static byte[] CreateMultipartFormDataByteArray(ModioAPIRequestOptions options, string boundary)
+        {
             using var formData = new MemoryStream();
 
             using (var writer = new StreamWriter(formData, new UTF8Encoding(false), 1024, true)) // Keeping stream open
@@ -610,13 +629,7 @@ namespace Modio.Unity
             }
 
             byte[] bytes = formData.ToArray();
-
-            var uploadHandler = new UploadHandlerRaw(bytes)
-            {
-                contentType = "multipart/form-data; boundary=" + boundary,
-            };
-
-            return uploadHandler;
+            return bytes;
         }
 
         static UploadHandler PrepareByteArray(ModioAPIRequestOptions options)

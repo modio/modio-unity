@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Modio.API;
 using UnityEngine;
 
@@ -26,5 +27,11 @@ namespace Modio.Unity
         }
 
         public void InvokeOnChanged() => Settings.InvokeOnChanged();
+
+        internal void SetPlatformSettings(IModioServiceSettings[] newSettings)
+        {
+            _platformSettings = newSettings;
+            InvokeOnChanged();
+        }
     }
 }

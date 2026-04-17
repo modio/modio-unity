@@ -60,6 +60,7 @@ namespace Modio.API.HttpClient
             _pathParameters.Clear();
             _basePath = string.Empty;
             _client.DefaultRequestHeaders.Clear();
+            _timeOfLastReauthentication = DateTime.MinValue;
             
 
             ModioClient.OnShutdown -= Shutdown;
@@ -73,7 +74,7 @@ namespace Modio.API.HttpClient
 
         public async Task<(Error, Stream)> DownloadFile(string url, CancellationToken token = default, bool allowReauth = true)
         {
-            Error error = await CheckFakeErrorsForTest(url);
+            (Error error, HttpResponseMessage fakeResponse) = await CheckFakeErrorsForTest(url);
             
             if(error)
                 return (error, null);
@@ -109,7 +110,7 @@ namespace Modio.API.HttpClient
                 if(token == default(CancellationToken))
                     token = cachedShutdownToken;
                 
-                HttpResponseMessage response = await _client.SendAsync(
+                HttpResponseMessage response = fakeResponse ?? await _client.SendAsync(
                     httpRequest,
                     HttpCompletionOption.ResponseHeadersRead,
                     token
@@ -189,26 +190,28 @@ namespace Modio.API.HttpClient
             return error;
         }
 
-        Task<Error> CheckFakeErrorsForTest(string url)
+        static Task<(Error, HttpResponseMessage)> CheckFakeErrorsForTest(string url)
         {
             var testSettings = ModioClient.Settings.GetPlatformSettings<ModioAPITestSettings>();
             
             if(testSettings == null)
-                return Task.FromResult(Error.None);
+                return Task.FromResult((Error.None, default(HttpResponseMessage)));
 
             if (testSettings.ShouldFakeDisconnected(url)) 
                 return FakeConnectionError();
 
             if (testSettings.ShouldFakeRateLimit(url))
-                return Task.FromResult<Error>(new RateLimitError(RateLimitErrorCode.RATELIMITED, 42));
+                return Task.FromResult<(Error, HttpResponseMessage)>((new RateLimitError(RateLimitErrorCode.RATELIMITED, 42), default(HttpResponseMessage)));
 
-            return Task.FromResult(Error.None);
+            HttpResponseMessage fakeResponse = testSettings.GetFakeHttpResponse(url);
+            
+            return Task.FromResult((Error.None, fakeResponse));
 
-            async Task<Error> FakeConnectionError()
+            async Task<(Error,HttpResponseMessage)> FakeConnectionError()
             {
                 await Task.Delay((int)(testSettings.FakeDisconnectedTimeoutDuration * 1000));
             
-                return new Error(ErrorCode.CANNOT_OPEN_CONNECTION);
+                return (new Error(ErrorCode.CANNOT_OPEN_CONNECTION), null);
             }
         }
 
@@ -257,7 +260,7 @@ namespace Modio.API.HttpClient
         {
             string target = BuildPath(request);
 
-            Error error = await CheckFakeErrorsForTest(target);
+            (Error error, HttpResponseMessage fakeResponse) = await CheckFakeErrorsForTest(target);
             if(error)
                 return (error, default(T));
 
@@ -290,8 +293,8 @@ namespace Modio.API.HttpClient
                 }
 
                 await LogRequest(httpRequest);
-                using HttpResponseMessage response = await _client.SendAsync(httpRequest, cachedShutdownToken);
-
+                using HttpResponseMessage response = fakeResponse ?? await _client.SendAsync(httpRequest, cachedShutdownToken);
+                
                 if (response.StatusCode == HttpStatusCode.NoContent)
                 {
                     cachedShutdownToken.ThrowIfCancellationRequested();

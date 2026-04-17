@@ -45,7 +45,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   DisplayAs: Top Sellers
-  DisplayAsLocalisedKey: 
+  DisplayAsLocalisedKey: modio_filter_topsellers
   Icon: {fileID: 0}
   HiddenIfMonetizationDisabled: 1
   searchType: 8
@@ -58,4 +58,6 @@ MonoBehaviour:
   isAscending: 0
   filterRevenueType: 1
   shareFilterSettingsWith: {fileID: 0}
+  hideTagCategories: []
   Carousels: []
+  ShowFeaturedReasonInCarousel: 0

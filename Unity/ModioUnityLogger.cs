@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace Modio.Unity
 {
@@ -20,6 +21,7 @@ namespace Modio.Unity
                 LogLevel.Warning => "[WARNING] ",
                 _                => string.Empty,
             };
+            
             Debug.unityLogger.Log(
                 logLevel switch
                 {

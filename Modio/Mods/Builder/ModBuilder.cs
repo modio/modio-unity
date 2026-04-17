@@ -29,6 +29,7 @@ namespace Modio.Mods.Builder
         ChangeFlags _pendingChanges = ChangeFlags.None;
 
         public string Name { get; private set; } = null;
+        string NameId { get; set; } = null;
         public string Summary { get; private set; } = null;
         public string Description { get; private set; } = null;
         public string LogoFilePath { get; private set; } = null;
@@ -98,6 +99,13 @@ namespace Modio.Mods.Builder
         {
             Name = name;
             _pendingChanges |= ChangeFlags.Name;
+            return this;
+        }
+
+        public ModBuilder SetNameId(string nameId)
+        {
+            NameId = nameId;
+            _pendingChanges |= ChangeFlags.NameId;
             return this;
         }
 
@@ -373,7 +381,7 @@ namespace Modio.Mods.Builder
 
             var body = new AddModRequest(
                 Name,
-                null,
+                _pendingChanges.HasFlag(ChangeFlags.NameId) ? NameId : null,
                 Summary,
                 Description,
                 logo,
@@ -458,8 +466,6 @@ namespace Modio.Mods.Builder
                 ModioLog.Error?.Log($"Can't publish changes for mod {EditTarget.Name}, no changes pending.");
                 return (new Error(ErrorCode.BAD_PARAMETER), null);
             }
-            
-            string nameId = Name?.ToLowerInvariant().Replace(' ', '-');
 
             ModioAPIFileParameter logo = ModioAPIFileParameter.None;
             Error error;
@@ -479,7 +485,7 @@ namespace Modio.Mods.Builder
             {
                 var body = new EditModRequest(
                     _pendingChanges.HasFlag(ChangeFlags.Name) ? Name : null,
-                    _pendingChanges.HasFlag(ChangeFlags.Name) ? nameId : null,
+                    _pendingChanges.HasFlag(ChangeFlags.NameId) ? NameId : null,
                     _pendingChanges.HasFlag(ChangeFlags.Summary) ? Summary : null,
                     _pendingChanges.HasFlag(ChangeFlags.Description) ? Description : null,
                     logo,
@@ -693,29 +699,34 @@ namespace Modio.Mods.Builder
 
 #endregion
 
-        Task<Error> GetChangeSpecificPublishTask(ChangeFlags flag) => flag switch
+        Task<Error> GetChangeSpecificPublishTask(ChangeFlags flag)
         {
-            ChangeFlags.Gallery            => PublishGallery(),
-            ChangeFlags.MetadataKvps       => PublishMetadataKvps(),
-            ChangeFlags.Modfile            => PublishModfile(),
-            ChangeFlags.MonetizationConfig => PublishMonetization(),
-            ChangeFlags.MonetizationTeam   => PublishMonetizationTeam(),
-            ChangeFlags.Dependencies       => PublishDependencies(),
-            // The below are all covered by the Add/Edit endpoints, so should never be called
-            ChangeFlags.Name             => throw new ArgumentException($"{flag} should be changed through the Mods endpoint"),
-            ChangeFlags.Summary          => throw new ArgumentException($"{flag} should be changed through the Mods endpoint"),
-            ChangeFlags.Description      => throw new ArgumentException($"{flag} should be changed through the Mods endpoint"),
-            ChangeFlags.Logo             => throw new ArgumentException($"{flag} should be changed through the Mods endpoint"),
-            ChangeFlags.MetadataBlob     => throw new ArgumentException($"{flag} should be changed through the Mods endpoint"),
-            ChangeFlags.Tags             => throw new ArgumentException($"{flag} should be changed through the Mods endpoint"),
-            ChangeFlags.Visibility       => throw new ArgumentException($"{flag} should be changed through the Mods endpoint"),
-            ChangeFlags.CommunityOptions => throw new ArgumentException($"{flag} should be changed through the Mods endpoint"),
-            ChangeFlags.MaturityOptions  => throw new ArgumentException($"{flag} should be changed through the Mods endpoint"),
-            ChangeFlags.AddFlags         => throw new ArgumentException($"{flag} should not be gotten from the {nameof(GetChangeSpecificPublishTask)} function! This could result in erroneous data being uploaded!"),
-            ChangeFlags.EditFlags        => throw new ArgumentException($"{flag} should not be gotten from the {nameof(GetChangeSpecificPublishTask)} function! This could result in erroneous data being uploaded!"),
-            ChangeFlags.None             => throw new ArgumentException("None changes?"),
-            _                            => throw new ArgumentException($"Change flag {flag} doesn't exist!"),
-        };
+            return flag switch
+            {
+                ChangeFlags.Gallery            => PublishGallery(),
+                ChangeFlags.MetadataKvps       => PublishMetadataKvps(),
+                ChangeFlags.Modfile            => PublishModfile(),
+                ChangeFlags.MonetizationConfig => PublishMonetization(),
+                ChangeFlags.MonetizationTeam   => PublishMonetizationTeam(),
+                ChangeFlags.Dependencies       => PublishDependencies(),
+                // The below are all covered by the Add/Edit endpoints, so should never be called
+                ChangeFlags.Name
+                    or ChangeFlags.Summary
+                    or ChangeFlags.Description
+                    or ChangeFlags.Logo
+                    or ChangeFlags.MetadataBlob
+                    or ChangeFlags.Tags
+                    or ChangeFlags.Visibility
+                    or ChangeFlags.CommunityOptions
+                    or ChangeFlags.MaturityOptions 
+                    => throw new ArgumentException($"{flag} should be changed through the Mods endpoint"),
+                ChangeFlags.AddFlags 
+                    or ChangeFlags.EditFlags 
+                    => throw new ArgumentException($"{flag} should not be gotten from the {nameof(GetChangeSpecificPublishTask)} function! This could result in erroneous data being uploaded!"),
+                ChangeFlags.None => throw new ArgumentException("None changes?"),
+                _                => throw new ArgumentException($"Change flag {flag} doesn't exist!")
+            };
+        }
 
         static bool ValidateImageFilePath(string filePath)
         {

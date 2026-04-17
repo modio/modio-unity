@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using Modio.API;
 using Modio.API.SchemaDefinitions;
@@ -6,7 +7,8 @@ using Modio.Extensions;
 namespace Modio.Mods
 {
     public class GameData
-    {
+    {   
+
         public GameTagCategory[] Categories;
         public string CurrencyName;
         public GameCommunityOptions CommunityOptions;
@@ -76,6 +78,12 @@ namespace Modio.Mods
             return (Error.None, gameData);
         }
 
+        /// <summary>
+        /// Sets the game data, writing it to disk. If a write is already in progress, it will mark the data as dirty and wait for the current write to finish before writing again if necessary.
+        /// This ensures that we don't have multiple concurrent writes to disk, which could cause issues.
+        /// </summary>
+        /// <param name="data"> The game data to set. This will be cached in memory and written to disk.</param>
+        /// <returns> An error if the write failed, or Error.None if it succeeded.</returns>
         public static async Task<Error> SetGameData(GameData data)
         {
             _cachedGameData = data;
@@ -85,19 +93,30 @@ namespace Modio.Mods
                 _isDirty = true;
                 return await _writeTcs.Task;
             }
-
+            
             _isDirty = false;
             _writeTcs = new TaskCompletionSource<Error>();
-            Error error = await ModioClient.DataStorage.WriteGameData(_cachedGameData);
+            Error error;
 
-            if (_isDirty && !error)
-                error = await SetGameData(data);
+            do
+            {
+                _isDirty = false;
+                error = await ModioClient.DataStorage.WriteGameData(_cachedGameData);
+            }
+            while (_isDirty && !error);
 
             _writeTcs.SetResult(error);
             _writeTcs = null;
 
             return error;
         }
+
+        /// <summary>
+        /// Store the current game data to disk.
+        /// </summary>
+        /// <returns> An error if the write failed, or Error.None if it succeeded.</returns>
+        /// <remarks> This will write the cached game data to disk, and if a write is already in progress, it will wait for it to finish before writing again if necessary.</remarks>
+        internal static async Task<Error> StoreGameDataToDisk() => await SetGameData(_cachedGameData);
 
         public static async Task<Error> SetGameTags(GameTagCategory[] tags)
         {

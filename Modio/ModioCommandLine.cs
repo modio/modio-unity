@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace Modio
@@ -42,6 +43,7 @@ namespace Modio
             return _flagCache.Contains(flag);
         }
         
+        [ExcludeFromCodeCoverage]
         static void GetArguments()
         {
             if (_argumentCache != null) return;

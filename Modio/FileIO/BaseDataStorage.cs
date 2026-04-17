@@ -31,6 +31,13 @@ namespace Modio.FileIO
         protected int OngoingTaskCount;
         protected CancellationTokenSource ShutdownTokenSource;
         protected CancellationToken ShutdownToken;
+        static bool _deleteDataOnShutdown;
+
+        bool IModioDataStorage.DeleteDataOnShutdown
+        {
+            get => _deleteDataOnShutdown;
+            set => _deleteDataOnShutdown = value;
+        }
 
         public virtual async Task<Error> Init()
         {
@@ -78,6 +85,12 @@ namespace Modio.FileIO
 
             while (OngoingTaskCount > 0) 
                 await Task.Yield();
+
+            if (_deleteDataOnShutdown)
+            {
+                await DeleteAllGameData();
+                _deleteDataOnShutdown = false;
+            }
 
             shutdownTimer.Stop();
             ModioLog.Verbose?.Log($"{typeof(BaseDataStorage)} took {shutdownTimer.Elapsed.Milliseconds}ms to shut down");
@@ -609,7 +622,7 @@ namespace Modio.FileIO
                 () => md5Stream.TotalBytesRead
             );
 
-            var writtenEntries = new Dictionary<string,ZipEntry>();
+            var writtenEntries = new Dictionary<string, ZipEntry>();
 
             // Run the extraction on a background thread
             // Note this isn't just an optimisation; this extract can lock the thread
@@ -687,32 +700,13 @@ namespace Modio.FileIO
         async Task<Error> ValidateZipEntries(ModioZipInputStream zipStream, List<ZipEntry> writtenEntries, string path)
         {
             Error error = Error.None;
-            MemoryStream headerStream = zipStream.GetHeaderStream();
 
-            //This maintains current behavior of no validation when the stream is null.
-            if (headerStream == null)
-                return Error.None;
-
-            await using var zipHelperStream = new ZipHelperStream(headerStream);
-            //capacity should never be more than the number of entries written
-            var centralDirectoryEntries = new List<ZipEntry>(writtenEntries.Count);
-
-            while (zipHelperStream.ReadEntry() is { } entry)
-            {
-                if (entry.IsDirectory)
-                    continue;
-
-                if (string.IsNullOrEmpty(entry.Name))
-                    continue;
-
-                centralDirectoryEntries.Add(entry);
-            }
-
+            var centralDirectoryEntries = zipStream.GetEocdEntries();
+            
             foreach (ZipEntry writtenEntry in writtenEntries)
             {
-                ZipEntry matching = centralDirectoryEntries.FirstOrDefault(e=> e.Name == writtenEntry.Name);
+                ZipEntry matching = centralDirectoryEntries.FirstOrDefault(e=> !e.IsDirectory && e.Name == writtenEntry.Name);
                 
-
                 if (matching == null)
                 {
                     ModioLog.Warning?.Log(
@@ -733,11 +727,23 @@ namespace Modio.FileIO
 
                     error = new Error(ErrorCode.CRCDOES_NOT_MATCH);
                 }
+                else if (matching.Offset != writtenEntry.Offset)
+                {
+                    ModioLog.Error?.Log(
+                        $"Error installing: offset in zip not what expected! {writtenEntry.Offset} != {matching.Offset}"
+                    );
+
+                    error = new Error(ErrorCode.CRCDOES_NOT_MATCH);
+                }
+                else
+                {
+                    ModioLog.Warning?.Log($"Found entry {matching.Name} at {matching.Offset}");
+                }
             }
 
             return error;
         }
-        
+
         protected virtual Error MoveTempInstallToCorrectLocation(Mod mod, string installDirectoryPath, string temporaryDirectoryPath)
         {
             if (DoesDirectoryExist(installDirectoryPath)) 

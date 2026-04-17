@@ -96,41 +96,6 @@ PrefabInstance:
       propertyPath: _styleTarget
       value: 106
       objectReference: {fileID: 0}
-    - target: {fileID: 5758796270013285115, guid: 74d7608239d705c4d9d4a3fa4d2062f3,
-        type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.size
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 5758796270013285115, guid: 74d7608239d705c4d9d4a3fa4d2062f3,
-        type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 5758796270013285115, guid: 74d7608239d705c4d9d4a3fa4d2062f3,
-        type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
-      value: 
-      objectReference: {fileID: 5329203738472693059}
-    - target: {fileID: 5758796270013285115, guid: 74d7608239d705c4d9d4a3fa4d2062f3,
-        type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 5758796270013285115, guid: 74d7608239d705c4d9d4a3fa4d2062f3,
-        type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
-      value: HyperLinkToTOS
-      objectReference: {fileID: 0}
-    - target: {fileID: 5758796270013285115, guid: 74d7608239d705c4d9d4a3fa4d2062f3,
-        type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: Modio.Unity.UI.Components.ModioUITermsOfUse, Modio.Unity.UI
-      objectReference: {fileID: 0}
-    - target: {fileID: 5758796270013285115, guid: 74d7608239d705c4d9d4a3fa4d2062f3,
-        type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
-      value: UnityEngine.Object, UnityEngine
-      objectReference: {fileID: 0}
     - target: {fileID: 5758796270013285116, guid: 74d7608239d705c4d9d4a3fa4d2062f3,
         type: 3}
       propertyPath: m_Pivot.x
@@ -312,41 +277,6 @@ PrefabInstance:
         type: 3}
       propertyPath: _styleTarget
       value: 106
-      objectReference: {fileID: 0}
-    - target: {fileID: 5758796270013285115, guid: 74d7608239d705c4d9d4a3fa4d2062f3,
-        type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.size
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 5758796270013285115, guid: 74d7608239d705c4d9d4a3fa4d2062f3,
-        type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 5758796270013285115, guid: 74d7608239d705c4d9d4a3fa4d2062f3,
-        type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
-      value: 
-      objectReference: {fileID: 5329203738472693059}
-    - target: {fileID: 5758796270013285115, guid: 74d7608239d705c4d9d4a3fa4d2062f3,
-        type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 5758796270013285115, guid: 74d7608239d705c4d9d4a3fa4d2062f3,
-        type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
-      value: HyperLinkToPrivacyPolicy
-      objectReference: {fileID: 0}
-    - target: {fileID: 5758796270013285115, guid: 74d7608239d705c4d9d4a3fa4d2062f3,
-        type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: Modio.Unity.UI.Components.ModioUITermsOfUse, Modio.Unity.UI
-      objectReference: {fileID: 0}
-    - target: {fileID: 5758796270013285115, guid: 74d7608239d705c4d9d4a3fa4d2062f3,
-        type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
-      value: UnityEngine.Object, UnityEngine
       objectReference: {fileID: 0}
     - target: {fileID: 5758796270013285116, guid: 74d7608239d705c4d9d4a3fa4d2062f3,
         type: 3}

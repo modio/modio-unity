@@ -919,6 +919,10 @@ MonoBehaviour:
         _disableIfFree: {fileID: 0}
         _alsoDisableIfPurchased: 0
         _enableIfPurchased: {fileID: 3777632853399258056}
+        _enableIfUsdMarketplace: {fileID: 0}
+        _enableIfVirtualCurrency: {fileID: 0}
+        _enableIfUnavailable: {fileID: 0}
+        _fiatPriceText: {fileID: 0}
     - rid: 5
       type: {class: ModPropertyFileOperations, ns: Modio.Unity.UI.Components.ModProperties,
         asm: Modio.Unity.UI}
@@ -1374,7 +1378,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 86710e43de46f6f4bac7c8e50813a599, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_AspectMode: 3
+  m_AspectMode: 4
   m_AspectRatio: 1.7777778
 --- !u!1 &2231320681211416556
 GameObject:
@@ -1431,13 +1435,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2231320681211416556}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3312d7739989d2b4e91e6319e9a96d76, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Padding: {x: 0, y: 0, z: 0, w: -200}
-  m_Softness: {x: 0, y: 200}
+  m_Padding: {x: 0, y: 0, z: 0, w: 0}
+  m_Softness: {x: 0, y: 0}
 --- !u!114 &2231320681211416552
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1452,6 +1456,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _properties: []
   _image: {fileID: 2231320681161790311}
+  _aspectRatioFitter: {fileID: 2231320681161790309}
   _resolution: 2
   _useHighestAvailableResolutionAsFallback: 1
   _paginationTemplate: {fileID: 6332964786695163531}
@@ -3552,6 +3557,10 @@ MonoBehaviour:
         _disableIfFree: {fileID: 5735302136874563450}
         _alsoDisableIfPurchased: 0
         _enableIfPurchased: {fileID: 0}
+        _enableIfUsdMarketplace: {fileID: 0}
+        _enableIfVirtualCurrency: {fileID: 0}
+        _enableIfUnavailable: {fileID: 0}
+        _fiatPriceText: {fileID: 0}
 --- !u!1 &6354116674717169164
 GameObject:
   m_ObjectHideFlags: 0
