@@ -107,7 +107,7 @@ namespace Modio.Unity
                              .FromNew<MacDataStorage>(ModioServicePriority.PlatformProvided);
 
             ModioServices.Bind<IModioRootPathProvider>()
-                         .FromNew<UnityRootPathProvider>(ModioServicePriority.Default);
+                         .FromNew<UnityRootPathProvider>(ModioServicePriority.EngineImplementation);
 
             ModioServices.Bind<IWebBrowserHandler>()
                          .FromNew<UnityWebBrowserHandler>(ModioServicePriority.EngineImplementation);
@@ -120,8 +120,9 @@ namespace Modio.Unity
                          .WithInterfaces<IGetActiveUserIdentifier>()
                          .FromNew<WssAuthService>(
                              ModioServicePriority.PlatformProvided-5, // Slightly lower priority than default platform auth services
-                             () => ModioServices.Resolve<ModioSettings>()?.TryGetPlatformSettings(out WssSettings _)
-                                   ?? false
+                             () => ModioServices.TryResolve(out ModioSettings settings) 
+                                   && settings.TryGetPlatformSettings(out WssSettings wssSettings)
+                                   && !string.IsNullOrEmpty(wssSettings.ServerURL)
                          );
             
             ModioServices.BindErrorMessage<ModioSettings>(

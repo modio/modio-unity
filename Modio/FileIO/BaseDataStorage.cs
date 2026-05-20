@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using ICSharpCode.SharpZipLib.Zip;
 using Modio.Users;
 using Modio.Errors;
+using Modio.Extensions;
 using Modio.Mods;
 using Newtonsoft.Json;
 
@@ -31,6 +32,8 @@ namespace Modio.FileIO
         protected int OngoingTaskCount;
         protected CancellationTokenSource ShutdownTokenSource;
         protected CancellationToken ShutdownToken;
+        protected readonly Dictionary<string, TaskCompletionSource<Error>> ActiveFileHandlesDictionary =
+            new Dictionary<string, TaskCompletionSource<Error>>();
         static bool _deleteDataOnShutdown;
 
         bool IModioDataStorage.DeleteDataOnShutdown
@@ -100,10 +103,10 @@ namespace Modio.FileIO
         public static void DebugDeleteAllGameData()
         {
             ModioClient.DataStorage.DeleteAllGameData();
-            User.LogOut();
+            User.LogOut().ForgetTaskSafely();
         }
 
-        public Task<Error> DeleteAllGameData()
+        public virtual Task<Error> DeleteAllGameData()
         {
             if (!Initialized) return Task.FromResult(new Error(ErrorCode.NOT_INITIALIZED));
 
@@ -258,7 +261,9 @@ namespace Modio.FileIO
             {
                 ModioLog.Error?.Log($"Error attempting download Modfile: {error.GetMessage()}\nAt:{filePath}");
 
-                downloadStream?.Dispose();
+                if (downloadStream != null)
+                    await downloadStream.DisposeAsync();
+                
                 return error;
             }
 
@@ -289,12 +294,7 @@ namespace Modio.FileIO
 
                     while ((bytesRead = await downloadStream.ReadAsync(buffer, 0, buffer.Length, token)) > 0)
                     {
-                        if (token.IsCancellationRequested)
-                        {
-                            ModioLog.Verbose?.Log("Cancelling");
-                            error = new Error(IsShuttingDown ? ErrorCode.SHUTTING_DOWN : ErrorCode.OPERATION_CANCELLED);
-                            break;
-                        }
+                        token.ThrowIfCancellationRequested();
 
                         totalBytesRead += bytesRead;
                         tracker?.SetBytesRead(bytesRead);
@@ -303,8 +303,6 @@ namespace Modio.FileIO
                         await writerStream.WriteAsync(buffer, 0, bytesRead, token);
                     }
                 }
-
-                downloadStream.Dispose();
 
                 md5.TransformFinalBlock(buffer, 0, 0);
                 string actualMd5Hash = BitConverter.ToString(md5.Hash).Replace("-", "").ToLowerInvariant();
@@ -355,6 +353,7 @@ namespace Modio.FileIO
             }
             finally
             {
+                await downloadStream.DisposeAsync();
                 OngoingTaskCount--;
             }
 
@@ -1122,36 +1121,53 @@ namespace Modio.FileIO
 
         protected virtual async Task<Error> WriteFile(string path, byte[] data, int bytesToWrite)
         {
+            if (IsShuttingDown)
+                return new Error(ErrorCode.SHUTTING_DOWN);
+            
             Error validPathError = IsValidPath(path);
             if (validPathError) return validPathError;
             
             if (data == null) return new Error(ErrorCode.BAD_PARAMETER);
+            
+            // Doing this before we await in progress operations informs DataStorage to actually wait for all queued
+            // operations to finish / cancel appropriately
+            OngoingTaskCount++;
+            
+            if (ActiveFileHandlesDictionary.TryGetValue(path, out TaskCompletionSource<Error> task))
+                await task.Task;
+
+            var handleTcs = new TaskCompletionSource<Error>();
+            
+            ActiveFileHandlesDictionary[path] = handleTcs;
 
             Error error = CreateDirectory(path);
             if (error) return error;
 
-            OngoingTaskCount++;
-
             try
             {
-                await using FileStream fileStream = File.Open(path, FileMode.Create);
+                await using FileStream fileStream = File.Open(path, FileMode.OpenOrCreate);
                 fileStream.Position = 0;
                 await fileStream.WriteAsync(data, 0, bytesToWrite, CancellationToken.None);
 
-                return Error.None;
+                error = Error.None;
             }
             catch (Exception exception)
             {
-                return new ErrorException(exception);
+                error = new ErrorException(exception);
             }
-            finally
-            {
-                OngoingTaskCount--;
-            }
+
+            ActiveFileHandlesDictionary.Remove(path);
+            handleTcs.SetResult(error);
+            OngoingTaskCount--;
+
+            return error;
         }
 
         protected virtual async Task<(Error error, byte[] result)> ReadFile(string path)
         {
+            if (IsShuttingDown)
+                return (new Error(ErrorCode.SHUTTING_DOWN), null);
+            
             byte[] output = Array.Empty<byte>();
 
             Error validPathError = IsValidPath(path);
@@ -1159,24 +1175,35 @@ namespace Modio.FileIO
             
             if (!DoesFileExist(path)) return (new Error(ErrorCode.FILE_NOT_FOUND), output);
 
+            // Doing this before we await in progress operations informs DataStorage to actually wait for all queued
+            // operations to finish / cancel appropriately
             OngoingTaskCount++;
+            
+            if (ActiveFileHandlesDictionary.TryGetValue(path, out TaskCompletionSource<Error> task))
+                await task.Task;
 
+            var handleTcs = new TaskCompletionSource<Error>();
+            
+            ActiveFileHandlesDictionary[path] = handleTcs;
+
+            Error error = Error.None;
+            
             try
             {
                 await using FileStream fileStream = File.Open(path, FileMode.Open);
                 output = new byte[fileStream.Length];
                 _ = await fileStream.ReadAsync(output, 0, output.Length);
-
-                return (Error.None, output);
             }
             catch (Exception exception)
             {
-                return (new ErrorException(exception), output);
+                error = new ErrorException(exception);
             }
-            finally
-            {
-                OngoingTaskCount--;
-            }
+
+            ActiveFileHandlesDictionary.Remove(path);
+            handleTcs.SetResult(error);
+            OngoingTaskCount--;
+
+            return (error, output);
         }
 
         protected virtual async Task<Error> WriteTextFile(string path, string data)

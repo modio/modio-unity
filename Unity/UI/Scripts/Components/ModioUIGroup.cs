@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Modio.Mods;
+using Modio.Unity.UI.Components.SearchProperties;
 using Modio.Unity.UI.Navigation;
 using Modio.Unity.UI.Panels;
 using UnityEngine;
@@ -10,6 +11,20 @@ using UnityEngine.UI;
 
 namespace Modio.Unity.UI.Components
 {
+    /// <summary>
+    /// This component will instantiate and assign a list of <typeparamref name="TResource"/>.
+    /// It automatically grabs the first <typeparamref name="TModioUIContainer"/> on its children as a template,
+    /// and instantiates more siblings for that template as needed.
+    /// 
+    /// You can hook it up to a search with a <see cref="SearchPropertyDisplayResults"/>.
+    /// 
+    /// Typically, the parent of the template UIMod will have a layoutGroup of some kind.
+    /// If the UIModGroup is able to recognise it, and it's within a scrollview, it will
+    /// use placeholders when the mods are offscreen and dynamically swap them out as
+    /// they near the visible area.
+    /// </summary>
+    /// <typeparam name="TResource">The resource to own, such as a Mod or Collection</typeparam>
+    /// <typeparam name="TModioUIContainer">e.g. a <see cref="ModioUIMod"/> or <see cref="ModioUICollection"/></typeparam>
     public class ModioUIGroup<TResource, TModioUIContainer> : MonoBehaviour 
         where TModioUIContainer : MonoBehaviour, IModioUIPropertiesOwner, IModioUIResourceContainer<TResource>
         where TResource : IModioInfo
@@ -96,7 +111,9 @@ namespace Modio.Unity.UI.Components
 
             _active.Clear();
 
-            ModioRectHelper.GetWorldAABB((RectTransform)_scrollRect.transform, out var scrollMin, out var scrollMax);
+            var containWithin = _scrollRect == null ? transform : _scrollRect.transform;
+            bool shouldUsePlaceholdersAtAll = _scrollRect != null;
+            ModioRectHelper.GetWorldAABB((RectTransform)containWithin, out var scrollMin, out var scrollMax);
             
             var size = scrollMax - scrollMin;
             scrollMin -= size;
@@ -127,7 +144,7 @@ namespace Modio.Unity.UI.Components
             {
                 bool active = TempActive.Remove(mods[i], out TModioUIContainer uiMod);
 
-                bool shouldUsePlaceholder = i != 0 && i != selectionIndex && (!active || currentSelectedGameObject == null || currentSelectedGameObject != uiMod.gameObject);
+                bool shouldUsePlaceholder = shouldUsePlaceholdersAtAll && i != 0 && i != selectionIndex && (!active || currentSelectedGameObject == null || currentSelectedGameObject != uiMod.gameObject);
 
                 (Vector3 min, Vector3 max) = GetApproximatePositionFor(i, (RectTransform)_template.transform);
                 

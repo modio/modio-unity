@@ -224,7 +224,7 @@ namespace Modio
 
         static Mod GetModRespectingIndexCache(long modId)
         {
-            if (ModCache.TryGetMod(modId, out Mod mod))
+            if (ModCache.TryGetMod(modId, out Mod mod) && !string.IsNullOrEmpty(mod.Name))
                 return mod;
 
             if (_index.ModObjectCache.TryGetValue(modId, out ModObject modObject))
@@ -317,6 +317,25 @@ namespace Modio
         {
             _operationQueue.Clear();
 
+            // If we have an unauthenticated user, only validate the existing state
+            // Don't attempt to modify it
+            if (!User.Current.IsAuthenticated)
+            {
+                ModioLog.Message?.Log("MIM is only validating existing mods, as we don't have subscriptions");
+                if(!_isDeactivated)
+                    foreach (KeyValuePair<long, ModIndex.IndexEntry> entry in _index.Index)
+                    {
+                        Mod mod = GetModRespectingIndexCache(entry.Key);
+                        if (_unverifiedMods.Contains(mod) && mod.File != null)
+                            _operationQueue.Enqueue(new ValidateJob(mod));
+                    }
+
+                if(!_hasScannedMissingMods)
+                    _operationQueue.Enqueue(new ScanMissingInstallsJob());
+                
+                return Task.CompletedTask;
+            }
+            
             foreach (Mod mod in User.Current.ModRepository.GetSubscribed())
             {
                 //If the modfile is missing, this is likely a saved ModID and not much else
@@ -444,13 +463,17 @@ namespace Modio
 
         
         /// <summary>
-        /// Will start a temporary mod session.
+        /// Will start a temporary mod session. Use this when you want mods to exist only for the current session of the
+        /// games running.
         /// </summary>
         /// <param name="tempMods">A list of mods to be used for the temp session.</param>
         /// <param name="appendCurrentSession">Whether the new mods should be added to the existing running mod session.</param>
         /// <returns>
         /// An asynchronous task that returns <see cref="Error"/>.<see cref="Error.None"/> on success.
         /// </returns>
+        /// <remarks>Mods installed this way will NOT persist on the file system once the session ends. The only exception
+        /// are mods that are subscribed to by a user. Use <see cref="AddTemporaryMods"/> for mods to persist after the
+        /// session ends.</remarks>
         /// <seealso cref="EndCurrentTempModSession"/>
         public static async Task<Error> StartTempModSession(List<ModioId> tempMods, bool appendCurrentSession = false)
         {
@@ -471,6 +494,7 @@ namespace Modio
         /// <summary>
         /// Will end the current temp mod session started by <see cref="StartTempModSession"/>
         /// </summary>
+        /// <remarks>Will cause mods installed using <see cref="StartTempModSession"/>to be uninstalled.</remarks>
         [ModioDebugMenu(ShowInSettingsMenu = false)]
         public static void EndCurrentTempModSession()
         {
@@ -480,7 +504,7 @@ namespace Modio
         }
 
         /// <summary>
-        /// Adds the list of mods to mod index
+        /// Adds the list of mods to mod index. Use this for mods to persist for longer than a single play session.
         /// </summary>
         /// <param name="tempMods">The list of mods to be added</param>
         /// <param name="lifeTimeDaysOverride">The number of days to keep the mods installed</param>
@@ -796,7 +820,6 @@ namespace Modio
 
                 if (CancellationToken.IsCancellationRequested)
                 {
-                    await stream.DisposeAsync();
                     PostEvent(OperationPhase.Cancelled, ModFileState.None);
                     return new Error(ErrorCode.OPERATION_CANCELLED);
                 }
@@ -1410,6 +1433,17 @@ namespace Modio
                 debugString += $"\n{job}";
             }
             return debugString;
+        }
+
+        public static string GetDebugString(Mod mod)
+        {
+            if (!_index.TryGetEntry(mod.Id, out ModIndex.IndexEntry indexEntry))
+                return $"Mod {mod} doesn't exist in index";
+
+            return $"{mod}: "
+                   + $"Subscribers: {string.Join(',', indexEntry.Subscribers.Select(l => l.ToString()))}"
+                   + $" Expires {indexEntry.ExpiresAfter}"
+                   + $" State {indexEntry.FileState}";
         }
     }
 }

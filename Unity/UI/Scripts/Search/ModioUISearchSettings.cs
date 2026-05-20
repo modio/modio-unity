@@ -25,6 +25,11 @@ namespace Modio.Unity.UI.Search
         SearchModsInCollection,
     }
 
+    /// <summary>
+    /// A container for all the information to specify a particular search
+    ///
+    /// You can create a blank prefab that has this component attached, then send it to a ModioUISearch
+    /// </summary>
     public class ModioUISearchSettings : MonoBehaviour
     {
         public enum CarouselStyle

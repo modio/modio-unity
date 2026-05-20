@@ -46,13 +46,13 @@ namespace Plugins.Modio.Unity.Platforms.Android
                 }
             }
             
-            (Error error, AccessTokenObject? tokenObejct) 
+            (Error error, AccessTokenObject? tokenObject) 
                 = await ModioAPI.Authentication.AuthenticateViaGoogle(
                     new GoogleAuthenticationRequest(authResponse.GetAuthCode(), displayedTerms, thirdPartyEmail, 0)
                 );
 
             if (!error)
-                User.Current.OnAuthenticated(tokenObejct.Value.AccessToken, accessTokenObject.Value.DateExpires, sync);
+                User.Current.OnAuthenticated(tokenObject.Value.AccessToken, tokenObject.Value.DateExpires, sync);
 
             return error;
 #else

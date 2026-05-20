@@ -18,6 +18,9 @@ namespace Modio.API.SchemaDefinitions{
 
         /// <summary></summary>
         internal readonly string IdToken;
+
+        internal readonly string DisplayNamePortal;
+        
         /// <summary></summary>
         internal readonly bool TermsAgreed;
         /// <summary></summary>
@@ -32,11 +35,13 @@ namespace Modio.API.SchemaDefinitions{
         [JsonConstructor]
         public SwitchAuthenticationRequest(
             string id_token,
+            string display_name_portal,
             bool terms_agreed,
             string email,
             long date_expires
         ) {
             IdToken = id_token;
+            DisplayNamePortal = display_name_portal;
             TermsAgreed = terms_agreed;
             Email = email;
             DateExpires = date_expires;
@@ -47,6 +52,7 @@ namespace Modio.API.SchemaDefinitions{
             _bodyParameters.Clear();
 
             _bodyParameters.Add("id_token", IdToken);
+            _bodyParameters.Add("display_name_portal", DisplayNamePortal);
             _bodyParameters.Add("terms_agreed", TermsAgreed);
             _bodyParameters.Add("email", Email);
             _bodyParameters.Add("date_expires", DateExpires);

@@ -48,9 +48,9 @@ namespace Modio
         /// </summary>
         public static bool IsInitialized { get; private set; } = false;
         /// <summary> If we are in the process of initializing, but it's not complete yet </summary>
-        internal static bool IsCurrentlyInitializing => _initializingTCS != null;
+        internal static bool IsCurrentlyInitializing => _initializingTcs != null;
         
-        static TaskCompletionSource<Error> _initializingTCS;
+        static TaskCompletionSource<Error> _initializingTcs;
         static bool _hasBoundDefaultServices;
 
         static event Action InternalOnInitialized;
@@ -88,7 +88,7 @@ namespace Modio
         public static Task<Error> Init(ModioSettings settings)
         {
             ModioServices.BindInstance(settings, ModioServicePriority.PlatformProvided);
-            
+
             return Init();
         }
         
@@ -109,15 +109,33 @@ namespace Modio
             
             BindDefaultServices();
 
+            if(!ModioServices.TryResolve(out ModioSettings settings) || settings == null)
+            {
+                ModioLog.Error?.Log("mod.io SDK failed to find required settings");
+                return new Error(ErrorCode.MISSING_COMPONENTS);
+            }
+
+            if (string.IsNullOrEmpty(settings.APIKey))
+            {
+                ModioLog.Error?.Log("mod.io SDK failed to find valid API key in settings");
+                return new Error(ErrorCode.INVALID_APIKEY);
+            }
+            
+            if(settings.GameId <= 0)
+            {
+                ModioLog.Error?.Log("mod.io SDK failed to find valid Game ID in settings");
+                return new Error(ErrorCode.INVALID_GAME_ID);
+            }
+            
             if (DataStorage == null || Api == null)
             {
                 ModioLog.Error?.Log("mod.io SDK failed to find required components");
                 return new Error(ErrorCode.MISSING_COMPONENTS);
             }
 
-            if (_initializingTCS != null) return await _initializingTCS.Task;
+            if (_initializingTcs != null) return await _initializingTcs.Task;
 
-            _initializingTCS = new TaskCompletionSource<Error>();
+            _initializingTcs = new TaskCompletionSource<Error>();
             
             ModioAPI.Init();
             ModioAPI.SetResponseLanguage(Settings.DefaultLanguage);
@@ -127,8 +145,8 @@ namespace Modio
             if (error)
             {
                 ModioLog.Error?.Log("mod.io SDK failed to init DataStorage module");
-                _initializingTCS.TrySetResult(error);
-                _initializingTCS = null;
+                _initializingTcs.TrySetResult(error);
+                _initializingTcs = null;
                 return error;
             }
             
@@ -141,15 +159,15 @@ namespace Modio
             if (error)
             {
                 ModioLog.Error?.Log($"mod.io SDK failed to Init {typeof(ModInstallationManagement)}");
-                _initializingTCS.TrySetResult(error);
-                _initializingTCS = null;
+                _initializingTcs.TrySetResult(error);
+                _initializingTcs = null;
                 return error;
             }
             
             IsInitialized = true;
             InternalOnInitialized?.Invoke();
-            _initializingTCS.TrySetResult(Error.None);
-            _initializingTCS = null;
+            _initializingTcs.TrySetResult(Error.None);
+            _initializingTcs = null;
 
             return Error.None;
         }
@@ -160,11 +178,11 @@ namespace Modio
         /// </summary>
         public static async Task Shutdown()
         {
-            if (_initializingTCS != null)
+            if (_initializingTcs != null)
             {
                 ModioLog.Warning?.Log("You have shutdown the mod.io SDK while is is initializing. Waiting for the Init to complete first, which may cause undesirable delays");
                 
-                await _initializingTCS.Task;
+                await _initializingTcs.Task;
             }
 
             if (!IsInitialized)
@@ -175,12 +193,18 @@ namespace Modio
 
             IsInitialized = false;
             
+            await User.Shutdown();
+            
+            ModioServices.RemoveBindingChangedListener<ModioSettings>(ErrorOnBindSettings);
+                
             OnShutdown?.Invoke();
 
             await ModInstallationManagement.Shutdown();
             
             if (ModioServices.TryResolve(out IModioDataStorage dataStorage))
                 await dataStorage.Shutdown();
+            
+            UnbindDefaultServices();
         }
         
         static void BindDefaultServices()
@@ -188,8 +212,13 @@ namespace Modio
             if(_hasBoundDefaultServices) return;
             _hasBoundDefaultServices = true;
             
+            ModioServices.AddBindingChangedListener<ModioSettings>(ErrorOnBindSettings);
+
             ModioServices.Bind<IModioAPIInterface>()
                          .FromNew<ModioAPIHttpClient>(ModioServicePriority.Default);
+            
+            ModioServices.Bind<IModioRootPathProvider>()
+                         .FromNew<DefaultRootPathProvider>(ModioServicePriority.Default);
             
             ModioServices.Bind<IModioDataStorage>()
                          .FromNew<BaseDataStorage>(ModioServicePriority.Default);
@@ -204,5 +233,35 @@ namespace Modio
                 "Please ensure you've bound a ModioSettings using " +
                 "ModioServices.BindInstance(settings); before trying to use Modio classes");
         }
+
+        static void UnbindDefaultServices()
+        {
+            if(!_hasBoundDefaultServices) return;
+            _hasBoundDefaultServices = false;
+            
+            ModioServices.RemoveBindingChangedListener<ModioSettings>(ErrorOnBindSettings);
+            
+            
+            ModioServices.RemoveBindingWithPriority<IModioAPIInterface>(ModioServicePriority.Default);
+            
+            ModioServices.RemoveBindingWithPriority<IModioRootPathProvider>(ModioServicePriority.Default);
+            
+            ModioServices.RemoveBindingWithPriority<IModioDataStorage>(ModioServicePriority.Default);
+            
+            ModioServices.RemoveBindingWithPriority<ModioEmailAuthService>(ModioServicePriority.Default);
+            
+            ModioServices.RemoveBindingWithPriority<IGetActiveUserIdentifier>(ModioServicePriority.Default);
+            
+            ModioServices.RemoveBindingWithPriority<IModioAuthService>(ModioServicePriority.Default);
+
+            
+        }
+        
+        static void ErrorOnBindSettings(ModioSettings _)
+        {
+            if (IsInitialized || IsCurrentlyInitializing)
+                ModioLog.Error?.Log("You have changed the ModioSettings after the ModioClient has been initialized. This may cause unexpected behaviour, please ensure you set all required settings before initialization");
+        }
+        
     }
 }

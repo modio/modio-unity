@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using ICSharpCode.SharpZipLib.Zip;
 using Modio.API;
@@ -35,7 +36,11 @@ namespace Modio.Mods.Builder
         public string LogoFilePath { get; private set; } = null;
         byte[] _logoBytes;
         ImageFormat _logoBytesFormat;
+        
         public string[] GalleryFilePaths { get; private set; } = null;
+        public int GalleryByteArraysCount => _galleryByteArrays?.Length ?? 0;
+        byte[][] _galleryByteArrays;
+        ImageFormat _galleryImageFormat;
         bool _appendingGallery;
 
         public string[] Tags { get; private set; } = null;
@@ -182,7 +187,13 @@ namespace Modio.Mods.Builder
             return this;
         }
 
-        /// <remarks>Will overwrite existing gallery images.</remarks>
+        /// <summary>
+        /// Set the gallery images for this mod, overwriting existing gallery images on the mod.io API to just what's
+        /// uploaded.
+        /// </summary>
+        /// <param name="galleryImageFilePaths">A collection of file paths to upload the images from.</param>
+        /// <remarks>Can be used alongside <see cref="SetGallery(byte[])"/> with images from both sources
+        /// uploaded.</remarks>
         public ModBuilder SetGallery(ICollection<string> galleryImageFilePaths)
         {
             GalleryFilePaths = galleryImageFilePaths.ToArray();
@@ -191,9 +202,22 @@ namespace Modio.Mods.Builder
             return this;
         }
 
-        /// <remarks>Will overwrite existing gallery images.</remarks>
+        /// <summary>
+        /// Set the gallery image for this mod, overwriting existing gallery images on the mod.io API to just what's
+        /// uploaded.
+        /// </summary>
+        /// <param name="galleryImageFilePath">A file path to upload the image from.</param>
+        /// <remarks>Can be used alongside <see cref="SetGallery(byte[])"/> with images from both sources
+        /// uploaded.</remarks>
         public ModBuilder SetGallery(string galleryImageFilePath) => SetGallery(new[] { galleryImageFilePath, });
 
+        /// <summary>
+        /// Upload the provided gallery images to this mod, preserving images already previously uploaded to the mod.io
+        /// API.
+        /// </summary>
+        /// <param name="galleryImageFilePaths">A file path to upload the image from.</param>
+        /// <remarks>Can be used alongside <see cref="AppendGallery(byte[])"/> with images from both sources
+        /// uploaded.</remarks>
         public ModBuilder AppendGallery(ICollection<string> galleryImageFilePaths)
         {
             GalleryFilePaths = GalleryFilePaths.Concat(galleryImageFilePaths).ToArray();
@@ -202,7 +226,66 @@ namespace Modio.Mods.Builder
             return this;
         }
 
+        /// <summary>
+        /// Upload the provided gallery images to this mod, preserving images already previously uploaded to the mod.io
+        /// API.
+        /// </summary>
+        /// <param name="galleryImageFilePath">A file path to upload the image from.</param>
+        /// <remarks>Can be used alongside <see cref="AppendGallery(byte[])"/> with images from both sources
+        /// uploaded.</remarks>
         public ModBuilder AppendGallery(string galleryImageFilePath) => AppendGallery(new[] { galleryImageFilePath, });
+
+        /// <summary>
+        /// Set the gallery image for this mod, overwriting existing gallery images on the mod.io API to just what's
+        /// uploaded.
+        /// </summary>
+        /// <param name="galleryImageByteArray">A byte array of the encoded image bytes to upload.</param>
+        /// <remarks>Can be used alongside <see cref="SetGallery(string)"/> with images from both sources
+        /// uploaded.</remarks>
+        public ModBuilder SetGallery(byte[] galleryImageByteArray, ImageFormat format)
+            => SetGallery(new[] { galleryImageByteArray, }, format);
+
+        /// <summary>
+        /// Set the gallery images for this mod, overwriting existing gallery images on the mod.io API to just what's
+        /// uploaded.
+        /// </summary>
+        /// <param name="galleryImageByteArrays">A collection of byte arrays of the encoded image bytes to upload.</param>
+        /// <remarks>Can be used alongside <see cref="SetGallery(string)"/> with images from both sources
+        /// uploaded.</remarks>
+        public ModBuilder SetGallery(ICollection<byte[]> galleryImageByteArrays, ImageFormat format)
+        {
+            _galleryByteArrays = galleryImageByteArrays.ToArray();
+            _galleryImageFormat = format;
+            _appendingGallery = false;
+            _pendingChanges |= ChangeFlags.Gallery;
+            return this;
+        }
+
+        /// <summary>
+        /// Upload the provided gallery images to this mod, preserving images already previously uploaded to the mod.io
+        /// API.
+        /// </summary>
+        /// <param name="galleryImageByteArray">A byte array of the encoded image bytes to upload.</param>
+        /// <remarks>Can be used alongside <see cref="AppendGallery(string)"/> with images from both sources
+        /// uploaded.</remarks>
+        public ModBuilder AppendGallery(byte[] galleryImageByteArray, ImageFormat format)
+            => AppendGallery(new[] { galleryImageByteArray, }, format);
+
+        /// <summary>
+        /// Upload the provided gallery images to this mod, preserving images already previously uploaded to the mod.io
+        /// API.
+        /// </summary>
+        /// <param name="galleryImageByteArrays">A collection of byte arrays of the encoded image bytes to upload.</param>
+        /// <remarks>Can be used alongside <see cref="AppendGallery(string)"/> with images from both sources
+        /// uploaded.</remarks>
+        public ModBuilder AppendGallery(ICollection<byte[]> galleryImageByteArrays, ImageFormat format)
+        {
+            _galleryByteArrays = _galleryByteArrays.Concat(galleryImageByteArrays).ToArray();
+            _galleryImageFormat = format;
+            _appendingGallery = true;
+            _pendingChanges |= ChangeFlags.Gallery;
+            return this;
+        }
 
         /// <remarks>Will overwrite existing dependencies.</remarks>
         public ModBuilder SetDependencies(ICollection<long> dependencies)
@@ -539,10 +622,10 @@ namespace Modio.Mods.Builder
 
             Error error;
 
-            if (GalleryFilePaths.Length > 0)
+            if ((GalleryFilePaths?.Length ?? 0) > 0 || GalleryByteArraysCount > 0)
             {
                 ModioAPIFileParameter file;
-                (error, file) = await GalleryZipFromFilePaths(GalleryFilePaths);
+                (error, file) = await GalleryZipFromPathsAndByteArrays();
 
                 if (error)
                 {
@@ -788,32 +871,60 @@ namespace Modio.Mods.Builder
             ));
         }
 
-        static async Task<(Error error, ModioAPIFileParameter file)> GalleryZipFromFilePaths(ICollection<string> imageFilePaths)
+        async Task<(Error error, ModioAPIFileParameter file)> GalleryZipFromPathsAndByteArrays()
         {
-            foreach (string filePath in imageFilePaths)
-            {
-                if (ValidateImageFilePath(filePath))
-                    continue;
-
-                ModioLog.Error?.Log($"Can't upload {imageFilePaths.Count} gallery images, {filePath} is invalid.");
-                return (new Error(ErrorCode.BAD_PARAMETER), default(ModioAPIFileParameter));
-            }
-
             var memStream = new MemoryStream();
             await using var zipStream = new ZipOutputStream(memStream);
             zipStream.IsStreamOwner = false;
-            
-            foreach (string imageFilePath in imageFilePaths)
+
+            int count = 0;
+
+            if (GalleryFilePaths != null)
             {
-                string imageFileName = Path.GetFileName(imageFilePath);
+                foreach (string filePath in GalleryFilePaths)
+                {
+                    if (ValidateImageFilePath(filePath))
+                        continue;
+
+                    ModioLog.Error?.Log($"Can't upload {GalleryFilePaths.Length} gallery images, {filePath} is invalid.");
+                    return (new Error(ErrorCode.BAD_PARAMETER), default(ModioAPIFileParameter));
+                }
+
+                foreach (string imageFilePath in GalleryFilePaths)
+                {
+                    string imageFileName = Path.GetFileName(imageFilePath);
                 
-                var newEntry = new ZipEntry(imageFileName);
-                zipStream.PutNextEntry(newEntry);
+                    var newEntry = new ZipEntry(imageFileName);
+                    zipStream.PutNextEntry(newEntry);
                 
-                await using Stream readStream = File.Open(imageFilePath, FileMode.Open, FileAccess.Read);
-                await readStream.CopyToAsync(zipStream);
+                    await using Stream readStream = File.Open(imageFilePath, FileMode.Open, FileAccess.Read);
+                    await readStream.CopyToAsync(zipStream);
                 
-                zipStream.CloseEntry();
+                    zipStream.CloseEntry();
+                    count++;
+                }
+            }
+
+            if (_galleryByteArrays != null)
+            {
+                foreach (byte[] imageByteArray in _galleryByteArrays)
+                {
+                    const string badCharacterRegex = @"[^\w\.@-]";
+                    
+                    // In case the file name may already be in use, we add the current data-time to keep it distinct
+                    // while still being readable
+                    string imageFileName = $"images-{DateTime.UtcNow}-{count}.{GetExtensionFromFormat(_galleryImageFormat)}";
+
+                    imageFileName = Regex.Replace(imageFileName, badCharacterRegex, "");
+                    
+                    var newEntry = new ZipEntry(imageFileName);
+                    zipStream.PutNextEntry(newEntry);
+
+                    await zipStream.WriteAsync(imageByteArray, 0, imageByteArray.Length);
+                
+                    zipStream.CloseEntry();
+                    count++;
+                }
             }
             
             zipStream.Finish();

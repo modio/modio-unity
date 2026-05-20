@@ -18,6 +18,8 @@ namespace Modio
         /// ModioServices.Bind&lt;IWebBrowserHandler&gt;()
         ///              .FromNew&lt;MyCustomWebBrowserHandler&gt;(ModioServicePriority.DeveloperOverride);
         /// </code></example>
+        /// <typeparam name="T">The type to bind</typeparam>
+
         [Pure]
         public static IBindType<T> Bind<T>()
         {
@@ -31,11 +33,22 @@ namespace Modio
         /// Convenience wrapper to bind an instance. The same as writing
         /// <code>Bind&lt;T&gt;().FromInstance(instance, priority);</code>
         /// </summary>
+        /// <param name="instance">The instance to bind</param>
+        /// <param name="priority">The priority of the binding</param>
+        /// <typeparam name="T">The type to bind the error message to.</typeparam>
         public static void BindInstance<T>(T instance, ModioServicePriority priority = ModioServicePriority.DeveloperOverride)
         {
             Bind<T>().FromInstance(instance, priority);
         }
 
+        /// <summary>
+        /// Binds an error message to a type, so that if that type is attempted to be resolved without a proper binding, the error message will be logged and included in the exception.
+        /// </summary>
+        /// <param name="message">The error message to log and include in the exception when resolution of the type fails due to missing bindings.</param>
+        /// <param name="priority">The priority of the binding</param>
+        /// <typeparam name="T">The type to bind the error message to.</typeparam>
+        /// <exception cref="KeyNotFoundException"></exception>
+        /// <remarks> This is intended to make it easier for users to understand what they need to do to properly set up the Plugin when they encounter common issues with missing bindings.</remarks>
         public static void BindErrorMessage<T>(string message, ModioServicePriority priority = ModioServicePriority.Fallback)
         {
             Bind<T>().FromMethod(
@@ -46,6 +59,10 @@ namespace Modio
                 }, priority);
         }
 
+        /// <summary>
+        /// Removes all bindings of all types with the specified priority. If multiple bindings of the same priority exist, all of them will be removed.
+        /// </summary>
+        /// <param name="priority">The priority of the bindings to remove</param>
         internal static void RemoveAllBindingsWithPriority(ModioServicePriority priority)
         {
             foreach (Type type in new List<Type>(Bindings.Keys))
@@ -56,6 +73,12 @@ namespace Modio
             }
         }
 
+        /// <summary>
+        /// Resolves an instance of type T using the current bindings.
+        /// </summary>
+        /// <typeparam name="T">The type to resolve</typeparam>
+        /// <returns>>An instance of type T</returns>
+        /// <remarks> If multiple bindings exist, the one with the highest priority will be used. If multiple bindings of the same priority exist, the last one added will be used.</remarks>
         public static T Resolve<T>()
         {
             IResolveType<T> dependencyBindings = GetBindings<T>();
@@ -63,6 +86,12 @@ namespace Modio
             return dependencyBindings.Resolve();
         }
 
+        /// <summary>
+        /// Resolves an instance of type T using the current bindings, returning true if successful and false if no valid bindings were found.
+        /// </summary>
+        /// <param name="result">When the method returns, contains the resolved instance of type T if the resolution was successful, or the default value of T if no valid bindings were found.</param>
+        /// <typeparam name="T">The type to resolve</typeparam>
+        /// <returns>True if the resolution was successful, false if no valid bindings were found.</returns>
         public static bool TryResolve<T>(out T result)
         {
             if (!Bindings.TryGetValue(typeof(T), out ServiceBindings untypedDependencies))
@@ -75,6 +104,14 @@ namespace Modio
             return dependencyBindings.TryResolve(out result);
         }
 
+        /// <summary>
+        /// Gets the bindings for type T.
+        /// </summary>
+        /// <param name="createIfMissing">If true, the bindings will be created if they don't exist yet. If false, a KeyNotFoundException will be thrown if the bindings don't exist.</param>
+        /// <typeparam name="T">The type to get the bindings for</typeparam>
+        /// <returns> The bindings for type T</returns>
+        /// <exception cref="KeyNotFoundException"></exception>
+        /// <remarks> This can be used to manually inspect or modify the bindings for a type. Consider using <see cref="AddBindingChangedListener{T}"/> instead if you just want to be notified when the binding changes without needing to manually manage the bindings yourself.</remarks>
         public static IResolveType<T> GetBindings<T>(bool createIfMissing = false)
         {
             if (!Bindings.TryGetValue(typeof(T), out ServiceBindings untypedDependencies))
@@ -89,6 +126,12 @@ namespace Modio
             return dependencyBindings;
         }
 
+        /// <summary>
+        /// Adds a listener that will be invoked whenever a new binding of type T is added.
+        /// </summary>
+        /// <param name="onNewValue">The listener to invoke when a new binding is added. </param>
+        /// <param name="fireImmediatelyIfValueBound">If true, the listener will be immediately invoked with the current value of the binding (if any) when added. If false, the listener will only be invoked on future changes to the binding.</param>
+        /// <typeparam name="T">The type of the binding to listen for changes on</typeparam>
         public static void AddBindingChangedListener<T>(Action<T> onNewValue, bool fireImmediatelyIfValueBound = true)
         {
             IResolveType<T> resolveType = GetBindings<T>(true);
@@ -97,20 +140,41 @@ namespace Modio
             if (fireImmediatelyIfValueBound && resolveType.TryResolve(out T value)) onNewValue.Invoke(value);
         }
         
+        /// <summary>
+        /// Removes a listener added with <see cref="AddBindingChangedListener{T}"/> so that it will no longer be invoked when the binding changes.
+        /// </summary>
+        /// <param name="onNewValue">The listener to remove</param>
+        /// <typeparam name="T">The type of the binding the listener was added to</typeparam>
+        /// <remarks> Note that this will not prevent the listener from being invoked if the binding has already changed and the listener was not yet removed, so consider using <see cref="RemoveBindingWithPriority{T}"/> if you want to ensure a binding is no longer used at all.</remarks>
         public static void RemoveBindingChangedListener<T>(Action<T> onNewValue)
         {
             IResolveType<T> resolveType = GetBindings<T>(true);
             resolveType.OnNewBinding -= onNewValue;
         }
 
+        /// <summary>
+        /// Removes all bindings of type T, regardless of priority.
+        /// </summary>
+        /// <typeparam name="T">The type of the bindings to remove</typeparam>
+        /// <remarks> Use with caution, as this may cause issues if done at the wrong time. Consider using <see cref="RemoveBindingWithPriority{T}"/> instead if you only want to remove specific bindings.</remarks>
         public static void RemoveAllBindingsOfType<T>()
         {
             if (!Bindings.TryGetValue(typeof(T), out ServiceBindings untypedDependencies))
                 return;
-
             untypedDependencies.RemoveAllBindings();
         }
-
+        
+        /// <summary>
+        /// Removes binding of type T with the specified priority. If multiple bindings of the same priority exist, all of them will be removed.
+        /// </summary>
+        /// <param name="priority">The priority of the bindings to remove</param>
+        /// <typeparam name="T">The type of the bindings to remove</typeparam>
+        internal static void RemoveBindingWithPriority<T>(ModioServicePriority priority)
+        {
+            if (!Bindings.TryGetValue(typeof(T), out ServiceBindings untypedDependencies))
+                return;
+            untypedDependencies.RemoveAllWithPriority(priority);
+        }
 #endregion
 
 #region PublicInterfaces
@@ -198,6 +262,40 @@ namespace Modio
                 }
 
                 return _value;
+            }
+            
+            public bool TryResolve(out T value)
+            {
+                if (_value != null || _factory == null)
+                {
+                    value = _value;
+                    return true;
+                }
+
+                if (_runningFactoryMethod)
+                {
+                    ModioLog.Error?.Log($"Cyclic dependency detected when resolving type {typeof(T).FullName}. This will cause issues.");
+                    value = default(T);
+                    return false;
+                }
+
+                _runningFactoryMethod = true;
+
+                try
+                {
+                    value = _value = _factory();
+                }
+                catch(KeyNotFoundException)
+                {
+                    value = default(T);
+                    return false;
+                }
+                finally
+                {
+                    _runningFactoryMethod = false;
+                }
+
+                return true;
             }
         }
         
@@ -378,8 +476,7 @@ namespace Modio
                     return false;
                 }
 
-                value = topBinding.Resolve();
-                return true;
+                return topBinding.TryResolve(out value);
             }
             
             public IEnumerable<(T, ModioServicePriority)> ResolveAll()

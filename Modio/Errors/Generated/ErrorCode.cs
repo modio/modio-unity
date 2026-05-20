@@ -13,7 +13,7 @@ namespace Modio.Errors
         HTTP_EXCEPTION,
         
         TERMS_OF_USE_NOT_INITIALIZED,
-
+        
         // User
         NOT_INITIALIZED,
         HAS_NOT_ACCEPTED_TERMS_OF_USE,
@@ -209,6 +209,11 @@ namespace Modio.Errors
         WSS_NOT_CONFIGURED,
         MISSING_MOUNT,
         MOUNT_LIMIT_EXCEEDED,
+        
+        // Game
+        /// <summary> The Game ID provided was invalid. Please confirm you have the correct Game ID from your mod.io dashboard, and that it is a positive integer.</summary>
+        INVALID_GAME_ID,
+        
         /// <summary>mod.io is currently experiencing an outage. (rare)</summary>
         MODIO_OUTAGE = 10000,
         /// <summary>Cross-origin request forbidden.</summary>
@@ -248,6 +253,8 @@ namespace Modio.Errors
         STEAM_APP_TICKET_INVALID = 11018,
         /// <summary>mod.io was unable to verify the credentials against the external service provider.</summary>
         CANNOT_VERIFY_EXTERNAL_CREDENTIALS = 11032,
+        /// <summary>mod.io was unable to sign in as the App Id was not valid (please note it is case sensitive).</summary>
+        SWITCH_APP_ID_NOT_VALID = 11041,
         /// <summary>The user has not agreed to the mod.io Terms of Use. Please see terms_agreed parameter description and the Terms endpoint for more information.</summary>
         USER_NO_ACCEPT_TERMS_OF_USE = 11074,
         /// <summary>Targeted user is banned</summary>
@@ -256,6 +263,8 @@ namespace Modio.Errors
         USER_TARGET_DELETED = 11131,
         /// <summary>"The authenticated user already follows the user."</summary>
         USER_TARGET_ALREADY_FOLLOWED  = 11134,
+        /// <summary>"The authenticated user doesn't follow the user."</summary>
+        USER_TARGET_NOT_FOLLOWED  = 11135,
         /// <summary>You must configure your OpenID config for your game in your game authentication settings before being able to authenticate users.</summary>
         OPEN_IDNOT_CONFIGURED = 11086,
         /// <summary>The submitted binary file is corrupted.</summary>
@@ -479,6 +488,7 @@ namespace Modio.Errors
                 ErrorCode.APIKEY_HAS_NO_GAME => "The api_key supplied in the request must be associated with a game.",
                 ErrorCode.APIKEY_FOR_TEST_ONLY => "The api_key supplied in the request is for test environment purposes only and cannot be used for this functionality.",
                 ErrorCode.CANNOT_VERIFY_EXTERNAL_CREDENTIALS => "mod.io was unable to verify the credentials against the external service provider.",
+                ErrorCode.SWITCH_APP_ID_NOT_VALID => "mod.io was unable to sign in as the App Id was not valid (please note it is case sensitive).",
                 ErrorCode.USER_NO_ACCEPT_TERMS_OF_USE => "The user has not agreed to the mod.io Terms of Use. Please see terms_agreed parameter description and the Terms endpoint for more information.",
                 ErrorCode.USER_TARGET_BANNED => "Targeted user is banned",
                 ErrorCode.USER_TARGET_DELETED => "Targeted user has been deleted",

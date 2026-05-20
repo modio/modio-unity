@@ -3,6 +3,11 @@ using UnityEngine;
 
 namespace Modio.Unity.UI.Search
 {
+    /// <summary>
+    /// A broad search category, that has tabs within it
+    /// Mostly used for the Library category. The individual SearchSettings are
+    /// shown as radio buttons in the Filter section
+    /// </summary>
     public class ModioUISearchCategory : MonoBehaviour
     {
         [SerializeField] string _categoryLabel;

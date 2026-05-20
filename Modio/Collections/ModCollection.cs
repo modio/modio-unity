@@ -420,17 +420,15 @@ namespace Modio.Collections
             }
             else
                 (error, _) = await ModioAPI.Collections.UnfollowCollection(Id);
-
-            switch (isFollowed)
+            
+            if (isFollowed && error)
+                UpdateLocalFollowStatus(false);
+            else if (!isFollowed && (error && error.Code != ErrorCode.CANNOT_OPEN_CONNECTION))
+                UpdateLocalFollowStatus(true);
+            else
             {
-                case true
-                    when error:
-                    UpdateLocalFollowStatus(false);
-                    break;
-
-                case false when (error && error.Code != ErrorCode.CANNOT_OPEN_CONNECTION):
-                    UpdateLocalFollowStatus(true);
-                    break;
+                //Reapply the followed state, in case we had a race condition where an old value came in during the web call
+                UpdateLocalFollowStatus(isFollowed);
             }
 
             InvokeModCollectionUpdated(ModCollectionChangeType.IsFollowed);
