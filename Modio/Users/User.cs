@@ -87,14 +87,6 @@ namespace Modio.Users
             
             (Error error, UserSaveObject userObject) = await ModioClient.DataStorage.ReadUserData(Current.LocalUserId);
 
-            if (!error && (userObject == null || userObject.LocalUserId == null))
-            {
-                ModioLog.Verbose?.Log($"{nameof(UserSaveObject)} corrupted, cleaning user data.");
-                await ModioClient.DataStorage.DeleteUserData(Current.LocalUserId);
-
-                error = new Error(ErrorCode.FILE_NOT_FOUND);
-            }
-
             if (!error)
             {
                 Current.ApplyDetailsFromSaveObject(userObject);
@@ -126,6 +118,19 @@ namespace Modio.Users
             HasAcceptedTermsOfUse = false;
 
             IsInitialized = true;
+        }
+
+        /// <summary>
+        /// This method makes sure we wait for any in progress (and queued) write operations to complete before shutting
+        /// down everything else. Helps protect against rare edge cases where a queued write can throw hands with the
+        /// file system over a file handle it shouldn't have anymore.
+        /// </summary>
+        internal static async Task Shutdown()
+        {
+            if (Current?._writeTcs == null)
+                return;
+
+            await Current._writeTcs.Task;
         }
 
         void ApplyDetailsFromSaveObject(UserSaveObject userObject)
@@ -164,7 +169,6 @@ namespace Modio.Users
             
             //For now just store the OAuthToken, we'll clarify if we're actually authenticated in Sync()
             _authentication.OAuthToken = userObject.AuthToken;
-            
 
             OnUserChanged?.Invoke(this);
         }
@@ -203,9 +207,6 @@ namespace Modio.Users
             await SaveUserData();
             
             InternalOnUserChanged?.Invoke();
-
-            // Using Task.Run() causes this to run in another thread, breaking sync completely as event subscribers
-            // exist on main thread. By requiring it run synchronously we keep it on the Unity main thread.
             
             // if Sync only runs if the user has not authenticated before,
             // or we are forcing a sync
@@ -884,16 +885,19 @@ namespace Modio.Users
 
             dataStorage.DeleteUserData(User.Current.LocalUserId).ForgetTaskSafely();
             
-            LogOut();
+            LogOut().ForgetTaskSafely();
         }
 
         /// <summary>Logs out the current <see cref="User"/> without deleting any associated data stored on this device.</summary>
-        public static void LogOut()
+        public static async Task LogOut()
         {
             ModioLog.Verbose?.Log($"Logging out {Current?.LocalUserId}");
             Current?.ModRepository.Dispose();
 
             ResetModsStatus();
+            
+            if (Current?._writeTcs is not null)
+                await Current._writeTcs.Task;
             
             Current = new User();
             OnUserChanged?.Invoke(Current);
@@ -927,6 +931,8 @@ namespace Modio.Users
 
         internal async Task<Error> SaveUserData()
         {
+            if (!ModioClient.IsInitialized && !ModioClient.IsCurrentlyInitializing)
+                return new Error(ErrorCode.NOT_INITIALIZED);
             
             if (_writeTcs is not null)
             {
@@ -943,7 +949,7 @@ namespace Modio.Users
                 _needsSavingToDisk = false;
                 error = await ModioClient.DataStorage.WriteUserData(GetWritable());
             }
-            while (_needsSavingToDisk && !error);
+            while (_needsSavingToDisk && !error && (ModioClient.IsInitialized || ModioClient.IsCurrentlyInitializing));
 
             _writeTcs.SetResult(error);
             _writeTcs = null;
@@ -1014,14 +1020,11 @@ namespace Modio.Users
         internal async Task<(Error error, PayObject? payObject)> PurchaseModWithUsdMarketplace(
             Mod mod,
             bool subscribeOnPurchase
-        )
-        {
+        ) {
             var service = ModioServices.Resolve<IModioUsdMarketplaceService>();
-
             
             if (service == null)
                 return (new Error(ErrorCode.UNKNOWN), null);
-
 
             Error error = Error.None;
             
@@ -1035,7 +1038,7 @@ namespace Modio.Users
             if (error)
                 return (error,null);
 
-            if(entitlements == null || (entitlements.Count == 0))
+            if(entitlements == null || entitlements.Count == 0)
             {
                 error = await service.OpenPurchaseFlow(mod.PortalSku);
 
@@ -1043,12 +1046,21 @@ namespace Modio.Users
                     return (error,null);
 
                 (error, _) = await UpdateEntitlementCache();
+
+                entitlements = GetCachedEntitlements();
                 
                 if (error)
                     return ( error,null);
+
+                if (entitlements == null || entitlements.Count == 0)
+                {
+                    error = Error.Unknown;
+                    ModioLog.Error?.Log($"Unknown error receiving entitlements: Received no entitlements after purchasing SKU {mod.PortalSku}. Please try again later.");
+                    return (error, null);
+                }
             }
             
-            var idempotent = $"{mod.Id}";
+            string idempotent = $"{mod.Id}";
 
             PayObject? payObject;
             (error, payObject) = await service.TryPurchase(mod, subscribeOnPurchase, idempotent);

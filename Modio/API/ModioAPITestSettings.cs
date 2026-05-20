@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Net;
 using System.Net.Http;
 using System.Text.RegularExpressions;
 
@@ -19,6 +20,9 @@ namespace Modio.API
 
         public bool RateLimitError;
         public string RateLimitOnEndpointRegex;
+
+        public bool FakeExpiredToken;
+        public string ExpiredOnEndpointRegex;
         
         //Not serialized, but useful in tests
         public readonly Dictionary<string, HttpResponseMessage> FakeHttpResponses = new Dictionary<string, HttpResponseMessage>();
@@ -39,6 +43,30 @@ namespace Modio.API
             return !string.IsNullOrEmpty(RateLimitOnEndpointRegex) &&
                    Regex.IsMatch(url, RateLimitOnEndpointRegex);
         }
+
+        public bool ShouldFakeExpiredToken(string url)
+        {
+            if (FakeExpiredToken)
+                return true;
+
+            return !string.IsNullOrEmpty(ExpiredOnEndpointRegex)
+                   && Regex.IsMatch(url, ExpiredOnEndpointRegex);
+        }
+        
+        
+        public void SetFakeResponse(string endpoint, HttpStatusCode httpStatusCode, string jsonResponse)
+        {
+            var httpResponse = new HttpResponseMessage(httpStatusCode);
+            httpResponse.Content = new StringContent(jsonResponse);
+            
+            FakeHttpResponses[endpoint] = httpResponse;
+            FakeUnityResponses[endpoint] = new FakeUnityApiResponse
+            {
+                JsonResponse = jsonResponse,
+                ResponseCode = (long)httpStatusCode,
+            };
+        }
+        
         public HttpResponseMessage GetFakeHttpResponse(string url)
         {
             foreach ((string regex, HttpResponseMessage message) in FakeHttpResponses)

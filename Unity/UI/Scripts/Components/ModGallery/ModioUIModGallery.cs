@@ -106,7 +106,7 @@ namespace Modio.Unity.UI.Components.ModGallery
                 {
                     if (_image != null) _image.texture = texture2D;
                     
-                    if(_aspectRatioFitter != null)
+                    if(_aspectRatioFitter != null && texture2D != null)
                         _aspectRatioFitter.aspectRatio = (float)texture2D.width / texture2D.height;
 
                 },

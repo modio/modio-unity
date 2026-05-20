@@ -7,6 +7,7 @@ using Object = UnityEngine.Object;
 
 namespace Modio.Unity.UI.Components.ModProperties
 {
+    [Serializable]
     public class ModPropertyTags : ModioResourceProperty
     {
         [SerializeField] ModioUITag _tagTemplate;

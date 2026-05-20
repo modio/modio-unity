@@ -178,7 +178,7 @@ namespace Modio.Mods
 
             if (modObject.Skus != null && modObject.Skus.Length != 0 && IsMonetized)
                 GetFiatPrice(modObject);
-    
+            
             Gallery = modObject.Media.Images.Select(
                                    imageObject => new ModioImageSource<GalleryResolution>(
                                        imageObject.Filename,
@@ -415,7 +415,7 @@ namespace Modio.Mods
         {
             if (!modId.IsValid()) return (new Error(ErrorCode.BAD_PARAMETER), null);
 
-            if (ModCache.TryGetMod(modId, out Mod output)) return (Error.None, output);
+            if (ModCache.TryGetMod(modId, out Mod output) && !string.IsNullOrEmpty(output.LastModObject.Name)) return (Error.None, output);
 
             (Error error, ModObject? modObject) = await ModioAPI.Mods.GetMod(modId);
 

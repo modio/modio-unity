@@ -5,6 +5,11 @@ using UnityEngine.EventSystems;
 
 namespace Modio.Unity.UI.Components
 {
+    /// <summary>
+    /// A UI container for a mod. Assign a mod to this, and any
+    /// child <see cref="ModioUIModProperties"/> will get updates about the mod
+    /// </summary>
+    /// <remarks>This will subscribe to the <see cref="Modio.Mods.Mod"/>'s `OnModUpdated` event and post updates to all child properties automatically.</remarks>
     public class ModioUIMod : MonoBehaviour, IModioUIPropertiesOwner, IModioUIResourceContainer<Mod>, IPointerClickHandler, ISubmitHandler
     {
         public UnityEvent onModUpdate;

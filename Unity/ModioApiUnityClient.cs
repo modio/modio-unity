@@ -254,6 +254,10 @@ namespace Modio.Unity
                 return Task.FromResult<(Error, ModioAPITestSettings.FakeUnityApiResponse)>(
                     (new RateLimitError(RateLimitErrorCode.RATELIMITED, 42), null));
 
+            if (testSettings.ShouldFakeExpiredToken(url))
+                return Task.FromResult<(Error, ModioAPITestSettings.FakeUnityApiResponse)>(
+                    (new Error(ErrorCode.EXPIRED_OR_REVOKED_ACCESS_TOKEN), null)
+                );
             
             return Task.FromResult((Error.None, testSettings.GetFakeUnityResponse(url)));
 
@@ -491,8 +495,15 @@ namespace Modio.Unity
                 if (firstOpenBracketIndex > 0)
                 {
                     string serverError = jsonResponse.Substring(0, firstOpenBracketIndex);
-                    ModioLog.Verbose?.Log($"HTTP Code: [{httpResponseCode}] Unexpected error from server before JSON: {serverError}");
+                    ModioLog.Warning?.Log($"HTTP Code: [{httpResponseCode}] Unexpected error from server before JSON: {serverError}");
                     jsonResponse = jsonResponse.Substring(firstOpenBracketIndex);
+                }
+                else
+                {
+                    if (jsonResponse == "File Not Found") return new Error(ErrorCode.FILE_NOT_FOUND);
+
+                    ModioLog.Error?.Log($"HTTP Code: [{httpResponseCode}] Unexpected error from server instead of JSON: {jsonResponse}");
+                    return new Error(ErrorCode.INVALID_JSON);
                 }
             }
 
@@ -794,7 +805,7 @@ namespace Modio.Unity
                 else
                     ModioServices.Bind<IModioAPIInterface>().FromNew<ModioAPIHttpClient>();
 
-                User.LogOut();
+                User.LogOut().ForgetTaskSafely();
             }
         }
 #endregion

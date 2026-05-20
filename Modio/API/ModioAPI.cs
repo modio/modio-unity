@@ -197,7 +197,7 @@ namespace Modio.API
 
         static bool IsInitialized()
         {
-            if (_modioSettings.GameId != 0) return true;
+            if (_modioSettings != null && _modioSettings.GameId != 0) return true;
 
             ModioLog.Error?.Log(ErrorCode.API_NOT_INITIALIZED.GetMessage());
             return false;

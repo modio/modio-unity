@@ -9,8 +9,8 @@ using Modio.Errors;
 using Modio.Extensions;
 using Modio.Mods;
 using Modio.Monetization;
-using Modio.Unity.Settings;
 using Modio.Unity.UI.Components;
+using Modio.Unity.UI.Components.SearchProperties;
 using Modio.Users;
 using UnityEngine;
 using UnityEngine.Events;
@@ -19,6 +19,21 @@ using UserProfile = Modio.Users.UserProfile;
 
 namespace Modio.Unity.UI.Search
 {
+    /// <summary>
+    /// This manages any searches run by the plugin.
+    /// Children of this script can use a <see cref="ModioUISearchProperties"/> to respond to the search updating
+    /// Use <see cref="ModioUISearchSettings"/> to specify what you are searching for
+    ///
+    /// A modioUiSearch is used for the main search by the plugin (the browse screen) as well as a separate one per carousel
+    /// It's also used for showing a mods dependencies and a collection's contents
+    ///
+    /// To get a basic search going;
+    ///   - Assign a prefab with a <see cref="ModioUISearchSettings"/> to _searchOnStart
+    ///   - Have a child gameObject in the scene with a <see cref="ModioUISearchProperties"/> component
+    ///   - Add a <see cref="SearchPropertyDisplayResults"/> to the UISearchProperties
+    ///   - Point that DisplayResults at a <see cref="ModioUIModGroup"/>
+    /// </summary>
+    /// <remarks>In the future, this is planned to be split into ModioUISearch and ModioSearch, which will live in the core of the mod.io C# plugin</remarks>
     public class ModioUISearch : MonoBehaviour, IModioUIPropertiesOwner
     {
         [SerializeField] bool _isDefault = true;
@@ -189,14 +204,7 @@ namespace Modio.Unity.UI.Search
             SetSearch(LastSearchFilter).ForgetTaskSafely();
         }
 
-        public bool HasCustomSearch()
-        {
-            return HasCustomSearchOrFiltering();
-            return LastSearchFilter.GetUsers().Count > 0 ||
-                   LastSearchFilter.GetSearchPhrase(Filtering.Like).Count > 0 ||
-                   _searchPreset == SpecialSearchType.SearchForTag ||
-                   _searchPreset == SpecialSearchType.SearchForUser;
-        }
+        public bool HasCustomSearch() => HasCustomSearchOrFiltering();
 
         public bool HasCustomTags()
         {

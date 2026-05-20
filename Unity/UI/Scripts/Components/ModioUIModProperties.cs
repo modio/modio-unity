@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace Modio.Unity.UI.Components
 {
+    /// <inheritdoc/>
     public class ModioUIModProperties : ModioUIPropertiesBase<ModioUIMod, IModProperty>
     {
         [SerializeReference] IModProperty[] _properties = Array.Empty<IModProperty>();

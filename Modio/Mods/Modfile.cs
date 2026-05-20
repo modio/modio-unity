@@ -15,7 +15,7 @@ namespace Modio.Mods
         public Error FileStateErrorCause { get; internal set; } = Error.None;
         public float FileStateProgress { get; internal set; }
         public long DownloadingBytesPerSecond { get; internal set; }
-        public ModfileDownloadReference Download { get; private set; }
+        public ModfileDownloadReference Download { get; internal set; }
         public string Md5Hash { get; private set; }
 
         internal Modfile(ModfileObject modfileObject)

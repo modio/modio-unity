@@ -106,12 +106,15 @@ namespace Modio.Unity
         /// <param name="_">The AsyncOperation that completed the download.</param>
         public void DownloadCompleted(AsyncOperation _)
         {
-            
             if (_callingRequest.result == UnityWebRequest.Result.Success)
                 return;
 
-            //Ensure the stream throws an error on read if the request failed
-            _streamBuffer.ThrowException = new IOException($"Download failed: {_callingRequest.error}");
+            if (_cancellationTokenSource.IsCancellationRequested)
+                _streamBuffer.ThrowException = new OperationCanceledException();
+            else
+                //Ensure the stream throws an error on read if the request failed
+                _streamBuffer.ThrowException = new IOException($"Download failed: {_callingRequest.error}");
+            
             _cancellationTokenSource.Cancel();
         }
 
@@ -158,19 +161,14 @@ namespace Modio.Unity
                 int offset,
                 int count,
                 CancellationToken cancellationToken
-            )
-            {
-              
-                
+            ) {
                 if (cancellationToken == CancellationToken.None)
                     cancellationToken = _shutdownToken;
-
                 
                 // Create a timeout cancellation token to avoid hanging indefinitely
                 TimeSpan timeout = TimeSpan.FromSeconds(10);
                 using var timeoutTokenSource = new CancellationTokenSource(timeout);
                 using var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutTokenSource.Token);
-                
                 
                 var totalBytesRead = 0;
 
@@ -181,7 +179,6 @@ namespace Modio.Unity
                     // Wait for data to be available in the queue
                     while (!_dataQueue.TryPeek(out data))
                     {
-                        
                         if (linkedTokenSource.Token.IsCancellationRequested)
                         {
                             if(ThrowException != null)
@@ -246,7 +243,7 @@ namespace Modio.Unity
 
             public override long Position { get; set; } = 0;
             bool IsDone { get; set; }
-            public IOException ThrowException { get; set; }
+            public Exception ThrowException { get; set; }
 
             class BufferChunk : IDisposable
             {

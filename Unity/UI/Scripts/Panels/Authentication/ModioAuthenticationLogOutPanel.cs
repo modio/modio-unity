@@ -1,4 +1,5 @@
-﻿using Modio.Users;
+﻿using Modio.Extensions;
+using Modio.Users;
 
 namespace Modio.Unity.UI.Panels.Authentication
 {
@@ -6,7 +7,7 @@ namespace Modio.Unity.UI.Panels.Authentication
     {
         public void OnPressLogout()
         {
-            User.LogOut();
+            User.LogOut().ForgetTaskSafely();
             ClosePanel();
         }
     }

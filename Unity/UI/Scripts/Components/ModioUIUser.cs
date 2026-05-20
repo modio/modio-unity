@@ -4,6 +4,11 @@ using UnityEngine.Events;
 
 namespace Modio.Unity.UI.Components
 {
+    /// <summary>
+    /// A UI container for a <see cref="UserProfile"/>. Assign a user to this, and any
+    /// child <see cref="ModioUIUserProperties"/> will get updates about the user
+    /// </summary>
+    /// <remarks>This will subscribe to the <see cref="UserProfile"/>'s `OnProfileUpdated` event and post updates to all child properties automatically.</remarks>
     public class ModioUIUser : MonoBehaviour, IModioUIPropertiesOwner
     {
         public UnityEvent onUserUpdate;

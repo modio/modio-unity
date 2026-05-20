@@ -203,6 +203,11 @@ namespace Modio.API.HttpClient
             if (testSettings.ShouldFakeRateLimit(url))
                 return Task.FromResult<(Error, HttpResponseMessage)>((new RateLimitError(RateLimitErrorCode.RATELIMITED, 42), default(HttpResponseMessage)));
 
+            if (testSettings.ShouldFakeExpiredToken(url))
+                return Task.FromResult<(Error, HttpResponseMessage)>(
+                    (new Error(ErrorCode.EXPIRED_OR_REVOKED_ACCESS_TOKEN), null)
+                );
+
             HttpResponseMessage fakeResponse = testSettings.GetFakeHttpResponse(url);
             
             return Task.FromResult((Error.None, fakeResponse));
@@ -407,7 +412,7 @@ namespace Modio.API.HttpClient
                 if (firstOpenBracketIndex > 0)
                 {
                     string serverError = errorResponse.Substring(0, firstOpenBracketIndex);
-                    ModioLog.Error?.Log($"Unexpected error from server before JSON: {serverError}");
+                    ModioLog.Warning?.Log($"Unexpected error from server before JSON: {serverError}");
                     errorResponse = errorResponse.Substring(firstOpenBracketIndex);
                 }
                 else if (firstOpenBracketIndex == -1)

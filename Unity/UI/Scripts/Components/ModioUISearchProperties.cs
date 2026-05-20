@@ -5,6 +5,7 @@ using UnityEngine;
 
 namespace Modio.Unity.UI.Components
 {
+    /// <inheritdoc/>
     public class ModioUISearchProperties : ModioUIPropertiesBase<ModioUISearch, ISearchProperty>
     {
         [SerializeReference] ISearchProperty[] _properties = Array.Empty<ISearchProperty>();

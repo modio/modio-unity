@@ -524,7 +524,6 @@ GameObject:
   - component: {fileID: 7367889113815566910}
   - component: {fileID: 7367889113815566911}
   - component: {fileID: 7367889113815566904}
-  - component: {fileID: 3532257639023876221}
   m_Layer: 5
   m_Name: ModPanel_ModDisplay
   m_TagString: Untagged
@@ -604,22 +603,6 @@ MonoBehaviour:
   onDisplayMoreInfo:
     m_PersistentCalls:
       m_Calls: []
---- !u!114 &3532257639023876221
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7367889113815566908}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 565a13a759144baa8b9bda30098ba9d7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  onUserUpdate:
-    m_PersistentCalls:
-      m_Calls: []
-  _useLoggedInUser: 0
 --- !u!1 &7367889113854180728
 GameObject:
   m_ObjectHideFlags: 0

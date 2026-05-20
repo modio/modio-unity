@@ -26,6 +26,11 @@ namespace Modio.Unity.Examples.Android
                 Destroy(gameObject);
                 return;
             }
+
+#if !MODIO_GOOGLE_PLAY_GAMES
+            ModioLog.Warning?.Log($"Compile directive [MODIO_GOOGLE_PLAY_GAMES] missing, cannot initialize mod.io Google Play Games Auth service");
+            return;
+#endif
             
             ModioServices.Bind<GoogleGamesAuthService>()
                          .WithInterfaces<IModioAuthService, IGetActiveUserIdentifier>()
