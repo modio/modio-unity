@@ -1145,7 +1145,7 @@ namespace Modio.FileIO
 
             try
             {
-                await using FileStream fileStream = File.Open(path, FileMode.OpenOrCreate);
+                await using FileStream fileStream = File.Open(path, FileMode.Create);
                 fileStream.Position = 0;
                 await fileStream.WriteAsync(data, 0, bytesToWrite, CancellationToken.None);
 
