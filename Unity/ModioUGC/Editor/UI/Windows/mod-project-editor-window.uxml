@@ -1,0 +1,10 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <ui:Template name="mod-project-editor" src="project://database/Assets/Plugins/Modio/Unity/ModioUGC/Editor/UI/Editors/mod-project-editor.uxml?fileID=9197481963319205126&amp;guid=5db894270a005814c8406c89d4dfc7ab&amp;type=3#mod-project-editor"/>
+    <uie:Toolbar/>
+    <ui:TwoPaneSplitView style="flex-shrink: 0;">
+        <ui:VisualElement style="flex-grow: 1; flex-shrink: 1;"/>
+        <ui:VisualElement style="flex-grow: 1; flex-shrink: 1;">
+            <ui:Instance template="mod-project-editor" style="flex-grow: 1; flex-shrink: 1;"/>
+        </ui:VisualElement>
+    </ui:TwoPaneSplitView>
+</ui:UXML>

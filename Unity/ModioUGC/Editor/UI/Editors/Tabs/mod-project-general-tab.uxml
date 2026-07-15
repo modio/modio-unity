@@ -1,0 +1,26 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+    <Style src="project://database/Assets/Plugins/Modio/Unity/ModioUGC/Editor/UI/Common/core.uss?fileID=7433441132597879392&amp;guid=1d8f6531680cfae438b7819fe1adf1dc&amp;type=3#core"/>
+    <ui:ScrollView>
+        <ui:TextField label="Mod name*" placeholder-text="" name="mod-project-name-field" is-delayed="true" class="mod-project-field" style="flex-direction: column;"/>
+        <ui:TextField label="Summary*" placeholder-text="" name="mod-project-summary-field" multiline="true" vertical-scroller-visibility="AlwaysVisible" is-delayed="true" value="" max-length="255" class="mod-project-field" style="flex-direction: column;">
+            <ui:Label text="10 or more characters required." class="requirement" style="align-self: flex-end;"/>
+        </ui:TextField>
+        <uie:ObjectField label="Mod listing image*" type="UnityEngine.Texture2D, UnityEngine.CoreModule" name="mod-project-logo-field" tooltip="Image file which will represent your mod&apos;s listing image. 512x288 or larger 16:9 aspect ratio recommended 8MB maximum" class="mod-project-field" style="flex-direction: column;">
+            <ui:Label text="16:9 | Min 512x288 | Max 8MB" class="requirement" style="align-self: flex-end;"/>
+        </uie:ObjectField>
+        <ui:TextField label="Homepage" placeholder-text="" name="mod-project-homepage-field" is-delayed="true" class="mod-project-field" style="flex-direction: column;"/>
+        <ui:TextField label="Profile URL" placeholder-text="" name="mod-project-profileurl-field" is-delayed="true" class="mod-project-field" style="flex-direction: column;"/>
+        <ui:VisualElement name="mod-project-community" class="unity-base-field mod-project-field" style="flex-grow: 1; flex-direction: column;">
+            <ui:Label text="Community" name="Label"/>
+            <ui:Toggle label="Allow Comments" name="mod-project-allow-comments-field" class="permission-toggle"/>
+            <ui:Toggle label="Allow Dependants" name="mod-project-allow-dependants-field" class="permission-toggle"/>
+            <ui:Toggle label="Allow Collections" name="mod-project-allow-collections-field" tooltip="If this option is enabled, other users will be able to add your mod to collections." class="permission-toggle"/>
+        </ui:VisualElement>
+        <ui:TextField label="Description" placeholder-text="" name="mod-project-description-field" is-delayed="true" multiline="true" vertical-scroller-visibility="AlwaysVisible" tooltip="Optional description for your mod, which can include details such as &apos;About&apos;, &apos;Features&apos;, &apos;Usage&apos;, &apos;FAQ&apos;, etc. HTML supported and encouraged." class="mod-project-field" style="flex-direction: column;"/>
+        <ui:VisualElement name="mod-project-tags" class="unity-base-field mod-project-field" style="flex-grow: 1; flex-direction: column;">
+            <ui:VisualElement name="mod-project-tags-field" class="unity-base-field" style="flex-grow: 1;"/>
+            <ui:Label text="Tags" name="Label"/>
+        </ui:VisualElement>
+        <ui:DropdownField label="Visibility*" name="mod-project-visibility-field" choices="Private,Public" class="mod-project-field" style="flex-direction: column;"/>
+    </ui:ScrollView>
+</ui:UXML>

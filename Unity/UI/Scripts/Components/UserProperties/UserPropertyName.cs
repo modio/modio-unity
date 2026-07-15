@@ -1,4 +1,6 @@
 ﻿using System;
+using Modio.Authentication;
+using Modio.Settings;
 using Modio.Unity.UI.Components.Localization;
 using Modio.Users;
 using TMPro;
@@ -18,7 +20,14 @@ namespace Modio.Unity.UI.Components.UserProperties
         {
             if (user?.Username != null)
             {
-                string nameToUse = string.IsNullOrEmpty(user.PortalUsername) ? user.Username : user.PortalUsername;
+                bool usePortalUsername = !string.IsNullOrEmpty(user.PortalUsername);
+
+                usePortalUsername &=
+                    !(ModioClient.Settings.TryGetPlatformSettings(out PortalNameSettings portalNameSettings) &&
+                    ModioServices.TryResolve(out IModioAuthService authService) &&
+                    portalNameSettings.ShouldIgnorePortalNameOn(authService.Portal));
+                
+                string nameToUse = usePortalUsername ? user.PortalUsername : user.Username;
                 
                 if (_localisedText != null)
                 {

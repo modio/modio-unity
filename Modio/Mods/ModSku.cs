@@ -34,5 +34,7 @@ namespace Modio.Mods
         }
 
         public override int GetHashCode() => HashCode.Combine(Portal, Sku, Id);
+
+        public override string ToString() => $"ModSku(Portal: {Portal}, Sku: {Sku}, Id: {Id})";
     }
 }

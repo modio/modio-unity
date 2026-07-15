@@ -1,0 +1,7 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+    <Style src="project://database/Assets/Plugins/Modio/Unity/ModioUGC/Editor/UI/Common/core.uss?fileID=7433441132597879392&amp;guid=1d8f6531680cfae438b7819fe1adf1dc&amp;type=3#core"/>
+    <ui:ScrollView>
+        <ui:ListView name="mod-project-metadata-tab" item-template="project://database/Assets/Plugins/Modio/Unity/ModioUGC/Editor/UI/Editors/Fields/mod-project-metadata-field.uxml?fileID=9197481963319205126&amp;guid=cde108f4faaeb2442a8f573c6ac932e2&amp;type=3#mod-project-metadata-field" show-add-remove-footer="true" class="mod-project-field"/>
+        <ui:TextField label="blob" placeholder-text="key=value;" multiline="true" name="mod-project-metadata-blob" is-delayed="true" class="mod-project-field" style="flex-direction: column; white-space: normal;"/>
+    </ui:ScrollView>
+</ui:UXML>

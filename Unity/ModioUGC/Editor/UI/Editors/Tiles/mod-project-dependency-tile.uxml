@@ -1,0 +1,7 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+    <Style src="project://database/Assets/Plugins/Modio/Unity/ModioUGC/Editor/UI/Common/core.uss?fileID=7433441132597879392&amp;guid=1d8f6531680cfae438b7819fe1adf1dc&amp;type=3#core"/>
+    <ui:VisualElement style="flex-grow: 1; flex-direction: row;">
+        <ui:Image style="aspect-ratio: 1.777778; height: 32px;"/>
+        <ui:Label text="Mod Name" style="margin-top: 0; margin-left: 4px;"/>
+    </ui:VisualElement>
+</ui:UXML>

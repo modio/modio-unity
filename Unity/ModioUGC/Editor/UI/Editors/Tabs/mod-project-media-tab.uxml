@@ -1,0 +1,8 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+    <Style src="project://database/Assets/Plugins/Modio/Unity/ModioUGC/Editor/UI/Common/core.uss?fileID=7433441132597879392&amp;guid=1d8f6531680cfae438b7819fe1adf1dc&amp;type=3#core"/>
+    <ui:ScrollView>
+        <ui:ListView name="mod-project-media-sketchfab" item-template="project://database/Assets/Plugins/Modio/Unity/ModioUGC/Editor/UI/Editors/Fields/mod-project-url-field.uxml?fileID=9197481963319205126&amp;guid=401000347d2732546ac48d6d71f25da7&amp;type=3#mod-project-url-field"/>
+        <ui:ListView name="mod-project-media-youtube" item-template="project://database/Assets/Plugins/Modio/Unity/ModioUGC/Editor/UI/Editors/Fields/mod-project-url-field.uxml?fileID=9197481963319205126&amp;guid=401000347d2732546ac48d6d71f25da7&amp;type=3#mod-project-url-field"/>
+        <ui:ListView name="mod-project-media-images" item-template="project://database/Assets/Plugins/Modio/Unity/ModioUGC/Editor/UI/Editors/Fields/mod-project-image-field.uxml?fileID=9197481963319205126&amp;guid=7271f7c3d1ca92c46905006aa58f48b1&amp;type=3#mod-project-image-field"/>
+    </ui:ScrollView>
+</ui:UXML>

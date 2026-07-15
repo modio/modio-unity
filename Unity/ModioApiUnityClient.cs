@@ -34,6 +34,11 @@ namespace Modio.Unity
 
         public void SetBasePath(string value) => _basePath = value;
 
+        public void SetUserAgent(string value)
+        {
+            _defaultHeaders["User-Agent"] = value;
+        }
+
         public void AddDefaultPathParameter(string key, string value) => _pathParameters[key] = value;
 
         public void RemoveDefaultPathParameter(string key) => _pathParameters.Remove(key);
@@ -64,7 +69,7 @@ namespace Modio.Unity
 
         public async Task<(Error, Stream)> DownloadFile(string url, CancellationToken token = default, bool allowReauth = true)
         {
-            (Error testError, _) = await CheckFakeErrorsForTest(url);
+            (Error testError, var fakeUnityApiResponse) = await CheckFakeErrorsForTest(url);
 
             if (testError)
                 return (testError, null);
@@ -93,15 +98,18 @@ namespace Modio.Unity
             
             await LogRequest(webRequest);
             Stream stream;
-            UnityWebRequestAsyncOperation requestAsyncOperation;
+            UnityWebRequestAsyncOperation requestAsyncOperation = null;
             // NOTE: Downloads aren't rate limited, so we don't check for them here
             try
             {
                 //webRequest.responseCode is -1;
-                requestAsyncOperation = webRequest.SendWebRequest();
-                requestAsyncOperation.completed += handler.DownloadCompleted;
-                await handler.ResponseReceived(token);
-                long responseCode = webRequest.responseCode;
+                if(fakeUnityApiResponse == null)
+                {
+                    requestAsyncOperation = webRequest.SendWebRequest();
+                    requestAsyncOperation.completed += handler.DownloadCompleted;
+                    await handler.ResponseReceived(token);
+                }
+                long responseCode = fakeUnityApiResponse?.ResponseCode ?? webRequest.responseCode;
 
                 //This is an unusual case that happens on certain platforms
                 if (responseCode == 0)
@@ -111,8 +119,15 @@ namespace Modio.Unity
                 {
                     if (!IsResponseConnectionFailure(responseCode))
                     {
-                        await handler.WaitForComplete();
-                        Stream jsonResponseStream = handler.GetStream();
+                        Stream jsonResponseStream;
+
+                        if (fakeUnityApiResponse != null)
+                            jsonResponseStream = new MemoryStream(Encoding.Default.GetBytes(fakeUnityApiResponse.JsonResponse));
+                        else
+                        {
+                            await handler.WaitForComplete();
+                            jsonResponseStream = handler.GetStream();
+                        }
                         var streamReader = new StreamReader(jsonResponseStream);
                         error = await GetErrorAndLogBadResponse(responseCode, streamReader);
                         
@@ -156,12 +171,18 @@ namespace Modio.Unity
             }
             
             //dispose the web request when the operation is completed
-            requestAsyncOperation.completed += (_) =>
+            if (requestAsyncOperation != null)
+                requestAsyncOperation.completed += (_) =>
+                {
+                    _webRequests.Remove(webRequest);
+                    webRequest.Dispose();
+                };
+            else
             {
                 _webRequests.Remove(webRequest);
                 webRequest.Dispose();
-            };
-            
+            }
+
             return (Error.None, stream);
 
             async Task<long> GetResponseCodeFromHeadRequest(long responseCode)
@@ -438,14 +459,14 @@ namespace Modio.Unity
                 if (firstOpenBracketIndex > 0)
                 {
                     string serverError = errorResponse.Substring(0, firstOpenBracketIndex);
-                    ModioLog.Error?.Log($"HTTP Code: [{httpResponseCode}] Unexpected error from server before JSON: {serverError}");
+                    ModioLog.Warning?.Log($"HTTP Code: [{httpResponseCode}] Unexpected error from server before JSON: {serverError}");
                     errorResponse = errorResponse.Substring(firstOpenBracketIndex);
                 }
                 else if (firstOpenBracketIndex == -1)
                 {
                     if (errorResponse == "File Not Found") return new Error(ErrorCode.FILE_NOT_FOUND);
 
-                    ModioLog.Error?.Log($"HTTP Code: [{httpResponseCode}] Unexpected error from server instead of JSON: {errorResponse}");
+                    ModioLog.Warning?.Log($"HTTP Code: [{httpResponseCode}] Unexpected error from server instead of JSON: {errorResponse}");
                     return new Error(ErrorCode.INVALID_JSON);
                 }
 

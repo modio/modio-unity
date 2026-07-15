@@ -1,0 +1,11 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+    <Style src="project://database/Assets/Plugins/Modio/Unity/ModioUGC/Editor/UI/Common/core.uss?fileID=7433441132597879392&amp;guid=1d8f6531680cfae438b7819fe1adf1dc&amp;type=3#core"/>
+    <ui:ScrollView>
+        <ui:VisualElement name="mod-project-moneitzation-vc" style="flex-grow: 0;">
+            <ui:IntegerField label="Price" value="42"/>
+        </ui:VisualElement>
+        <ui:VisualElement style="flex-grow: 0;">
+            <ui:DropdownField label="Price"/>
+        </ui:VisualElement>
+    </ui:ScrollView>
+</ui:UXML>

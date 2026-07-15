@@ -1,5 +1,7 @@
 ﻿using System;
 using Modio.API;
+using Modio.Authentication;
+using Modio.Settings;
 using UnityEngine;
 using UnityEngine.UI;
 using UserProfile = Modio.Users.UserProfile;
@@ -25,7 +27,12 @@ namespace Modio.Unity.UI.Components.UserProperties
         public void OnUserUpdate(UserProfile user)
         {
             var isUsernameDefinedByPortal = user != null && !string.IsNullOrEmpty(user.PortalUsername);
-
+            
+            isUsernameDefinedByPortal &=
+                !(ModioClient.Settings.TryGetPlatformSettings(out PortalNameSettings portalNameSettings) &&
+                  ModioServices.TryResolve(out IModioAuthService authService) &&
+                  portalNameSettings.ShouldIgnorePortalNameOn(authService.Portal));
+            
             foreach (GameObject gameObject in _enableIsUsernameDefinedByPortal)
             {
                 gameObject.SetActive(isUsernameDefinedByPortal);

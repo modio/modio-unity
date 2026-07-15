@@ -1,0 +1,30 @@
+.changed {
+    border-left-width: 3px;
+    border-left-color: var(--modio-accent-color);
+    padding-left: 3px;
+    margin-left: 3px;
+    -unity-font-style: bold;
+}
+
+
+
+Label.requirement {
+    font-size: 90%;
+    -unity-text-align: upper-left;
+}
+
+.permission-toggle Label {
+    left: 16px;
+    position: absolute;
+}
+
+
+
+
+
+#mod-project-content>VisualElement {
+    padding-left: 4px;
+    padding-right: 4px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+}

@@ -1,0 +1,10 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+    <Style src="project://database/Assets/Plugins/Modio/Unity/ModioUGC/Editor/UI/Common/core.uss?fileID=7433441132597879392&amp;guid=1d8f6531680cfae438b7819fe1adf1dc&amp;type=3#core"/>
+    <ui:VisualElement class="mod-project-field" style="flex-grow: 1;">
+        <ui:Toggle label="Allow" tooltip="" class="permission-toggle" style="flex-direction: row-reverse;"/>
+        <ui:VisualElement class="unity-base-field" style="flex-grow: 1; padding-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; flex-direction: column;">
+            <ui:Toggle label="I must be credited as the original creator" class="permission-toggle" style="flex-direction: row-reverse;"/>
+            <ui:Toggle label="Require permission from me first" class="permission-toggle" style="flex-direction: row-reverse;"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

@@ -1,0 +1,15 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+    <ui:Template name="mod-project-resuse-permissions-field" src="project://database/Assets/Plugins/Modio/Unity/ModioUGC/Editor/UI/Editors/Fields/mod-project-resuse-permissions-field.uxml?fileID=9197481963319205126&amp;guid=fc9abed304b9edf47b46580539786c32&amp;type=3#mod-project-resuse-permissions-field"/>
+    <Style src="project://database/Assets/Plugins/Modio/Unity/ModioUGC/Editor/UI/Common/core.uss?fileID=7433441132597879392&amp;guid=1d8f6531680cfae438b7819fe1adf1dc&amp;type=3#core"/>
+    <ui:ScrollView>
+        <ui:Label text="Set permissions on how your Mod assets can be used for other&apos;s content creation. By granting permission for others to use or modify your files, you acknowledge that such authorization cannot be retroactively revoked with respect to works already created." style="white-space: normal; padding-bottom: 4px;"/>
+        <ui:Toggle label="Allow others to upload to other sites with credit" name="mod-project-perm-allow-upload-field" tooltip="Allow others to upload my Mod assets on other sites, but I must be credited as the original creator" class="permission-toggle permission-toggle-field" style="flex-direction: row-reverse;"/>
+        <ui:Toggle label="Allow others to convert Mod to work in other games with credit" name="mod-project-perm-allow-convert-field" tooltip="Allow others to convert my Mod assets to work in other games, but I must be credited as the original creator" class="permission-toggle permission-toggle-field" style="flex-direction: row-reverse;"/>
+        <ui:Label text="Allow others to modify my Mod assets (including releasing bug fixes or improvements) and release it as a new Mod" class="unity-base-field"/>
+        <ui:Instance template="mod-project-resuse-permissions-field" class="permission-toggle permission-toggle-field"/>
+        <ui:Label text="Allow others to use my Mod assets in their own Mods" class="unity-base-field"/>
+        <ui:Instance template="mod-project-resuse-permissions-field" class="permission-toggle-field"/>
+        <ui:Toggle label="Allow others to use my mod  in any commerical works" name="mod-project-perm-allow-commercial-field" tooltip="Allow others to use my Mod assets in any Mod/files in any commercial works" class="permission-toggle permission-toggle-field" style="flex-direction: row-reverse;"/>
+        <ui:Toggle label="Mod is 100% original work, or assets that can be redistributed" name="mod-project-perm-is-original-field" tooltip="My Mod contains 100% original work, or assets which can be redistributed" class="permission-toggle permission-toggle-field" style="flex-direction: row-reverse;"/>
+    </ui:ScrollView>
+</ui:UXML>

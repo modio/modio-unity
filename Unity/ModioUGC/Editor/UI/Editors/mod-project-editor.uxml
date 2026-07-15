@@ -1,0 +1,53 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+    <ui:Template name="mod-project-dependencies-tab" src="project://database/Assets/Plugins/Modio/Unity/ModioUGC/Editor/UI/Editors/Tabs/mod-project-dependencies-tab.uxml?fileID=9197481963319205126&amp;guid=1bb443285c6f35e4380f62b28d051140&amp;type=3#mod-project-dependencies-tab"/>
+    <ui:Template name="mod-project-general-tab" src="project://database/Assets/Plugins/Modio/Unity/ModioUGC/Editor/UI/Editors/Tabs/mod-project-general-tab.uxml?fileID=9197481963319205126&amp;guid=2e000a8f95a5db2409fccbc905bbe692&amp;type=3#mod-project-general-tab"/>
+    <ui:Template name="mod-project-media-tab" src="project://database/Assets/Plugins/Modio/Unity/ModioUGC/Editor/UI/Editors/Tabs/mod-project-media-tab.uxml?fileID=9197481963319205126&amp;guid=2f5a9d10a6c6b134db83755462a0d18c&amp;type=3#mod-project-media-tab"/>
+    <ui:Template name="mod-project-metadata-tab" src="project://database/Assets/Plugins/Modio/Unity/ModioUGC/Editor/UI/Editors/Tabs/mod-project-metadata-tab.uxml?fileID=9197481963319205126&amp;guid=b0cc686eb1ba7aa4185a4c81da621a65&amp;type=3#mod-project-metadata-tab"/>
+    <ui:Template name="mod-project-monetization-tab" src="project://database/Assets/Plugins/Modio/Unity/ModioUGC/Editor/UI/Editors/Tabs/mod-project-monetization-tab.uxml?fileID=9197481963319205126&amp;guid=eb60c66b9a5a011429bebf6bbbe08061&amp;type=3#mod-project-monetization-tab"/>
+    <ui:Template name="mod-project-permissions-tab" src="project://database/Assets/Plugins/Modio/Unity/ModioUGC/Editor/UI/Editors/Tabs/mod-project-permissions-tab.uxml?fileID=9197481963319205126&amp;guid=5e8c207ce3214d5459f81fcd6499417b&amp;type=3#mod-project-permissions-tab"/>
+    <Style src="project://database/Assets/Plugins/Modio/Unity/ModioUGC/Editor/UI/Common/core.uss?fileID=7433441132597879392&amp;guid=1d8f6531680cfae438b7819fe1adf1dc&amp;type=3#core"/>
+    <ui:VisualElement name="mod-project-header" style="flex-grow: 0; padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px; flex-shrink: 0;">
+        <ui:VisualElement style="flex-grow: 0; flex-direction: row; height: 64px; justify-content: flex-start; align-self: stretch; align-items: center; min-height: 64px; max-height: 64px;">
+            <ui:Image style="aspect-ratio: 1.777778; padding-top: 3px; padding-right: 3px; padding-bottom: 3px; padding-left: 3px; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; height: 64px;"/>
+            <ui:Label text="Label" class="required"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+    <ui:VisualElement name="mod-project-content" style="flex-grow: 1; border-top-width: 1px; border-bottom-width: 1px; border-left-color: rgba(0, 0, 0, 0.5); border-right-color: rgba(0, 0, 0, 0.5); border-top-color: rgba(0, 0, 0, 0.5); border-bottom-color: rgba(0, 0, 0, 0.5); flex-shrink: 1;">
+        <ui:TabView enabled="true">
+            <ui:Tab label="General" name="mod-project-general-tab">
+                <ui:Instance template="mod-project-general-tab"/>
+            </ui:Tab>
+            <ui:Tab label="Media" name="mod-project-media-tab">
+                <ui:Instance template="mod-project-media-tab"/>
+            </ui:Tab>
+            <ui:Tab label="Reuse Permissions" name="mod-project-permissions-tab" focusable="false">
+                <ui:Instance template="mod-project-permissions-tab"/>
+            </ui:Tab>
+            <ui:Tab label="Dependencies" name="mod-project-dependencies-tab" focusable="false">
+                <ui:Instance template="mod-project-dependencies-tab"/>
+            </ui:Tab>
+            <ui:Tab label="Metadata" name="mod-project-metadata-tab" focusable="false">
+                <ui:Instance template="mod-project-metadata-tab"/>
+            </ui:Tab>
+            <ui:Tab label="Monetization" name="mod-project-monetization-tab" style="visibility: visible; opacity: 1;">
+                <ui:Instance template="mod-project-monetization-tab"/>
+            </ui:Tab>
+            <ui:Tab label="Team" name="mod-project-team-tab"/>
+        </ui:TabView>
+        <ui:VisualElement style="flex-grow: 1; flex-shrink: 0;"/>
+    </ui:VisualElement>
+    <ui:VisualElement name="mod-project-footer" style="flex-grow: 0; padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px; flex-shrink: 0;">
+        <ui:VisualElement style="flex-grow: 0; flex-direction: row; justify-content: flex-end;">
+            <ui:VisualElement style="flex-grow: 0; flex-direction: row;">
+                <ui:Button text="Delete" name="mod-project-delete" style="flex-shrink: 1;"/>
+                <ui:Button text="Archive" name="mod-project-archive"/>
+                <ui:Button text="Revert" name="mod-project-revert"/>
+                <ui:Button text="Publish" name="mod-project-publish" style="flex-shrink: 1;"/>
+            </ui:VisualElement>
+            <ui:VisualElement style="flex-grow: 1; position: absolute; padding-top: 4px; padding-right: 4px; flex-direction: row; padding-bottom: 4px; padding-left: 4px; align-items: flex-start; left: 0;">
+                <ui:Label text="user.example@mod.io" style="padding-top: 0; padding-right: 4px; padding-bottom: 0; padding-left: 0;"/>
+                <ui:Button text="(logout)" name="mod-project-logout" class="label-button"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

@@ -127,13 +127,14 @@ namespace Modio
         internal static async Task Shutdown()
         {
             Mod.RemoveChangeListener(ModChangeType.IsSubscribed, OnModSubscriptionChange);
-            
+
             EndCurrentTempModSession();
             
+            _operationQueue.Clear();
             _currentOperation?.Cancel();
-            
+
             while (_currentOperation != null) await Task.Yield();
-            
+
             _index?.Shutdown();
             _index = null;
         }
@@ -492,7 +493,9 @@ namespace Modio
         }
 
         /// <summary>
-        /// Will end the current temp mod session started by <see cref="StartTempModSession"/>
+        /// Will end the current temp mod session started by <see cref="StartTempModSession"/>. If using temp mods to
+        /// install premium mods, it's imperative that this is called BEFORE the game shuts down to allow the plugin to
+        /// uninstall the temp mods.
         /// </summary>
         /// <remarks>Will cause mods installed using <see cref="StartTempModSession"/>to be uninstalled.</remarks>
         [ModioDebugMenu(ShowInSettingsMenu = false)]
@@ -547,6 +550,25 @@ namespace Modio
             foreach (Mod mod in mods) AddTemporaryMod(mod, lifeTimeDays);
 
             return Error.None;
+        }
+
+        /// <summary>
+        /// Use this to remove mods that would otherwise persist due to their set lifetime. Useful for forcefully making
+        /// space for other mods or cleaning up unwanted temp mods sooner.
+        /// </summary>
+        /// <param name="modsToRemove">The list of mods to remove</param>
+        public static void RemoveTemporaryMods(List<ModioId> modsToRemove)
+        {
+            foreach (ModioId id in modsToRemove)
+            {
+                if (!_index.TryGetEntry(id, out ModIndex.IndexEntry indexEntry))
+                    continue;
+
+                indexEntry.ExpiresAfter = DateTime.UnixEpoch;
+                _currentSessionMods.Remove(id);
+            }
+            
+            ClearExpiredTempMods();
         }
 
         /// <summary>

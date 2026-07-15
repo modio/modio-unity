@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Modio.Authentication;
 using Modio.Extensions;
 using Modio.Images;
+using Modio.Settings;
 using Modio.Users;
 using UnityEngine;
 using UnityEngine.Scripting.APIUpdating;
@@ -37,7 +39,9 @@ namespace Modio.Unity.UI.Components.UserProperties
             if (_currentUser == User.Current.Profile
                 && ModioServices.TryResolve(out IModioAuthService authService)
                 && authService is IExternalAvatarProviderService<Texture2D> imageProvider
-                && authService.Portal == User.Current.AuthenticatedPortal)
+                && authService.Portal == User.Current.AuthenticatedPortal
+                && (!ModioClient.Settings.TryGetPlatformSettings(out PortalNameSettings portalNameSettings)
+                    || portalNameSettings.ShouldIgnorePortalAvatarOn(authService.Portal)))
             {
                 SetImageFromProvider(imageProvider).ForgetTaskSafely();
                 return;

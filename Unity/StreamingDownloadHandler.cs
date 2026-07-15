@@ -109,6 +109,9 @@ namespace Modio.Unity
             if (_callingRequest.result == UnityWebRequest.Result.Success)
                 return;
 
+            //If this hasn't already been set, we've failed to get headers
+            _hasReceivedHeaders.TrySetResult(false);
+
             if (_cancellationTokenSource.IsCancellationRequested)
                 _streamBuffer.ThrowException = new OperationCanceledException();
             else

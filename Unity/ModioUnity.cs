@@ -23,35 +23,7 @@ namespace Modio.Unity
         [ExcludeFromCodeCoverage]
         static void OnAfterAssembliesLoaded()
         {
-            ModioUnitySettings modioUnitySettings = LoadSettings();
-            
-            if (ModioCommandLine.TryGetArgument("gameid", out string gameId))
-                modioUnitySettings.Settings.GameId = int.Parse(gameId);
-
-            if (ModioCommandLine.TryGetArgument("apikey", out string apiKey))
-                modioUnitySettings.Settings.APIKey = apiKey;
-
-            if (ModioCommandLine.TryGetArgument("url", out string url))
-                modioUnitySettings.Settings.ServerURL = url;
-            
-            if (ModioCommandLine.HasFlag("use-wss"))
-                if(!modioUnitySettings.Settings.TryGetPlatformSettings(out WssSettings _))
-                {
-                    var wssSettings = new WssSettings();
-                    modioUnitySettings.Settings.PlatformSettings = modioUnitySettings.Settings.PlatformSettings.Append(wssSettings).ToArray();
-                }
-            
-            if (ModioCommandLine.TryGetArgument("monetizationtype", out string monetizationType))
-            {
-                if(modioUnitySettings.Settings.TryGetPlatformSettings(out MonetizationSettings monetizationSettings))
-                    monetizationSettings.MonetizationType = Enum.Parse<ModioMonetizationType>(monetizationType, true);
-                else
-                {
-                    monetizationSettings = new MonetizationSettings { MonetizationType = Enum.Parse<ModioMonetizationType>(monetizationType, true), };
-                    modioUnitySettings.Settings.PlatformSettings = modioUnitySettings.Settings.PlatformSettings.Append(monetizationSettings).ToArray();
-                    
-                }
-            }
+            ModioUnitySettings modioUnitySettings = ModioUnitySettings.LoadSettings();
             
             ModioServices.Bind<IModioLogHandler>().FromNew<ModioUnityLogger>(ModioServicePriority.EngineImplementation);
 
@@ -59,22 +31,8 @@ namespace Modio.Unity
             ModioLog.Verbose?.Log(environmentDetails);
             
             Error.StoreStackTraceWhenCreated = false;
-             
-            Version.AddEnvironmentDetails(environmentDetails);
             
-            // If command line arg present we need to mutate the config
-            if (ModioCommandLine.TryGetArgument("log", out string logLevelText)
-                || ModioCommandLine.TryGetArgument("loglevel", out logLevelText))
-            {
-                if (Enum.TryParse(logLevelText, true, out LogLevel logLevelEnum))
-                {
-                    modioUnitySettings.Settings.LogLevel = logLevelEnum;
-                }
-                else
-                    // ReSharper disable once ExpressionIsAlwaysNull (it's set in ApplyLogLevel)
-                    // ReSharper disable once ConstantConditionalAccessQualifier
-                    ModioLog.Error?.Log($"Unrecognized log level: {logLevelText}");
-            }
+            Version.AddEnvironmentDetails(environmentDetails);
 
             if (modioUnitySettings != null)
             {
@@ -139,27 +97,6 @@ namespace Modio.Unity
 
             InitPlatform();
         }
-
-        [ExcludeFromCodeCoverage]
-        static ModioUnitySettings LoadSettings()
-        {
-            ModioUnitySettings foundSetting = null;
-
-            if (ModioCommandLine.TryGetArgument("unity-settings", out string target))
-            {
-                foundSetting = Resources.Load<ModioUnitySettings>($"mod.io/{target}");
-                if (foundSetting == null)
-                    foundSetting = Resources.Load<ModioUnitySettings>($"mod.io/v3_config_{target}");
-            }
-
-            if(foundSetting == null)
-                foundSetting = Resources.Load<ModioUnitySettings>(ModioUnitySettings.DefaultResourceNameOverride);
-            if (foundSetting == null)
-                foundSetting = Resources.Load<ModioUnitySettings>(ModioUnitySettings.DefaultResourceName);
-
-            return foundSetting;
-        }
-
 
 #if UNITY_EDITOR
         [ExcludeFromCodeCoverage]

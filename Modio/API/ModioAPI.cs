@@ -37,7 +37,9 @@ namespace Modio.API
             Apple,
             Discord,
             EpicGamesStore,
-            Facebook,
+            Meta,
+            [Obsolete]
+            Facebook = Meta,
             GOG,
             Google,
             Itchio,
@@ -171,7 +173,7 @@ namespace Modio.API
             _apiInterface = apiInterface;
             apiInterface.SetDefaultHeader("Accept", "application/json");
             SetResponseLanguage(LanguageCodeResponse);
-            apiInterface.SetDefaultHeader("User-Agent", $"{Version.GetCurrent()}");
+            apiInterface.SetUserAgent($"{Version.GetCurrent()}");
 
             SetPlatform(CurrentPlatform);
             SetPortal(CurrentPortal);
@@ -299,12 +301,12 @@ namespace Modio.API
                 _                     => null,
             };
 
-        internal static string GetHeader(this Portal portal) => portal switch
+        public static string GetHeader(this Portal portal) => portal switch
             {
                 Portal.Apple              => "apple",
                 Portal.Discord            => "discord",
                 Portal.EpicGamesStore     => "epicgames",
-                Portal.Facebook           => "facebook",
+                Portal.Meta               => "meta",
                 Portal.GOG                => "gog",
                 Portal.Google             => "google",
                 Portal.Itchio             => "itchio",
@@ -315,6 +317,25 @@ namespace Modio.API
                 Portal.XboxLive           => "xboxlive",
                 _                         => null,
             };
+
+        public static Portal PortalFromHeader(this string portal) => portal switch
+        {
+            "apple"     => Portal.Apple,
+            "discord"   => Portal.Discord,
+            "epicgames" => Portal.EpicGamesStore,
+            "facebook"  => Portal.Facebook,
+            "gog"       => Portal.GOG,
+            "google"    => Portal.Google,
+            "itchio"    => Portal.Itchio,
+            "nintendo"  => Portal.Nintendo,
+            "psn"       => Portal.PlayStationNetwork,
+            "sso"       => Portal.SSO,
+            "steam"     => Portal.Steam,
+            "xboxlive"  => Portal.XboxLive,
+            "web"       => Portal.SSO,
+            "meta"      => Portal.Facebook,
+            _           => throw new ArgumentOutOfRangeException(nameof(portal), portal, null),
+        };
 
 #endregion GetHeader Extensions
     }
