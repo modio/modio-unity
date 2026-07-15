@@ -23,6 +23,13 @@ namespace Modio.API.Interfaces
         /// <param name="value">The value of the header.</param>
         void SetDefaultHeader(string name, string value);
 
+        
+        /// <summary>
+        /// Sets the user-agent string
+        /// </summary>
+        /// <param name="value">The value of the header.</param>
+        void SetUserAgent(string value);
+        
         /// <summary>
         /// Sets a default path value
         /// </summary>

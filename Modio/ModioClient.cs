@@ -51,6 +51,8 @@ namespace Modio
         internal static bool IsCurrentlyInitializing => _initializingTcs != null;
         
         static TaskCompletionSource<Error> _initializingTcs;
+        static TaskCompletionSource<bool> _shutdownTcs;
+
         static bool _hasBoundDefaultServices;
 
         static event Action InternalOnInitialized;
@@ -105,6 +107,19 @@ namespace Modio
             {
                 ModioLog.Error?.Log($"Reinitializing mod.io SDK! Use {nameof(ModioClient)}.{nameof(Shutdown)} before initializing the SDK!");
                 return new Error(ErrorCode.SDKALREADY_INITIALIZED);
+            }
+            
+            if(_initializingTcs != null && _shutdownTcs != null)
+            {
+                ModioLog.Error?.Log("You have attempted to initializing the mod.io SDK, while it is already initializing and shutting down. "
+                                    + "Waiting for the Init and Shutdown to complete, which may cause undesirable delays");
+
+                await Task.WhenAll(_shutdownTcs.Task, _initializingTcs.Task);
+            }
+            if(_shutdownTcs != null)
+            {
+                ModioLog.Warning?.Log("You have started initializing the mod.io SDK while it is shutting down. Waiting for the shutdown to complete first, which may cause undesirable delays");
+                await _shutdownTcs.Task;
             }
             
             BindDefaultServices();
@@ -178,6 +193,13 @@ namespace Modio
         /// </summary>
         public static async Task Shutdown()
         {
+            
+            if(_initializingTcs != null && _shutdownTcs != null)
+            {
+                ModioLog.Warning?.Log("You have started initializing and shutting down the mod.io SDK at the same time. Waiting for the Init and Shutdown to complete, which may cause undesirable delays");
+                
+                return;
+            }
             if (_initializingTcs != null)
             {
                 ModioLog.Warning?.Log("You have shutdown the mod.io SDK while is is initializing. Waiting for the Init to complete first, which may cause undesirable delays");
@@ -192,6 +214,14 @@ namespace Modio
             }
 
             IsInitialized = false;
+
+            if (_shutdownTcs != null)
+            {
+                await _shutdownTcs.Task;
+                return;
+            }
+
+            _shutdownTcs = new TaskCompletionSource<bool>();
             
             await User.Shutdown();
             
@@ -205,6 +235,9 @@ namespace Modio
                 await dataStorage.Shutdown();
             
             UnbindDefaultServices();
+            _shutdownTcs.TrySetResult(true);
+            _shutdownTcs = null;
+
         }
         
         static void BindDefaultServices()

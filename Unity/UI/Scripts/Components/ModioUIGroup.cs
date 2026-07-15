@@ -42,8 +42,12 @@ namespace Modio.Unity.UI.Components
 
         (IReadOnlyList<TResource> mods, int selectionIndex) _displayOnEnable;
 
-        [SerializeField, Tooltip("(Optional) The root layout to rebuild before performing selections")]
+        [SerializeField, Tooltip("(Optional) The root layout to rebuild before performing selections"),]
         RectTransform _layoutRebuilder;
+        
+        [SerializeField, Tooltip("Should we rebuild the layoutRebuilder and redo placeholder logic? Useful if a ScrollRect viewport will change size in response to child count"),]
+        bool _rebuildAndReapplyPlaceholders;
+        
         ScrollRect _scrollRect;
         LayoutGroup _layoutGroup;
 
@@ -195,11 +199,17 @@ namespace Modio.Unity.UI.Components
                 }
             }
             
+            //Ensure layouts have been applied, otherwise we'll snap scrollviews to their old positions
+            if ((shouldDoSelection || _rebuildAndReapplyPlaceholders) && _layoutRebuilder != null)
+            {
+                LayoutRebuilder.ForceRebuildLayoutImmediate(_layoutRebuilder);
+
+                if (_rebuildAndReapplyPlaceholders)
+                    EnsurePlaceholdersCorrect();
+            }
+
             if (shouldDoSelection)
             {
-                //Ensure layouts have been applied, otherwise we'll snap scrollviews to their old positions
-                if (_layoutRebuilder != null) LayoutRebuilder.ForceRebuildLayoutImmediate(_layoutRebuilder);
-
                 var currentFocusedPanel = ModioPanelManager.GetInstance().CurrentFocusedPanel;
                 if (_active.Count > 0)
                 {
