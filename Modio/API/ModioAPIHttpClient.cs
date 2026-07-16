@@ -34,6 +34,12 @@ namespace Modio.API.HttpClient
 
         public void SetBasePath(string value) => _basePath = value;
 
+        public void SetUserAgent(string value)
+        {
+            _client.DefaultRequestHeaders.UserAgent.Clear();
+            _client.DefaultRequestHeaders.UserAgent.TryParseAdd(value);
+        }
+
         public void AddDefaultPathParameter(string key, string value) => _pathParameters.Add(key, value);
 
         public void RemoveDefaultPathParameter(string key) => _pathParameters.Remove(key);
@@ -95,9 +101,6 @@ namespace Modio.API.HttpClient
 
             error = await EnforceAuthentication(downloadRequest, httpRequest);
             
-            if (!httpRequest.Headers.UserAgent.TryParseAdd(Version.GetCurrent()))
-                ModioLog.Error?.Log($"Failed to set user agent to {Version.GetCurrent()}");
-
             if(error) return (error, null);
 
             await LogRequest(httpRequest);
@@ -282,10 +285,6 @@ namespace Modio.API.HttpClient
                 
                 if(error) return (error, default(T));
 
-                if (!httpRequest.Headers.UserAgent.TryParseAdd(Version.GetCurrent()))
-                    ModioLog.Error?.Log($"Failed to set user agent to {Version.GetCurrent()}");
-
-                
                 foreach (KeyValuePair<string, string> headerParameter in request.Options.HeaderParameters)
                 {
                     if (headerParameter.Key == "Content-Range")

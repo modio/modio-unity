@@ -14,19 +14,18 @@ namespace Modio.Monetization
         static bool _cached = false;
         static Task<Error> _updateSkuCacheTask;
         static Action _onSkuUpdated;
-        static readonly HashSet<Mod> ModsWaitingForPrice = new HashSet<Mod>();
+        static readonly HashSet<Mod> ModsWithPrice = new HashSet<Mod>();
         
         static void Reset()
         {
             _currentPortal = ModioAPI.Portal.None;
-            ModsWaitingForPrice.Clear();
             _cached = false;
             _updateSkuCacheTask = null;
         }
 
         public static async Task<Error> FetchSkuCache(ModioAPI.Portal portal)
         {
-            
+
             if (!ModioServices.TryResolve(out IModioUsdMarketplaceService usdMarketplaceService))
                 return new Error(ErrorCode.MONETIZATION_UNEXPECTED_ERROR);
 
@@ -63,16 +62,16 @@ namespace Modio.Monetization
             {
                 mod.FiatPrice = GetLocalPrice(mod.PortalSku);
                 mod.InvokeModUpdated(ModChangeType.Everything);
+
                 return;
             }
-            ModsWaitingForPrice.Add(mod);
+            ModsWithPrice.Add(mod);
         }
 
         static void ApplyPrices()
         {
-            foreach (Mod mod in ModsWaitingForPrice)
+            foreach (Mod mod in ModsWithPrice)
                 ApplyPrice(mod);
-            ModsWaitingForPrice.Clear();
         }
         
         static void ApplyPrice(Mod mod)

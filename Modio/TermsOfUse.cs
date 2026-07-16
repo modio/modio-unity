@@ -122,6 +122,8 @@ namespace Modio
 
             return output;
         }
+
+        internal static void ClearTermsCache() => _termsCache = new Dictionary<string, TermsOfUse>();
     }
     
     /// <summary>

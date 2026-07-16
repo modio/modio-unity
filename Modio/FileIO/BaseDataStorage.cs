@@ -164,14 +164,17 @@ namespace Modio.FileIO
         }
 
 
-        Task<Error> DeleteData(string filePath)
+        async Task<Error> DeleteData(string filePath)
         {
+            if (ActiveFileHandlesDictionary.TryGetValue(filePath, out TaskCompletionSource<Error> task))
+                await task.Task;
+            
             Error error = DeleteFile(filePath);
 
             if (error)
                 ModioLog.Error?.Log($"Error deleting [{GameId}] game data: {error.GetMessage()}\nAt: {filePath}");
 
-            return Task.FromResult(error);
+            return error;
         }
 
 #endregion

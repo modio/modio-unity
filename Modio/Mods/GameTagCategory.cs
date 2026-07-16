@@ -129,7 +129,10 @@ namespace Modio.Mods
         /// </summary>
         public static Task<(Error, GameTagCategory[])> GetCollectionTagOptions()
         {
-            _cachedCollectionTags ??= new[]
+            if (_cachedCollectionTags != null)
+                return Task.FromResult((Error.None, _cachedCollectionTags));
+
+            _cachedCollectionTags = new[]
             {
                 new GameTagCategory(
                     "Category",
@@ -156,12 +159,17 @@ namespace Modio.Mods
                         ModTag.Get("Gameplay", ResourceTagType.CollectionTag),
                         ModTag.Get("Quality of Life", ResourceTagType.CollectionTag),
                         ModTag.Get("UI", ResourceTagType.CollectionTag),
+                        ModTag.Get("Visuals", ResourceTagType.CollectionTag),
                     },
                     false,
                     false
                 ),
             };
-            
+
+            foreach (GameTagCategory category in _cachedCollectionTags)
+                foreach (ModTag tag in category.Tags)
+                    tag.IsVisible = true;
+
             return Task.FromResult((Error.None, _cachedCollectionTags));
         }
     }

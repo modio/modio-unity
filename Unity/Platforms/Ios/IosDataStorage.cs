@@ -11,6 +11,10 @@ namespace Modio.Unity.Platforms.Ios
 #if UNITY_IOS
             try
             {
+                if (ModioClient.Settings.TryGetPlatformSettings(out ModioDiskTestSettings settings)
+                    && settings.OverrideDiskSpaceRemaining)
+                    return settings.BytesRemaining;
+                
                 return GetAvailableDiskSpace();
             }
             catch (Exception e)
