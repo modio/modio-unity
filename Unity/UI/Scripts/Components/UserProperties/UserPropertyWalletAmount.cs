@@ -11,14 +11,10 @@ namespace Modio.Unity.UI.Components.UserProperties
     {
         [SerializeField] TMP_Text _text;
 
-        bool hasSetText = false;
-
         public void OnUserUpdate(UserProfile user)
         {
-            Wallet wallet = User.Current?.Wallet;
-            
-            _text.text = wallet != null ? (wallet.Balance).ToString() : "";
-            hasSetText = true;
+            // Unfortunately we don't need this user, only User.Current
+            // Keeping this an IUserProperty to support our existing implementations 
         }
 
         public void Start() { }
@@ -27,9 +23,20 @@ namespace Modio.Unity.UI.Components.UserProperties
 
         public void OnEnable()
         {
-            if (!hasSetText) _text.text = "";
+            User.OnUserChanged += OnUserChanged;
+            OnUserChanged(User.Current);
         }
 
-        public void OnDisable() { }
+        public void OnDisable()
+        {
+            User.OnUserChanged -= OnUserChanged;
+        }
+
+        void OnUserChanged(User user)
+        {
+            Wallet wallet = user?.Wallet;
+            
+            _text.text = wallet != null ? (wallet.Balance).ToString() : "";
+        }
     }
 }

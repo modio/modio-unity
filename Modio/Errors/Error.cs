@@ -15,11 +15,11 @@ namespace Modio
         public static readonly Error Unknown = new Error(ErrorCode.UNKNOWN);
 
         public readonly ErrorCode Code;
-
         
         protected readonly StackTrace _stackTrace;
         protected List<(string memberName, string sourceFilePath, int sourceLineNumber, string message)>
             _callInformation;
+        string _rayId;
 
         public Error(ErrorCode code)
         {
@@ -33,16 +33,26 @@ namespace Modio
 
         public virtual string GetMessage()
         {
+            var message = Code.GetMessage();
+
+
+
             if (_stackTrace != null)
-                return $"{Code.GetMessage()}\n at:\n{_stackTrace}";
+                message = message + $"\n at:\n{_stackTrace}";
             if(_callInformation != null)
             {
-                string formattedCall = string.Join('\n', _callInformation.Select(
-                                                       a => $"{a.sourceFilePath}: {a.memberName}:{a.sourceLineNumber}:{a.message}"));
-                return $"{Code.GetMessage()}\n at:\n{formattedCall}";
+                string formattedCall = string.Join(
+                    '\n',
+                    _callInformation.Select(a => $"{a.sourceFilePath}: {a.memberName}:{a.sourceLineNumber}:{a.message}")
+                );
+
+                message = message + $"\n at:\n{formattedCall}";
             }
 
-            return Code.GetMessage();
+            if (!string.IsNullOrEmpty(_rayId))
+                message = message + $"\n Cloudflare Ray Id: {_rayId}";
+
+            return message;
         }
 
         public static implicit operator bool(Error error) => error.Code != ErrorCode.NONE;
@@ -78,6 +88,15 @@ namespace Modio
             
             return this;
         }
-    }
 
+        /// <summary>
+        /// Attaches a Cloudflare Ray id to this error, which will print with the message of the error object when invoking
+        /// <see cref="GetMessage"/>.
+        /// </summary>
+        internal Error AddCloudflareRayId(string rayId)
+        {
+            _rayId = rayId;
+            return this;
+        }
+    }
 }

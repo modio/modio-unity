@@ -3,7 +3,7 @@ using Modio.API;
 
 namespace Modio.Authentication
 {
-    public partial interface IModioAuthService
+    public interface IModioAuthService
     {
         /// <summary>
         /// Authenticates with the required server 
@@ -16,7 +16,7 @@ namespace Modio.Authentication
             string thirdPartyEmail = null,
             bool sync = true
         );
-        
+
         public ModioAPI.Portal Portal { get; }
     }
 }

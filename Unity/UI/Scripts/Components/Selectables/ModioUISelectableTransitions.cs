@@ -9,6 +9,7 @@ namespace Modio.Unity.UI.Components.Selectables
     public class ModioUISelectableTransitions : MonoBehaviour
     {
         public ToggleFilter FilteredToggle => _toggleFilter;
+        
         public enum ToggleFilter
         {
             Any     = OnlyOn | OnlyOff,
@@ -26,7 +27,8 @@ namespace Modio.Unity.UI.Components.Selectables
 
         IModioUISelectable _owner;
         ModioUIToggle _toggle;
-        
+        int _lastEnabledOnFrame;
+
         public ISelectableTransition[] SelectableTransitions => _transitions;
 
         void Awake()
@@ -42,7 +44,7 @@ namespace Modio.Unity.UI.Components.Selectables
             {
                 OnSelectionStateChanged(IModioUISelectable.SelectionState.Normal, true);
                 
-                enabled = false;
+                //enabled = false;
             }
         }
 
@@ -53,6 +55,8 @@ namespace Modio.Unity.UI.Components.Selectables
 
         void OnEnable()
         {
+            _lastEnabledOnFrame = Time.frameCount;
+            
             foreach (var monoBehaviourEvents in _monoBehaviourEvents) monoBehaviourEvents.OnEnable();
 
             if (_owner != null)
@@ -60,6 +64,8 @@ namespace Modio.Unity.UI.Components.Selectables
                 _owner.StateChanged += OnSelectionStateChanged;
                 OnSelectionStateChanged(_owner.State, true);
             }
+            else
+                OnSelectionStateChanged(IModioUISelectable.SelectionState.Normal, true);
         }
 
         void OnDisable()
@@ -94,6 +100,9 @@ namespace Modio.Unity.UI.Components.Selectables
                     state = IModioUISelectable.SelectionState.Normal;
                 ModioUIInput.SwappedControlScheme += OnSwappedToController;
             }
+
+            instant |= !enabled;
+            instant |= _lastEnabledOnFrame == Time.frameCount;
 
             foreach (ISelectableTransition transition in _transitions)
                 transition.OnSelectionStateChanged(state, instant);

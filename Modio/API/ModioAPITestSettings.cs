@@ -1,10 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Text.RegularExpressions;
 
 namespace Modio.API
 {
+    [Serializable]
     public class ModioAPITestSettings : IModioServiceSettings
     {
         public class FakeUnityApiResponse

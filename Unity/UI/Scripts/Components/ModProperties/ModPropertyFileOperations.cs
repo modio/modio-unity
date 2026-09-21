@@ -37,7 +37,7 @@ namespace Modio.Unity.UI.Components.ModProperties
 
         public void OnModUpdate(Mod mod)
         {
-            Operation operation = mod.File.State switch
+            Operation operation = mod.File?.State switch
             {
                 ModFileState.Queued              => Operation.Queued,
                 ModFileState.Downloading         => Operation.Downloading,

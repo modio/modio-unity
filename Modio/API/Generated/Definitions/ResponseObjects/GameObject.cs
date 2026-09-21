@@ -75,6 +75,9 @@ namespace Modio.API.SchemaDefinitions{
         internal readonly ThemeObject Theme;
         /// <summary>Platforms that are supported by this title.</summary>
         internal readonly GamePlatformsObject[] Platforms;
+        /// <summary> Placement options for this title. Placements determine how the mod grid is displayed in game. </summary>
+        internal readonly PlacementObject[] Placements;
+        
 
         /// <param name="id">Unique game id.</param>
         /// <param name="status">Status of the game (see [status and visibility](#status-amp-visibility) for details):<br/><br/>__0__ = Not Accepted<br/>__1__ = Accepted<br/>__3__ = Deleted</param>
@@ -143,7 +146,8 @@ namespace Modio.API.SchemaDefinitions{
             GameTagOptionLocalizedObject[] tagOptions,
             GameStatsObject stats,
             ThemeObject theme,
-            GamePlatformsObject[] platforms
+            GamePlatformsObject[] platforms,
+            PlacementObject[] placements
         ) {
             Id = id;
             Status = status;
@@ -178,6 +182,7 @@ namespace Modio.API.SchemaDefinitions{
             Stats = stats;
             Theme = theme;
             Platforms = platforms;
+            Placements = placements;
         }
     }
 }

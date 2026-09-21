@@ -18,7 +18,7 @@ namespace Modio.Unity.UI.Components
 
         public void TagSelectedForSearch()
         {
-            ModioUISearch.Default.SetSearchForTag(_tag);
+            ModioUISearch.Default.ModioSearch.SetSearchForTag(_tag);
         }
     }
 }

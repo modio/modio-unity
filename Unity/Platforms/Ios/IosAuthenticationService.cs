@@ -114,7 +114,7 @@ namespace Modio.Unity.Platforms.Ios
                     );
 
                 if (!error)
-                    User.Current.OnAuthenticated(accessTokenObject.Value.AccessToken,  accessTokenObject.Value.DateExpires, _sync);
+                    await Users.User.Current.ApplyAuthenticationAsync(accessTokenObject.Value.AccessToken, _sync);
 
                 return error;
             }

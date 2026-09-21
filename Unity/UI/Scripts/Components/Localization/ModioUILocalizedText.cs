@@ -6,6 +6,9 @@ namespace Modio.Unity.UI.Components.Localization
 {
     public class ModioUILocalizedText : MonoBehaviour
     {
+        public string Key => _key;
+        public event Action<string> OnKeyChanged;
+        
         [SerializeField] string _key;
 
         [SerializeField] TMP_Text _tmpText;
@@ -78,6 +81,7 @@ namespace Modio.Unity.UI.Components.Localization
             if (string.IsNullOrEmpty(_initialKey))
                 _initialKey = _key;
             _key = key;
+            OnKeyChanged?.Invoke(key);
             UpdateText();
         }
 

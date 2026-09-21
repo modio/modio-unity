@@ -5,7 +5,7 @@ using Object = UnityEngine.Object;
 namespace Modio.Unity.UI.Scripts.Themes
 {
     [Serializable]
-    public abstract class BaseStyleOption<T> : IStyleOption
+    public abstract class BaseStyleOption<T> : IStyleComponent<T> where T : Object
     {
         public ThemeOptions OptionType => _option;
 
@@ -16,6 +16,6 @@ namespace Modio.Unity.UI.Scripts.Themes
             if (component is T superType) StyleComponent(superType);
         }
 
-        protected abstract void StyleComponent(T component);
+        public abstract void StyleComponent(T component);
     }
 }

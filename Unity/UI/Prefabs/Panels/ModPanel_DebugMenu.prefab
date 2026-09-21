@@ -111,6 +111,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 0}
   _getSelectablesInChildrensChildren: 1
   _fallbackSelectionToIfNoValidChildren: {fileID: 0}
+  _selectOnEnableIfLastSelectionInactive: 0
 --- !u!114 &6156659255106131763
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -365,6 +366,8 @@ MonoBehaviour:
   PercentPaddingVertical: 0.05
   adjustHorizontally: 0
   adjustVertically: 1
+  _snapToMin: 0
+  _snapToMax: 0
   Viewport: {fileID: 8709648999980777639}
   DefaultViewportContainer: {fileID: 8295554501518848081}
   HorizontalViewportContainer: {fileID: 0}
@@ -438,7 +441,7 @@ MonoBehaviour:
   m_text: Enter the game Id
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 5f9d73ed3cc0464468ed37bef4b9e476, type: 2}
-  m_sharedMaterial: {fileID: -5350118352905887863, guid: 5f9d73ed3cc0464468ed37bef4b9e476,
+  m_sharedMaterial: {fileID: -7325664360489529984, guid: 5f9d73ed3cc0464468ed37bef4b9e476,
     type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
@@ -555,7 +558,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 232, y: -157.02}
+  m_AnchoredPosition: {x: 232, y: -153.02}
   m_SizeDelta: {x: 464, y: 0}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!222 &6606347692869718261
@@ -589,7 +592,7 @@ MonoBehaviour:
   m_text: Section
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 5f9d73ed3cc0464468ed37bef4b9e476, type: 2}
-  m_sharedMaterial: {fileID: -5350118352905887863, guid: 5f9d73ed3cc0464468ed37bef4b9e476,
+  m_sharedMaterial: {fileID: -7325664360489529984, guid: 5f9d73ed3cc0464468ed37bef4b9e476,
     type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
@@ -750,6 +753,7 @@ GameObject:
   - component: {fileID: 4477636054554644760}
   - component: {fileID: 4477636054554644763}
   - component: {fileID: 4477636054554644762}
+  - component: {fileID: 1875274331974163479}
   m_Layer: 5
   m_Name: Background (Blur)
   m_TagString: Untagged
@@ -884,6 +888,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _action: 0
+--- !u!114 &1875274331974163479
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4477636054554644756}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99322d4030fe448fad38f69727c003e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _inverseForBackgrounds: 1
 --- !u!1 &4477636054742054809
 GameObject:
   m_ObjectHideFlags: 0
@@ -1202,6 +1219,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 8392453733025242328}
   _getSelectablesInChildrensChildren: 1
   _fallbackSelectionToIfNoValidChildren: {fileID: 0}
+  _selectOnEnableIfLastSelectionInactive: 0
 --- !u!1 &5409906169761876615
 GameObject:
   m_ObjectHideFlags: 0
@@ -2024,6 +2042,12 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4273645941101471291, guid: 71d551a152b09064a93b5f043b796120,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -7325664360489529984, guid: 5f9d73ed3cc0464468ed37bef4b9e476,
+        type: 2}
     - target: {fileID: 5390317740366944672, guid: 71d551a152b09064a93b5f043b796120,
         type: 3}
       propertyPath: m_Navigation.m_Mode
@@ -2034,6 +2058,12 @@ PrefabInstance:
       propertyPath: m_text
       value: GAME ID...
       objectReference: {fileID: 0}
+    - target: {fileID: 7403279965963565552, guid: 71d551a152b09064a93b5f043b796120,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -7325664360489529984, guid: 5f9d73ed3cc0464468ed37bef4b9e476,
+        type: 2}
     - target: {fileID: 8941885032045446393, guid: 71d551a152b09064a93b5f043b796120,
         type: 3}
       propertyPath: m_Pivot.x

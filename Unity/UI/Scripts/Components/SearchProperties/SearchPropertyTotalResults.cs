@@ -13,9 +13,9 @@ namespace Modio.Unity.UI.Components.SearchProperties
 
         public void OnSearchUpdate(ModioUISearch search)
         {
-            _foundResultsText.gameObject.SetActive(search.LastSearchResultTotalCount > 0);
+            _foundResultsText.gameObject.SetActive(search.ModioSearch.LastSearchResultTotalCount > 0);
 
-            _foundResultsText.text = string.Format(_foundResultsString, search.LastSearchResultTotalCount);
+            _foundResultsText.text = string.Format(_foundResultsString, search.ModioSearch.LastSearchResultTotalCount);
         }
     }
 }

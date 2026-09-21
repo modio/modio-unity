@@ -56,15 +56,25 @@ namespace Modio.Monetization
         public static void TryGetLocalPrice(Mod mod)
         {
             if (mod.PortalSku == null)
+            {
+                mod.FiatPrice = null;
                 return;
+            }
             
             if (_cached)
             {
-                mod.FiatPrice = GetLocalPrice(mod.PortalSku);
-                mod.InvokeModUpdated(ModChangeType.Everything);
+                if (_currentPortal != ModioAPI.Portal.None && _currentPortal != ModioAPI.CurrentPortal)
+                    Reset();
+                else
+                {
+                    mod.FiatPrice = GetLocalPrice(mod.PortalSku);
+                    mod.InvokeModUpdated(ModChangeType.Everything);
 
-                return;
+                    return;
+                }
             }
+            
+            mod.FiatPrice = null;
             ModsWithPrice.Add(mod);
         }
 

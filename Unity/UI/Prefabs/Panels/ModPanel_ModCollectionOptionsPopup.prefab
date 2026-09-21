@@ -186,7 +186,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9e990c13f9f24324a4a5a1d8cb151528, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _styleTarget: 202
+  _styleTarget: 200
   _targetComponents:
   - Component: {fileID: 3198826103835759340}
     Option: 0
@@ -490,6 +490,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 0}
   _getSelectablesInChildrensChildren: 0
   _fallbackSelectionToIfNoValidChildren: {fileID: 0}
+  _selectOnEnableIfLastSelectionInactive: 0
 --- !u!114 &3198826104926626340
 MonoBehaviour:
   m_ObjectHideFlags: 0

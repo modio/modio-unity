@@ -60,7 +60,7 @@ namespace Modio.Unity.UI.Panels
 
         void MoreFromCreatorPressed()
         {
-            ModioUISearch.Default.SetSearchForUser(_modioUICollection.Collection.Creator);
+            ModioUISearch.Default.ModioSearch.SetSearchForUser(_modioUICollection.Collection.Creator);
             ClosePanel();
         }
     }

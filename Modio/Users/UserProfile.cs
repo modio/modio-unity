@@ -89,7 +89,7 @@ namespace Modio.Users
             profile.ApplyDetailsFromUserObject(user);
             return profile;
         }
-
+        
         public static bool operator ==(UserProfile left, UserProfile right) => Equals(left, right);
 
         public static bool operator !=(UserProfile left, UserProfile right) => !Equals(left, right);
@@ -121,39 +121,9 @@ namespace Modio.Users
 
 #region Muting
 
-        public async Task<Error> Mute()
-        {
-            (Error error, Response204? _) = await ModioAPI.Users.MuteAUser(UserId);
+        public Task<Error> Mute() => User.Current.MuteUser(this);
 
-            if (error)
-            {
-                if (!error.IsSilent)
-                    ModioLog.Error?.Log($"Error muting user {Username}: {error}");
-
-                return error;
-            }
-
-            ModCache.ClearModSearchCache();
-
-            return Error.None;
-        }
-
-        public async Task<Error> UnMute()
-        {
-            (Error error, Response204? _) = await ModioAPI.Users.UnmuteAUser(UserId);
-
-            if (error)
-            {
-                if (!error.IsSilent)
-                    ModioLog.Error?.Log($"Error un-muting user {Username}: {error}");
-
-                return error;
-            }
-
-            ModCache.ClearModSearchCache();
-
-            return Error.None;
-        }
+        public Task<Error> UnMute() => User.Current.UnmuteUser(this);
 
 #endregion
 

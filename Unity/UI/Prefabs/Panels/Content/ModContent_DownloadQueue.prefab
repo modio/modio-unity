@@ -506,7 +506,7 @@ MonoBehaviour:
   _styleTarget: 100
   _targetComponents:
   - Component: {fileID: 2946884069624570473}
-    Option: 4
+    Option: 7
 --- !u!1 &5681266154075245412
 GameObject:
   m_ObjectHideFlags: 0
@@ -789,7 +789,7 @@ MonoBehaviour:
   _styleTarget: 1
   _targetComponents:
   - Component: {fileID: 6151723424821262471}
-    Option: 4
+    Option: 7
 --- !u!1 &6151723425747671788
 GameObject:
   m_ObjectHideFlags: 0
@@ -969,7 +969,7 @@ MonoBehaviour:
   _styleTarget: 1
   _targetComponents:
   - Component: {fileID: 6151723426082219980}
-    Option: 4
+    Option: 7
 --- !u!1 &6151723426522370568
 GameObject:
   m_ObjectHideFlags: 0
@@ -1574,17 +1574,17 @@ PrefabInstance:
     - target: {fileID: 3345754084887186727, guid: 00396c498781f3f41bf79b53668e5349,
         type: 3}
       propertyPath: m_fontColor.b
-      value: 0.84705883
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3345754084887186727, guid: 00396c498781f3f41bf79b53668e5349,
         type: 3}
       propertyPath: m_fontColor.g
-      value: 0.75686276
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3345754084887186727, guid: 00396c498781f3f41bf79b53668e5349,
         type: 3}
       propertyPath: m_fontColor.r
-      value: 0.02745098
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3345754084887186727, guid: 00396c498781f3f41bf79b53668e5349,
         type: 3}
@@ -1605,7 +1605,7 @@ PrefabInstance:
     - target: {fileID: 3345754084887186727, guid: 00396c498781f3f41bf79b53668e5349,
         type: 3}
       propertyPath: m_fontColor32.rgba
-      value: 4292395271
+      value: 4294967295
       objectReference: {fileID: 0}
     - target: {fileID: 3345754084887186727, guid: 00396c498781f3f41bf79b53668e5349,
         type: 3}
@@ -1615,12 +1615,12 @@ PrefabInstance:
     - target: {fileID: 5681405893648574736, guid: 00396c498781f3f41bf79b53668e5349,
         type: 3}
       propertyPath: _targetComponents.Array.data[0].Option
-      value: 8
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 5681405893648574736, guid: 00396c498781f3f41bf79b53668e5349,
         type: 3}
       propertyPath: _targetComponents.Array.data[1].Option
-      value: 8
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 5756642250720423447, guid: 00396c498781f3f41bf79b53668e5349,
         type: 3}
@@ -1983,17 +1983,17 @@ PrefabInstance:
     - target: {fileID: 3345754084887186727, guid: 00396c498781f3f41bf79b53668e5349,
         type: 3}
       propertyPath: m_fontColor.b
-      value: 0.84705883
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3345754084887186727, guid: 00396c498781f3f41bf79b53668e5349,
         type: 3}
       propertyPath: m_fontColor.g
-      value: 0.75686276
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3345754084887186727, guid: 00396c498781f3f41bf79b53668e5349,
         type: 3}
       propertyPath: m_fontColor.r
-      value: 0.02745098
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3345754084887186727, guid: 00396c498781f3f41bf79b53668e5349,
         type: 3}
@@ -2014,7 +2014,7 @@ PrefabInstance:
     - target: {fileID: 3345754084887186727, guid: 00396c498781f3f41bf79b53668e5349,
         type: 3}
       propertyPath: m_fontColor32.rgba
-      value: 4292395271
+      value: 4294967295
       objectReference: {fileID: 0}
     - target: {fileID: 3345754084887186727, guid: 00396c498781f3f41bf79b53668e5349,
         type: 3}
@@ -2024,7 +2024,12 @@ PrefabInstance:
     - target: {fileID: 5681405893648574736, guid: 00396c498781f3f41bf79b53668e5349,
         type: 3}
       propertyPath: _targetComponents.Array.data[0].Option
-      value: 8
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 5681405893648574736, guid: 00396c498781f3f41bf79b53668e5349,
+        type: 3}
+      propertyPath: _targetComponents.Array.data[1].Option
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 5756642250720423447, guid: 00396c498781f3f41bf79b53668e5349,
         type: 3}

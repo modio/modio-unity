@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Text.RegularExpressions;
+using System.Text;
 using Modio.API;
 using UnityEngine;
 
@@ -71,6 +71,7 @@ namespace Modio.Unity.UI.Components.Localization
             {
                 foreach (var languageTable in _languageTables)
                 {
+                    
                     if (languageTable.TryGetValue(ModioUILocalizationKeys.LanguageCode, out var code) &&
                         isoCode == code)
                     {
@@ -112,25 +113,23 @@ namespace Modio.Unity.UI.Components.Localization
                 //prevent the last column getting a \r tacked on
                 if (entry.EndsWith("\r")) trimmedEntry = entry.Substring(0, entry.Length - 1);
 
-                // Splits a CSV row into tokens. There will be 2*columns entries. Even entries will be blank or commas/quotes and should be ignored
-                // Odd entries will contain the actual text
-                var pattern = @"(?:,""|^"")(""""|[\w\W]*?)(?="",|""$)|(?:,(?!"")|^(?!""))([^,]*?)(?=$|,)|(\r\n|\n)";
-                var tokens = Regex.Split(trimmedEntry, pattern);
+                // Column 0 is the key, columns 1..n are the per-language values
+                var fields = ParseCsvLine(trimmedEntry);
 
-                if (tokens.Length < 2) continue;
+                if (fields.Count < 2) continue;
 
-                var entryKey = tokens[1];
+                var entryKey = fields[0];
 
                 if (_languageTables == null)
                 {
                     _languageTables = new List<Dictionary<string, string>>();
 
-                    for (int i = 1; i < tokens.Length / 2; i++)
+                    for (int i = 1; i < fields.Count; i++)
                     {
                         _languageTables.Add(
                             new Dictionary<string, string>
                             {
-                                { entryKey, tokens[i * 2 + 1] },
+                                { entryKey, fields[i] },
                             }
                         );
                     }
@@ -138,14 +137,61 @@ namespace Modio.Unity.UI.Components.Localization
                     continue;
                 }
 
-                // i=0 is key
-                for (int i = 1; i * 2 + 1 < tokens.Length && i - 1 < _languageTables.Count; i++)
+                for (int i = 1; i < fields.Count && i - 1 < _languageTables.Count; i++)
                 {
-                    _languageTables[i - 1].Add(entryKey, tokens[i * 2 + 1]);
+                    _languageTables[i - 1].Add(entryKey, fields[i]);
+                }
+
+                // Error if inconsistent number of columns in the CSV file
+                if (fields.Count - 1 != _languageTables.Count)
+                {
+                    ModioLog.Error?.Log($"Inconsistent number of columns in localization CSV file for entry {entryKey}. Expected {_languageTables.Count + 1}, got {fields.Count}.");
                 }
             }
-            
+
+            //Ensure a language is set
+            if (ModioServices.TryResolve(out ModioSettings settings)) SetLanguageCode(settings.DefaultLanguage);
+
             ModioClient.OnInitialized += OnPluginInitialized;
+        }
+
+        // Parses a single CSV row into its fields. Handles quoted fields containing
+        // commas, and doubled quotes ("") as an escaped quote inside a quoted field.
+        static List<string> ParseCsvLine(string line)
+        {
+            var fields = new List<string>();
+            var current = new StringBuilder();
+            var inQuotes = false;
+
+            for (int i = 0; i < line.Length; i++)
+            {
+                var c = line[i];
+
+                if (inQuotes)
+                {
+                    if (c != '"')
+                        current.Append(c);
+                    else if (i + 1 < line.Length && line[i + 1] == '"') // escaped quote ("")
+                    {
+                        current.Append('"');
+                        i++; // skip the next quote
+                    }
+                    else
+                        inQuotes = false;
+                }
+                else if (c == '"')
+                    inQuotes = true;
+                else if (c == ',')
+                {
+                    fields.Add(current.ToString());
+                    current.Clear();
+                }
+                else
+                    current.Append(c);
+            }
+
+            fields.Add(current.ToString());
+            return fields;
         }
 
         void OnDestroy()

@@ -9,7 +9,7 @@ namespace Modio.Unity.UI.Scripts.Themes.Options
     {
         [SerializeField] Sprite _image;
 
-        protected override void StyleComponent(Image component)
+        public override void StyleComponent(Image component)
         {
             component.sprite = _image;
         }

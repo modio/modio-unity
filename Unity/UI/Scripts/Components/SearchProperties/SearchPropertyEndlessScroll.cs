@@ -51,9 +51,9 @@ namespace Modio.Unity.UI.Components.SearchProperties
 
                 if (distanceFromEnd < _distanceFromBottomToLoadContent &&
                     _search != null &&
-                    _search.CanGetMoreResults &&
-                    !_search.IsSearching)
-                    _search.GetNextPageAdditivelyForLastSearch();
+                    _search.ModioSearch.CanGetMoreResults &&
+                    !_search.ModioSearch.IsSearching)
+                    _search.ModioSearch.GetNextPageAdditivelyForLastSearch();
 
                 yield return null;
             }

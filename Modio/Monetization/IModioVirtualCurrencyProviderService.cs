@@ -11,5 +11,6 @@ namespace Modio.Monetization
         /// <summary>Opens the target platform's checkout flow. This will open a separate UI window outside the game.</summary>
         /// <param name="sku">The SKU being purchased.</param>
         public Task<Error> OpenCheckoutFlow(PortalSku sku);
+
     }
 }

@@ -1,29 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using Modio.Mods;
+using Modio.Search;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
 namespace Modio.Unity.UI.Search
 {
-    [System.Serializable]
-    public enum SpecialSearchType
-    {
-        Nothing = 8,
-
-        Installed             = 5,
-        Subscribed            = 6,
-        InstalledOrSubscribed = 7,
-        UserCreations         = 9,
-        Purchased             = 10,
-        SearchForTag,
-        SearchForUser,
-        SubSearchesOnly,
-        
-        SearchCollections     = 100,
-        FollowedCollections   = 101,
-        SearchModsInCollection,
-    }
 
     /// <summary>
     /// A container for all the information to specify a particular search
@@ -56,7 +39,8 @@ namespace Modio.Unity.UI.Search
         public List<string> searchTags;
         public SortModsBy sortModsBy;
         public long CollectionId;
-        public bool showMatureContent;
+
+        public MatureContentFilter matureContentFilter = MatureContentFilter.ShowAll;
         public bool isAscending;
         public RevenueType filterRevenueType = Modio.Mods.RevenueType.Free;
 
@@ -70,7 +54,7 @@ namespace Modio.Unity.UI.Search
         {
             var filter = new ModSearchFilter(0, paginationSize) { 
                 SortBy = sortModsBy,
-                ShowMatureContent = (showMatureContent),
+                MatureContentFilter = (matureContentFilter),
                 IsSortAscending = (isAscending),
                 RevenueType = filterRevenueType, };
 
@@ -93,7 +77,7 @@ namespace Modio.Unity.UI.Search
             if (searchWith == null) searchWith = ModioUISearch.Default;
 
             var searchFilter = GetSearchFilter(searchWith.DefaultPageSize);
-            searchWith.SetCustomSearchBase(searchFilter, searchType);
+            searchWith.ModioSearch.SetCustomSearchBase(searchFilter, searchType);
         }
     }
 }

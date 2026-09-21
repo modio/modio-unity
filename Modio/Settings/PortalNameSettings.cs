@@ -14,7 +14,7 @@ namespace Modio.Settings
 
         public bool ShouldIgnorePortalNameOn(ModioAPI.Portal portal)
         {
-            bool shouldIgnore = _ignorePortalNameOn.Contains(portal);
+            bool shouldIgnore = _ignorePortalNameOn?.Contains(portal) ?? false;
             if (shouldIgnore)
                 CheckWarnings(portal);
             return shouldIgnore;
@@ -22,7 +22,7 @@ namespace Modio.Settings
 
         public bool ShouldIgnorePortalAvatarOn(ModioAPI.Portal portal)
         {
-            bool shouldIgnore = _ignorePortalAvatarOn.Contains(portal);
+            bool shouldIgnore = _ignorePortalAvatarOn?.Contains(portal) ?? false;
             if (shouldIgnore)
                 CheckWarnings(portal);
             return shouldIgnore;
@@ -30,7 +30,7 @@ namespace Modio.Settings
 
         void CheckWarnings(ModioAPI.Portal portal)
         {
-            if (!_hasLoggedError && portal is ModioAPI.Portal.PlayStationNetwork or ModioAPI.Portal.XboxLive or ModioAPI.Portal.Nintendo)
+            if (!_hasLoggedError && portal is ModioAPI.Portal.PlayStation or ModioAPI.Portal.XboxLive or ModioAPI.Portal.Nintendo)
             {
                 _hasLoggedError = true;
                 ModioLog.Error?.Log($"Disabling portal names on {portal} is strongly discouraged. Check individual platform documentation for further info.");

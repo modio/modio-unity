@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Modio.Extensions;
 using Modio.Mods;
+using Modio.Search;
 using Modio.Unity.UI.Components.Selectables;
 using Modio.Unity.UI.Search;
 using TMPro;
@@ -82,10 +83,10 @@ namespace Modio.Unity.UI.Components
             //Don't override with the current tags if we're in the process of changing them
             if(_hasLocalChanges) return;
 
-            var currentFilter = ModioUISearch.Default.LastSearchFilter;
+            var currentFilter = ModioUISearch.Default.ModioSearch.LastSearchFilter;
 
             if (ModioClient.IsInitialized) 
-                UpdateTags(ModioUISearch.Default.LastSearchPreset == SpecialSearchType.SearchCollections).ForgetTaskSafely();
+                UpdateTags(ModioUISearch.Default.ModioSearch.LastSearchPreset == SpecialSearchType.SearchCollections).ForgetTaskSafely();
 
             foreach (var tagItem in checkboxTagItems)
             {
@@ -103,7 +104,7 @@ namespace Modio.Unity.UI.Components
         {
             var tags = checkboxTagItems.Where(tagEntry => tagEntry.Toggle.isOn).Select(tagItem => tagItem.Tag);
             _hasLocalChanges = false;
-            ModioUISearch.Default.ApplyTagsToSearch(tags);
+            ModioUISearch.Default.ModioSearch.ApplyTagsToSearch(tags);
         }
 
         public void ClearFilter()

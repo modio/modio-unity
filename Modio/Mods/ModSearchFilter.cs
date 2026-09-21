@@ -20,6 +20,7 @@ namespace Modio.Mods
         Downloads,
         Subscribers,
         DateSubmitted,
+        DateUpdated,
     }
     public enum RevenueType
     {
@@ -32,6 +33,17 @@ namespace Modio.Mods
         None = 0,
         PendingOnly = 1,
         LiveAndPending = 2,
+    }
+    [Flags]
+    public enum MatureContentFilter
+    {
+        ShowAll = -1,
+        NoMature = 0,
+        Alcohol = 1,
+        Drugs = 2,
+        Violent = 4,
+        Explicit = 8,
+        
     }
     [Serializable]
     public class ModSearchFilter
@@ -52,7 +64,9 @@ namespace Modio.Mods
         List<UserProfile> _users;
         string _collectionCategory;
         
-        public bool ShowMatureContent { get; set; }
+        
+        public MatureContentFilter MatureContentFilter { get; set; } = MatureContentFilter.ShowAll;
+        
         public SearchFilterPlatformStatus PlatformStatus  { get; set; } = SearchFilterPlatformStatus.None;
         
         public SortModsBy SortBy { get; set; } = SortModsBy.DateSubmitted;
@@ -220,8 +234,8 @@ namespace Modio.Mods
             if(_collectionCategory != null)
                 filter.CollectionCategory(_collectionCategory);
 
-            filter.MaturityOption(ShowMatureContent ? 0b1111 : 0b0000,
-                ShowMatureContent ? Filtering.BitwiseAnd : Filtering.None);
+            if (MatureContentFilter >= 0)
+                filter.MaturityOption((int)MatureContentFilter, Filtering.BitwiseAnd);
 
             string platformStatusFilter = PlatformStatus switch
             {
@@ -242,6 +256,7 @@ namespace Modio.Mods
                 SortModsBy.Downloads     => "downloads_total",
                 SortModsBy.Subscribers   => "subscribers_total",
                 SortModsBy.DateSubmitted => "id",
+                SortModsBy.DateUpdated   => "date_updated",
                 _                        => throw new ArgumentOutOfRangeException()
             };
             filter.SortByStringType(sortBy, IsSortAscending);

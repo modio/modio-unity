@@ -112,6 +112,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 0}
   _getSelectablesInChildrensChildren: 1
   _fallbackSelectionToIfNoValidChildren: {fileID: 0}
+  _selectOnEnableIfLastSelectionInactive: 0
 --- !u!1 &6757068646569548313
 GameObject:
   m_ObjectHideFlags: 0
@@ -322,6 +323,8 @@ MonoBehaviour:
   _targetComponents:
   - Component: {fileID: 6757068646998226218}
     Option: 10
+  - Component: {fileID: 6757068646998226218}
+    Option: 6
 --- !u!1 &6757068647746586424
 GameObject:
   m_ObjectHideFlags: 0

@@ -270,6 +270,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 0}
   _getSelectablesInChildrensChildren: 0
   _fallbackSelectionToIfNoValidChildren: {fileID: 0}
+  _selectOnEnableIfLastSelectionInactive: 0
 --- !u!114 &2590345401898890590
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -318,6 +319,7 @@ MonoBehaviour:
         _subscribeToggle: {fileID: 0}
         _unsubscribeButton: {fileID: 6215768133519423017}
         _purchaseButton: {fileID: 0}
+        _cannotPurchaseButton: {fileID: 0}
         _text: {fileID: 0}
         _localisedText: {fileID: 0}
         _dependenciesAreConfirmed: 0
@@ -329,6 +331,8 @@ MonoBehaviour:
         _enableButton: {fileID: 6215768132437906837}
         _disableButton: {fileID: 6215768133554187398}
         _showIfInstalledWhenEnabledNotAvailable: {fileID: 0}
+        _showWhenEnabled: {fileID: 0}
+        _showWhenDisabled: {fileID: 0}
     - rid: 2
       type: {class: ModPropertyOptionButtonsForPanels, ns: Modio.Unity.UI.Components.ModProperties,
         asm: Modio.Unity.UI}
@@ -590,7 +594,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9e990c13f9f24324a4a5a1d8cb151528, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _styleTarget: 202
+  _styleTarget: 200
   _targetComponents:
   - Component: {fileID: 2590345402989053334}
     Option: 0

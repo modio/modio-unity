@@ -22,11 +22,11 @@ namespace Modio.Unity.UI.Components.SearchProperties
             bool matchesAdditiveBehaviour = _additiveLoadBehaviour switch
             {
                 AdditiveLoadBehaviour.Ignore                 => true,
-                AdditiveLoadBehaviour.OnlyDuringAdditiveLoad => search.IsAdditiveSearch,
-                AdditiveLoadBehaviour.HideDuringAdditiveLoad => !search.IsAdditiveSearch,
+                AdditiveLoadBehaviour.OnlyDuringAdditiveLoad => search.ModioSearch.IsAdditiveSearch,
+                AdditiveLoadBehaviour.HideDuringAdditiveLoad => !search.ModioSearch.IsAdditiveSearch,
                 _                                            => throw new ArgumentOutOfRangeException()
             };
-            _displayWhileSearching.SetActive(search.IsSearching && matchesAdditiveBehaviour);
+            _displayWhileSearching.SetActive(search.ModioSearch.IsSearching && matchesAdditiveBehaviour);
         }
     }
 }

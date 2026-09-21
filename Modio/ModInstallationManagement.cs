@@ -105,7 +105,7 @@ namespace Modio
 
                 if (mod.File?.State is ModFileState.FileOperationFailed or ModFileState.Queued or ModFileState.None)
                     continue;
-                
+
                 _unverifiedMods.Add(mod);
             }
 
@@ -114,7 +114,9 @@ namespace Modio
             var settings = ModioServices.Resolve<ModioSettings>();
             
             // We want to check this if the settings are present, but if not ignore
-            if (!settings.TryGetPlatformSettings(out ModInstallationManagementSettings managementSettings))
+            if (!settings.TryGetPlatformSettings(out ModInstallationManagementSettings managementSettings)
+                // Mild hack for editor tooling
+                && !ModioServices.TryResolve(out managementSettings))
                 Activate();
             else if (managementSettings.AutoActivate)
                 Activate();
@@ -866,6 +868,7 @@ namespace Modio
                 _index.GetEntry(Mod).FileState = ModFileState.Downloaded;
                 _index.GetEntry(Mod).DownloadedModfileId = modfileId;
                 await SaveIndex();
+                Mod.File.FileStateProgress = 0f;
 
                 PostEvent(OperationPhase.Completed, ModFileState.Downloaded);
 
@@ -998,8 +1001,10 @@ namespace Modio
                 _index.GetEntry(Mod).FileState = ModFileState.Installed;
                 _index.GetEntry(Mod).InstalledModfileId = Mod.File.Id;
                 await SaveIndex();
+                Mod.File.FileStateProgress = 0f;
 
                 PostEvent(OperationPhase.Completed, ModFileState.Installed);
+
                 return Error.None;
             }
 
@@ -1157,8 +1162,10 @@ namespace Modio
                 _index.GetEntry(Mod).FileState = ModFileState.Installed;
                 _index.GetEntry(Mod).InstalledModfileId = Mod.File.Id;
                 await SaveIndex();
-
+                Mod.File.FileStateProgress = 0f;
+                
                 PostEvent(OperationPhase.Completed, ModFileState.Installed);
+                
                 return Error.None;
             }
 
@@ -1197,6 +1204,7 @@ namespace Modio
 
                 _index.RemoveEntry(Mod);
                 await SaveIndex();
+                Mod.File.FileStateProgress = 0f;
                 PostEvent(OperationPhase.Completed, ModFileState.None);
                 _unverifiedMods.Remove(Mod);
 

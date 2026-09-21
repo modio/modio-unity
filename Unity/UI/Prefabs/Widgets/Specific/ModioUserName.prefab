@@ -209,7 +209,7 @@ MonoBehaviour:
       data:
         _enableIsUsernameDefinedByPortal:
         - {fileID: 6808803010503083810}
-        _platformImage: {fileID: 0}
+        _platformImage: {fileID: 6808803010503082207}
         _platformIcons: []
 --- !u!114 &7090027101539724882
 MonoBehaviour:
@@ -892,6 +892,18 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e1e8f8c15a85fb141ad83e0a6f5206c5, type: 3}
+--- !u!114 &6808803010503082207 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2823761848046429244, guid: e1e8f8c15a85fb141ad83e0a6f5206c5,
+    type: 3}
+  m_PrefabInstance: {fileID: 8740851581970162915}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6808803010503083810}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!224 &6808803010503083809 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 2823761848046429122, guid: e1e8f8c15a85fb141ad83e0a6f5206c5,

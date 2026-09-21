@@ -13,15 +13,13 @@ namespace Modio.API
     {
         public static partial class InAppPurchases
         {
-            /// <summary>Convert an in-game consumable that a user has purchased via PlayStation™Network into a users mod.io inventory. For an entitlement to be eligible for consumption it must be registered on mod.io within the In-App Purchases section of your game profile. This endpoint will consume the entitlement on behalf of the user against the portal in which the entitlements reside (i.e. PlayStation™Network). Requests to this endpoint should specify if they are syncing PS4 or PS5 entitlements via the [platform header](#targeting-a-platform). If the platform header is omitted from the request, the endpoint will default to syncing PS5 entitlements.</summary>
-            /// <param name="">Convert an in-game consumable that a user has purchased via PlayStation™Network into a users mod.io inventory. For an entitlement to be eligible for consumption it must be registered on mod.io within the In-App Purchases section of your game profile. This endpoint will consume the entitlement on behalf of the user against the portal in which the entitlements reside (i.e. PlayStation™Network). Requests to this endpoint should specify if they are syncing PS4 or PS5 entitlements via the [platform header](#targeting-a-platform). If the platform header is omitted from the request, the endpoint will default to syncing PS5 entitlements.,,    Body Parameter|Type|Required|Description,    ---|---|---|---|,    auth_code|string|true|The auth code returned from the PlayStation™Network API.,    env|integer||The PlayStation™Network environment you are targeting. If omitted, the request will default to targeting the production environment.,    service_label|int||The service label where the entitlements for mod.io reside. If omitted the default value will be 0.</param>
-            /// <param name="body"></param>
-            public static async Task<(Error error, JToken entitlementFulfillmentObjects)> SyncPlaystationNetworkEntitlementsAsJToken(
-                SyncPlayStationNetworkEntitlementsRequest? body = null
+            /// <summary>Convert an in-game consumable that a user has purchased via PlayStation™ into a users mod.io inventory. For an entitlement to be eligible for consumption it must be registered on mod.io within the In-App Purchases section of your game profile. This endpoint will consume the entitlement on behalf of the user against the portal in which the entitlements reside (i.e. PlayStation™). Requests to this endpoint should specify if they are syncing PS4 or PS5 entitlements via the [platform header](#targeting-a-platform). If the platform header is omitted from the request, the endpoint will default to syncing PS5 entitlements.</summary>
+            public static async Task<(Error error, JToken entitlementFulfillmentObjects)> SyncPlaystationEntitlementsAsJToken(
+                SyncPlayStationEntitlementsRequest? body = null
             ) {
                 if (!IsInitialized()) return (new Error(ErrorCode.API_NOT_INITIALIZED), null);
 
-                using var request = ModioAPIRequest.New($"/me/iap/psn/sync", ModioAPIRequestMethod.Post, ModioAPIRequestContentType.FormUrlEncoded);
+                using var request = ModioAPIRequest.New($"/me/iap/ps/sync", ModioAPIRequestMethod.Post, ModioAPIRequestContentType.FormUrlEncoded);
 
                 request.Options.AddBody(body);
                 request.Options.RequireAuthentication();
@@ -29,14 +27,13 @@ namespace Modio.API
                 return await _apiInterface.GetJson(request);
             }
 
-            /// <summary>Convert an in-game consumable that a user has purchased via PlayStation™Network into a users mod.io inventory. For an entitlement to be eligible for consumption it must be registered on mod.io within the In-App Purchases section of your game profile. This endpoint will consume the entitlement on behalf of the user against the portal in which the entitlements reside (i.e. PlayStation™Network). Requests to this endpoint should specify if they are syncing PS4 or PS5 entitlements via the [platform header](#targeting-a-platform). If the platform header is omitted from the request, the endpoint will default to syncing PS5 entitlements.</summary>
-            /// <param name="">Convert an in-game consumable that a user has purchased via PlayStation™Network into a users mod.io inventory. For an entitlement to be eligible for consumption it must be registered on mod.io within the In-App Purchases section of your game profile. This endpoint will consume the entitlement on behalf of the user against the portal in which the entitlements reside (i.e. PlayStation™Network). Requests to this endpoint should specify if they are syncing PS4 or PS5 entitlements via the [platform header](#targeting-a-platform). If the platform header is omitted from the request, the endpoint will default to syncing PS5 entitlements.,,    Body Parameter|Type|Required|Description,    ---|---|---|---|,    auth_code|string|true|The auth code returned from the PlayStation™Network API.,    env|integer||The PlayStation™Network environment you are targeting. If omitted, the request will default to targeting the production environment.,    service_label|int||The service label where the entitlements for mod.io reside. If omitted the default value will be 0.</param>
-            public static async Task<(Error error, Pagination<EntitlementFulfillmentObject[]>? entitlementFulfillmentObjects)> SyncPlaystationNetworkEntitlements(
-                SyncPlayStationNetworkEntitlementsRequest? body = null
+            /// <summary>Convert an in-game consumable that a user has purchased via PlayStation™ into a users mod.io inventory. For an entitlement to be eligible for consumption it must be registered on mod.io within the In-App Purchases section of your game profile. This endpoint will consume the entitlement on behalf of the user against the portal in which the entitlements reside (i.e. PlayStation™). Requests to this endpoint should specify if they are syncing PS4 or PS5 entitlements via the [platform header](#targeting-a-platform). If the platform header is omitted from the request, the endpoint will default to syncing PS5 entitlements.</summary>
+            public static async Task<(Error error, Pagination<EntitlementFulfillmentObject[]>? entitlementFulfillmentObjects)> SyncPlaystationEntitlements(
+                SyncPlayStationEntitlementsRequest? body = null
             ) {
                 if (!IsInitialized()) return (new Error(ErrorCode.API_NOT_INITIALIZED), null);
 
-                using var request = ModioAPIRequest.New($"/me/iap/psn/sync", ModioAPIRequestMethod.Post, ModioAPIRequestContentType.FormUrlEncoded);
+                using var request = ModioAPIRequest.New($"/me/iap/ps/sync", ModioAPIRequestMethod.Post, ModioAPIRequestContentType.FormUrlEncoded);
 
                 request.Options.AddBody(body);
                 request.Options.RequireAuthentication();

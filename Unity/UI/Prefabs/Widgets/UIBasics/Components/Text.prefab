@@ -71,7 +71,7 @@ MonoBehaviour:
   m_text: Waiting...
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 5f9d73ed3cc0464468ed37bef4b9e476, type: 2}
-  m_sharedMaterial: {fileID: -5350118352905887863, guid: 5f9d73ed3cc0464468ed37bef4b9e476,
+  m_sharedMaterial: {fileID: -7325664360489529984, guid: 5f9d73ed3cc0464468ed37bef4b9e476,
     type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
@@ -169,3 +169,5 @@ MonoBehaviour:
   _targetComponents:
   - Component: {fileID: 995374498371502021}
     Option: 10
+  - Component: {fileID: 995374498371502021}
+    Option: 6

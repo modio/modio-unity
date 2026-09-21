@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Modio.Unity.UI.Scripts.Themes
@@ -15,13 +16,26 @@ namespace Modio.Unity.UI.Scripts.Themes
             {
                 if (_instance is not null && _instance._postedStyleEvent)
                     value.Invoke();
-
                 _onThemeSheetUpdatedInternal += value;
             }
             remove => _onThemeSheetUpdatedInternal -= value;
         }
 
+        public static void RegisterProperties(ModioUIThemeProperties properties)
+        {
+            if (_instance is not null && _instance._postedStyleEvent)
+                properties.ApplyStyles(Theme);
+            
+            AllProperties.Add(properties);
+        }
+        
+        public static void DeregisterProperties(ModioUIThemeProperties properties)
+        {
+            AllProperties.Remove(properties);
+        }
+
         static event Action _onThemeSheetUpdatedInternal;
+        static readonly HashSet<ModioUIThemeProperties> AllProperties = new();
         
         /// <summary>
         /// The current theme sheet containing all the mod.io styling options. This will only be available in play mode
@@ -33,6 +47,8 @@ namespace Modio.Unity.UI.Scripts.Themes
 
         bool _postedStyleEvent;
         
+        [SerializeField]
+        ModioUIThemeSheet _defaultThemeSheet;
         ModioUIThemeSheet _themeSheet;
         
         void Awake()
@@ -62,22 +78,32 @@ namespace Modio.Unity.UI.Scripts.Themes
 
         void OnModioSettingsUpdated(ModioSettings settings)
         {
-            if (!settings.TryGetPlatformSettings(out ModioThemeSystemSettings themeSettings)
-                || !Application.isPlaying
-                || _themeSheet == themeSettings.ThemeSheet) 
+            if (!Application.isPlaying) 
                 return;
-            
-            if (_themeSheet is not null)
+
+            ModioUIThemeSheet themeSheet = _defaultThemeSheet;
+
+            if (settings.TryGetPlatformSettings(out ModioThemeSystemSettings themeSettings)) themeSheet = themeSettings.ThemeSheet;
+
+            if (_themeSheet == themeSheet) 
+                return;
+
+            if (_themeSheet != null)
                 _themeSheet.OnThemeSheetUpdated -= InvokeThemeSheetUpdated;
 
-            _themeSheet = themeSettings.ThemeSheet;
+            _themeSheet = themeSheet;
             InvokeThemeSheetUpdated();
-            _themeSheet.OnThemeSheetUpdated += InvokeThemeSheetUpdated;
+            if (_themeSheet != null)
+                _themeSheet.OnThemeSheetUpdated += InvokeThemeSheetUpdated;
         }
 
         void InvokeThemeSheetUpdated()
         {
             _onThemeSheetUpdatedInternal?.Invoke();
+            
+            foreach (ModioUIThemeProperties properties in AllProperties) 
+                properties.ApplyStyles(Theme);
+
             if (!_postedStyleEvent) _postedStyleEvent = true;
         }
 

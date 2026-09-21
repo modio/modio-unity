@@ -5,6 +5,7 @@ using UnityEngine;
 
 namespace Modio.Unity.UI.Components.ModProperties
 {
+    [Serializable]
     public class ModPropertyCreatorName : ModioResourceProperty
     {
         [SerializeField] TMP_Text _text;

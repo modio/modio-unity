@@ -47,8 +47,8 @@ namespace Modio.Platforms.Wss
             if (!message.TryGetValue(out WssLoginSuccess loginSuccess))
                 return new WssError(ErrorCode.WSS_FAILED_TO_DESERIALIZE);
 
-            User.Current.OnAuthenticated(loginSuccess.access_token, loginSuccess.date_expires, sync);
-
+            await User.Current.ApplyAuthenticationAsync(loginSuccess.access_token, sync);
+            
             await codePrompter.HideCodePrompt();
             
             //Currently closing the connection after authentication, no other operations are expected

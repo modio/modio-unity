@@ -19,7 +19,7 @@ namespace Modio.Unity.UI.Components.SearchProperties
 
             foreach (var go in _displayWhenMoreResults)
             {
-                go.SetActive(!search.IsSearching && search.CanGetMoreResults);
+                go.SetActive(!search.ModioSearch.IsSearching && search.ModioSearch.CanGetMoreResults);
             }
         }
 
@@ -39,7 +39,7 @@ namespace Modio.Unity.UI.Components.SearchProperties
 
         void LoadMoreClicked()
         {
-            _search.GetNextPageAdditivelyForLastSearch();
+            _search.ModioSearch.GetNextPageAdditivelyForLastSearch();
         }
     }
 }

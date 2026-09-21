@@ -36,12 +36,14 @@ namespace Modio.Unity.UI.Scripts.Themes
         ButtonWalletBalance,
         ButtonHamburger,
         ButtonModCreator,
+        ButtonLibrarySort,
         PanelBackground = 200,
         PanelModDisplay,
         PanelModTileOptions,
         PanelModDisplayInfoBackground,
         PanelFilter,
         BrowserHeader,
+        PanelSpinner,
         FilterToggle = 300,
         TextSubdued,
         InputField,
@@ -53,5 +55,8 @@ namespace Modio.Unity.UI.Scripts.Themes
         ModTileFeatured,
         ModTileFeaturedLarge,
         ModTilePremiumBranding,
+        ModTileDisabledText,
+        ModTileEnabledText,
+        LibraryModTilePremiumIcon,
     }
 }

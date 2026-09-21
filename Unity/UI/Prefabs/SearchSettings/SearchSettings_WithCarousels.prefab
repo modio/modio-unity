@@ -44,16 +44,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a94e276117549a394fa60a568b852f0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  DisplayAs: Browse
-  DisplayAsLocalisedKey: modio_btn_menu_browsemods
+  DisplayAs: Featured
+  DisplayAsLocalisedKey: modio_btn_menu_featured
   Icon: {fileID: 21300000, guid: 1b4826362aea6a24aad38a202babee87, type: 3}
   HiddenIfMonetizationDisabled: 0
-  searchType: 8
+  searchType: 13
   searchPhrase: 
   searchTags: []
   sortModsBy: 4
   CollectionId: 0
-  showMatureContent: 0
+  matureContentFilter: -1
   isAscending: 0
   filterRevenueType: 2
   shareFilterSettingsWith: {fileID: 5720165946152866720}

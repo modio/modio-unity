@@ -44,7 +44,13 @@ namespace Modio.Unity.UI.Components
 
         void OnModUpdated() => onModUpdate?.Invoke();
 
-        public void OnPointerClick(PointerEventData eventData) => OnSubmit(eventData);
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            if (eventData.button == PointerEventData.InputButton.Right)
+                OnDisplayMoreInfoClicked();
+            else
+                OnSubmit(eventData);
+        }
 
         public void OnSubmit(BaseEventData eventData) => onClickOrSubmit?.Invoke(Mod);
 

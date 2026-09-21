@@ -304,6 +304,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 0}
   _getSelectablesInChildrensChildren: 0
   _fallbackSelectionToIfNoValidChildren: {fileID: 0}
+  _selectOnEnableIfLastSelectionInactive: 0
 --- !u!114 &4868809066581406586
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -351,6 +352,8 @@ MonoBehaviour:
         _enableButton: {fileID: 8953892567585663380}
         _disableButton: {fileID: 8953892566952514756}
         _showIfInstalledWhenEnabledNotAvailable: {fileID: 0}
+        _showWhenEnabled: {fileID: 0}
+        _showWhenDisabled: {fileID: 0}
     - rid: 1
       type: {class: ModPropertyOptionButtonsForPanels, ns: Modio.Unity.UI.Components.ModProperties,
         asm: Modio.Unity.UI}
@@ -475,6 +478,7 @@ GameObject:
   - component: {fileID: 4868809067314774688}
   - component: {fileID: 4868809067314774689}
   - component: {fileID: 4868809067314774694}
+  - component: {fileID: 4093724649699568882}
   m_Layer: 5
   m_Name: Image (PopupBackground)
   m_TagString: Untagged
@@ -560,6 +564,22 @@ MonoBehaviour:
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
+--- !u!114 &4093724649699568882
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4868809067314774692}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e990c13f9f24324a4a5a1d8cb151528, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _styleTarget: 200
+  _targetComponents:
+  - Component: {fileID: 4868809067314774689}
+    Option: 0
 --- !u!1001 &573560802293860217
 PrefabInstance:
   m_ObjectHideFlags: 0

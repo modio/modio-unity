@@ -19,7 +19,7 @@ namespace Modio.Unity.UI.Components
 
         public void Setup(GameTagCategory category)
         {
-            _categoryTitle.text = category.Name;
+            _categoryTitle.text = category.LocalizedName;
             SetFilterCount(0);
         }
 

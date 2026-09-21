@@ -12,7 +12,19 @@ namespace Modio.Authentication
         protected const ModioServicePriority SERVICE_BINDING_PRIORITY = ModioServicePriority.PlatformProvided + 9;
         bool _resolveUsingThis;
 
-        public IModioAuthService ServiceOverride { get; set; }
+        public IModioAuthService ServiceOverride
+        {
+            get => _serviceOverride;
+            set
+            {
+                // ModioAPI doesn't update portal automatically after authing, so we set here when choosing auth service
+                ModioAPI.SetPortal(value.Portal);
+                _serviceOverride = value;
+            }
+        }
+
+        IModioAuthService _serviceOverride;
+        
         public IReadOnlyList<IModioAuthService> AuthBindings { get; private set; }
 
         public ModioMultiplatformAuthResolver()
@@ -51,7 +63,7 @@ namespace Modio.Authentication
 
         bool IsActiveForConditional() => _resolveUsingThis;
 
-        public Task<Error> Authenticate(bool displayedTerms, string thirdPartyEmail = null, bool sync = true)
+        public Task<Error> Authenticate(bool displayedTerms, string thirdPartyEmail = null, bool sync = true) 
             => Get<IModioAuthService>().Authenticate(displayedTerms, thirdPartyEmail, sync);
 
         public Task<string> GetActiveUserIdentifier() => Get<IGetActiveUserIdentifier>().GetActiveUserIdentifier();

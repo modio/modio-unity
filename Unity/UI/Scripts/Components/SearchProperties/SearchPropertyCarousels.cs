@@ -41,7 +41,7 @@ namespace Modio.Unity.UI.Components.SearchProperties
         {
             ModioUISearchSettings searchSettings = search.LastSearchSettingsFrom;
 
-            if (search.HasCustomSearchOrFiltering()) searchSettings = null;
+            if (search.HasCustomSearch()) searchSettings = null;
             
             if(_searchLastSearchSettingsFrom == searchSettings )
                 return;

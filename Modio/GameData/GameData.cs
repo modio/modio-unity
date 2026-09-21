@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Modio.API;
 using Modio.API.SchemaDefinitions;
@@ -13,7 +14,9 @@ namespace Modio.Mods
         public string CurrencyName;
         public GameCommunityOptions CommunityOptions;
         public GameMonetizationOptions MonetizationOptions;
-
+        public ModioFeaturedContent[] FeaturedContent;
+        
+        
         bool _hasFetchedWeb;
 
         static GameData _cachedGameData;
@@ -71,6 +74,9 @@ namespace Modio.Mods
             gameData.CommunityOptions = (GameCommunityOptions)gameObject.Value.CommunityOptions;
             gameData.MonetizationOptions = (GameMonetizationOptions)gameObject.Value.MonetizationOptions;
             
+            
+            gameData.FeaturedContent = gameObject.Value.Placements?.Select(placement => new ModioFeaturedContent(placement)).OrderBy(p=> p.DisplayPosition).ToArray() ?? Array.Empty<ModioFeaturedContent>();
+            
             gameData._hasFetchedWeb = true;
 
             SetGameData(gameData).ForgetTaskSafely();
@@ -125,7 +131,10 @@ namespace Modio.Mods
             if (error)
             {
                 if (_cachedGameData != null)
+                {
                     _cachedGameData.Categories = tags;
+                    StoreGameDataToDisk().ForgetTaskSafely();
+                }
 
                 return error;
             }
@@ -133,5 +142,6 @@ namespace Modio.Mods
             gameData.Categories = tags;
             return await SetGameData(gameData);
         }
+
     }
 }

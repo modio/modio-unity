@@ -51,6 +51,7 @@ GameObject:
   - component: {fileID: 5656710365374051860}
   - component: {fileID: 5656710365374051861}
   - component: {fileID: 5656710365374051850}
+  - component: {fileID: 2810659656789880685}
   m_Layer: 5
   m_Name: Background (Blur)
   m_TagString: Untagged
@@ -185,6 +186,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _action: 0
+--- !u!114 &2810659656789880685
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5656710365374051848}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99322d4030fe448fad38f69727c003e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _inverseForBackgrounds: 1
 --- !u!1 &5656710365485554766
 GameObject:
   m_ObjectHideFlags: 0

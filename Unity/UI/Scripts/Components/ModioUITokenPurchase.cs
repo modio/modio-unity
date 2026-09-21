@@ -4,17 +4,21 @@ using System.Linq;
 using System.Threading.Tasks;
 using Modio.Extensions;
 using Modio.Monetization;
+using Modio.Platforms;
+using Modio.Unity.UI.Panels;
 using Modio.Users;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace Modio.Unity.UI.Components
 {
     public class ModioUITokenPurchase : MonoBehaviour
     {
         [SerializeField] ModioUITokenPack _referencePack;
+        [SerializeField] GameObject _showWhileSearching;
 
         long _cachedGameId;
-        readonly List<ModioUITokenPack> _currentPacks = new List<ModioUITokenPack>();
+        readonly List<ModioUITokenPack> _currentPacks = new();
 
         void Start()
         {
@@ -32,6 +36,43 @@ namespace Modio.Unity.UI.Components
             User.OnUserAuthenticated += BeginGetCurrencyPacks;
         }
 
+        void OnEnable()
+        {
+            BeginCheckNoPacks().ForgetTaskSafely();
+
+            if (_currentPacks.Count > 0)
+            {
+                EventSystem.current.SetSelectedGameObject(_currentPacks[0].gameObject);
+                DelayedEnsurePackSelected().ForgetTaskSafely();
+            }
+            if (!ModioServices.TryResolve(out IModioStoreComplianceService complianceService))
+                return;
+            complianceService.ShowStoreInformation();
+        }
+
+        void OnDisable()
+        {
+            if (!ModioServices.TryResolve(out IModioStoreComplianceService complianceService))
+                return;
+            complianceService.HideStoreInformation();
+        }
+
+        static async Task BeginCheckNoPacks()
+        {
+            if (!ModioServices.TryResolve(out IModioVirtualCurrencyProviderService vcProvider) ||
+                !ModioServices.TryResolve(out IModioStoreComplianceService complianceService))
+                return;
+
+            (Error error, PortalSku[] skus) result = await vcProvider.GetCurrencyPackSkus();
+            if (!result.error &&
+                result.skus != null &&
+                result.skus.Length != 0)
+                return;
+
+            await complianceService.ShowNoPacksError();
+        }
+        
+        
         void OnDestroy()
         {
             ModioClient.OnInitialized -= OnModClientInitialized;
@@ -59,14 +100,16 @@ namespace Modio.Unity.UI.Components
 
             if (!ModioServices.TryResolve(out IModioVirtualCurrencyProviderService skuProvider)) return;
 
+            _showWhileSearching.SetActive(true);
             (Error error, PortalSku[] skus) = await skuProvider.GetCurrencyPackSkus();
+            _showWhileSearching.SetActive(false);
 
             if (error) ModioLog.Error?.Log(error);
 
-            ShowTokenPacks(skus);
+            ShowTokenPacks(skus.OrderBy(sku => sku.Value));
         }
 
-        void ShowTokenPacks(PortalSku[] sku)
+        void ShowTokenPacks(IEnumerable<PortalSku> sku)
         {
             // Make sure we don't add packs if we already have them loaded
             ClearTokenPacks();
@@ -88,7 +131,7 @@ namespace Modio.Unity.UI.Components
                 packUI.SetPack(tokenPack);
                 _currentPacks.Add(packUI);
             }
-
+            
             if (_currentPacks.Count == 0)
             {
                 Debug.LogError(
@@ -97,6 +140,26 @@ namespace Modio.Unity.UI.Components
 
                 _referencePack.gameObject.SetActive(false);
             }
+            else
+                EventSystem.current.SetSelectedGameObject(_currentPacks[0].gameObject);
+        }
+
+        async Task DelayedEnsurePackSelected()
+        {
+            await Task.Yield();
+            
+            if (_currentPacks.Count == 0 || !gameObject.activeInHierarchy)
+                return;
+
+            GameObject currentSelection = EventSystem.current.currentSelectedGameObject;
+            if(currentSelection != null && currentSelection.GetComponent<ModioUITokenPack>() != null)
+                return;
+
+            var panel = GetComponentInParent<ModioPanelBase>();
+            if(panel != null && !panel.HasFocus)
+                return;
+
+            EventSystem.current.SetSelectedGameObject(_currentPacks[0].gameObject);
         }
 
         void ClearTokenPacks()

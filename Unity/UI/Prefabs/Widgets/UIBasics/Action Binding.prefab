@@ -153,6 +153,8 @@ MonoBehaviour:
   _targetComponents:
   - Component: {fileID: 6773178036690334619}
     Option: 11
+  - Component: {fileID: 6773178036690334619}
+    Option: 6
 --- !u!1 &8248473643503889802
 GameObject:
   m_ObjectHideFlags: 0
@@ -440,6 +442,7 @@ MonoBehaviour:
   _additionalToHideIfNoBindings:
   - {fileID: 1854296486378627987}
   - {fileID: 8248473643503889802}
+  _dynamicPromptText: {fileID: 0}
 --- !u!114 &8441047286948199266
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -482,6 +485,12 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 1986095192311893460}
     m_Modifications:
+    - target: {fileID: 2644569597606339977, guid: 3249f62a74f4d8c47a70ab2fe96d78bd,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -76580068089955207, guid: a6487a22895c8aa4ab27e972c4bea7e4,
+        type: 2}
     - target: {fileID: 3884844579327299559, guid: 3249f62a74f4d8c47a70ab2fe96d78bd,
         type: 3}
       propertyPath: m_AnchorMax.y

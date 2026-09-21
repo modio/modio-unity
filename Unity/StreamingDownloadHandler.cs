@@ -52,7 +52,7 @@ namespace Modio.Unity
         protected override bool ReceiveData(byte[] dataReceived, int dataLength)
         {
             if(_cancellationTokenSource.Token.IsCancellationRequested){
-                _callingRequest.Abort();
+                _callingRequest?.Abort();
                 _streamBuffer.Flush();
                 _hasReceivedHeaders.TrySetCanceled();
                 //returning false, logs Curl error 23 
@@ -85,11 +85,11 @@ namespace Modio.Unity
 
         public async Task WaitForComplete()
         {
-            while (!_callingRequest.isDone)
+            while (_callingRequest is { isDone: false, })
             {
                 if (_cancellationTokenSource.Token.IsCancellationRequested)
                 {
-                    _callingRequest.Abort();
+                    _callingRequest?.Abort();
                     _streamBuffer.Flush();
                     _hasReceivedHeaders.TrySetCanceled(_cancellationTokenSource.Token);
                     return;
@@ -106,6 +106,12 @@ namespace Modio.Unity
         /// <param name="_">The AsyncOperation that completed the download.</param>
         public void DownloadCompleted(AsyncOperation _)
         {
+            // The request may have been disposed by a separate cleanup path (e.g. WaitToDispose /
+            // DisposeWayLater) before this completion callback fired. Detaching nulls the reference,
+            // so bail out rather than dereferencing a disposed request and throwing a NRE.
+            if (_callingRequest == null)
+                return;
+            
             if (_callingRequest.result == UnityWebRequest.Result.Success)
                 return;
 
@@ -116,7 +122,7 @@ namespace Modio.Unity
                 _streamBuffer.ThrowException = new OperationCanceledException();
             else
                 //Ensure the stream throws an error on read if the request failed
-                _streamBuffer.ThrowException = new IOException($"Download failed: {_callingRequest.error}");
+                _streamBuffer.ThrowException = new IOException($"Download failed: {_callingRequest?.error}");
             
             _cancellationTokenSource.Cancel();
         }
@@ -276,5 +282,12 @@ namespace Modio.Unity
 
         }
         
+        /// <summary>
+        /// Drops the reference to the calling request so completion callbacks don't touch it after
+        /// it has been disposed. A disposed <see cref="UnityWebRequest"/> is non-null but throws a
+        /// <see cref="NullReferenceException"/> from its native getters, so callers must detach
+        /// before disposing rather than relying on a null check.
+        /// </summary>
+        public void DetachRequest() => _callingRequest = null;
     }
 }

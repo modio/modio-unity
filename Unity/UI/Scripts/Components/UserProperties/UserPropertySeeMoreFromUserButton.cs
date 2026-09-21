@@ -36,7 +36,7 @@ namespace Modio.Unity.UI.Components.UserProperties
         {
             if (_user != null)
             {
-                ModioUISearch.Default.SetSearchForUser(_user);
+                ModioUISearch.Default.ModioSearch.SetSearchForUser(_user);
 
                 ModioPanelBase currentFocusedPanel = ModioPanelManager.GetInstance().CurrentFocusedPanel;
 

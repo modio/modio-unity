@@ -34,9 +34,12 @@ namespace Modio.Unity.UI.Panels
 
             var preferredSize = LayoutUtility.GetPreferredSize(rectTransform, (int)axis);
             rectTransform.SetSizeWithCurrentAnchors(axis, preferredSize);
-
+            
             if (_target == null) return;
 
+            float remainingHorizontal = _containWithin.rect.width - _target.rect.width - _padding.horizontal;
+            bool swapHorizontalAndVertical = remainingHorizontal < rectTransform.rect.width;
+            
             GetMinMax(_target,        axis, out var targetMin,  out var targetMax);
             GetMinMax(_containWithin, axis, out var containMin, out var containMax);
 
@@ -46,20 +49,58 @@ namespace Modio.Unity.UI.Panels
             
             float scale = rectTransform.lossyScale.x;
 
-            if (axis == RectTransform.Axis.Horizontal)
-            {
-                bool usePreferredSide = containMax > targetMax + (preferredSize + padding) * scale;
+            bool axisIsHorizontal = (axis == RectTransform.Axis.Horizontal);
 
-                if (usePreferredSide)
-                    pos.x = targetMax + (_padding.left * scale);
+            if (swapHorizontalAndVertical)
+            {
+                if (axisIsHorizontal)
+                {
+                    pos.x = Mathf.Max(
+                        targetMin - _padding.top * scale,
+                        containMin + (preferredSize + _padding.bottom) * scale
+                    );
+
+                    pos.x = (targetMax + targetMin - preferredSize) / 2;
+                }
                 else
-                    pos.x = targetMin - (_padding.right + preferredSize) * scale;
+                {
+                    bool usePreferredSide = containMin < targetMin - (preferredSize + _padding.bottom) * scale;
+
+                    if (usePreferredSide)
+                    {
+                        pos.y = targetMin - _padding.bottom * scale;
+                    }
+                    else
+                    {
+                        pos.y = targetMax + (_padding.bottom + preferredSize) * scale;
+                    }
+                }
             }
             else
             {
-                pos.y = Mathf.Max(targetMin - _padding.top * scale, containMin + (preferredSize + _padding.bottom) * scale);
+                if (axisIsHorizontal)
+                {
+                    bool usePreferredSide = containMax > targetMax + (preferredSize + padding) * scale;
+
+                    if (usePreferredSide)
+                    {
+                        pos.x = targetMax + (_padding.left * scale);
+                    }
+                    else
+                    {
+                        pos.x = targetMin - (_padding.right + preferredSize) * scale;
+                    }
+                }
+                else
+                {
+                    pos.y = Mathf.Max(
+                        targetMin - _padding.top * scale,
+                        containMin + (preferredSize + _padding.bottom) * scale
+                    );
+                }
             }
 
+            
             rectTransform.position = pos;
         }
 

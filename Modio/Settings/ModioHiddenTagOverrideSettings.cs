@@ -1,5 +1,8 @@
-﻿namespace Modio.Settings
+﻿using System;
+
+namespace Modio.Settings
 {
+    [Serializable]
     public class ModioHiddenTagOverrideSettings : IModioServiceSettings
     {
         public string[] HideTagCategories;
