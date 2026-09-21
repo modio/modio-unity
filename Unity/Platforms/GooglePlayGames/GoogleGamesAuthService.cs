@@ -52,7 +52,7 @@ namespace Plugins.Modio.Unity.Platforms.Android
                 );
 
             if (!error)
-                User.Current.OnAuthenticated(tokenObject.Value.AccessToken, tokenObject.Value.DateExpires, sync);
+                await User.Current.ApplyAuthenticationAsync(tokenObject.Value.AccessToken, sync);
 
             return error;
 #else

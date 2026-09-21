@@ -123,6 +123,9 @@ namespace Modio.FileIO
 
         protected virtual async Task<(Error error, T result)> ReadData<T>(string filePath)
         {
+            if (!Initialized)
+                return (new Error(ErrorCode.NOT_INITIALIZED), default(T));
+            
             (Error error, string json) = await ReadTextFile(filePath);
 
             if (error)
@@ -151,6 +154,9 @@ namespace Modio.FileIO
 
         protected virtual async Task<Error> WriteData<T>(T data, string filePath)
         {
+            if (!Initialized)
+                return new Error(ErrorCode.NOT_INITIALIZED);
+            
             if (data == null) return new Error(ErrorCode.BAD_PARAMETER);
 
             string json = JsonConvert.SerializeObject(data, Formatting.Indented);
@@ -166,6 +172,9 @@ namespace Modio.FileIO
 
         async Task<Error> DeleteData(string filePath)
         {
+            if (!Initialized)
+                return new Error(ErrorCode.NOT_INITIALIZED);
+            
             if (ActiveFileHandlesDictionary.TryGetValue(filePath, out TaskCompletionSource<Error> task))
                 await task.Task;
             
@@ -216,6 +225,9 @@ namespace Modio.FileIO
 
         public virtual async Task<(Error error, UserSaveObject[] results)> ReadAllSavedUserData()
         {
+            if (!Initialized)
+                return (new Error(ErrorCode.NOT_INITIALIZED), Array.Empty<UserSaveObject>());
+            
             Error error = Error.None;
             var output = new List<UserSaveObject>();
 
@@ -522,13 +534,11 @@ namespace Modio.FileIO
             catch (TaskCanceledException)
             {
                 error = LogTaskCancelAndCleanup();
-
                 return error;
             }
             catch (OperationCanceledException)
             {
                 error = LogTaskCancelAndCleanup();
-
                 return error;
             }
             catch ( AggregateException aggregateException)
@@ -1122,7 +1132,7 @@ namespace Modio.FileIO
 
 #region File Read/Write
 
-        protected virtual async Task<Error> WriteFile(string path, byte[] data, int bytesToWrite)
+        public virtual async Task<Error> WriteFile(string path, byte[] data, int bytesToWrite)
         {
             if (IsShuttingDown)
                 return new Error(ErrorCode.SHUTTING_DOWN);

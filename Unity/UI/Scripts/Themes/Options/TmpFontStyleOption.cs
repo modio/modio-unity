@@ -9,8 +9,8 @@ namespace Modio.Unity.UI.Scripts.Themes.Options
     {
         [SerializeField] FontStyles _fontStyles;
         [SerializeField] TmpSpacingWrapper _spacing;
-        
-        protected override void StyleComponent(TMP_Text component)
+
+        public override void StyleComponent(TMP_Text component)
         {
             component.fontStyle = _fontStyles;
 

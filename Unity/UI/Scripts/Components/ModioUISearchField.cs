@@ -39,7 +39,7 @@ namespace Modio.Unity.UI.Components
             if (lastSearchPhrase == searchField.text) return;
             lastSearchPhrase = searchField.text;
 
-            ModioUISearch.Default.ApplySearchPhrase(searchField.text);
+            ModioUISearch.Default.ModioSearch.ApplySearchPhrase(searchField.text);
         }
     }
 }

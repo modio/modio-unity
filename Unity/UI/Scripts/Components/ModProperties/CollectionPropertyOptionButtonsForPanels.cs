@@ -43,7 +43,7 @@ namespace Modio.Unity.UI.Components.ModProperties
 
         void MoreFromCreatorButtonClicked()
         {
-            ModioUISearch.Default.SetSearchForUser(_collection.Creator);
+            ModioUISearch.Default.ModioSearch.SetSearchForUser(_collection.Creator);
         }
 
         void ReportModButtonClicked()

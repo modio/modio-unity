@@ -384,6 +384,8 @@ MonoBehaviour:
   _targetComponents:
   - Component: {fileID: 7909108289066426640}
     Option: 10
+  - Component: {fileID: 7909108289066426640}
+    Option: 6
 --- !u!1 &7909108289640155858
 GameObject:
   m_ObjectHideFlags: 0
@@ -634,6 +636,8 @@ MonoBehaviour:
   _targetComponents:
   - Component: {fileID: 7909108289811462490}
     Option: 10
+  - Component: {fileID: 7909108289811462490}
+    Option: 6
 --- !u!1 &7909108290175646126
 GameObject:
   m_ObjectHideFlags: 0
@@ -750,6 +754,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 0}
   _getSelectablesInChildrensChildren: 1
   _fallbackSelectionToIfNoValidChildren: {fileID: 0}
+  _selectOnEnableIfLastSelectionInactive: 0
 --- !u!114 &4041190736626991227
 MonoBehaviour:
   m_ObjectHideFlags: 0

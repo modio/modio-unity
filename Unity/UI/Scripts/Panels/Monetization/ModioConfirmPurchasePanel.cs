@@ -36,7 +36,7 @@ namespace Modio.Unity.UI.Panels.Monetization
             Task<Error> purchaseItemTask = mod.Purchase(_subscribeOnPurchase);
 
             Error error = await ModioPanelManager.GetPanelOfType<ModioWaitingPanelGeneric>()
-                                                     .OpenAndWaitForAsync(purchaseItemTask);
+                                                     .OpenAndWaitForAsync(purchaseItemTask, GenericWaitingType.Purchasing);
 
             if (error.Code != ErrorCode.NONE)
                 ModioPanelManager.GetPanelOfType<ModioErrorPanelGeneric>().OpenPanel(error);

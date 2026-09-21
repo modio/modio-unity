@@ -24,7 +24,11 @@ namespace Modio.Unity.UI.Components
         void OnEnable()
         {
             if (_panel != null)
+            {
                 _panel.OnHasFocusChanged += OnHasFocusChanged;
+                if(_panel.HasFocus)
+                    OnHasFocusChanged(true);
+            }
             else
                 OnHasFocusChanged(true);
         }
@@ -66,7 +70,7 @@ namespace Modio.Unity.UI.Components
 
             if (platformPurchaseFlowTask != null)
                 ModioPanelManager.GetPanelOfType<ModioWaitingPanelGeneric>()
-                                 ?.OpenAndWaitFor(platformPurchaseFlowTask, PlatformPurchaseFlowCompleted);
+                                 ?.OpenAndWaitFor(platformPurchaseFlowTask, PlatformPurchaseFlowCompleted,GenericWaitingType.Purchasing);
         }
 
         void PlatformPurchaseFlowCompleted(Error error)

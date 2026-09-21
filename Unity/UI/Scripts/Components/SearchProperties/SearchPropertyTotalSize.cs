@@ -33,7 +33,7 @@ namespace Modio.Unity.UI.Components.SearchProperties
                     totalFileSize += _alsoIncludeSizeOf.Mod.File.FileSize;
                 }
 
-                foreach (Mod mod in search.LastSearchResultMods)
+                foreach (Mod mod in search.ModioSearch.LastSearchResultMods)
                 {
                     if (!_ignoreInstalledMods || mod.File.State != ModFileState.Installed)
                         totalFileSize += mod.File.FileSize;

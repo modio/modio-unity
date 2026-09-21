@@ -4,6 +4,8 @@ using UnityEngine.UI;
 
 namespace Modio.Unity.UI.Input
 {
+    //Match the execution order of UnityEngine.UI.ToggleGroup
+    [DefaultExecutionOrder(10)]
     public class ModioUITabNavigationToggleGroup : ToggleGroup
     {
         [SerializeField] ModioUIInput.ModioAction _leftAction = ModioUIInput.ModioAction.TabLeft;

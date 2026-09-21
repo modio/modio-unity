@@ -14,7 +14,7 @@ namespace Modio.Unity.UI.Components.ModProperties
 
         protected override void OnResourceUpdate(IModioInfo resource)
         {
-            _text.text = resource.Summary;
+            if (_text != null) _text.text = resource.Summary;
 
             if (_enableIfDescriptionDiffers != null)
             {

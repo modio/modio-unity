@@ -5,7 +5,7 @@ namespace Modio
 {
     public static class Version
     {
-        static readonly System.Version Current = new System.Version(2026, 7, 0);
+        static readonly System.Version Current = new System.Version(2026, 9, 0);
         static readonly HashSet<string> EnvironmentDetails = new HashSet<string>();
 
         public static void AddEnvironmentDetails(string details)

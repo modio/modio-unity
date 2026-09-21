@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 7610331151759833996}
   - component: {fileID: 4640608247519484844}
   - component: {fileID: 8576499710897260497}
+  - component: {fileID: 2296561061785371709}
   m_Layer: 5
   m_Name: ControllerIcon
   m_TagString: Untagged
@@ -97,6 +98,22 @@ MonoBehaviour:
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
+--- !u!114 &2296561061785371709
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5855711654453864927}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e990c13f9f24324a4a5a1d8cb151528, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _styleTarget: 0
+  _targetComponents:
+  - Component: {fileID: 4640608247519484844}
+    Option: 8
 --- !u!1 &6158427912915720113
 GameObject:
   m_ObjectHideFlags: 0
@@ -250,6 +267,8 @@ MonoBehaviour:
   _targetComponents:
   - Component: {fileID: 2644569597606339977}
     Option: 12
+  - Component: {fileID: 2644569597606339977}
+    Option: 8
 --- !u!1 &6962400705646233705
 GameObject:
   m_ObjectHideFlags: 0
@@ -358,6 +377,7 @@ GameObject:
   - component: {fileID: 6658227071093865432}
   - component: {fileID: 8165503177395333334}
   - component: {fileID: 3520183705791036682}
+  - component: {fileID: 8883259846142089561}
   m_Layer: 5
   m_Name: Background
   m_TagString: Untagged
@@ -443,3 +463,19 @@ MonoBehaviour:
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
+--- !u!114 &8883259846142089561
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8267498872251136428}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e990c13f9f24324a4a5a1d8cb151528, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _styleTarget: 107
+  _targetComponents:
+  - Component: {fileID: 8165503177395333334}
+    Option: 6

@@ -17,11 +17,13 @@ using UnityEditor;
 
 namespace Modio.Unity
 {
-    internal static class ModioUnity
+    public static class ModioUnity
     {
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
         [ExcludeFromCodeCoverage]
-        static void OnAfterAssembliesLoaded()
+        static void OnAfterAssembliesLoaded() => SetUpModioForUnity();
+
+        public static void SetUpModioForUnity()
         {
             ModioUnitySettings modioUnitySettings = ModioUnitySettings.LoadSettings();
             
@@ -91,10 +93,13 @@ namespace Modio.Unity
 
 #if UNITY_EDITOR
             EditorApplication.playModeStateChanged += OnGameShuttingDown;
+
 #else
             Application.quitting += () => ModioClient.Shutdown().ForgetTaskSafely();
+            Application.focusChanged += ModioClient.FocusChanged;
+            
 #endif
-
+            
             InitPlatform();
         }
 

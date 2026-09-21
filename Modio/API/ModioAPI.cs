@@ -44,14 +44,17 @@ namespace Modio.API
             Google,
             Itchio,
             Nintendo,
-            PlayStationNetwork,
+            PlayStation,
+            [Obsolete]
+            PlayStationNetwork = PlayStation,
             SSO,
             Steam,
             XboxLive,
         }
 
         public static event Action<bool> OnOfflineStatusChanged;
-
+        public static event Action<Portal> OnCurrentPortalChanged;
+        
         public static bool IsOffline { get; private set; }
 
         public static Portal CurrentPortal { get; private set; } = Portal.None;
@@ -155,6 +158,8 @@ namespace Modio.API
             _apiInterface.RemoveDefaultHeader(HEADER_PORTAL);
             string header = portal.GetHeader();
             if (header != null) _apiInterface.SetDefaultHeader(HEADER_PORTAL, header);
+            
+            OnCurrentPortalChanged?.Invoke(portal);
         }
 
         static void SetPortalFromPortalProvider(IModioAuthService authService)
@@ -302,38 +307,39 @@ namespace Modio.API
             };
 
         public static string GetHeader(this Portal portal) => portal switch
-            {
-                Portal.Apple              => "apple",
-                Portal.Discord            => "discord",
-                Portal.EpicGamesStore     => "epicgames",
-                Portal.Meta               => "meta",
-                Portal.GOG                => "gog",
-                Portal.Google             => "google",
-                Portal.Itchio             => "itchio",
-                Portal.Nintendo           => "nintendo",
-                Portal.PlayStationNetwork => "psn",
-                Portal.SSO                => "sso",
-                Portal.Steam              => "steam",
-                Portal.XboxLive           => "xboxlive",
-                _                         => null,
-            };
+        {
+            Portal.Apple          => "apple",
+            Portal.Discord        => "discord",
+            Portal.EpicGamesStore => "epicgames",
+            Portal.Meta           => "meta",
+            Portal.GOG            => "gog",
+            Portal.Google         => "google",
+            Portal.Itchio         => "itchio",
+            Portal.Nintendo       => "nintendo",
+            Portal.PlayStation    => "ps",
+            Portal.SSO            => "sso",
+            Portal.Steam          => "steam",
+            Portal.XboxLive       => "xboxlive",
+            _                     => null,
+        };
 
         public static Portal PortalFromHeader(this string portal) => portal switch
         {
             "apple"     => Portal.Apple,
             "discord"   => Portal.Discord,
             "epicgames" => Portal.EpicGamesStore,
-            "facebook"  => Portal.Facebook,
+            "facebook"  => Portal.Meta,
             "gog"       => Portal.GOG,
             "google"    => Portal.Google,
             "itchio"    => Portal.Itchio,
             "nintendo"  => Portal.Nintendo,
-            "psn"       => Portal.PlayStationNetwork,
+            "psn"       => Portal.PlayStation,
+            "ps"        => Portal.PlayStation,
             "sso"       => Portal.SSO,
             "steam"     => Portal.Steam,
             "xboxlive"  => Portal.XboxLive,
             "web"       => Portal.SSO,
-            "meta"      => Portal.Facebook,
+            "meta"      => Portal.Meta,
             _           => throw new ArgumentOutOfRangeException(nameof(portal), portal, null),
         };
 

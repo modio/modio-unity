@@ -7,22 +7,22 @@ using Newtonsoft.Json.Linq;
 
 namespace Modio.API.SchemaDefinitions{
     [JsonObject]
-    public readonly partial struct SyncPlayStationNetworkEntitlementsRequest : IApiRequest
+    public readonly partial struct SyncPlayStationEntitlementsRequest : IApiRequest
     {
         static readonly Dictionary<string, object> _bodyParameters = new Dictionary<string, object>();
 
-        /// <summary>PlayStation™Network authentication code.</summary>
+        /// <summary>PlayStation® authentication code.</summary>
         public readonly string AuthCode;
-        /// <summary>The PlayStation Network environment you are targeting. If omitted, the request will default to targeting PlayStation Network's production environment.</summary>
+        /// <summary>The PlayStation environment you are targeting. If omitted, the request will default to targeting PlayStation's production environment.</summary>
         public readonly long Env;
         /// <summary>The service label where the entitlements for mod.io reside. If omitted the default value will be 0.</summary>
         public readonly long ServiceLabel;
 
-        /// <param name="authCode">PlayStation™Network authentication code.</param>
-        /// <param name="env">The PlayStation Network environment you are targeting. If omitted, the request will default to targeting PlayStation Network's production environment.</param>
+        /// <param name="authCode">PlayStation authentication code.</param>
+        /// <param name="env">The PlayStation environment you are targeting. If omitted, the request will default to targeting PlayStation's production environment.</param>
         /// <param name="serviceLabel">The service label where the entitlements for mod.io reside. If omitted the default value will be 0.</param>
         [JsonConstructor]
-        public SyncPlayStationNetworkEntitlementsRequest(
+        public SyncPlayStationEntitlementsRequest(
             string auth_code,
             long env,
             long service_label

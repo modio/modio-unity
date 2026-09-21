@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Modio.API;
 using Modio.API.SchemaDefinitions;
 using Modio.Extensions;
 using Modio.Settings;
@@ -14,11 +16,15 @@ namespace Modio.Mods
         static GameTagCategory[] _cachedCollectionTags;
         static Task<(Error, GameTagCategory[])> _cachedGetTags;
 
+        readonly Dictionary<string, string> _localizedNames = new Dictionary<string, string>();
+
         public readonly string Name;
         public readonly bool MultiSelect;
         public readonly ModTag[] Tags; 
         public readonly bool Locked;
 
+        public string LocalizedName => _localizedNames.GetValueOrDefault(ModioAPI.LanguageCodeResponse, Name);
+        
         [JsonProperty]
         bool _hidden;
         /// <summary>
@@ -58,6 +64,9 @@ namespace Modio.Mods
         
         internal GameTagCategory(GameTagOptionObject tagObject){
             Name = tagObject.Name;
+
+            _localizedNames = tagObject.NameLocalization;
+            
             MultiSelect = tagObject.Type == "checkboxes";
             Hidden = tagObject.Hidden;
             Locked = tagObject.Locked;

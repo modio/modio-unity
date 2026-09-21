@@ -10,16 +10,21 @@ namespace Modio.Unity.UI.Scripts.Themes
 
         [SerializeField] StyledComponent[] _targetComponents = Array.Empty<StyledComponent>();
         
-        void Start() => ModioThemeController.OnThemeSheetUpdated += ApplyStyling;
+        void OnEnable() => ModioThemeController.RegisterProperties(this);
 
-        void OnDestroy() => ModioThemeController.OnThemeSheetUpdated -= ApplyStyling;
+        void OnDisable() => ModioThemeController.DeregisterProperties(this);
 
+        [ContextMenu("Apply Theme Immediately")]
         void ApplyStyling() => ApplyStyles(ModioThemeController.Theme);
 
-        void ApplyStyles(ModioUIThemeSheet themeSheet)
+        public void ApplyStyles(ModioUIThemeSheet themeSheet)
         {
-            foreach (StyledComponent property in _targetComponents) 
+            foreach (StyledComponent property in _targetComponents)
+            {
                 themeSheet.ApplyStyle(_styleTarget, property.Option, property.Component);
+                if(property.Component is GameObject go)
+                    Debug.LogError($"Suspicious theme property: Gameobject {go} when expecting a component", go);
+            }
         }
     }
 

@@ -32,6 +32,8 @@ namespace Modio.Images
             if (cachedImage != null)
             {
                 ApplyImage(cachedImage);
+                //We may have been actively loading something, then gone back to a cached one
+                OnLoadingActive?.Invoke(false);
                 return;
             }
 
@@ -46,18 +48,50 @@ namespace Modio.Images
 
             ImageReference currentlyDownloading = _currentImageReference;
             (Error downloadError, TImage downloadedImage) = await _imageCache.DownloadImage(_currentImageReference);
-            
-            if (_currentImageReference == currentlyDownloading)
-            {
-                if (downloadError)
-                    _failedToLoad = true;
-                
-                ApplyImage(downloadedImage);
-            }
 
+            if (_currentImageReference != currentlyDownloading)
+                return;
+
+            if (downloadError)
+                _failedToLoad = true;
+                
+            ApplyImage(downloadedImage);
             OnLoadingActive?.Invoke(false);
+
         }
 
+        public async void SetImage(ImageReference reference)
+        {
+            if (reference != _currentImageReference)
+                _failedToLoad = false;
+            else if (_failedToLoad)
+                return;
+
+            _currentImageReference = reference;
+            TImage cachedImage = _imageCache.GetCachedImage(_currentImageReference);
+
+            if (cachedImage != null)
+            {
+                ApplyImage(cachedImage);
+                //We may have been actively loading something, then gone back to a cached one
+                OnLoadingActive?.Invoke(false);
+                return;
+            }
+
+            OnLoadingActive?.Invoke(true);
+            ImageReference currentlyDownloading = _currentImageReference;
+            (Error downloadError, TImage downloadedImage) = await _imageCache.DownloadImage(_currentImageReference);
+
+            if (_currentImageReference != currentlyDownloading)
+                return;
+
+            if (downloadError)
+                _failedToLoad = true;
+
+            ApplyImage(downloadedImage);
+            OnLoadingActive?.Invoke(false);
+        }
+        
         void ApplyImage(TImage cachedImage)
         {
             OnNewImageAvailable?.Invoke(cachedImage);

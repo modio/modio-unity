@@ -1,5 +1,8 @@
-﻿namespace Modio.Platforms.Wss
+﻿using System;
+
+namespace Modio.Platforms.Wss
 {
+    [Serializable]
     public class WssSettings : IModioServiceSettings
     {
         

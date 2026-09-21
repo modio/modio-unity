@@ -75,7 +75,7 @@ namespace Modio.Unity.UI.Components
             _useOverrideIfSetIndex = index;
             SetSearch(search);
             
-            if (_toggle.isOn)
+            if (_toggle != null && _toggle.isOn)
                 OnToggleValueChanged(true);
         }
 

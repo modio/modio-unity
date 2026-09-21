@@ -316,7 +316,7 @@ MonoBehaviour:
   _styleTarget: 100
   _targetComponents:
   - Component: {fileID: 2495514739220954254}
-    Option: 3
+    Option: 6
 --- !u!1 &5231915410622531415
 GameObject:
   m_ObjectHideFlags: 0
@@ -332,6 +332,7 @@ GameObject:
   - component: {fileID: 5231915410622531412}
   - component: {fileID: 4036846433036697017}
   - component: {fileID: 1992947902113103717}
+  - component: {fileID: 8055269584795310932}
   m_Layer: 5
   m_Name: ButtonWithIcon (Filter)
   m_TagString: Untagged
@@ -352,8 +353,8 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 427034158002249699}
-  - {fileID: 427034157016950824}
   - {fileID: 5630108581633546493}
+  - {fileID: 427034157016950824}
   - {fileID: 7992514213313191895}
   - {fileID: 2495514739220954252}
   m_Father: {fileID: 0}
@@ -416,7 +417,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 4921648469169285347}
+      - m_Target: {fileID: 8055269584795310932}
         m_TargetAssemblyTypeName: Modio.Unity.UI.Input.ModioUIInputPrompt, Modio.Unity.UI
         m_MethodName: PressedAction
         m_Mode: 1
@@ -512,6 +513,30 @@ MonoBehaviour:
   _key: modio_btn_filter
   _tmpText: {fileID: 1109626486756375783}
   _splitFormatArgs: []
+--- !u!114 &8055269584795310932
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5231915410622531415}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc87f767fa2c4241a60ba8cedd983ea1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _action: 3
+  _inputPromptText: {fileID: 437622563124722667}
+  _textBackground: {fileID: 6048449259078547124}
+  _image: {fileID: 7117686270276699598}
+  _hideIfNoBindings: 0
+  _hideIfNoListener: 1
+  _hideIfController: 0
+  _hideIfNotController: 0
+  _additionalToHideIfNoBindings:
+  - {fileID: 427034158002249698}
+  - {fileID: 4567170949252031425}
+  _dynamicPromptText: {fileID: 0}
 --- !u!1001 &1220818148557072867
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -661,6 +686,12 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 56ef818b4547e344191ef803b418eb13, type: 3}
+--- !u!1 &427034158002249698 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1521115987996751361, guid: 56ef818b4547e344191ef803b418eb13,
+    type: 3}
+  m_PrefabInstance: {fileID: 1220818148557072867}
+  m_PrefabAsset: {fileID: 0}
 --- !u!224 &427034158002249699 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 1521115987996751360, guid: 56ef818b4547e344191ef803b418eb13,
@@ -994,12 +1025,18 @@ MonoBehaviour:
     type: 3}
   m_PrefabInstance: {fileID: 2380344766999638464}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 4567170949252031425}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!1 &4567170949252031425 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2191413758870393345, guid: 00396c498781f3f41bf79b53668e5349,
+    type: 3}
+  m_PrefabInstance: {fileID: 2380344766999638464}
+  m_PrefabAsset: {fileID: 0}
 --- !u!224 &7992514213313191895 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 5756642250720423447, guid: 00396c498781f3f41bf79b53668e5349,
@@ -1023,6 +1060,12 @@ PrefabInstance:
       propertyPath: m_PreferredHeight
       value: 32
       objectReference: {fileID: 0}
+    - target: {fileID: 2644569597606339977, guid: 3249f62a74f4d8c47a70ab2fe96d78bd,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -76580068089955207, guid: a6487a22895c8aa4ab27e972c4bea7e4,
+        type: 2}
     - target: {fileID: 3884844579327299559, guid: 3249f62a74f4d8c47a70ab2fe96d78bd,
         type: 3}
       propertyPath: m_AnchorMax.y
@@ -1111,7 +1154,7 @@ PrefabInstance:
     - target: {fileID: 7819357821102999199, guid: 3249f62a74f4d8c47a70ab2fe96d78bd,
         type: 3}
       propertyPath: m_RootOrder
-      value: 2
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7819357821102999199, guid: 3249f62a74f4d8c47a70ab2fe96d78bd,
         type: 3}
@@ -1223,33 +1266,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!1 &4773450443644212747 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 6962400705646233705, guid: 3249f62a74f4d8c47a70ab2fe96d78bd,
-    type: 3}
-  m_PrefabInstance: {fileID: 2495514737519959650}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &4921648469169285347
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4773450443644212747}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dc87f767fa2c4241a60ba8cedd983ea1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _action: 3
-  _inputPromptText: {fileID: 437622563124722667}
-  _textBackground: {fileID: 6048449259078547124}
-  _image: {fileID: 7117686270276699598}
-  _hideIfNoBindings: 0
-  _hideIfNoListener: 0
-  _hideIfController: 0
-  _hideIfNotController: 0
-  _additionalToHideIfNoBindings: []
 --- !u!224 &5630108581633546493 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 7819357821102999199, guid: 3249f62a74f4d8c47a70ab2fe96d78bd,
@@ -1316,7 +1332,7 @@ PrefabInstance:
     - target: {fileID: 6180724351688658046, guid: d7c3d3f59838ab6459042d9399d6de86,
         type: 3}
       propertyPath: m_RootOrder
-      value: 1
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6180724351688658046, guid: d7c3d3f59838ab6459042d9399d6de86,
         type: 3}

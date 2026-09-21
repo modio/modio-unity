@@ -1,7 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Modio.Monetization;
 using Modio.Unity.Settings;
 using Modio.Unity.UI.Components.Localization;
+using Modio.Unity.UI.Components.Selectables;
 using Modio.Unity.UI.Search;
 using TMPro;
 using UnityEngine;
@@ -62,7 +64,7 @@ namespace Modio.Unity.UI.Components
 
             if (_lastCategory is not null && _lastCategory == category) 
                 SetTabs(category.Tabs, _lastCategoryIndex);
-            else
+            else 
                 SetTabs(category.Tabs);
 
             if (ModioUISearch.Default != null)
@@ -71,7 +73,7 @@ namespace Modio.Unity.UI.Components
                     category.CustomSearchBase.SetAsCustomSearchBase(ModioUISearch.Default);
                 else
                 {
-                    ModioUISearch.Default.SetCustomSearchBase(null, default);
+                    ModioUISearch.Default.ModioSearch.SetCustomSearchBase(null, default);
                 }
             }
 
@@ -84,7 +86,25 @@ namespace Modio.Unity.UI.Components
             if (_tabs.Count > 0) _tabs[0].SetSelected();
             else if (_disableIfNoCategory != null) _disableIfNoCategory.SetActive(false);
             if (_activeTabCount == 1) _tabs[0].gameObject.SetActive(false);
+            
+            var toggle = _categoryName.transform.parent.GetComponent<ModioUIToggle>();
+            if (toggle != null)
+                toggle.onValueChanged.AddListener(OnCategoryToggled);
+            
             _hasRunStart = true;
+        }
+
+        void OnDestroy()
+        {
+            var toggle = _categoryName.transform.parent.GetComponent<ModioUIToggle>();
+            if (toggle != null)
+                toggle.onValueChanged.RemoveListener(OnCategoryToggled);
+        }
+        
+        void OnCategoryToggled(bool expanded)
+        {
+            foreach (ModioUISearchCategoryTab tab in _tabs)
+                tab.gameObject.SetActive(expanded);
         }
 
         public void SetTabs(IEnumerable<ModioUISearchSettings> tabSearches, int startIndex = 0)

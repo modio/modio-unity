@@ -117,6 +117,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 0}
   _getSelectablesInChildrensChildren: 1
   _fallbackSelectionToIfNoValidChildren: {fileID: 0}
+  _selectOnEnableIfLastSelectionInactive: 0
 --- !u!114 &6867935901555807017
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -379,6 +380,8 @@ MonoBehaviour:
   _targetComponents:
   - Component: {fileID: 6867935901801402146}
     Option: 12
+  - Component: {fileID: 6867935901801402146}
+    Option: 6
 --- !u!1 &6867935902221483953
 GameObject:
   m_ObjectHideFlags: 0
@@ -392,6 +395,7 @@ GameObject:
   - component: {fileID: 6867935902221483965}
   - component: {fileID: 6867935902221483966}
   - component: {fileID: 6867935902221483967}
+  - component: {fileID: 2741405072169017410}
   m_Layer: 5
   m_Name: Background (Blur)
   m_TagString: Untagged
@@ -526,6 +530,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _action: 0
+--- !u!114 &2741405072169017410
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6867935902221483953}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99322d4030fe448fad38f69727c003e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _inverseForBackgrounds: 1
 --- !u!1 &6867935902443215164
 GameObject:
   m_ObjectHideFlags: 0
@@ -695,6 +712,8 @@ MonoBehaviour:
   _targetComponents:
   - Component: {fileID: 6867935902443215162}
     Option: 10
+  - Component: {fileID: 6867935902443215162}
+    Option: 6
 --- !u!1 &6867935902749427299
 GameObject:
   m_ObjectHideFlags: 0
@@ -1189,6 +1208,8 @@ MonoBehaviour:
   _targetComponents:
   - Component: {fileID: 6867935903446518999}
     Option: 10
+  - Component: {fileID: 6867935903446518999}
+    Option: 6
 --- !u!114 &5482959293720791886
 MonoBehaviour:
   m_ObjectHideFlags: 0

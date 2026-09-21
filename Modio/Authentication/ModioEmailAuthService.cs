@@ -119,7 +119,8 @@ namespace Modio.Authentication
                     new EmailAuthenticationSecurityCodeRequest(code)
                 );
 
-            if (!exchangeError) User.Current.OnAuthenticated(accessTokenObject.Value.AccessToken, accessTokenObject.Value.DateExpires, _sync);
+            if (!exchangeError) 
+                await User.Current.ApplyAuthenticationAsync(accessTokenObject.Value.AccessToken, _sync);
 
             return ReturnErrorAndReset(exchangeError);
         }

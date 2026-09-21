@@ -56,9 +56,11 @@ namespace Modio.Users
         public ModRepository ModRepository { get; private set; }
         public ModCollectionRepository ModCollectionRepository { get; private set; }
         public ModioAPI.Portal AuthenticatedPortal { get; private set; }
+        public Task DelayedSyncTasks { get; private set; }
 
         readonly Authentication _authentication;
         bool _needsSavingToDisk;
+        List<UserProfile> _muted = new List<UserProfile>();
         List<UserProfile> _followed = new List<UserProfile>();
         Dictionary<ModioId, ModioRating> _modRatings = new Dictionary<ModioId, ModioRating>();
         Dictionary<ModioId, ModioRating> _collectionRatings = new Dictionary<ModioId, ModioRating>();
@@ -66,6 +68,7 @@ namespace Modio.Users
         List<CachedEntitlement> _cachedEntitlements;
         
         TaskCompletionSource<Error> _writeTcs;
+        TaskCompletionSource<Error> _syncEntitlementsTcs;
 
         public static async Task InitializeNewUser()
         {
@@ -78,7 +81,8 @@ namespace Modio.Users
             Current.IsUpdating = true;
 
             Current.LocalUserId = await ModioServices.Resolve<IGetActiveUserIdentifier>().GetActiveUserIdentifier();
-
+            
+            
             if (string.IsNullOrEmpty(Current.LocalUserId))
             {
                 Current.IsUpdating = false;
@@ -87,9 +91,15 @@ namespace Modio.Users
             
             (Error error, UserSaveObject userObject) = await ModioClient.DataStorage.ReadUserData(Current.LocalUserId);
 
+
             if (!error)
             {
                 Current.ApplyDetailsFromSaveObject(userObject);
+
+                if (ModioServices.TryResolve(out IModioAuthService authService) &&
+                    authService is IRequireReAuthOnReOpen)
+                        await authService.Authenticate(false);
+
                 Current.IsAuthenticated = true;
                 Current.HasAcceptedTermsOfUse = true;
                 InternalOnUserChanged?.Invoke();
@@ -166,21 +176,18 @@ namespace Modio.Users
                     ModCollection mod = ModCollection.Get(collection);
                     mod.UpdateLocalFollowStatus(true);
                 }
-            
+
+            if (userObject.MutedUsers != null)
+                foreach (long mutedUser in userObject.MutedUsers)
+                {
+                    var mutedUserProfile = new UserProfile { UserId = mutedUser, };
+                    _muted.Add(mutedUserProfile);
+                }
+
             //For now just store the OAuthToken, we'll clarify if we're actually authenticated in Sync()
             _authentication.OAuthToken = userObject.AuthToken;
 
             OnUserChanged?.Invoke(this);
-        }
-
-        internal void OnAcceptedTermsOfUse()
-        {
-            HasAcceptedTermsOfUse = true;
-        }
-
-        public void OnAuthenticated(string oAuthToken, long dateExpires, bool sync = true)
-        {
-            ApplyAuthenticationAsync(oAuthToken, sync).ForgetTaskSafely();
         }
 
         public async Task ApplyAuthenticationAsync(string oAuthToken, bool sync)
@@ -202,7 +209,7 @@ namespace Modio.Users
             HasAcceptedTermsOfUse = true;
             bool hasAuthenticated = IsAuthenticated;
             IsAuthenticated = true;
-            AuthenticatedPortal = ModioAPI.CurrentPortal;
+            AuthenticatedPortal = ModioServices.Resolve<IModioAuthService>().Portal;
 
             await SaveUserData();
             
@@ -241,13 +248,19 @@ namespace Modio.Users
             Task<Error> profileTask = SyncProfile();
             Task<Error> subscriptionTask = SyncSubscriptions();
             Task<Error> purchaseTask = SyncPurchases();
-            
-            SyncModRatings().ForgetTaskSafely();
-            SyncCollectionRatings().ForgetTaskSafely();
-            SyncEntitlements().ForgetTaskSafely();
-            SyncCollections().ForgetTaskSafely();
-            SyncUsersFollowing().ForgetTaskSafely();
-            SyncUserCreations().ForgetTaskSafely();
+
+            Task delayedTasks = Task.WhenAll(
+                SyncModRatings(),
+                SyncCollectionRatings(),
+                SyncEntitlements(),
+                SyncCollections(),
+                SyncUsersFollowing(),
+                SyncUserCreations(),
+                SyncMutedUsers()
+            );
+
+            DelayedSyncTasks = delayedTasks;
+            DelayedSyncTasks.ForgetTaskSafely();
 
             if (ModioClient.Settings.TryGetPlatformSettings(out MonetizationSettings settings)
                 && settings.MonetizationType == ModioMonetizationType.UsdMarketplace
@@ -255,6 +268,7 @@ namespace Modio.Users
                 await usdCurrencyProvider.UpdateSkuCache();
 
             Error[] errors = await Task.WhenAll(profileTask, subscriptionTask, purchaseTask);
+            
 
             IsUpdating = false;
 
@@ -475,6 +489,12 @@ namespace Modio.Users
         /// </returns>
         public async Task<Error> SyncEntitlements()
         {
+            if (_syncEntitlementsTcs is not null)
+                return await _syncEntitlementsTcs.Task;
+
+            // Sync entitlement endpoints have a lock on the API, so we respect the lock by not syncing twice 
+            _syncEntitlementsTcs = new TaskCompletionSource<Error>();
+            
             ModioLog.Verbose?.Log($"Syncing Entitlements {UserId}");
 
             var settings = ModioServices.Resolve<ModioSettings>();
@@ -484,6 +504,8 @@ namespace Modio.Users
                 || (!gameDataError && data.MonetizationOptions == 0))
             {
                 ModioLog.Message?.Log($"No {typeof(MonetizationSettings)} settings found, skipping SyncEntitlements");
+                _syncEntitlementsTcs.SetResult(Error.None);
+                _syncEntitlementsTcs = null;
                 return Error.None;
             }
 
@@ -499,6 +521,11 @@ namespace Modio.Users
                 
                 if (error && !error.IsSilent) 
                     ModioLog.Error?.Log($"Error Fetching SKU Cache for {UserId}: {error}");
+                
+                _syncEntitlementsTcs.SetResult(error);
+                _syncEntitlementsTcs = null;
+
+                return error;
             }
             
             if (ModioServices.TryResolve(out IModioEntitlementService entitlementPlatform))
@@ -510,6 +537,8 @@ namespace Modio.Users
             ModioLog.Verbose?.Log($"Finished Syncing Entitlements {LocalUserId} with result: {Error.None}");
 
             await SyncWallet();
+            _syncEntitlementsTcs.SetResult(error);
+            _syncEntitlementsTcs = null;
             return error;
         }
 
@@ -633,6 +662,19 @@ namespace Modio.Users
             return Error.None;
         }
 
+        async Task<Error> SyncMutedUsers()
+        {
+            (Error error, IReadOnlyList<UserProfile> mutedUsers) = await GetMutedUsers();
+            
+            if (error)
+                return error;
+
+            if (!new HashSet<UserProfile>(_muted).SetEquals(mutedUsers))
+                ModCache.ClearModSearchCache();
+
+            _muted = mutedUsers.ToList();
+            return Error.None;
+        }
         /// <summary>Gets all users muted by the currently authenticated User from the API.</summary>
         /// <returns>
         /// <p>An asynchronous task that returns a tuple (<see cref="Error"/> error, <see cref="IReadOnlyList{UserProfile}"/> results), where:</p>
@@ -653,7 +695,6 @@ namespace Modio.Users
             }
 
             List<UserProfile> output = userObjects.Value.Data.Select(UserProfile.Get).ToList();
-
             return (Error.None, output);
         }
 
@@ -969,6 +1010,7 @@ namespace Modio.Users
                 PurchasedMods = ModRepository.GetPurchased().Select(mod => (long)mod.Id).ToList(),
                 FollowedCollections = ModCollectionRepository.GetFollowed().Select(collection => (long)collection.Id).ToList(),
                 UserPortal = (int)AuthenticatedPortal,
+                MutedUsers = _muted.Select(user => (long)user.UserId).ToList(),
             };
 
         /// <summary>
@@ -1038,7 +1080,8 @@ namespace Modio.Users
             if (error)
                 return (error,null);
 
-            if(entitlements == null || entitlements.Count == 0)
+            if(entitlements == null || entitlements.Count == 0
+                || !DoesUserHaveEntitlement(mod.PortalSku.Sku))
             {
                 error = await service.OpenPurchaseFlow(mod.PortalSku);
 
@@ -1072,6 +1115,8 @@ namespace Modio.Users
             return (Error.None, payObject);
         }
 
+        bool DoesUserHaveEntitlement(string sku) => _cachedEntitlements.Any(entitlement => entitlement.SkuId == sku);
+
         internal async Task<(Error error, PayObject? payObject)> PurchaseModWithVirtualCurrency(Mod mod, bool subscribeOnPurchase)
         {
             var idempotent = $"{mod.Id}";
@@ -1090,6 +1135,40 @@ namespace Modio.Users
             ApplyWalletFromPurchase(payObject.Value);
 
             return (Error.None, payObject);
+        }
+
+        public async Task<Error> MuteUser(UserProfile userProfile)
+        {
+            (Error error, Response204? _) = await ModioAPI.Users.MuteAUser(userProfile.UserId);
+
+            if (error)
+            {
+                if (!error.IsSilent)
+                    ModioLog.Error?.Log($"Error muting user {userProfile.Username}: {error}");
+
+                return error;
+            }
+            
+            _muted.Add(userProfile);
+            ModCache.ClearModSearchCache();
+            return error;
+        }
+
+        public async Task<Error> UnmuteUser(UserProfile userProfile)
+        {
+            (Error error, Response204? _) = await ModioAPI.Users.UnmuteAUser(userProfile.UserId);
+
+            if (error)
+            {
+                if (!error.IsSilent)
+                    ModioLog.Error?.Log($"Error unmuting user {userProfile.Username}: {error}");
+
+                return error;
+            }
+
+            _muted.Remove(userProfile);
+            ModCache.ClearModSearchCache();
+            return error;
         }
     }
 
@@ -1116,6 +1195,7 @@ namespace Modio.Users
         public List<long> DisabledMods;
         public List<long> PurchasedMods;
         public List<long> FollowedCollections;
+        public List<long> MutedUsers;
         public int UserPortal;
     }
 }

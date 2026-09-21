@@ -317,8 +317,9 @@ GameObject:
   - component: {fileID: 6228893450905740569}
   - component: {fileID: 1677957421764699731}
   - component: {fileID: 4342097122356557526}
+  - component: {fileID: -3747305659114813071}
   m_Layer: 5
-  m_Name: ModCollection Tile
+  m_Name: ModCollection Tile v1.5
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -424,6 +425,29 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _overrideFocusTo: {fileID: 0}
+--- !u!114 &-3747305659114813071
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 923178964203065354}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 951ff4c46cf24702978110ebaff44084, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _properties:
+  - rid: 6108278046677008384
+  references:
+    version: 2
+    RefIds:
+    - rid: 6108278046677008384
+      type: {class: CollectionPropertySubscriptionQuickAction, ns: Modio.Unity.UI.Components.ModProperties,
+        asm: Modio.Unity.UI}
+      data:
+        _selectable: {fileID: 6228893450905740569}
+        _showPopupToSubscribe: 1
 --- !u!1 &998455678836016031
 GameObject:
   m_ObjectHideFlags: 0
@@ -2381,10 +2405,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9e990c13f9f24324a4a5a1d8cb151528, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _styleTarget: 400
+  _styleTarget: 304
   _targetComponents:
   - Component: {fileID: 457896103088064360}
-    Option: 4
+    Option: 7
 --- !u!1 &7390298022864302640
 GameObject:
   m_ObjectHideFlags: 0
@@ -3192,6 +3216,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _styleTarget: 400
   _targetComponents:
+  - Component: {fileID: 7058217676487463472}
+    Option: 4
   - Component: {fileID: 7529673500407538570}
     Option: 4
   - Component: {fileID: 8189567333751665072}
@@ -3519,6 +3545,11 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 1007071233795975999}
     m_Modifications:
+    - target: {fileID: 799947857264405640, guid: de7f440ac028c7943948219f541c8280,
+        type: 3}
+      propertyPath: _styleTarget
+      value: 304
+      objectReference: {fileID: 0}
     - target: {fileID: 4679660057563520418, guid: de7f440ac028c7943948219f541c8280,
         type: 3}
       propertyPath: m_Type

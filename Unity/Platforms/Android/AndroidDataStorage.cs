@@ -75,6 +75,8 @@ namespace Modio.Unity.Platforms.Android
             {
                 ModioLog.Warning?.Log($"Exception deleting legacy image cache & temp directories: {e}");
             }
+            
+            base.MigrateLegacyModInstalls();
         }
     }
 }

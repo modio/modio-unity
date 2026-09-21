@@ -27,17 +27,17 @@ namespace Modio.Unity.UI.Components.SearchProperties
 
         public void OnSearchUpdate(ModioUISearch search)
         {
-            var filter = search.LastSearchFilter;
+            var filter = search.ModioSearch.LastSearchFilter;
 
             var searchPhrases = filter.GetSearchPhrase(Filtering.Like);
             var searchHasEntries = searchPhrases?.Count > 0;
+            bool searchHasCustomTags = search.ModioSearch.HasCustomTags();
 
             if (_searchText != null)
             {
                 _searchText.enabled = searchHasEntries;
                 if (searchHasEntries) _searchText.text = $"{string.Join(" ", searchPhrases)}";
-
-                if (search.HasCustomTags())
+                if (searchHasCustomTags)
                 {
                     _searchText.enabled = true;
                     IReadOnlyList<ModTag> tags = filter.GetTags();
@@ -66,10 +66,10 @@ namespace Modio.Unity.UI.Components.SearchProperties
             }
 
             if (_disableWhileShowingCustomText != null)
-                _disableWhileShowingCustomText.SetActive(!(searchHasEntries || searchHasUser));
+                _disableWhileShowingCustomText.SetActive(!(searchHasEntries || searchHasUser || searchHasCustomTags));
 
             if (_showWhileShowingCustomText != null)
-                _showWhileShowingCustomText.SetActive((searchHasEntries || searchHasUser));
+                _showWhileShowingCustomText.SetActive((searchHasEntries || searchHasUser || searchHasCustomTags));
 
             if (search.LastSearchSettingsFrom != null)
             {
@@ -82,7 +82,7 @@ namespace Modio.Unity.UI.Components.SearchProperties
                     _disableWhenNoSearchCategoryName.SetActive(
                         (!string.IsNullOrEmpty(search.LastSearchSettingsFrom.DisplayAsLocalisedKey) ||
                          !string.IsNullOrEmpty(search.LastSearchSettingsFrom.DisplayAs))
-                        && (!_alsoDisableForCustomSearchOrFilter || !search.HasCustomSearchOrFiltering()));
+                        && (!_alsoDisableForCustomSearchOrFilter || !search.HasCustomSearch()));
                 
                 if (_searchCategoryIcon != null)
                 {

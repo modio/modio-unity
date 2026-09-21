@@ -46,15 +46,6 @@ namespace Modio.Unity.UI.Panels.Authentication
                 Debug.LogWarning("Attempted to open Auth Flow when already logged in");
                 return;
             }
-
-            if (!ModioClient.IsInitialized)
-            {
-                var waitingPanel = ModioPanelManager.GetPanelOfType<ModioWaitingPanelGeneric>();
-            
-                if (waitingPanel != null && !waitingPanel.HasFocus)
-                    waitingPanel.OpenPanel();
-
-            }
             
             ModioClient.OnInitialized -= OnPluginReady;
             ModioClient.OnInitialized += OnPluginReady;
@@ -90,6 +81,10 @@ namespace Modio.Unity.UI.Panels.Authentication
                 {
                     OpenPanel();
                     AttemptSso(authService, false).ForgetTaskSafely();
+                    
+                    var waitingPanel = ModioPanelManager.GetPanelOfType<ModioWaitingPanelGeneric>();
+                    waitingPanel?.ClosePanel();
+                    
                     return;
                 }
             }
@@ -99,7 +94,6 @@ namespace Modio.Unity.UI.Panels.Authentication
                 OpenPanel();
                 
                 var waitingPanel = ModioPanelManager.GetPanelOfType<ModioWaitingPanelGeneric>();
-                
                 waitingPanel?.ClosePanel();
                 
                 ModioPanelManager.GetPanelOfType<ModioAuthenticationPickerPanel>().OpenPanel();
@@ -113,7 +107,7 @@ namespace Modio.Unity.UI.Panels.Authentication
         {
             OpenPanel();
             
-            var waitingPanel = ModioPanelManager.GetPanelOfType<ModioWaitingPanelGeneric>();
+            var waitingPanel = ModioPanelManager.GetPanelOfType<ModioAuthenticationWaitingPanel>();
             
             if (waitingPanel != null && !waitingPanel.HasFocus)
                 waitingPanel.OpenPanel();
@@ -151,7 +145,7 @@ namespace Modio.Unity.UI.Panels.Authentication
 
         public async Task AttemptSso(IModioAuthService authService, bool agreedToTerms)
         {
-            var waitingPanel = ModioPanelManager.GetPanelOfType<ModioWaitingPanelGeneric>();
+            var waitingPanel = ModioPanelManager.GetPanelOfType<ModioAuthenticationWaitingPanel>();
             waitingPanel?.OpenPanel();
             
             Error error;

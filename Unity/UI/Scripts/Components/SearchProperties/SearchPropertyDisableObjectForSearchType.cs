@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Linq;
+using Modio.Mods;
+using Modio.Search;
 using Modio.Unity.UI.Search;
 using UnityEngine;
 
@@ -17,10 +19,10 @@ namespace Modio.Unity.UI.Components.SearchProperties
         public void OnSearchUpdate(ModioUISearch search)
         {
             bool searchConditionsMet = (_hideOnCustomSearch && search.HasCustomSearch()) ||
-                                       _hideForSearchTypes.Contains(search.LastSearchPreset);
+                                       _hideForSearchTypes.Contains(search.ModioSearch.LastSearchPreset);
 
             searchConditionsMet |= _hideForSearchTypes.Contains(SpecialSearchType.SearchForTag) &&
-                                   search.HasCustomTags();
+                                   search.ModioSearch.HasCustomTags();
             
             foreach (GameObject gameObject in _gameObjectsToHide)
             {

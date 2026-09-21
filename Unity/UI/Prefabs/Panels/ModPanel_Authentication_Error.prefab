@@ -71,7 +71,7 @@ MonoBehaviour:
   m_text: Something went wrong!
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 5f9d73ed3cc0464468ed37bef4b9e476, type: 2}
-  m_sharedMaterial: {fileID: -5350118352905887863, guid: 5f9d73ed3cc0464468ed37bef4b9e476,
+  m_sharedMaterial: {fileID: -7325664360489529984, guid: 5f9d73ed3cc0464468ed37bef4b9e476,
     type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
@@ -169,6 +169,8 @@ MonoBehaviour:
   _targetComponents:
   - Component: {fileID: 2834973748716194866}
     Option: 10
+  - Component: {fileID: 2834973748716194866}
+    Option: 6
 --- !u!1 &2834973749030159734
 GameObject:
   m_ObjectHideFlags: 0
@@ -323,7 +325,7 @@ MonoBehaviour:
   m_text: '[Error code: 12041]'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 5f9d73ed3cc0464468ed37bef4b9e476, type: 2}
-  m_sharedMaterial: {fileID: -5350118352905887863, guid: 5f9d73ed3cc0464468ed37bef4b9e476,
+  m_sharedMaterial: {fileID: -7325664360489529984, guid: 5f9d73ed3cc0464468ed37bef4b9e476,
     type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}

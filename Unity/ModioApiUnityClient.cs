@@ -28,7 +28,7 @@ namespace Modio.Unity
         readonly Dictionary<string, string> _defaultHeaders = new Dictionary<string, string>();
         readonly List<UnityWebRequest> _webRequests = new List<UnityWebRequest>();
         
-        CancellationTokenSource _cancellationTokenSource;
+        CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         static Task<Error> _reauthTask;
         DateTime _timeOfLastReauthentication;
 
@@ -88,7 +88,7 @@ namespace Modio.Unity
             var handler = new StreamingDownloadHandler(1024 * 1024, token);
             UnityWebRequest webRequest = CreateWebRequest(downloadRequest, url, handler);
             
-            _webRequests.Add(webRequest);
+            TrackRequest(webRequest);
             
             handler.SetCallingRequest(webRequest);
             Error error = await EnforceAuthentication(downloadRequest, webRequest);
@@ -139,10 +139,10 @@ namespace Modio.Unity
                         return (error, null);
                     }
                     
-                    ModioLog.Error?.Log($"Unable to reach mod.io servers {webRequest.responseCode}");
+                    ModioLog.Error?.Log($"Unable to reach mod.io servers {webRequest.responseCode} [{webRequest.result}] {webRequest.error}");
                     ModioAPI.SetOfflineStatus(true);
                     
-                    await WaitToDispose(webRequest);
+                    await WaitToDispose(webRequest, handler);
 
                     return (new Error(ErrorCode.CANNOT_OPEN_CONNECTION), null);
                 }
@@ -154,7 +154,7 @@ namespace Modio.Unity
                 ModioLog.Verbose?.Log($"Cancelled downloading file: {url}");
                 
                 webRequest.Abort();
-                await WaitToDispose(webRequest);
+                await WaitToDispose(webRequest, handler);
                 
                 return (new Error(ErrorCode.OPERATION_CANCELLED), null);
             }
@@ -164,7 +164,7 @@ namespace Modio.Unity
 
                 webRequest.Abort();
 
-                await WaitToDispose(webRequest);
+                await WaitToDispose(webRequest, handler);
 
                 return (new ErrorException(e), null);
                 
@@ -174,12 +174,13 @@ namespace Modio.Unity
             if (requestAsyncOperation != null)
                 requestAsyncOperation.completed += (_) =>
                 {
-                    _webRequests.Remove(webRequest);
+                    UntrackRequest(webRequest);
+                    handler.DetachRequest();
                     webRequest.Dispose();
                 };
             else
             {
-                _webRequests.Remove(webRequest);
+                UntrackRequest(webRequest);
                 webRequest.Dispose();
             }
 
@@ -203,11 +204,15 @@ namespace Modio.Unity
             }
         }
 
-        async Task WaitToDispose(UnityWebRequest webRequest)
+        async Task WaitToDispose(UnityWebRequest webRequest, StreamingDownloadHandler handler = null)
         {
+            // Detach up front so a late 'completed' callback can't touch the request once we start
+            // tearing it down (DisposeWayLater disposes on a delay, decoupled from this method).
+            handler?.DetachRequest();
+            
             while (!webRequest.isDone)
                 await Task.Delay(30);
-            _webRequests.Remove(webRequest);
+            UntrackRequest(webRequest);
         
             DisposeWayLater(webRequest).ForgetTaskSafely();
         }
@@ -373,7 +378,7 @@ namespace Modio.Unity
             if (error)
                 return (error, default(T));
             
-            _webRequests.Add(webRequest);
+            TrackRequest(webRequest);
 
             CancellationToken cachedShutdownToken = _cancellationTokenSource?.Token ?? CancellationToken.None;
 
@@ -400,24 +405,30 @@ namespace Modio.Unity
                 {
                     if (IsResponseConnectionFailure(responseCode))
                     {
-                        ModioLog.Error?.Log($"Unable to reach mod.io servers {responseCode}");
+                        ModioLog.Error?.Log($"Unable to reach mod.io servers {responseCode} [{webRequest.result}] {webRequest.error}");
                         ModioAPI.SetOfflineStatus(true);
                         return (new Error(ErrorCode.CANNOT_OPEN_CONNECTION), default(T));
                     }
 
+                    string rayId;
+                    
                     if (responseCode != 429
                         || !(fakeResponse?.ResponseHeaders ?? webRequest.GetResponseHeaders()).TryGetValue("retry-after", out string retryHeader)
                         || string.IsNullOrEmpty(retryHeader)
                         || !int.TryParse(retryHeader, out int retryAfterSeconds))
                     {
                         error = GetErrorAndLogBadResponse(responseCode, jsonResponse);
+
+                        if (fakeResponse == null
+                            && webRequest.GetResponseHeaders().TryGetValue("CF-RAY", out rayId))
+                            error.AddCloudflareRayId(rayId);
                         
                         if (allowReauth && error.Code == ErrorCode.EXPIRED_OR_REVOKED_ACCESS_TOKEN)
                             return await ReauthenticateWithResponse(() => GetJson(request, reader, false));
 
                         return (error, default(T));
                     }
-
+                    
                     GetErrorAndLogBadResponse(responseCode, jsonResponse);
                     return (new RateLimitError(RateLimitErrorCode.RATELIMITED, retryAfterSeconds), default(T));
                 }
@@ -441,7 +452,7 @@ namespace Modio.Unity
             }
             finally
             {
-                _webRequests.Remove(webRequest);
+                UntrackRequest(webRequest);
             }
         }
 
@@ -738,10 +749,31 @@ namespace Modio.Unity
 
         public void Dispose()
         {
-            foreach (UnityWebRequest webRequest in _webRequests)
+            _cancellationTokenSource?.Cancel();
+
+            UnityWebRequest[] inFlight;
+
+            lock (_webRequests)
             {
-                webRequest?.Dispose();
+                inFlight = _webRequests.ToArray();
+                _webRequests.Clear();
             }
+
+            // Just abort and let the owning Task handle the dispose
+            foreach (UnityWebRequest webRequest in inFlight)
+                webRequest?.Abort();
+        }
+
+        void TrackRequest(UnityWebRequest webRequest)
+        {
+            lock (_webRequests)
+                _webRequests.Add(webRequest);
+        }
+
+        void UntrackRequest(UnityWebRequest webRequest)
+        {
+            lock (_webRequests)
+                _webRequests.Remove(webRequest);
         }
 
         Task LogRequest(UnityWebRequest request, ModioAPIRequest modioRequest = null)
@@ -806,7 +838,7 @@ namespace Modio.Unity
         }
 
         static bool IsResponseConnectionFailure(long responseCode)
-            => responseCode == 0       // Generic can't reach server
+            => responseCode <= 0       // Generic can't reach server
                || responseCode == 408  // Request timeout
                || responseCode == 503; // Server unavailable;
         

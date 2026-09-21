@@ -54,6 +54,9 @@ namespace Modio.Unity.UI.Components.UserProperties
 
                 _platformImage.enabled = platformIcon != null;
                 _platformImage.sprite = platformIcon;
+
+                var layoutElement = _platformImage.GetComponent<LayoutElement>();
+                if (layoutElement != null) layoutElement.enabled = _platformImage.enabled;
             }
         }
     }

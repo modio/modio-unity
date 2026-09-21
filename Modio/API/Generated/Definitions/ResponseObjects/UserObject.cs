@@ -6,7 +6,7 @@ using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json.Linq;
 
 namespace Modio.API.SchemaDefinitions{
-    [JsonObject]
+    [JsonObject(MemberSerialization.Fields)]
     public readonly partial struct UserObject 
     {
         /// <summary>Unique id of the user.</summary>

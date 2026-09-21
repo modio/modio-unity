@@ -1,4 +1,5 @@
-﻿using TMPro;
+﻿using Modio.Unity.UI.Components.Localization;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
@@ -20,6 +21,7 @@ namespace Modio.Unity.UI.Input
         [SerializeField] bool _hideIfController;
         [SerializeField] bool _hideIfNotController;
         [SerializeField] GameObject[] _additionalToHideIfNoBindings;
+        [SerializeField] ModioUILocalizedText _dynamicPromptText;
         Button _button;
         LayoutElement _layoutElement;
         bool _layoutElementIgnoreLayout;
@@ -83,6 +85,11 @@ namespace Modio.Unity.UI.Input
                 if (_inputPromptText != null) _inputPromptText.text = "UNBOUND";
 
                 SetElementsVisible(true, false);
+            }
+
+            if (_dynamicPromptText != null && info.LocTextOverride != null)
+            {
+                _dynamicPromptText.SetKey(info.LocTextOverride);
             }
 
             void SetElementsVisible(bool textVisible, bool imageVisible)

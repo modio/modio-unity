@@ -45,16 +45,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   DisplayAs: 
-  DisplayAsLocalisedKey: modio_btn_menu_browsemods
+  DisplayAsLocalisedKey: modio_page_mods
   Icon: {fileID: 21300000, guid: fe8c7b267ac06c14a84ee66bba332c26, type: 3}
   HiddenIfMonetizationDisabled: 0
   searchType: 8
   searchPhrase: 
   searchTags: []
-  sortModsBy: 4
+  sortModsBy: 3
   CollectionId: 0
-  showMatureContent: 0
-  isAscending: 1
+  matureContentFilter: -1
+  isAscending: 0
   filterRevenueType: 2
   shareFilterSettingsWith: {fileID: 5720165946152866720}
   hideTagCategories: []

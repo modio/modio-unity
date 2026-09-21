@@ -1,4 +1,5 @@
 using Modio.API;
+using Modio.Images;
 
 namespace Modio.Monetization
 {
@@ -9,19 +10,26 @@ namespace Modio.Monetization
         public readonly string Name;
         public readonly string FormattedPrice;
         public readonly int Value;
+        public readonly string Description;
+        public ImageReference ImageReference;
 
         public PortalSku(
             ModioAPI.Portal portal,
             string sku,
             string name,
             string formattedPrice,
-            int value
+            int value,
+            string description = "",
+            ImageReference imageReference = default
         ) {
             Portal = portal;
             Sku = sku;
             Name = name;
             FormattedPrice = formattedPrice;
             Value = value;
+            Description = description;
+            ImageReference = imageReference;
         }
+        
     }
 }

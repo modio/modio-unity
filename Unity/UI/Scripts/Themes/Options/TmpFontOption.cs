@@ -10,7 +10,7 @@ namespace Modio.Unity.UI.Scripts.Themes.Options
     {
         [SerializeField] TMP_FontAsset _fontAsset;
 
-        protected override void StyleComponent(TMP_Text component)
+        public override void StyleComponent(TMP_Text component)
         {
             component.font = _fontAsset;
         }

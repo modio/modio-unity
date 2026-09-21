@@ -17,6 +17,8 @@ namespace Modio.Unity.UI.Editor.Components
         public override void OnInspectorGUI()
         {
             serializedObject.Update();
+
+            ((ModioUIThemeSheet)target).SetAsCurrentPropertyProvider();
             
             GUI.enabled = targets.Length == 1;
             var compareTo = (ModioUIThemeSheet)EditorGUILayout.ObjectField("Compare to", null, typeof(ModioUIThemeSheet), false);

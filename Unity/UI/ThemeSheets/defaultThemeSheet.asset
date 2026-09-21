@@ -12,52 +12,113 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 87c797fc2fce443e85e345f9af5f9daf, type: 3}
   m_Name: defaultThemeSheet
   m_EditorClassIdentifier: 
+  _baseTheme: {fileID: 0}
+  _colors:
+  - Name: Dark
+    ResolvesAs:
+      Name: 
+      ExplicitValue: {r: 0, g: 0, b: 0, a: 1}
+  - Name: Dark1
+    ResolvesAs:
+      Name: 
+      ExplicitValue: {r: 0.2509804, g: 0.2509804, b: 0.2509804, a: 1}
+  - Name: Dark1Hover
+    ResolvesAs:
+      Name: 
+      ExplicitValue: {r: 0.3137255, g: 0.3137255, b: 0.3137255, a: 1}
+  - Name: Dark2
+    ResolvesAs:
+      Name: 
+      ExplicitValue: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
+  - Name: Light
+    ResolvesAs:
+      Name: 
+      ExplicitValue: {r: 1, g: 1, b: 1, a: 1}
+  - Name: LightSubued
+    ResolvesAs:
+      Name: 
+      ExplicitValue: {r: 1, g: 1, b: 1, a: 0.69803923}
+  - Name: Primary
+    ResolvesAs:
+      Name: 
+      ExplicitValue: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
+  - Name: PrimaryHover
+    ResolvesAs:
+      Name: 
+      ExplicitValue: {r: 0.050980393, g: 0.89411765, b: 1, a: 1}
+  - Name: Danger
+    ResolvesAs:
+      Name: 
+      ExplicitValue: {r: 0.85882354, g: 0.3254902, b: 0.33333334, a: 1}
+  - Name: DangerHover
+    ResolvesAs:
+      Name: 
+      ExplicitValue: {r: 0.99607843, g: 0.42745098, b: 0.43529412, a: 1}
+  - Name: Warning
+    ResolvesAs:
+      Name: 
+      ExplicitValue: {r: 0.99607843, g: 0.9529412, b: 0.4627451, a: 1}
+  - Name: Success
+    ResolvesAs:
+      Name: 
+      ExplicitValue: {r: 0.49411765, g: 0.9372549, b: 0.54901963, a: 1}
+  - Name: FullTransparentWhite
+    ResolvesAs:
+      Name: 
+      ExplicitValue: {r: 1, g: 1, b: 1, a: 0}
+  - Name: FullTransparentWhite
+    ResolvesAs:
+      Name: 
+      ExplicitValue: {r: 1, g: 1, b: 1, a: 0}
+  - Name: Dropshadow
+    ResolvesAs:
+      Name: FullTransparentWhite
+      ExplicitValue: {r: 1, g: 1, b: 1, a: 0}
   _styles:
   - _target: 1
     _extends: 0
     _styleOptions:
-    - rid: 3044336126279811072
-    - rid: 3044336040670658567
-    - rid: 3044336040670658568
-    - rid: 3044336040670658566
-    - rid: 3044336040670658569
-    - rid: 3044336040670658570
-    - rid: 3044336040670658571
-    - rid: 7330996142239645699
-    - rid: 7330996142239645700
-    - rid: 7330996273359880194
     - rid: 7330996142239645696
     - rid: 7330996142239645697
     - rid: 7330996142239645698
-    - rid: 7330996142239645701
-    - rid: 7330996142239645702
     - rid: 7330996276992933891
     - rid: 7330996276992933892
     - rid: 7330996276992933893
     - rid: 7330996276992933894
     - rid: 7330996276992933895
     - rid: 7330996276992933897
-    - rid: 7931681601538228224
+    - rid: 1141548383927795715
+    - rid: 1447790313616441348
+    - rid: 1447790313616441349
+    - rid: 1447790313616441350
+    - rid: 1447790313616441357
+    - rid: 1447790313616441358
+    - rid: 1447790313616441351
+    - rid: 1447790313616441352
+    - rid: 1447790313616441354
+    - rid: 1447790313616441355
+    - rid: 1447790334920097819
+    - rid: 1141548225503428608
   - _target: 101
     _extends: 100
     _styleOptions:
-    - rid: 7330996142239645711
-    - rid: 7330996142239645712
-    - rid: 7330996142239645713
-    - rid: 7330996142239645714
     - rid: 7330996276992933901
+    - rid: 1447790334920097792
+    - rid: 1447790334920097793
   - _target: 202
     _extends: 1
     _styleOptions:
     - rid: 7330996142239645718
     - rid: 7330996276992933889
-    - rid: 7330996614934560768
-    - rid: 7330996614934560769
     - rid: 6551853948811608089
     - rid: 6551853948811608090
+    - rid: 1141548383927795716
+    - rid: 1141548383927795717
   - _target: 200
     _extends: 1
-    _styleOptions: []
+    _styleOptions:
+    - rid: 1447790334920097794
+    - rid: 1141548316001828864
   - _target: 201
     _extends: 1
     _styleOptions:
@@ -70,30 +131,30 @@ MonoBehaviour:
   - _target: 203
     _extends: 201
     _styleOptions:
-    - rid: 7330996227869507588
+    - rid: 1447790334920097795
   - _target: 105
     _extends: 1
     _styleOptions:
     - rid: 7330996142239645715
     - rid: 7330996276992933906
   - _target: 400
-    _extends: 1
+    _extends: 100
     _styleOptions:
-    - rid: 7330996142239645717
-    - rid: 7330996142239645720
+    - rid: 1447790334920097796
   - _target: 300
     _extends: 1
     _styleOptions:
-    - rid: 7330996250945781777
-    - rid: 7330996250945781778
+    - rid: 1141548383927795713
+    - rid: 1141548383927795714
   - _target: 107
-    _extends: 0
+    _extends: 1
     _styleOptions:
     - rid: 7330996250945781779
   - _target: 401
     _extends: 1
     _styleOptions:
-    - rid: 7330996273359880193
+    - rid: 1447790334920097797
+    - rid: 1447790334920097799
   - _target: 303
     _extends: 1
     _styleOptions:
@@ -101,16 +162,19 @@ MonoBehaviour:
     - rid: 7330996276992933905
     - rid: 7330996276992933909
     - rid: 7330996276992933910
+    - rid: 1141548253483368448
   - _target: 100
     _extends: 1
     _styleOptions:
-    - rid: 7330996227869507590
+    - rid: 1141548316001828870
+    - rid: 1141548316001828871
+    - rid: 1141548316001828872
   - _target: 106
     _extends: 100
     _styleOptions:
-    - rid: 7330996227869507586
+    - rid: 1447790334920097800
   - _target: 108
-    _extends: 1
+    _extends: 100
     _styleOptions:
     - rid: 7330996276992933903
     - rid: 7330996276992933904
@@ -119,7 +183,7 @@ MonoBehaviour:
     _styleOptions:
     - rid: 7330996276992933907
     - rid: 7330996276992933908
-    - rid: 7330996613620432896
+    - rid: 1447790334920097801
   - _target: 109
     _extends: 100
     _styleOptions:
@@ -142,17 +206,13 @@ MonoBehaviour:
   - _target: 304
     _extends: 1
     _styleOptions:
-    - rid: 7330996614934560771
-    - rid: 7931681627741618177
     - rid: 7330996614934560773
-    - rid: 7931681627741618178
-    - rid: 7931681627741618179
-    - rid: 7931681627741618181
+    - rid: 1447790334920097814
   - _target: 305
     _extends: 1
     _styleOptions:
-    - rid: 7023046983627046918
     - rid: 7023046983627046919
+    - rid: 1447790334920097812
   - _target: 402
     _extends: 400
     _styleOptions: []
@@ -165,86 +225,427 @@ MonoBehaviour:
     _styleOptions:
     - rid: 7931681601538228225
   - _target: 404
+    _extends: 0
+    _styleOptions:
+    - rid: 1447790334920097803
+    - rid: 1447790334920097804
+  - _target: 112
+    _extends: 100
+    _styleOptions:
+    - rid: 1447790334920097807
+  - _target: 405
     _extends: 400
     _styleOptions:
-    - rid: 7931681442575417344
-    - rid: 7931681442575417345
+    - rid: 1447790334920097809
+    - rid: 1141548253483368450
+  - _target: 406
+    _extends: 400
+    _styleOptions:
+    - rid: 1447790334920097810
+    - rid: 1141548253483368449
+  - _target: 301
+    _extends: 1
+    _styleOptions:
+    - rid: 1141548316001828865
+  - _target: 407
+    _extends: 1
+    _styleOptions:
+    - rid: 6857073665889009743
   references:
     version: 2
     RefIds:
-    - rid: 3044336040670658566
-      type: {class: ColorSchemeOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
+    - rid: 1141548225503428608
+      type: {class: SimpleColorOptionV2, ns: Modio.Unity.UI.Scripts.Themes.Options,
         asm: Modio.Unity.UI}
       data:
-        _option: 0
-        _isOn: 0
-        _colorBlock:
-          m_NormalColor: {r: 0.6, g: 0.6, b: 0.6, a: 0.34901962}
-          m_HighlightedColor: {r: 0.6, g: 0.6, b: 0.6, a: 0.5019608}
-          m_PressedColor: {r: 0.6, g: 0.6, b: 0.6, a: 0.5019608}
-          m_SelectedColor: {r: 0.6, g: 0.6, b: 0.6, a: 0.5019608}
-          m_DisabledColor: {r: 0.23921569, g: 0.26666668, b: 0.29411766, a: 0.7176471}
-          m_ColorMultiplier: 1
-          m_FadeDuration: 0.1
-    - rid: 3044336040670658567
-      type: {class: SimpleColorOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        _option: 14
+        _color2:
+          Name: Dropshadow
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+    - rid: 1141548253483368448
+      type: {class: SimpleColorOptionV2, ns: Modio.Unity.UI.Scripts.Themes.Options,
         asm: Modio.Unity.UI}
       data:
-        _color: {r: 0.12941177, g: 0.13725491, b: 0.14509805, a: 1}
-        _option: 0
-    - rid: 3044336040670658568
-      type: {class: SimpleColorOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        _option: 6
+        _color2:
+          Name: LightSubued
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+    - rid: 1141548253483368449
+      type: {class: SimpleColorOptionV2, ns: Modio.Unity.UI.Scripts.Themes.Options,
         asm: Modio.Unity.UI}
       data:
-        _color: {r: 0.22352941, g: 0.24313726, b: 0.26666668, a: 1}
+        _option: 6
+        _color2:
+          Name: Success
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+    - rid: 1141548253483368450
+      type: {class: ColorSchemeOptionSimplified, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _option: 6
+        _matchStates: 3
+        _mainColor:
+          Name: Danger
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+        _highlightColor:
+          Name: DangerHover
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+    - rid: 1141548316001828864
+      type: {class: SimpleColorOptionV2, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
         _option: 1
-    - rid: 3044336040670658569
-      type: {class: ColorSchemeOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        _color2:
+          Name: Dark1
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+    - rid: 1141548316001828865
+      type: {class: SimpleColorOptionV2, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _option: 6
+        _color2:
+          Name: LightSubued
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+    - rid: 1141548316001828870
+      type: {class: ImageOption, ns: Modio.Unity.UI.Scripts.Themes.Options, asm: Modio.Unity.UI}
+      data:
+        _option: 9
+        _image: {fileID: 0}
+    - rid: 1141548316001828871
+      type: {class: ImageOption, ns: Modio.Unity.UI.Scripts.Themes.Options, asm: Modio.Unity.UI}
+      data:
+        _option: 3
+        _image: {fileID: 0}
+    - rid: 1141548316001828872
+      type: {class: ImageOption, ns: Modio.Unity.UI.Scripts.Themes.Options, asm: Modio.Unity.UI}
+      data:
+        _option: 4
+        _image: {fileID: 21300000, guid: 91c8a28ebcde6ac469e4ad1171ed8847, type: 3}
+    - rid: 1141548383927795713
+      type: {class: ColorSchemeOptionSimplified, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _option: 3
+        _matchStates: 1
+        _mainColor:
+          Name: Primary
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+        _highlightColor:
+          Name: PrimaryHover
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+    - rid: 1141548383927795714
+      type: {class: ColorSchemeOptionSimplified, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _option: 3
+        _matchStates: 2
+        _mainColor:
+          Name: 
+          ExplicitValue: {r: 1, g: 1, b: 1, a: 0.2}
+        _highlightColor:
+          Name: 
+          ExplicitValue: {r: 1, g: 1, b: 1, a: 0.38431373}
+    - rid: 1141548383927795715
+      type: {class: SimpleColorOptionV2, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _option: 1
+        _color2:
+          Name: Dark1
+          ExplicitValue: {r: 0.22352941, g: 0.24313726, b: 0.26666668, a: 1}
+    - rid: 1141548383927795716
+      type: {class: ColorSchemeOptionSimplified, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _option: 1
+        _matchStates: 2
+        _mainColor:
+          Name: FullTransparentWhite
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+        _highlightColor:
+          Name: Light
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+    - rid: 1141548383927795717
+      type: {class: ColorSchemeOptionSimplified, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _option: 6
+        _matchStates: 2
+        _mainColor:
+          Name: Light
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+        _highlightColor:
+          Name: Dark
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+    - rid: 1447790313616441348
+      type: {class: ColorSchemeOptionSimplified, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _option: 4
+        _matchStates: 3
+        _mainColor:
+          Name: FullTransparentWhite
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+        _highlightColor:
+          Name: Primary
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+    - rid: 1447790313616441349
+      type: {class: ColorSchemeOptionSimplified, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _option: 7
+        _matchStates: 3
+        _mainColor:
+          Name: Primary
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+        _highlightColor:
+          Name: PrimaryHover
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+    - rid: 1447790313616441350
+      type: {class: ColorSchemeOptionSimplified, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _option: 3
+        _matchStates: 3
+        _mainColor:
+          Name: FullTransparentWhite
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+        _highlightColor:
+          Name: FullTransparentWhite
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+    - rid: 1447790313616441351
+      type: {class: SimpleColorOptionV2, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _option: 6
+        _color2:
+          Name: Light
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+    - rid: 1447790313616441352
+      type: {class: SimpleColorOptionV2, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _option: 8
+        _color2:
+          Name: Dark
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+    - rid: 1447790313616441354
+      type: {class: ColorSchemeOptionSimplified, ns: Modio.Unity.UI.Scripts.Themes.Options,
         asm: Modio.Unity.UI}
       data:
         _option: 0
-        _isOn: 1
-        _colorBlock:
-          m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
-          m_HighlightedColor: {r: 1, g: 1, b: 1, a: 1}
-          m_PressedColor: {r: 1, g: 1, b: 1, a: 1}
-          m_SelectedColor: {r: 1, g: 1, b: 1, a: 1}
-          m_DisabledColor: {r: 1, g: 1, b: 1, a: 0.5019608}
-          m_ColorMultiplier: 1
-          m_FadeDuration: 0.1
-    - rid: 3044336040670658570
-      type: {class: ColorSchemeOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        _matchStates: 2
+        _mainColor:
+          Name: Dark1
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+        _highlightColor:
+          Name: Dark1Hover
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+    - rid: 1447790313616441355
+      type: {class: ColorSchemeOptionSimplified, ns: Modio.Unity.UI.Scripts.Themes.Options,
         asm: Modio.Unity.UI}
       data:
-        _option: 3
-        _isOn: 0
-        _colorBlock:
-          m_NormalColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 0.34901962}
-          m_HighlightedColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 0.5019608}
-          m_PressedColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 0.5019608}
-          m_SelectedColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 0.5019608}
-          m_DisabledColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 0.7176471}
-          m_ColorMultiplier: 1
-          m_FadeDuration: 0.1
-    - rid: 3044336040670658571
-      type: {class: ColorSchemeOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        _option: 0
+        _matchStates: 1
+        _mainColor:
+          Name: Light
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+        _highlightColor:
+          Name: Light
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+    - rid: 1447790313616441357
+      type: {class: ColorSchemeOptionSimplified, ns: Modio.Unity.UI.Scripts.Themes.Options,
         asm: Modio.Unity.UI}
       data:
-        _option: 3
-        _isOn: 1
-        _colorBlock:
-          m_NormalColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 0.34901962}
-          m_HighlightedColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 0.5019608}
-          m_PressedColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 0.5019608}
-          m_SelectedColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 0.5019608}
-          m_DisabledColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 0.7176471}
-          m_ColorMultiplier: 1
-          m_FadeDuration: 0.1
-    - rid: 3044336126279811072
+        _option: 6
+        _matchStates: 2
+        _mainColor:
+          Name: Light
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+        _highlightColor:
+          Name: Light
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+    - rid: 1447790313616441358
+      type: {class: ColorSchemeOptionSimplified, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _option: 6
+        _matchStates: 1
+        _mainColor:
+          Name: Dark
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+        _highlightColor:
+          Name: Dark
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+    - rid: 1447790334920097792
+      type: {class: ColorSchemeOptionSimplified, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _option: 0
+        _matchStates: 2
+        _mainColor:
+          Name: Primary
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+        _highlightColor:
+          Name: PrimaryHover
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+    - rid: 1447790334920097793
+      type: {class: ColorSchemeOptionSimplified, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _option: 0
+        _matchStates: 1
+        _mainColor:
+          Name: Light
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+        _highlightColor:
+          Name: Light
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+    - rid: 1447790334920097794
+      type: {class: SimpleColorOptionV2, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _option: 0
+        _color2:
+          Name: Dark2
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+    - rid: 1447790334920097795
+      type: {class: SimpleColorOptionV2, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _option: 0
+        _color2:
+          Name: FullTransparentWhite
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+    - rid: 1447790334920097796
+      type: {class: SimpleColorOptionV2, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _option: 0
+        _color2:
+          Name: Dark2
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+    - rid: 1447790334920097797
       type: {class: ImageOption, ns: Modio.Unity.UI.Scripts.Themes.Options, asm: Modio.Unity.UI}
       data:
         _option: 9
         _image: {fileID: 21300000, guid: 64d67717e3005c34c83b13fe437d0da0, type: 3}
+    - rid: 1447790334920097799
+      type: {class: SimpleColorOptionV2, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _option: 0
+        _color2:
+          Name: 
+          ExplicitValue: {r: 1, g: 1, b: 1, a: 1}
+    - rid: 1447790334920097800
+      type: {class: ColorSchemeOptionSimplified, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _option: 6
+        _matchStates: 3
+        _mainColor:
+          Name: Light
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+        _highlightColor:
+          Name: PrimaryHover
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+    - rid: 1447790334920097801
+      type: {class: ColorSchemeOptionSimplified, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _option: 0
+        _matchStates: 3
+        _mainColor:
+          Name: Dark
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+        _highlightColor:
+          Name: Dark
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+    - rid: 1447790334920097803
+      type: {class: SimpleColorOptionV2, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _option: 0
+        _color2:
+          Name: Primary
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+    - rid: 1447790334920097804
+      type: {class: SimpleColorOptionV2, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _option: 1
+        _color2:
+          Name: PrimaryHover
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+    - rid: 1447790334920097807
+      type: {class: ColorSchemeOptionSimplified, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _option: 6
+        _matchStates: 1
+        _mainColor:
+          Name: Light
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+        _highlightColor:
+          Name: Light
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+    - rid: 1447790334920097809
+      type: {class: ColorSchemeOptionSimplified, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _option: 0
+        _matchStates: 3
+        _mainColor:
+          Name: Danger
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+        _highlightColor:
+          Name: DangerHover
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+    - rid: 1447790334920097810
+      type: {class: ColorSchemeOptionSimplified, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _option: 0
+        _matchStates: 3
+        _mainColor:
+          Name: Success
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+        _highlightColor:
+          Name: Success
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+    - rid: 1447790334920097812
+      type: {class: ColorSchemeOptionSimplified, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _option: 0
+        _matchStates: 3
+        _mainColor:
+          Name: Warning
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+        _highlightColor:
+          Name: Warning
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+    - rid: 1447790334920097814
+      type: {class: SimpleColorOptionV2, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _option: 0
+        _color2:
+          Name: Dark2
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+    - rid: 1447790334920097819
+      type: {class: ColorSchemeOptionSimplified, ns: Modio.Unity.UI.Scripts.Themes.Options,
+        asm: Modio.Unity.UI}
+      data:
+        _option: 4
+        _matchStates: 3
+        _mainColor:
+          Name: FullTransparentWhite
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
+        _highlightColor:
+          Name: Light
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
     - rid: 6551853948811608089
       type: {class: ColorSchemeOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
         asm: Modio.Unity.UI}
@@ -273,12 +674,14 @@ MonoBehaviour:
           m_DisabledColor: {r: 0.05490196, g: 0.0627451, b: 0.105882354, a: 0.5019608}
           m_ColorMultiplier: 1
           m_FadeDuration: 0.1
-    - rid: 7023046983627046918
-      type: {class: SimpleColorOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
+    - rid: 6857073665889009743
+      type: {class: SimpleColorOptionV2, ns: Modio.Unity.UI.Scripts.Themes.Options,
         asm: Modio.Unity.UI}
       data:
-        _color: {r: 0.99607843, g: 0.9529412, b: 0.4627451, a: 1}
         _option: 0
+        _color2:
+          Name: Warning
+          ExplicitValue: {r: 0, g: 0, b: 0, a: 0}
     - rid: 7023046983627046919
       type: {class: SimpleColorOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
         asm: Modio.Unity.UI}
@@ -300,124 +703,12 @@ MonoBehaviour:
       data:
         _option: 10
         _fontAsset: {fileID: 11400000, guid: 5f9d73ed3cc0464468ed37bef4b9e476, type: 2}
-    - rid: 7330996142239645699
-      type: {class: ColorSchemeOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
-        asm: Modio.Unity.UI}
-      data:
-        _option: 6
-        _isOn: 0
-        _colorBlock:
-          m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
-          m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
-          m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
-          m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
-          m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
-          m_ColorMultiplier: 1
-          m_FadeDuration: 0.1
-    - rid: 7330996142239645700
-      type: {class: ColorSchemeOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
-        asm: Modio.Unity.UI}
-      data:
-        _option: 8
-        _isOn: 1
-        _colorBlock:
-          m_NormalColor: {r: 0.05490196, g: 0.0627451, b: 0.105882354, a: 1}
-          m_HighlightedColor: {r: 0.05490196, g: 0.0627451, b: 0.105882354, a: 1}
-          m_PressedColor: {r: 0.05490196, g: 0.0627451, b: 0.105882354, a: 1}
-          m_SelectedColor: {r: 0.05490196, g: 0.0627451, b: 0.105882354, a: 1}
-          m_DisabledColor: {r: 0.05490196, g: 0.0627451, b: 0.105882354, a: 1}
-          m_ColorMultiplier: 1
-          m_FadeDuration: 0.1
-    - rid: 7330996142239645701
-      type: {class: ColorSchemeOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
-        asm: Modio.Unity.UI}
-      data:
-        _option: 4
-        _isOn: 0
-        _colorBlock:
-          m_NormalColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 0}
-          m_HighlightedColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
-          m_PressedColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
-          m_SelectedColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
-          m_DisabledColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 0}
-          m_ColorMultiplier: 1
-          m_FadeDuration: 0.1
-    - rid: 7330996142239645702
-      type: {class: ColorSchemeOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
-        asm: Modio.Unity.UI}
-      data:
-        _option: 4
-        _isOn: 1
-        _colorBlock:
-          m_NormalColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 0}
-          m_HighlightedColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
-          m_PressedColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
-          m_SelectedColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
-          m_DisabledColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 0}
-          m_ColorMultiplier: 1
-          m_FadeDuration: 0.1
     - rid: 7330996142239645710
       type: {class: TmpFontSizeOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
         asm: Modio.Unity.UI}
       data:
         _option: 12
         _fontSize: 40
-    - rid: 7330996142239645711
-      type: {class: ColorSchemeOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
-        asm: Modio.Unity.UI}
-      data:
-        _option: 0
-        _isOn: 0
-        _colorBlock:
-          m_NormalColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
-          m_HighlightedColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
-          m_PressedColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
-          m_SelectedColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
-          m_DisabledColor: {r: 0, g: 0.44313726, b: 0.5019608, a: 0.7176471}
-          m_ColorMultiplier: 1
-          m_FadeDuration: 0.1
-    - rid: 7330996142239645712
-      type: {class: ColorSchemeOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
-        asm: Modio.Unity.UI}
-      data:
-        _option: 0
-        _isOn: 1
-        _colorBlock:
-          m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
-          m_HighlightedColor: {r: 1, g: 1, b: 1, a: 1}
-          m_PressedColor: {r: 1, g: 1, b: 1, a: 1}
-          m_SelectedColor: {r: 1, g: 1, b: 1, a: 1}
-          m_DisabledColor: {r: 1, g: 1, b: 1, a: 0.5019608}
-          m_ColorMultiplier: 1
-          m_FadeDuration: 0.1
-    - rid: 7330996142239645713
-      type: {class: ColorSchemeOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
-        asm: Modio.Unity.UI}
-      data:
-        _option: 4
-        _isOn: 0
-        _colorBlock:
-          m_NormalColor: {r: 1, g: 1, b: 1, a: 0}
-          m_HighlightedColor: {r: 1, g: 1, b: 1, a: 1}
-          m_PressedColor: {r: 1, g: 1, b: 1, a: 1}
-          m_SelectedColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
-          m_DisabledColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 0}
-          m_ColorMultiplier: 1
-          m_FadeDuration: 0.1
-    - rid: 7330996142239645714
-      type: {class: ColorSchemeOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
-        asm: Modio.Unity.UI}
-      data:
-        _option: 4
-        _isOn: 1
-        _colorBlock:
-          m_NormalColor: {r: 1, g: 1, b: 1, a: 0}
-          m_HighlightedColor: {r: 1, g: 1, b: 1, a: 1}
-          m_PressedColor: {r: 1, g: 1, b: 1, a: 1}
-          m_SelectedColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
-          m_DisabledColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
-          m_ColorMultiplier: 1
-          m_FadeDuration: 0.1
     - rid: 7330996142239645715
       type: {class: TmpFontStyleOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
         asm: Modio.Unity.UI}
@@ -429,78 +720,12 @@ MonoBehaviour:
           WordSpacing: 0
           LineSpacing: 0
           ParagraphSpacing: 0
-    - rid: 7330996142239645717
-      type: {class: SimpleColorOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
-        asm: Modio.Unity.UI}
-      data:
-        _color: {r: 0.103773594, g: 0.103773594, b: 0.103773594, a: 0.6117647}
-        _option: 0
     - rid: 7330996142239645718
       type: {class: TmpFontSizeOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
         asm: Modio.Unity.UI}
       data:
         _option: 11
         _fontSize: 16
-    - rid: 7330996142239645720
-      type: {class: SimpleColorOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
-        asm: Modio.Unity.UI}
-      data:
-        _color: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
-        _option: 4
-    - rid: 7330996227869507586
-      type: {class: ColorSchemeOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
-        asm: Modio.Unity.UI}
-      data:
-        _option: 6
-        _isOn: 0
-        _colorBlock:
-          m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
-          m_HighlightedColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
-          m_PressedColor: {r: 0.6981132, g: 0.6981132, b: 0.6981132, a: 1}
-          m_SelectedColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
-          m_DisabledColor: {r: 0.69803923, g: 0.69803923, b: 0.69803923, a: 0.49019608}
-          m_ColorMultiplier: 1
-          m_FadeDuration: 0.1
-    - rid: 7330996227869507588
-      type: {class: SimpleColorOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
-        asm: Modio.Unity.UI}
-      data:
-        _color: {r: 0.12941177, g: 0.13725491, b: 0.14509805, a: 0.02745098}
-        _option: 0
-    - rid: 7330996227869507590
-      type: {class: SimpleColorOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
-        asm: Modio.Unity.UI}
-      data:
-        _color: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
-        _option: 3
-    - rid: 7330996250945781777
-      type: {class: ColorSchemeOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
-        asm: Modio.Unity.UI}
-      data:
-        _option: 3
-        _isOn: 0
-        _colorBlock:
-          m_NormalColor: {r: 1, g: 1, b: 1, a: 0.2}
-          m_HighlightedColor: {r: 1, g: 1, b: 1, a: 0.38431373}
-          m_PressedColor: {r: 0.67058825, g: 0.6431373, b: 0.6431373, a: 0.2}
-          m_SelectedColor: {r: 1, g: 1, b: 1, a: 0.2}
-          m_DisabledColor: {r: 1, g: 1, b: 1, a: 0.2}
-          m_ColorMultiplier: 1
-          m_FadeDuration: 0.1
-    - rid: 7330996250945781778
-      type: {class: ColorSchemeOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
-        asm: Modio.Unity.UI}
-      data:
-        _option: 3
-        _isOn: 1
-        _colorBlock:
-          m_NormalColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
-          m_HighlightedColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
-          m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
-          m_SelectedColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
-          m_DisabledColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 0.49019608}
-          m_ColorMultiplier: 1
-          m_FadeDuration: 0.1
     - rid: 7330996250945781779
       type: {class: TmpFontOption, ns: Modio.Unity.UI.Scripts.Themes.Options, asm: Modio.Unity.UI}
       data:
@@ -539,26 +764,6 @@ MonoBehaviour:
           WordSpacing: 0
           LineSpacing: -40
           ParagraphSpacing: 0
-    - rid: 7330996273359880193
-      type: {class: SimpleColorOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
-        asm: Modio.Unity.UI}
-      data:
-        _color: {r: 1, g: 1, b: 1, a: 1}
-        _option: 0
-    - rid: 7330996273359880194
-      type: {class: ColorSchemeOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
-        asm: Modio.Unity.UI}
-      data:
-        _option: 7
-        _isOn: 0
-        _colorBlock:
-          m_NormalColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
-          m_HighlightedColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
-          m_PressedColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
-          m_SelectedColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
-          m_DisabledColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
-          m_ColorMultiplier: 1
-          m_FadeDuration: 0.1
     - rid: 7330996276992933889
       type: {class: TmpFontStyleOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
         asm: Modio.Unity.UI}
@@ -792,78 +997,12 @@ MonoBehaviour:
           m_DisabledColor: {r: 0.23921569, g: 0.26666668, b: 0.29411766, a: 0.7176471}
           m_ColorMultiplier: 1
           m_FadeDuration: 0.1
-    - rid: 7330996613620432896
-      type: {class: ColorSchemeOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
-        asm: Modio.Unity.UI}
-      data:
-        _option: 6
-        _isOn: 0
-        _colorBlock:
-          m_NormalColor: {r: 1, g: 1, b: 1, a: 0.6}
-          m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
-          m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
-          m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
-          m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
-          m_ColorMultiplier: 1
-          m_FadeDuration: 0.1
-    - rid: 7330996614934560768
-      type: {class: ColorSchemeOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
-        asm: Modio.Unity.UI}
-      data:
-        _option: 1
-        _isOn: 0
-        _colorBlock:
-          m_NormalColor: {r: 0.6, g: 0.6, b: 0.6, a: 0}
-          m_HighlightedColor: {r: 1, g: 1, b: 1, a: 1}
-          m_PressedColor: {r: 1, g: 1, b: 1, a: 1}
-          m_SelectedColor: {r: 1, g: 1, b: 1, a: 1}
-          m_DisabledColor: {r: 0.23921569, g: 0.26666668, b: 0.29411766, a: 0.7176471}
-          m_ColorMultiplier: 1
-          m_FadeDuration: 0.1
-    - rid: 7330996614934560769
-      type: {class: SimpleColorOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
-        asm: Modio.Unity.UI}
-      data:
-        _color: {r: 0.1882353, g: 0.1882353, b: 0.1882353, a: 1}
-        _option: 0
-    - rid: 7330996614934560771
-      type: {class: ColorSchemeOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
-        asm: Modio.Unity.UI}
-      data:
-        _option: 6
-        _isOn: 0
-        _colorBlock:
-          m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
-          m_HighlightedColor: {r: 1, g: 1, b: 1, a: 1}
-          m_PressedColor: {r: 1, g: 1, b: 1, a: 1}
-          m_SelectedColor: {r: 1, g: 1, b: 1, a: 1}
-          m_DisabledColor: {r: 1, g: 1, b: 1, a: 1}
-          m_ColorMultiplier: 1
-          m_FadeDuration: 0.1
     - rid: 7330996614934560773
       type: {class: TmpFontSizeOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
         asm: Modio.Unity.UI}
       data:
         _option: 10
         _fontSize: 16
-    - rid: 7931681442575417344
-      type: {class: SimpleColorOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
-        asm: Modio.Unity.UI}
-      data:
-        _color: {r: 0.02745098, g: 0.7529412, b: 0.84313726, a: 1}
-        _option: 1
-    - rid: 7931681442575417345
-      type: {class: SimpleColorOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
-        asm: Modio.Unity.UI}
-      data:
-        _color: {r: 0, g: 0.44313726, b: 0.5019608, a: 1}
-        _option: 0
-    - rid: 7931681601538228224
-      type: {class: SimpleColorOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
-        asm: Modio.Unity.UI}
-      data:
-        _color: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
-        _option: 4
     - rid: 7931681601538228225
       type: {class: TmpFontSizeOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
         asm: Modio.Unity.UI}
@@ -876,59 +1015,3 @@ MonoBehaviour:
       data:
         _option: 11
         _fontSize: 40
-    - rid: 7931681627741618177
-      type: {class: ColorSchemeOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
-        asm: Modio.Unity.UI}
-      data:
-        _option: 6
-        _isOn: 1
-        _colorBlock:
-          m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
-          m_HighlightedColor: {r: 1, g: 1, b: 1, a: 1}
-          m_PressedColor: {r: 1, g: 1, b: 1, a: 1}
-          m_SelectedColor: {r: 1, g: 1, b: 1, a: 1}
-          m_DisabledColor: {r: 1, g: 1, b: 1, a: 1}
-          m_ColorMultiplier: 0
-          m_FadeDuration: 0
-    - rid: 7931681627741618178
-      type: {class: ColorSchemeOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
-        asm: Modio.Unity.UI}
-      data:
-        _option: 7
-        _isOn: 0
-        _colorBlock:
-          m_NormalColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
-          m_HighlightedColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
-          m_PressedColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
-          m_SelectedColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
-          m_DisabledColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
-          m_ColorMultiplier: 0
-          m_FadeDuration: 0
-    - rid: 7931681627741618179
-      type: {class: ColorSchemeOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
-        asm: Modio.Unity.UI}
-      data:
-        _option: 7
-        _isOn: 1
-        _colorBlock:
-          m_NormalColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
-          m_HighlightedColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
-          m_PressedColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
-          m_SelectedColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
-          m_DisabledColor: {r: 0.02745098, g: 0.75686276, b: 0.84705883, a: 1}
-          m_ColorMultiplier: 0
-          m_FadeDuration: 0
-    - rid: 7931681627741618181
-      type: {class: ColorSchemeOption, ns: Modio.Unity.UI.Scripts.Themes.Options,
-        asm: Modio.Unity.UI}
-      data:
-        _option: 0
-        _isOn: 0
-        _colorBlock:
-          m_NormalColor: {r: 0, g: 0, b: 0, a: 0.6}
-          m_HighlightedColor: {r: 0, g: 0, b: 0, a: 0.6}
-          m_PressedColor: {r: 0, g: 0, b: 0, a: 0.6}
-          m_SelectedColor: {r: 0, g: 0, b: 0, a: 0.6}
-          m_DisabledColor: {r: 0, g: 0, b: 0, a: 0.6}
-          m_ColorMultiplier: 0
-          m_FadeDuration: 0

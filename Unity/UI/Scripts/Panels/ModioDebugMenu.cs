@@ -99,6 +99,10 @@ namespace Modio.Unity.UI.Panels
         {
             foreach (Assembly a in AppDomain.CurrentDomain.GetAssemblies())
             {
+                //The jetbrains.Annotations assembly seems to cause issues (FileNotFoundException)
+                if(a.FullName.Contains("Jetbrains", StringComparison.InvariantCultureIgnoreCase))
+                    continue;
+                
                 foreach (Type type in a.GetTypes())
                 {
                     MethodInfo[] allMethods = type.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);

@@ -4,6 +4,7 @@ using System.Text;
 using Modio.API;
 using Modio.API.SchemaDefinitions;
 using Modio.Mods;
+using Modio.Monetization;
 
 namespace Modio.Caching
 {
@@ -47,7 +48,11 @@ namespace Modio.Caching
         internal static bool TryGetMod(ModioId modId, out Mod mod) =>
             Mods.TryGetValue(modId, out mod);
 
-        static ModCache() => ModioClient.OnShutdown += Clear;
+        static ModCache()
+        {
+            ModioClient.OnShutdown += Clear;
+            ModioAPI.OnCurrentPortalChanged += PortalChanged;
+        }
 
         public static void Clear()
         {
@@ -55,6 +60,18 @@ namespace Modio.Caching
             ModSearches.Clear();
             SearchesNotInCache = 0;
             SearchesSavedByCache = 0;
+        }
+
+        static void PortalChanged(ModioAPI.Portal portal)
+        {
+            if (ModioServices.TryResolve(out ModioSettings settings)
+                && settings.TryGetPlatformSettings(out MonetizationSettings monetizationSettings)
+                && monetizationSettings.MonetizationType == ModioMonetizationType.UsdMarketplace)
+            {
+                foreach (Mod mod in Mods.Values)
+                    if (mod.IsMonetized)
+                        mod.GetSkuAfterPortalChange();
+            }
         }
 
         internal static bool GetCachedModSearch(

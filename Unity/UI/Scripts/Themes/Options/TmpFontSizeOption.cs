@@ -8,8 +8,8 @@ namespace Modio.Unity.UI.Scripts.Themes.Options
     public class TmpFontSizeOption : BaseStyleOption<TMP_Text>
     {
         [SerializeField] float _fontSize;
-        
-        protected override void StyleComponent(TMP_Text component)
+
+        public override void StyleComponent(TMP_Text component)
         {
             component.fontSize = _fontSize;
         }

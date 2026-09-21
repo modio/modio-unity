@@ -1,5 +1,5 @@
-using System;
 using Modio.Extensions;
+using Modio.Search;
 using Modio.Unity.UI.Components.Localization;
 using Modio.Unity.UI.Input;
 using Modio.Unity.UI.Navigation;
@@ -48,18 +48,16 @@ namespace Modio.Unity.UI.Panels
         public override void OnGainedFocus(GainedFocusCause selectionBehaviour)
         {
             ModioUIInput.AddHandler(ModioUIInput.ModioAction.Search, OpenSearch);
-            ModioUIInput.AddHandler(ModioUIInput.ModioAction.Filter, OpenFilter);
-            ModioUIInput.AddHandler(ModioUIInput.ModioAction.Sort,   OpenSort);
 
             if (ModioUnityMultiplatformAuthResolver.IsSupportedPlatform) 
                 ModioUIInput.AddHandler(ModioUIInput.ModioAction.Logout, OpenLogout);
 
-            ModioUISearch.Default.OnSearchUpdatedUnityEvent.AddListener(HookUpCancelOrClearFilter);
+            ModioUISearch.Default.OnSearchUpdatedUnityEvent.AddListener(HookUpSearchResponsiveButtons);
 
             base.OnGainedFocus(selectionBehaviour);
 
             //must happen after base.OnGainedFocus to unhook the regular Cancel listener
-            HookUpCancelOrClearFilter();
+            HookUpSearchResponsiveButtons();
             
             if (!ModioClient.IsInitialized || User.Current == null || !User.Current.IsAuthenticated)
             {
@@ -88,7 +86,7 @@ namespace Modio.Unity.UI.Panels
             if (!ModioClient.IsInitialized)
             {
                 waitingPanel = ModioPanelManager.GetPanelOfType<ModioWaitingPanelGeneric>();
-                waitingPanel?.OpenPanel();
+                waitingPanel?.OpenPanel(GenericWaitingType.Generic);
                 
                 ModioLog.Warning?.Log(($"Attempting to open {nameof(ModBrowserPanel)} before initializing the plugin and AutoInitialize is disabled"));
                 
@@ -108,7 +106,7 @@ namespace Modio.Unity.UI.Panels
                 if (waitingPanel == null)
                 {
                     waitingPanel = ModioPanelManager.GetPanelOfType<ModioWaitingPanelGeneric>();
-                    waitingPanel?.OpenPanel();    
+                    waitingPanel?.OpenPanel(GenericWaitingType.Generic);
                 }
                 
                 while (User.Current.IsUpdating)
@@ -148,27 +146,37 @@ namespace Modio.Unity.UI.Panels
             ModioUIInput.RemoveHandler(ModioUIInput.ModioAction.Cancel,      CancelPressed);
 
             if (ModioUISearch.Default != null)
-                ModioUISearch.Default.OnSearchUpdatedUnityEvent.RemoveListener(HookUpCancelOrClearFilter);
+                ModioUISearch.Default.OnSearchUpdatedUnityEvent.RemoveListener(HookUpSearchResponsiveButtons);
 
             base.OnLostFocus();
         }
 
-        void HookUpCancelOrClearFilter()
+        void HookUpSearchResponsiveButtons()
         {
             if (!HasFocus) return;
             
+            //The "Back" button can either clear the search, or exit the menu, depending on if there's a custom search
             ModioUIInput.RemoveHandler(ModioUIInput.ModioAction.Cancel,      CancelPressed);
             ModioUIInput.RemoveHandler(ModioUIInput.ModioAction.SearchClear, ClearSearch);
-
+            
             if (ModioUISearch.Default.HasCustomSearch())
                 ModioUIInput.AddHandler(ModioUIInput.ModioAction.SearchClear, ClearSearch);
             else
                 ModioUIInput.AddHandler(ModioUIInput.ModioAction.Cancel, CancelPressed);
+            
+            // Open filter and sort are only valid for some search types
+            ModioUIInput.RemoveHandler(ModioUIInput.ModioAction.Filter, OpenFilter);
+            ModioUIInput.RemoveHandler(ModioUIInput.ModioAction.Sort,   OpenSort);
+            
+            if(ModioUISearch.Default.ModioSearch.LastSearchPreset is not SpecialSearchType.VcPacks)
+                ModioUIInput.AddHandler(ModioUIInput.ModioAction.Filter, OpenFilter);
+            if(ModioUISearch.Default.ModioSearch.LastSearchPreset is not SpecialSearchType.VcPacks and not SpecialSearchType.SubSearchesOnly)
+                ModioUIInput.AddHandler(ModioUIInput.ModioAction.Sort,   OpenSort);
         }
 
         void OpenSearch()
         {
-            if (_searchField != null) _searchField.SelectInputField();
+            if (_searchField != null && _searchField.isActiveAndEnabled) _searchField.SelectInputField();
         }
 
         void ClearSearch()

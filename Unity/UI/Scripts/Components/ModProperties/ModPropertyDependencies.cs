@@ -14,7 +14,7 @@ namespace Modio.Unity.UI.Components.ModProperties
         
         public void OnCollectionUpdate(ModCollection collection)
         {
-            _searchMods.SetSearchForCollectionMods(collection);
+            _searchMods.ModioSearch.SetSearchForCollectionMods(collection);
         }
     }
     [Serializable]
@@ -30,7 +30,7 @@ namespace Modio.Unity.UI.Components.ModProperties
             if (_disableIfNoDependencies != null) _disableIfNoDependencies.SetActive(mod.Dependencies.HasDependencies);
             if (_dependenciesCount != null) _dependenciesCount.text = mod.Dependencies.Count.ToString();
 
-            if (_searchDependencies != null) _searchDependencies.SetSearchForDependencies(mod);
+            if (_searchDependencies != null) _searchDependencies.ModioSearch.SetSearchForDependencies(mod);
         }
     }
 }

@@ -18,8 +18,8 @@ namespace Modio.Images
         
         public string Url { get; private set; }
 
-        internal ImageReference(string url) => Url = url;
-
+        public ImageReference(string url) => Url = url;
+    
         sealed class UrlEqualityComparer : IEqualityComparer<ImageReference>
         {
             public bool Equals(ImageReference x, ImageReference y)

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace Modio.Unity.UI.Input
@@ -10,12 +11,13 @@ namespace Modio.Unity.UI.Input
         {
             public List<Sprite> Icons { get; private set; }
             public List<string> TextPrompts { get; private set; }
-
+            
             public bool InputHasListeners { get; private set; }
+            public string LocTextOverride { get; private set; }
 
             public event Action<InputPromptDisplayInfo> OnUpdated;
 
-            public virtual void UpdateInfo(List<string> textPrompts, List<Sprite> icons, bool hasListeners)
+            public virtual void UpdateInfo(List<string> textPrompts, List<Sprite> icons, bool hasListeners, string locTextOverride)
             {
                 if (textPrompts != null && textPrompts.Count > 0)
                 {
@@ -42,6 +44,7 @@ namespace Modio.Unity.UI.Input
                 }
 
                 InputHasListeners = hasListeners;
+                LocTextOverride = locTextOverride;
 
                 OnUpdated?.Invoke(this);
             }
@@ -49,20 +52,19 @@ namespace Modio.Unity.UI.Input
             /// <summary>
             /// Update if the input has listeners, without changing the visuals displaying it
             /// </summary>
-            public void UpdateListenerInfo(bool hasListeners)
+            public void UpdateListenerInfo(bool hasListeners, string locTextOverride)
             {
                 if (InputHasListeners == hasListeners) return;
 
                 InputHasListeners = hasListeners;
+                LocTextOverride = locTextOverride;
 
                 OnUpdated?.Invoke(this);
             }
         }
 
-        static readonly Dictionary<ModioAction, List<(Action action, int frameAdded)>> Handlers =
-            new Dictionary<ModioAction, List<(Action, int)>>();
-        static readonly Dictionary<ModioAction, InputPromptDisplayInfo> Prompts =
-            new Dictionary<ModioAction, InputPromptDisplayInfo>();
+        static readonly Dictionary<ModioAction, List<(Action action, int frameAdded, string locTextOverride)>> Handlers = new();
+        static readonly Dictionary<ModioAction, InputPromptDisplayInfo> Prompts = new();
         static readonly List<Action> CachedHandlersForCurrentCall = new List<Action>();
 
         public static Func<Vector2> RawCursorProvider;
@@ -95,6 +97,10 @@ namespace Modio.Unity.UI.Input
             Logout,
             MoreOptionsCollection,
             LocalCollections,
+            DynamicSelect,
+            ContextualFastAction,
+            LibraryEnable,
+            LibraryDisable,
         }
 
         public static void PressedAction(ModioAction action)
@@ -117,7 +123,7 @@ namespace Modio.Unity.UI.Input
             CachedHandlersForCurrentCall.Clear();
         }
 
-        public static void AddHandler(ModioAction action, Action onPressed)
+        public static void AddHandler(ModioAction action, Action onPressed, string locTextOverride = null)
         {
             if (!SuppressNoInputListenerWarning)
             {
@@ -131,16 +137,16 @@ namespace Modio.Unity.UI.Input
 
             if (!Handlers.TryGetValue(action, out var actionHandlers))
             {
-                actionHandlers = new List<(Action action, int frameAdded)>();
+                actionHandlers = new List<(Action action, int frameAdded, string locTextOverride)>();
                 Handlers[action] = actionHandlers;
             }
 
-            actionHandlers.Add((onPressed, Time.frameCount));
+            actionHandlers.Add((onPressed, Time.frameCount, locTextOverride));
 
-            if (actionHandlers.Count == 1)
+            if (actionHandlers.Count == 1 || !string.IsNullOrEmpty(locTextOverride))
             {
                 InputPromptDisplayInfo prompts = GetInputPromptDisplayInfo(action);
-                prompts.UpdateListenerInfo(true);
+                prompts.UpdateListenerInfo(true, locTextOverride);
             }
         }
 
@@ -162,7 +168,7 @@ namespace Modio.Unity.UI.Input
             if (removed && actionHandlers.Count == 0)
             {
                 InputPromptDisplayInfo prompts = GetInputPromptDisplayInfo(action);
-                prompts.UpdateListenerInfo(false);
+                prompts.UpdateListenerInfo(false, null);
             }
         }
 
@@ -177,8 +183,10 @@ namespace Modio.Unity.UI.Input
             InputPromptDisplayInfo prompts = GetInputPromptDisplayInfo(action);
 
             bool hasListeners = Handlers.TryGetValue(action, out var actionHandlers) && actionHandlers.Count > 0;
+            
+            string locTextOverride = !hasListeners ? null : actionHandlers.Select(act => act.locTextOverride).FirstOrDefault(s => s != null);
 
-            prompts.UpdateInfo(textPrompts, icons, hasListeners);
+            prompts.UpdateInfo(textPrompts, icons, hasListeners, locTextOverride);
         }
 
         public static InputPromptDisplayInfo GetInputPromptDisplayInfo(ModioAction action)

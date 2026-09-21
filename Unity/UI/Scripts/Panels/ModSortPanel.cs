@@ -4,12 +4,16 @@ using System.Threading.Tasks;
 using Modio.Mods;
 using Modio.Unity.UI.Components;
 using Modio.Unity.UI.Search;
+using UnityEngine;
 using UnityEngine.UI;
 
 namespace Modio.Unity.UI.Panels
 {
     public class ModSortPanel : ModioPanelBase
     {
+        [SerializeField]
+        bool _useLegacyLogic = true;
+        
         protected override void Awake()
         {
             base.Awake();
@@ -21,6 +25,7 @@ namespace Modio.Unity.UI.Panels
 
         public override void DoDefaultSelection()
         {
+            _toggles = GetComponentsInChildren<Toggle>(true);
             SetSelectedGameObject(
                 _toggles.FirstOrDefault(t => t.isOn)?.gameObject ?? _toggles.First().gameObject
             );
@@ -28,7 +33,13 @@ namespace Modio.Unity.UI.Panels
 
         public override void OnGainedFocus(GainedFocusCause selectionBehaviour)
         {
-            SortModsBy currentSortBy = ModioUISearch.Default.LastSearchFilter.SortBy;
+            if (!_useLegacyLogic)
+            {
+                base.OnGainedFocus(selectionBehaviour);
+                return;
+            }
+            
+            SortModsBy currentSortBy = ModioUISearch.Default.ModioSearch.LastSearchFilter.SortBy;
 
             foreach (Toggle toggle in _toggles)
             {
@@ -49,7 +60,7 @@ namespace Modio.Unity.UI.Panels
 
             if (selectedToggle == null) return;
 
-            if (selectedToggle.SortModsBy == ModioUISearch.Default.LastSearchFilter.SortBy)
+            if (selectedToggle.SortModsBy == ModioUISearch.Default.ModioSearch.LastSearchFilter.SortBy)
             {
                 return;
             }
@@ -67,10 +78,11 @@ namespace Modio.Unity.UI.Panels
                     true, // Note: this is a mistake on the backend api. Ascending is swapped with descending for this field
                 SortModsBy.Subscribers   => true,
                 SortModsBy.DateSubmitted => false,
+                SortModsBy.DateUpdated   => false,
                 _                        => throw new ArgumentOutOfRangeException()
             };
 
-            ModioUISearch.Default.ApplySortBy(selectedToggle.SortModsBy, ascending);
+            ModioUISearch.Default.ModioSearch.ApplySortBy(selectedToggle.SortModsBy, ascending);
         }
     }
 }

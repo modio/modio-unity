@@ -71,7 +71,7 @@ MonoBehaviour:
   m_text: version no.
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: a6487a22895c8aa4ab27e972c4bea7e4, type: 2}
-  m_sharedMaterial: {fileID: 1812198033598225256, guid: a6487a22895c8aa4ab27e972c4bea7e4,
+  m_sharedMaterial: {fileID: -76580068089955207, guid: a6487a22895c8aa4ab27e972c4bea7e4,
     type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
@@ -169,6 +169,8 @@ MonoBehaviour:
   _targetComponents:
   - Component: {fileID: 2845508178308460949}
     Option: 11
+  - Component: {fileID: 2845508178308460949}
+    Option: 6
 --- !u!1 &4053711281271426386
 GameObject:
   m_ObjectHideFlags: 0
@@ -694,7 +696,7 @@ MonoBehaviour:
 '
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: a6487a22895c8aa4ab27e972c4bea7e4, type: 2}
-  m_sharedMaterial: {fileID: 1812198033598225256, guid: a6487a22895c8aa4ab27e972c4bea7e4,
+  m_sharedMaterial: {fileID: -76580068089955207, guid: a6487a22895c8aa4ab27e972c4bea7e4,
     type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
@@ -777,6 +779,8 @@ MonoBehaviour:
   _targetComponents:
   - Component: {fileID: 6098333559007273711}
     Option: 12
+  - Component: {fileID: 6098333559007273711}
+    Option: 6
 --- !u!1 &6098333559033233319
 GameObject:
   m_ObjectHideFlags: 0
@@ -815,7 +819,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 320, y: -492.415}
+  m_AnchoredPosition: {x: 320, y: -485.615}
   m_SizeDelta: {x: 512, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &6098333559033233323
@@ -849,7 +853,7 @@ MonoBehaviour:
   m_text: 'Please choose one of the following reasons:'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 5f9d73ed3cc0464468ed37bef4b9e476, type: 2}
-  m_sharedMaterial: {fileID: -5350118352905887863, guid: 5f9d73ed3cc0464468ed37bef4b9e476,
+  m_sharedMaterial: {fileID: -7325664360489529984, guid: 5f9d73ed3cc0464468ed37bef4b9e476,
     type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
@@ -961,6 +965,8 @@ MonoBehaviour:
   _targetComponents:
   - Component: {fileID: 6098333559033233316}
     Option: 10
+  - Component: {fileID: 6098333559033233316}
+    Option: 6
 --- !u!1 &6098333559329968841
 GameObject:
   m_ObjectHideFlags: 0
@@ -1158,6 +1164,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 0}
   _getSelectablesInChildrensChildren: 0
   _fallbackSelectionToIfNoValidChildren: {fileID: 0}
+  _selectOnEnableIfLastSelectionInactive: 0
 --- !u!1 &7419576904450592680
 GameObject:
   m_ObjectHideFlags: 0
@@ -1228,7 +1235,7 @@ MonoBehaviour:
   m_text: XXX
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: a6487a22895c8aa4ab27e972c4bea7e4, type: 2}
-  m_sharedMaterial: {fileID: 1812198033598225256, guid: a6487a22895c8aa4ab27e972c4bea7e4,
+  m_sharedMaterial: {fileID: -76580068089955207, guid: a6487a22895c8aa4ab27e972c4bea7e4,
     type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
@@ -1311,6 +1318,8 @@ MonoBehaviour:
   _targetComponents:
   - Component: {fileID: 8429721839303988334}
     Option: 11
+  - Component: {fileID: 8429721839303988334}
+    Option: 6
 --- !u!1001 &6098333557992880678
 PrefabInstance:
   m_ObjectHideFlags: 0

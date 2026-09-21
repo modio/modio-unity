@@ -230,6 +230,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 0}
   _getSelectablesInChildrensChildren: 0
   _fallbackSelectionToIfNoValidChildren: {fileID: 0}
+  _selectOnEnableIfLastSelectionInactive: 0
 --- !u!1 &3007746447016257200
 GameObject:
   m_ObjectHideFlags: 0
@@ -243,6 +244,7 @@ GameObject:
   - component: {fileID: 3007746447016257204}
   - component: {fileID: 3007746447016257205}
   - component: {fileID: 3007746447016257202}
+  - component: {fileID: 3279262543705285551}
   m_Layer: 5
   m_Name: Background (Blur) (1)
   m_TagString: Untagged
@@ -377,6 +379,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _action: 0
+--- !u!114 &3279262543705285551
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3007746447016257200}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99322d4030fe448fad38f69727c003e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _inverseForBackgrounds: 1
 --- !u!1 &3007746447917905421
 GameObject:
   m_ObjectHideFlags: 0
@@ -448,7 +463,7 @@ MonoBehaviour:
   m_text: Something went wrong!
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 5f9d73ed3cc0464468ed37bef4b9e476, type: 2}
-  m_sharedMaterial: {fileID: -5350118352905887863, guid: 5f9d73ed3cc0464468ed37bef4b9e476,
+  m_sharedMaterial: {fileID: -7325664360489529984, guid: 5f9d73ed3cc0464468ed37bef4b9e476,
     type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
@@ -546,6 +561,8 @@ MonoBehaviour:
   _targetComponents:
   - Component: {fileID: 3007746447917905422}
     Option: 10
+  - Component: {fileID: 3007746447917905422}
+    Option: 6
 --- !u!1 &3007746447934803229
 GameObject:
   m_ObjectHideFlags: 0
@@ -702,7 +719,7 @@ MonoBehaviour:
   m_text: '[Error code: 12041]'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 5f9d73ed3cc0464468ed37bef4b9e476, type: 2}
-  m_sharedMaterial: {fileID: -5350118352905887863, guid: 5f9d73ed3cc0464468ed37bef4b9e476,
+  m_sharedMaterial: {fileID: -7325664360489529984, guid: 5f9d73ed3cc0464468ed37bef4b9e476,
     type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}

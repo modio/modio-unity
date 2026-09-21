@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Modio.Errors;
 using Modio.Monetization;
@@ -22,10 +23,14 @@ namespace Modio.Unity.UI.Components
         [SerializeField]
         ValueImageMap[] _valuesToImages;
 
+        bool openDetails = false;
         public void SetPack(PortalSku sku)
         {
-            _tokenPack = sku;
+            
 
+            _tokenPack = sku;
+            openDetails = !string.IsNullOrEmpty(_tokenPack.Description);
+            
             if (_amount != null)
                 _amount.text = _tokenPack.Value.ToString();
             if (_price != null)
@@ -36,7 +41,7 @@ namespace Modio.Unity.UI.Components
             if (_icon != null)
                 _icon.sprite = GetImageForValue(sku.Value);
         }
-
+        
         public void OnPressedPurchase()
         {
             if (!ModioServices.TryResolve(out IModioVirtualCurrencyProviderService skuProvider))
@@ -44,7 +49,13 @@ namespace Modio.Unity.UI.Components
                 ModioPanelManager.GetPanelOfType<ModioBuyTokensPanel>().ClosePanel();
                 return;
             }
-
+            
+            if (!string.IsNullOrEmpty(_tokenPack.Description))
+            {
+                ModioPanelManager.GetPanelOfType<ModioTokenDetailsPanel>().OpenPanel(_tokenPack);
+                return;
+            }
+            
             Task<Error> platformPurchaseFlowTask = skuProvider.OpenCheckoutFlow(_tokenPack);
 
             if (platformPurchaseFlowTask != null)
@@ -63,7 +74,8 @@ namespace Modio.Unity.UI.Components
 
                                          ModioPanelManager.GetPanelOfType<ModioBuyTokensPanel>()
                                                           ?.ClosePanel();
-                                     }
+                                     },
+                                     GenericWaitingType.Purchasing
                                  );
         }
 
@@ -74,6 +86,10 @@ namespace Modio.Unity.UI.Components
                     return map.image;
 
             ModioLog.Warning?.Log($"No image mapped for token pack value [{amount}]!");
+
+            if (_valuesToImages.Length > 0) //Closest, rounded up
+                return _valuesToImages.OrderBy(map => Math.Abs(map.value - (amount + 0.01f))).First().image;
+
             return default(Sprite);
         }
 

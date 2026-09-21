@@ -126,7 +126,7 @@ namespace Modio.API.HttpClient
                     using var streamReader = new StreamReader(stream);
                     error = await GetErrorAndLogBadResponse(streamReader);
                     cachedShutdownToken.ThrowIfCancellationRequested();
-                    
+
                     if (allowReauth && error.Code == ErrorCode.EXPIRED_OR_REVOKED_ACCESS_TOKEN)
                     {
                         await stream.DisposeAsync();
@@ -310,7 +310,6 @@ namespace Modio.API.HttpClient
                 await using Stream stream = await response.Content.ReadAsStreamAsync();
                 using var streamReader = new StreamReader(stream);
 
-
                 if ((int)response.StatusCode < 200 || (int)response.StatusCode >= 300)
                 {
                     Error returnableError = await GetErrorAndLogBadResponse(streamReader);
@@ -326,6 +325,9 @@ namespace Modio.API.HttpClient
                     {
                         return (new RateLimitError(RateLimitErrorCode.RATELIMITED, retryAfterSeconds), default(T));
                     }
+
+                    if (response.Headers.TryGetValues("CF-RAY", out IEnumerable<string> rayId))
+                        returnableError.AddCloudflareRayId(rayId.First());
 
                     return (returnableError, default(T));
                 }

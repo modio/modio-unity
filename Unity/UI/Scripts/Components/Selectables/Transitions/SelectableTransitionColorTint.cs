@@ -11,7 +11,8 @@ namespace Modio.Unity.UI.Components.Selectables.Transitions
         [SerializeField] Graphic _target;
         [SerializeField] ColorBlock _colorBlock = ColorBlock.defaultColorBlock;
         Coroutine _coroutine;
-        
+        IModioUISelectable.SelectionState _currentState;
+
         public ColorBlock ColorBlock
         {
             get => _colorBlock;
@@ -22,7 +23,9 @@ namespace Modio.Unity.UI.Components.Selectables.Transitions
         {
             if (_target == null) return;
 
-            Color targetColor = state switch
+            _currentState = state;
+
+            Color targetColor = _currentState switch
             {
                 IModioUISelectable.SelectionState.Normal      => _colorBlock.normalColor,
                 IModioUISelectable.SelectionState.Highlighted => _colorBlock.highlightedColor,
@@ -32,10 +35,10 @@ namespace Modio.Unity.UI.Components.Selectables.Transitions
                 _                                             => _colorBlock.normalColor,
             };
 
-            if (_target.gameObject.activeInHierarchy)
+            if (_coroutine != null) _target.StopCoroutine(_coroutine);
+            if (_target.gameObject.activeInHierarchy && !instant)
             {
-                if (_coroutine != null) _target.StopCoroutine(_coroutine);
-                _coroutine = _target.StartCoroutine(CrossFadeColor(targetColor, !instant ? _colorBlock.fadeDuration : 0));
+                _coroutine = _target.StartCoroutine(CrossFadeColor(targetColor, _colorBlock.fadeDuration));
             }
             else
             {

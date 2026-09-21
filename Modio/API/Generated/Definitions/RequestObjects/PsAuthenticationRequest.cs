@@ -13,11 +13,11 @@ using Newtonsoft.Json.Linq;
 
 namespace Modio.API.SchemaDefinitions{
     [JsonObject]
-    public readonly partial struct PsnAuthenticationRequest : IApiRequest
+    public readonly partial struct PsAuthenticationRequest : IApiRequest
     {
         static readonly Dictionary<string, object> _bodyParameters = new Dictionary<string, object>();
 
-        /// <summary>PlayStation Network authentication code.</summary>
+        /// <summary>PlayStation® authentication code.</summary>
         public readonly string AuthCode;
         /// <summary></summary>
         public readonly bool TermsAgreed;
@@ -27,26 +27,33 @@ namespace Modio.API.SchemaDefinitions{
         public readonly int Environment;
         /// <summary></summary>
         internal readonly long DateExpires;
+        /// <summary>
+        /// Flag to the mod.io REST API that we're using the Cross-Gen authentication service
+        /// </summary>
+        internal readonly bool? IsCrossgen;
 
-        /// <param name="authCode">PlayStation Network authentication code.</param>
+        /// <param name="authCode">PlayStation® authentication code.</param>
         /// <param name="termsAgreed"></param>
         /// <param name="email"></param>
         /// <param name="environment"></param>
         /// <param name="dateExpires"></param>
         [JsonConstructor]
-        public PsnAuthenticationRequest(
+        public PsAuthenticationRequest(
             string auth_code,
             bool terms_agreed,
             string? email,
             int environment,
-            long date_expires
+            long date_expires,
+            bool? isCrossgen = null
         ) {
             AuthCode = auth_code;
             TermsAgreed = terms_agreed;
             Email = email;
             Environment = environment;
             DateExpires = date_expires;
+            IsCrossgen = isCrossgen;
         }
+
 
         public IReadOnlyDictionary<string, object> GetBodyParameters()
         {
@@ -54,6 +61,10 @@ namespace Modio.API.SchemaDefinitions{
 
             _bodyParameters.Add("auth_code", AuthCode);
             _bodyParameters.Add("terms_agreed", TermsAgreed);
+
+            if (IsCrossgen != null)
+                _bodyParameters.Add("ps4_crossgen", IsCrossgen);
+            
             if (!string.IsNullOrEmpty(Email)) _bodyParameters.Add("email", Email);
             _bodyParameters.Add("env", Environment);
             _bodyParameters.Add("date_expires", DateExpires);

@@ -16,6 +16,8 @@ namespace Modio.Unity.UI.Navigation
 
         [SerializeField] GameObject _fallbackSelectionToIfNoValidChildren;
 
+        [SerializeField] bool _selectOnEnableIfLastSelectionInactive;
+
         bool _selectChildImmediately;
         bool _needsDelayedNavigationCorrection;
         GameObject _lastSelectedGameObject;
@@ -37,6 +39,12 @@ namespace Modio.Unity.UI.Navigation
             _lastSelectedGameObject = null;
             LayoutRebuilder.MarkLayoutForRebuild((RectTransform)transform);
             _needsDelayedNavigationCorrection = true;
+
+            if (_selectOnEnableIfLastSelectionInactive &&
+                EventSystem.current != null &&
+                (EventSystem.current.currentSelectedGameObject == null
+                    || !EventSystem.current.currentSelectedGameObject.activeInHierarchy))
+                _selectChildImmediately = true;
         }
 
 #if UNITY_EDITOR

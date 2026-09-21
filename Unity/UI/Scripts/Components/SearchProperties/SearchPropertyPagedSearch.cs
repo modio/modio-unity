@@ -27,8 +27,8 @@ namespace Modio.Unity.UI.Components.SearchProperties
 
             if (_pageCountText != null)
             {
-                var pageIndex = search.LastSearchFilter.PageIndex + 1;
-                var pageCount = search.LastSearchResultPageCount;
+                var pageIndex = search.ModioSearch.LastSearchFilter.PageIndex + 1;
+                var pageCount = search.ModioSearch.LastSearchResultPageCount;
                 _pageCountText.text = string.Format(_pageCountString, pageIndex, pageCount);
             }
         }
@@ -43,18 +43,18 @@ namespace Modio.Unity.UI.Components.SearchProperties
         {
             if (_whenPanelFocused != null && !_whenPanelFocused.HasFocus) return;
 
-            var currentPageIndex = _search.LastSearchFilter.PageIndex;
-            if (currentPageIndex > 0) _search.SetPageForCurrentSearch(currentPageIndex - 1);
+            var currentPageIndex = _search.ModioSearch.LastSearchFilter.PageIndex;
+            if (currentPageIndex > 0) _search.ModioSearch.SetPageForCurrentSearch(currentPageIndex - 1);
         }
 
         void OnNextPageClicked()
         {
             if (_whenPanelFocused != null && !_whenPanelFocused.HasFocus) return;
 
-            var currentPageIndex = _search.LastSearchFilter.PageIndex;
+            var currentPageIndex = _search.ModioSearch.LastSearchFilter.PageIndex;
 
-            if (currentPageIndex + 1 < _search.LastSearchResultPageCount)
-                _search.SetPageForCurrentSearch(currentPageIndex + 1);
+            if (currentPageIndex + 1 < _search.ModioSearch.LastSearchResultPageCount)
+                _search.ModioSearch.SetPageForCurrentSearch(currentPageIndex + 1);
         }
 
         public void OnDestroy() { }

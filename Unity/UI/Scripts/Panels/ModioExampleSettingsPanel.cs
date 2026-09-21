@@ -195,6 +195,8 @@ namespace Modio.Unity.UI.Panels
                                      () => authResolver.ServiceOverride == modioAuthPlatform,
                                      on =>
                                      {
+                                         if(authResolver.ServiceOverride == modioAuthPlatform)
+                                             return;
                                          if (on) authResolver.ServiceOverride = modioAuthPlatform;
                                          _debugMenu.SetToDefaults();
                                          if(ModioClient.IsInitialized)

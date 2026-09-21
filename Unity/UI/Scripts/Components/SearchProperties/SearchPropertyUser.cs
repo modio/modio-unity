@@ -11,7 +11,7 @@ namespace Modio.Unity.UI.Components.SearchProperties
 
         public void OnSearchUpdate(ModioUISearch search)
         {
-            var users = search.LastSearchFilter.GetUsers();
+            var users = search.ModioSearch.LastSearchFilter.GetUsers();
             _user.SetUser(users.Count > 0 ? users[0] : null);
         }
     }

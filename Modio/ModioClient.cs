@@ -56,7 +56,8 @@ namespace Modio
         static bool _hasBoundDefaultServices;
 
         static event Action InternalOnInitialized;
-
+        public static event Action<bool> OnFocusChanged;
+        
         /// <summary>
         /// Event that is invoked when the client is initialized.
         /// If the client is already initialized when a listener is added
@@ -238,6 +239,16 @@ namespace Modio
             _shutdownTcs.TrySetResult(true);
             _shutdownTcs = null;
 
+        }
+
+        /// <summary>
+        /// Invoked when the application focus changes.
+        /// This is used to determine if the user has returned to the application after being away.
+        /// </summary>
+        /// <param name="focus"></param>
+        public static void FocusChanged(bool focus)
+        {
+            OnFocusChanged?.Invoke(focus);
         }
         
         static void BindDefaultServices()

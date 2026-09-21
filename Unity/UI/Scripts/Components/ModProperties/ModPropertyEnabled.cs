@@ -15,6 +15,8 @@ namespace Modio.Unity.UI.Components.ModProperties
         [SerializeField] Button _disableButton;
 
         [SerializeField] GameObject _showIfInstalledWhenEnabledNotAvailable;
+        [SerializeField] GameObject _showWhenEnabled;
+        [SerializeField] GameObject _showWhenDisabled;
 
         Mod _mod;
 
@@ -22,7 +24,7 @@ namespace Modio.Unity.UI.Components.ModProperties
         {
             _mod = mod;
 
-            var showEnabledOption = mod.File.State == ModFileState.Installed
+            var showEnabledOption = mod.File?.State == ModFileState.Installed
                                     && mod.IsSubscribed;
 
             var compUISettings = ModioClient.Settings.GetPlatformSettings<ModioComponentUISettings>();
@@ -62,6 +64,15 @@ namespace Modio.Unity.UI.Components.ModProperties
                 _disableButton.onClick.AddListener(DisableButtonClicked);
 
                 _disableButton.gameObject.SetActive(_mod.IsEnabled && showEnabledOption);
+            }
+
+            if (_showWhenEnabled)
+            {
+                _showWhenEnabled.SetActive(_mod.IsEnabled && showEnabledOption);
+            }
+            if (_showWhenDisabled)
+            {
+                _showWhenDisabled.SetActive(!_mod.IsEnabled && showEnabledOption);
             }
         }
 

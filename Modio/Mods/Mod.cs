@@ -198,9 +198,13 @@ namespace Modio.Mods
             return this;
         }
 
+        internal void GetSkuAfterPortalChange()
+        {
+            GetFiatPrice(LastModObject);
+        }
+        
         void GetFiatPrice(ModObject modObject)
         {
-
             ModSkuObject skuObject =
                 modObject.Skus.FirstOrDefault(
                     sku => string.Equals(
@@ -214,6 +218,8 @@ namespace Modio.Mods
             PortalSku = skuObject.Id == 0 ? null : new ModSku(skuObject);
             
             ModioFiatPrice.TryGetLocalPrice(this);
+            
+            InvokeModUpdated(ModChangeType.Everything);
         }
 
 #region Subscriptions
@@ -285,7 +291,7 @@ namespace Modio.Mods
                 return error;
             }
 
-            if (subscribed && includeDependencies)
+            if (subscribed && includeDependencies && Dependencies.HasDependencies)
             {
                 (Error dependencyError, IEnumerable<Mod> dependencies) = await Dependencies.GetAllDependencies();
 
