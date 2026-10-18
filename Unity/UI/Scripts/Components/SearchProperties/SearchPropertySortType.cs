@@ -45,6 +45,7 @@ namespace Modio.Unity.UI.Components.SearchProperties
             SortModsBy.Subscribers   => "modio_sort_type_subscribers",
             SortModsBy.DateSubmitted => "modio_sort_type_date_submitted",
             SortModsBy.DateUpdated   => "modio_sort_type_date_updated",
+            SortModsBy.DateLive      => "modio_sort_type_date_submitted",
             _                        => "modio_sort_type_blank",
         };
     }

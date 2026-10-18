@@ -40,6 +40,7 @@ namespace Modio.API.SchemaDefinitions{
         internal readonly string? MetadataBlob;
         /// <summary></summary>
         internal readonly string[]? Tags;
+        internal readonly string? Homepage;
 #nullable disable
 
         /// <param name="name"></param>
@@ -64,7 +65,8 @@ namespace Modio.API.SchemaDefinitions{
             long? maturity_option,
             long? community_options,
             string? metadata_blob,
-            string[]? tags
+            string[]? tags,
+            string? homepage_url
 #nullable disable
         ) {
             Name = name;
@@ -77,6 +79,7 @@ namespace Modio.API.SchemaDefinitions{
             CommunityOptions = community_options;
             MetadataBlob = metadata_blob;
             Tags = tags;
+            Homepage = homepage_url;
         }
 
         public IReadOnlyDictionary<string, object> GetBodyParameters()
@@ -103,6 +106,7 @@ namespace Modio.API.SchemaDefinitions{
                 else
                     _bodyParameters.Add("tags[]", string.Empty);
             }
+            if (!string.IsNullOrEmpty(Homepage)) _bodyParameters.Add("homepage_url", Homepage);
 
             return _bodyParameters;
         }

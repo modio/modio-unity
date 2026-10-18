@@ -58,7 +58,8 @@ namespace Modio.Unity.UI.Components.SearchProperties
                     else
                         _modGroup.SetMods(search.ModioSearch.LastSearchResultMods, search.ModioSearch.LastSearchSelectionIndex);
 
-                    _modGroup.gameObject.SetActive(search.ModioSearch.LastSearchResultMods.Count > 0 && !isLibrarySearch);
+                    if(_modGroup.gameObject != search.gameObject)
+                        _modGroup.gameObject.SetActive(search.ModioSearch.LastSearchResultMods.Count > 0 && !isLibrarySearch);
                     if(_modGroupLibrary != null)
                         _modGroupLibrary.gameObject.SetActive(search.ModioSearch.LastSearchResultMods.Count > 0 && isLibrarySearch);
                 }
@@ -83,7 +84,7 @@ namespace Modio.Unity.UI.Components.SearchProperties
 
                 if (_displayWhenNoResults != null)
                     _displayWhenNoResults.SetActive(!handledNetworkError && search.ModioSearch.LastSearchResultMods.Count == 0 && search.ModioSearch.LastSearchResultModCollections.Count == 0
-                                                    && search.ModioSearch.LastSearchPreset != SpecialSearchType.SubSearchesOnly && search.ModioSearch.LastSearchPreset != SpecialSearchType.VcPacks);
+                                                    && search.ModioSearch.LastSearchPreset is not SpecialSearchType.SubSearchesOnly and not SpecialSearchType.VcPacks and not SpecialSearchType.DynamicCarousels);
             }
             else
             {

@@ -5,14 +5,14 @@ slug: /unity/unity-introduction
 ---
 
 <a href="https://mod.io"><img src="https://mod.io/images/branding/modio-logo-bluewhite.svg" alt="mod.io" width="360" align="right"/></a>
-# mod.io Unity Plugin v2026.9
+# mod.io Unity Plugin v2026.10
 [![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)](https://github.com/modio/modio-unity/blob/master/Documentation/LICENSE.md)
 [![Discord](https://img.shields.io/discord/389039439487434752.svg?label=Discord&logo=discord&color=7289DA&labelColor=2C2F33)](https://discord.mod.io)
 [![Master docs](https://img.shields.io/badge/docs-master-green.svg)](https://docs.mod.io/unity/)
 [![Unity 3D](https://img.shields.io/badge/Unity-2021.3+-lightgrey.svg)](https://unity3d.com)
 
 > [!IMPORTANT]  
-> This is a new &amp; improved version of the mod.io Unity plugin! You can find the old version (known as V2) on the [legacy-v2](https://github.com/modio/modio-unity/tree/legacy/v2) branch. This version doesn't currently have support for all platforms, you can see in [Platform Support](#platform-support) when each platform is expected to be available.
+> This is a new &amp; improved version of the mod.io Unity plugin! You can find the old version (known as V2) on the [legacy-v2](https://github.com/modio/modio-unity/tree/legacy/v2) branch.
 
 Welcome to the mod.io Unity Engine plugin [repository](https://github.com/modio/modio-unity)!
 

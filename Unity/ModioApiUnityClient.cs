@@ -88,9 +88,10 @@ namespace Modio.Unity
             var handler = new StreamingDownloadHandler(1024 * 1024, token);
             UnityWebRequest webRequest = CreateWebRequest(downloadRequest, url, handler);
             
+            handler.SetCallingRequest(webRequest);
+            webRequest.disposeDownloadHandlerOnDispose = true;
             TrackRequest(webRequest);
             
-            handler.SetCallingRequest(webRequest);
             Error error = await EnforceAuthentication(downloadRequest, webRequest);
 
             if (error)
@@ -107,7 +108,7 @@ namespace Modio.Unity
                 {
                     requestAsyncOperation = webRequest.SendWebRequest();
                     requestAsyncOperation.completed += handler.DownloadCompleted;
-                    await handler.ResponseReceived(token);
+                    await handler.ResponseReceived();
                 }
                 long responseCode = fakeUnityApiResponse?.ResponseCode ?? webRequest.responseCode;
 
@@ -175,7 +176,6 @@ namespace Modio.Unity
                 requestAsyncOperation.completed += (_) =>
                 {
                     UntrackRequest(webRequest);
-                    handler.DetachRequest();
                     webRequest.Dispose();
                 };
             else

@@ -170,7 +170,7 @@ namespace Modio.FileIO
         }
 
 
-        async Task<Error> DeleteData(string filePath)
+        protected async Task<Error> DeleteData(string filePath)
         {
             if (!Initialized)
                 return new Error(ErrorCode.NOT_INITIALIZED);
@@ -685,7 +685,7 @@ namespace Modio.FileIO
                 return error;
 
             await zipStream.ReadUntilEndAsync(token);
-            string rawMd5Hash = await md5Stream.GetMD5HashAsync();
+            string rawMd5Hash = await md5Stream.GetMD5HashAsync(token);
             string actualMd5Hash = rawMd5Hash.Replace("-", "").ToLowerInvariant();
 
             if (actualMd5Hash != md5Hash && !string.IsNullOrEmpty(md5Hash))
@@ -813,6 +813,7 @@ namespace Modio.FileIO
             await using (crcStream)
                 while (true)
                 {
+                    token.ThrowIfCancellationRequested();
                     int readSize = await zipStream.ReadAsync(buffer, 0, buffer.Length, token);
                     progressTracker?.Update();
 

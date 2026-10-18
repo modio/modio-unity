@@ -19,7 +19,8 @@ namespace Modio.API.SchemaDefinitions{
         internal readonly bool Visible;
         /// <summary>The user who submitted the collection.</summary>
         internal readonly UserObject SubmittedBy;
-        /// <summary>The category of the collection.</summary>
+        /// <summary>The legacy category of the collection. Now contained in CollectionTags</summary>
+        [Obsolete("The legacy category of the collection. Now contained in CollectionTags")]
         internal readonly string Category;
         /// <summary>The date the collection was added.</summary>
         internal readonly long DateAdded;
@@ -37,8 +38,11 @@ namespace Modio.API.SchemaDefinitions{
         internal readonly long FilesizeUncompressed;
         /// <summary>The platforms the mods are compatible within this collection.</summary>
         internal readonly string[] Platforms;
-        /// <summary>The tags associated with the collection.</summary>
+        /// <summary>The legacy tags associated with the collection. Now contained in CollectionTags</summary>
+        [Obsolete("The legacy tags associated with the collection. Now contained in CollectionTags")]
         internal readonly string[] Tags;
+        /// <summary>The tags associated with the collection.</summary>
+        internal readonly ModTagObject[] CollectionTags;
         /// <summary>The stats of the collection.</summary>
         internal readonly CollectionStatsObject Stats;
         /// <summary>The logo of the collection.</summary>
@@ -69,6 +73,7 @@ namespace Modio.API.SchemaDefinitions{
         /// <param name="filesizeUncompressed">The total uncompressed filesize of all mods in the collection.</param>
         /// <param name="platforms">The platforms the mods are compatible within this collection.</param>
         /// <param name="tags">The tags associated with the collection.</param>
+        /// <param name="collection_tags">The tags associated with the collection.</param>
         /// <param name="stats">The stats of the collection.</param>
         /// <param name="logo">The logo of the collection.</param>
         /// <param name="name">The name of the collection.</param>
@@ -92,6 +97,7 @@ namespace Modio.API.SchemaDefinitions{
             long filesize_uncompressed,
             string[] platforms,
             string[] tags,
+            ModTagObject[] collection_tags,
             CollectionStatsObject stats,
             LogoObject logo,
             string name,
@@ -105,7 +111,10 @@ namespace Modio.API.SchemaDefinitions{
             Status = status;
             Visible = visible;
             SubmittedBy = submitted_by;
+#pragma warning disable CS0618 // Type or member is obsolete
             Category = category;
+            Tags = tags;
+#pragma warning restore CS0618 // Type or member is obsolete
             DateAdded = date_added;
             DateUpdated = date_updated;
             DateLive = date_live;
@@ -114,7 +123,7 @@ namespace Modio.API.SchemaDefinitions{
             Filesize = filesize;
             FilesizeUncompressed = filesize_uncompressed;
             Platforms = platforms;
-            Tags = tags;
+            CollectionTags = collection_tags;
             Stats = stats;
             Logo = logo;
             Name = name;
@@ -123,5 +132,6 @@ namespace Modio.API.SchemaDefinitions{
             Description = description;
             DescriptionPlaintext = description_plaintext;
         }
+
     }
 }

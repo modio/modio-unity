@@ -18,7 +18,7 @@ namespace Modio.Unity.UI.Components.SearchProperties
 
         public void OnSearchUpdate(ModioUISearch search)
         {
-            bool searchConditionsMet = (_hideOnCustomSearch && search.HasCustomSearch()) ||
+            bool searchConditionsMet = (_hideOnCustomSearch && search.ModioSearch.HasCustomSearch()) ||
                                        _hideForSearchTypes.Contains(search.ModioSearch.LastSearchPreset);
 
             searchConditionsMet |= _hideForSearchTypes.Contains(SpecialSearchType.SearchForTag) &&

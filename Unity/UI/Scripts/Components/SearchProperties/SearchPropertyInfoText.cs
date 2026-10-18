@@ -82,12 +82,13 @@ namespace Modio.Unity.UI.Components.SearchProperties
                     _disableWhenNoSearchCategoryName.SetActive(
                         (!string.IsNullOrEmpty(search.LastSearchSettingsFrom.DisplayAsLocalisedKey) ||
                          !string.IsNullOrEmpty(search.LastSearchSettingsFrom.DisplayAs))
-                        && (!_alsoDisableForCustomSearchOrFilter || !search.HasCustomSearch()));
+                        && (!_alsoDisableForCustomSearchOrFilter || !search.ModioSearch.HasCustomSearch()));
                 
                 if (_searchCategoryIcon != null)
                 {
-                    _searchCategoryIcon.sprite = search.LastSearchSettingsFrom.Icon;
-                    _searchCategoryIcon.gameObject.SetActive(search.LastSearchSettingsFrom.Icon != null);
+                    
+                    _searchCategoryIcon.sprite = (search.LastSearchSettingsFrom as ModioUISearchSettings)?.Icon;
+                    _searchCategoryIcon.gameObject.SetActive(_searchCategoryIcon.sprite != null);
                 }
             }
         }

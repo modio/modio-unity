@@ -15,6 +15,7 @@ namespace Modio.Mods
         static GameTagCategory[] _cachedTags;
         static GameTagCategory[] _cachedCollectionTags;
         static Task<(Error, GameTagCategory[])> _cachedGetTags;
+        static Task<(Error, GameTagCategory[])> _cachedGetCollectionTags;
 
         readonly Dictionary<string, string> _localizedNames = new Dictionary<string, string>();
 
@@ -23,7 +24,7 @@ namespace Modio.Mods
         public readonly ModTag[] Tags; 
         public readonly bool Locked;
 
-        public string LocalizedName => _localizedNames.GetValueOrDefault(ModioAPI.LanguageCodeResponse, Name);
+        public string LocalizedName => _localizedNames?.GetValueOrDefault(ModioAPI.LanguageCodeResponse, Name) ?? Name;
         
         [JsonProperty]
         bool _hidden;
@@ -62,7 +63,7 @@ namespace Modio.Mods
                 Hidden = true;
         }
         
-        internal GameTagCategory(GameTagOptionObject tagObject){
+        internal GameTagCategory(GameTagOptionObject tagObject, ResourceTagType resourceTagType){
             Name = tagObject.Name;
 
             _localizedNames = tagObject.NameLocalization;
@@ -70,7 +71,7 @@ namespace Modio.Mods
             MultiSelect = tagObject.Type == "checkboxes";
             Hidden = tagObject.Hidden;
             Locked = tagObject.Locked;
-            Tags = tagObject.Tags.Select(tagName => ModTag.Get(tagName)).ToArray();
+            Tags = tagObject.Tags.Select(tagName => ModTag.Get(tagName, resourceTagType)).ToArray();
             
             if (ModioClient.Settings.TryGetPlatformSettings(out ModioHiddenTagOverrideSettings tagSettings)
                 && tagSettings.HideTagCategories.Contains(Name))
@@ -78,7 +79,7 @@ namespace Modio.Mods
             
             foreach ((string tagName, int count) in tagObject.TagCountMap)
             {
-                ModTag tag = ModTag.Get(tagName);
+                ModTag tag = ModTag.Get(tagName, resourceTagType);
                 tag.Count = count;
                 tag.IsVisible = !Hidden;
             }
@@ -86,7 +87,7 @@ namespace Modio.Mods
             if (tagObject.TagsLocalization != null)
                 foreach (var localization in tagObject.TagsLocalization)
                 {
-                    ModTag tag = ModTag.Get(localization.Tag);
+                    ModTag tag = ModTag.Get(localization.Tag, resourceTagType);
                     tag.SetLocalizations(localization.Translations);
                 }
         }
@@ -95,6 +96,7 @@ namespace Modio.Mods
         {
             //handle restarting the plugin and potentially changing game
             ModioClient.OnInitialized += () => _cachedTags = null;
+            ModioClient.OnShutdown += () => _cachedTags = null;
         }
 
         public static async Task<(Error, GameTagCategory[])> GetGameTagOptions()
@@ -125,9 +127,9 @@ namespace Modio.Mods
                 return (Error.None, _cachedTags);
             }
 
-            _cachedTags = gameTagOptionObjects.Value.Data.Select(options => new GameTagCategory(options)).ToArray();
+            _cachedTags = gameTagOptionObjects.Value.Data.Select(options => new GameTagCategory(options, ResourceTagType.ModTag)).ToArray();
             
-            GameData.SetGameTags(_cachedTags).ForgetTaskSafely();
+            GameData.SetGameTags(_cachedTags, false).ForgetTaskSafely();
             
             return (Error.None, _cachedTags);
         }
@@ -136,11 +138,55 @@ namespace Modio.Mods
         /// Get the tags which are usable for collections. These are hardcoded
         /// and not changeable per game.
         /// </summary>
-        public static Task<(Error, GameTagCategory[])> GetCollectionTagOptions()
+        public static async Task<(Error, GameTagCategory[])> GetCollectionTagOptions()
         {
             if (_cachedCollectionTags != null)
-                return Task.FromResult((Error.None, _cachedCollectionTags));
+                return (Error.None, _cachedCollectionTags);
+            
+            _cachedGetCollectionTags ??= GetCollectionTagOptionsInternal();
+            (Error, GameTagCategory[]) getTagsResult = await _cachedGetCollectionTags;
+            _cachedGetCollectionTags = null;
+            return getTagsResult;
+        }
 
+        public static async Task<(Error, GameTagCategory[])> GetCollectionTagOptionsInternal()
+        {
+            
+            if (_cachedCollectionTags != null) return (Error.None, _cachedCollectionTags);
+            
+            (Error error, Pagination<GameTagOptionObject[]>? gameTagOptionObjects) = await API.ModioAPI.Tags.GetGameCollectionTagOptions();
+            
+            if (error)
+            {
+                (Error readCacheError, GameData cachedGameData) = await GameData.GetGameDataFromDisk();
+                
+                if (readCacheError || cachedGameData.CollectionCategories?.Length == 0)
+                {
+                    //Note we return the web error, not the cache error, as that's more useful
+                    return (error, Array.Empty<GameTagCategory>());
+                }
+                
+                _cachedCollectionTags = cachedGameData.CollectionCategories;
+                return (Error.None, _cachedCollectionTags);
+            }
+
+            _cachedCollectionTags = gameTagOptionObjects.Value.Data.Select(options =>
+                {
+                    ResourceTagType resourceTagType = /*string.Equals(options.Name, "Category", StringComparison.InvariantCulture)
+                        ? ResourceTagType.CollectionCategory
+                        :*/ ResourceTagType.CollectionTag;
+
+                    return new GameTagCategory(options, resourceTagType);
+                }
+            ).ToArray();
+            
+            GameData.SetGameTags(_cachedCollectionTags, true).ForgetTaskSafely();
+            
+            return (Error.None, _cachedCollectionTags);
+        }
+        
+        public static Task<(Error, GameTagCategory[])> GetCollectionTagOptionsInternal_Hardcoded()
+        {
             _cachedCollectionTags = new[]
             {
                 new GameTagCategory(

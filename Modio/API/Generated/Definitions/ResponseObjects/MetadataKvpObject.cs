@@ -10,9 +10,9 @@ namespace Modio.API.SchemaDefinitions{
     public readonly partial struct MetadataKvpObject 
     {
         /// <summary>The key of the key-value pair.</summary>
-        internal readonly string Metakey;
+        public readonly string Metakey;
         /// <summary>The value of the key-value pair.</summary>
-        internal readonly string Metavalue;
+        public readonly string Metavalue;
 
         /// <param name="metakey">The key of the key-value pair.</param>
         /// <param name="metavalue">The value of the key-value pair.</param>

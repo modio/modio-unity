@@ -79,6 +79,7 @@ namespace Modio.Unity.UI.Panels
                 SortModsBy.Subscribers   => true,
                 SortModsBy.DateSubmitted => false,
                 SortModsBy.DateUpdated   => false,
+                SortModsBy.DateLive      => false,
                 _                        => throw new ArgumentOutOfRangeException()
             };
 

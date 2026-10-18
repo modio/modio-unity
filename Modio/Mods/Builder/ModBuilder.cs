@@ -18,6 +18,7 @@ namespace Modio.Mods.Builder
     /// tasks that need to be performed intelligently, minimizing the amount of requests made.</summary>
     /// <remarks>When editing a mod these properties will not be populated: <see cref="LogoFilePath"/>,
     /// <see cref="GalleryFilePaths"/>, <see cref="LogoFilePath"/></remarks>
+    [Serializable]
     public class ModBuilder
     {
         /// <summary>Produces a list of Tuples with each published change &amp; their corresponding result.</summary>
@@ -33,6 +34,7 @@ namespace Modio.Mods.Builder
         string NameId { get; set; } = null;
         public string Summary { get; private set; } = null;
         public string Description { get; private set; } = null;
+        public string Homepage { get; private set; } = null;
         public string LogoFilePath { get; private set; } = null;
         byte[] _logoBytes;
         ImageFormat _logoBytesFormat;
@@ -43,6 +45,7 @@ namespace Modio.Mods.Builder
         ImageFormat _galleryImageFormat;
         bool _appendingGallery;
 
+        // TODO: Replace string[] with ModTag[]
         public string[] Tags { get; private set; } = null;
         public string MetadataBlob { get; private set; } = null;
         public Dictionary<string, string> MetadataKvps { get; private set; } = null;
@@ -125,6 +128,13 @@ namespace Modio.Mods.Builder
         {
             Description = description;
             _pendingChanges |= ChangeFlags.Description;
+            return this;
+        }
+
+        public ModBuilder SetHomepage(string homepage)
+        {
+            Homepage = homepage;
+            _pendingChanges |= ChangeFlags.Homepage;
             return this;
         }
         
@@ -474,7 +484,8 @@ namespace Modio.Mods.Builder
                 _pendingChanges.HasFlag(ChangeFlags.MaturityOptions) ? (long)MaturityOptions : null,
                 _pendingChanges.HasFlag(ChangeFlags.CommunityOptions) ? (long)CommunityOptions : null,
                 MetadataBlob,
-                Tags
+                Tags,
+                _pendingChanges.HasFlag(ChangeFlags.Homepage) ? Homepage : null
             );
 
             ModObject? modObject;
@@ -581,7 +592,8 @@ namespace Modio.Mods.Builder
                     _pendingChanges.HasFlag(ChangeFlags.Tags) ? Tags : null,
                     _pendingChanges.HasFlag(ChangeFlags.MonetizationConfig) ? (long)_monetizationOptions : null,
                     _pendingChanges.HasFlag(ChangeFlags.MonetizationConfig) ? Price : null,
-                    _pendingChanges.HasFlag(ChangeFlags.MonetizationConfig) ? Stock : null
+                    _pendingChanges.HasFlag(ChangeFlags.MonetizationConfig) ? Stock : null,
+                    _pendingChanges.HasFlag(ChangeFlags.Homepage) ? Homepage : null
                 );
 
                 ModObject? modObject;
@@ -720,7 +732,8 @@ namespace Modio.Mods.Builder
                 null,
                 (long)_monetizationOptions,
                 Price,
-                Stock
+                Stock,
+                null
             );
 
             (error, _) = await ModioAPI.Mods.EditMod(EditTarget.Id, body);

@@ -5,16 +5,15 @@ using System.Net;
 using System.Threading.Tasks;
 using Modio.API;
 using Modio.API.SchemaDefinitions;
-using Modio.Authentication;
 using Modio.Caching;
 using Modio.Errors;
 using Modio.Extensions;
 using Modio.Images;
 using Modio.Mods.Builder;
 using Modio.Monetization;
+using Modio.Ratings;
 using Modio.Reports;
 using Modio.Users;
-using Plugins.Modio.Modio.Ratings;
 
 namespace Modio.Mods
 {
@@ -93,7 +92,7 @@ namespace Modio.Mods
         string _summaryDecoded;
         string _summaryHtmlEncoded;
 
-        internal ModObject LastModObject { get; private set; }
+        public ModObject LastModObject { get; private set; }
 
         public string FiatPrice { get; internal set; }
 
@@ -122,10 +121,10 @@ namespace Modio.Mods
 
         public static Mod Get(long id) => ModCache.GetMod(new ModioId(id));
 
+        public static Mod Get(ModObject modObject) => ModCache.GetMod(modObject);
+
         internal Mod ApplyDetailsFromModObject(ModObject modObject)
         {
-            
-
             Name = WebUtility.HtmlDecode(modObject.Name);
             _summaryHtmlEncoded = modObject.Summary;
             _summaryDecoded = null;
@@ -443,7 +442,7 @@ namespace Modio.Mods
         /// of this task. Use this whenever you don't know if you'll have the mod data ready but need to be certain
         /// it's available.</remarks>
         /// <returns>A collection of <see cref="Mod"/>s.</returns>
-        public static async Task<(Error error, ICollection<Mod>)> GetMods(ICollection<long> neededModIds)
+        public static async Task<(Error error, IReadOnlyList<Mod>)> GetMods(ICollection<long> neededModIds)
         {
             if (neededModIds.Count <= 0) 
                 return (Error.None, Array.Empty<Mod>());

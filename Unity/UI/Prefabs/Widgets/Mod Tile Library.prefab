@@ -3000,8 +3000,8 @@ MonoBehaviour:
         _disableIfFree: {fileID: 1277152814960798999}
         _alsoDisableIfPurchased: 0
         _enableIfPurchased: {fileID: 0}
-        _enableIfUsdMarketplace: {fileID: 1277152814960798999}
-        _enableIfVirtualCurrency: {fileID: 1277152814960798999}
+        _enableIfUsdMarketplace: {fileID: 0}
+        _enableIfVirtualCurrency: {fileID: 0}
         _enableIfUnavailable: {fileID: 0}
         _fiatPriceText: {fileID: 0}
 --- !u!114 &3748400269602484937
