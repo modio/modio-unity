@@ -43,8 +43,7 @@ namespace Modio.Unity.UI.Components.SearchProperties
         void ViewAllResultsClicked()
         {
             var searchWith = ModioUISearch.Default;
-            ModSearchFilter filter = _search.LastSearchSettingsFrom.GetSearchFilter(searchWith.DefaultPageSize);
-            searchWith.SetSearch(filter, _search.ModioSearch.LastSearchPreset, settingsFrom: _search.LastSearchSettingsFrom);
+            searchWith.SetSearch(_search.LastSearchSettingsFrom);
         }
     }
 }

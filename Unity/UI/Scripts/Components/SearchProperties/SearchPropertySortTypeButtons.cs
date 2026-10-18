@@ -138,13 +138,13 @@ namespace Modio.Unity.UI.Components.SearchProperties
             {
                 SortModsBy.Name    => true,
                 SortModsBy.Price   => false,
-                SortModsBy.Rating  => true,
+                SortModsBy.Rating  => false,
                 SortModsBy.Popular => false,
-                SortModsBy.Downloads =>
-                    true, // Note: this is a mistake on the backend api. Ascending is swapped with descending for this field
-                SortModsBy.Subscribers   => true,
+                SortModsBy.Downloads => false,
+                SortModsBy.Subscribers   => false,
                 SortModsBy.DateSubmitted => false,
-                SortModsBy.DateUpdated => false,
+                SortModsBy.DateUpdated   => false,
+                SortModsBy.DateLive      => false,
                 _                        => throw new ArgumentOutOfRangeException()
             };
 

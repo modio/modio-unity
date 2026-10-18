@@ -65,8 +65,8 @@ namespace Modio.Unity.UI.Components
         {
             if (newValue && ModioUISearch.Default != null && _search != null)
             {
-                _search.SetAsCustomSearchBase(ModioUISearch.Default);
-                _search.Search(ModioUISearch.Default);
+                ModioUISearch.Default.ModioSearch.SetCustomSearchBase(_search);
+                ModioUISearch.Default.SetSearch(_search, true);
             }
         }
 

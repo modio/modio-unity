@@ -10,13 +10,13 @@ namespace Modio.API.SchemaDefinitions{
     public readonly partial struct ImageObject 
     {
         /// <summary>Image filename including extension.</summary>
-        internal readonly string Filename;
+        public readonly string Filename;
         /// <summary>URL to the full-sized image.</summary>
-        internal readonly string Original;
+        public readonly string Original;
         /// <summary>URL to the image thumbnail.</summary>
-        internal readonly string Thumb320X180;
+        public readonly string Thumb320X180;
         /// <summary>URL to the image thumbnail.</summary>
-        internal readonly string Thumb1280X720;
+        public readonly string Thumb1280X720;
 
         /// <param name="filename">Image filename including extension.</param>
         /// <param name="original">URL to the full-sized image.</param>

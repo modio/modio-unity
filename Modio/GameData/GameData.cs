@@ -11,6 +11,7 @@ namespace Modio.Mods
     {   
 
         public GameTagCategory[] Categories;
+        public GameTagCategory[] CollectionCategories;
         public string CurrencyName;
         public GameCommunityOptions CommunityOptions;
         public GameMonetizationOptions MonetizationOptions;
@@ -124,22 +125,18 @@ namespace Modio.Mods
         /// <remarks> This will write the cached game data to disk, and if a write is already in progress, it will wait for it to finish before writing again if necessary.</remarks>
         internal static async Task<Error> StoreGameDataToDisk() => await SetGameData(_cachedGameData);
 
-        public static async Task<Error> SetGameTags(GameTagCategory[] tags)
+        public static async Task<Error> SetGameTags(GameTagCategory[] tags, bool collectionTags)
         {
             (Error error, GameData gameData) = await GetGameDataFromDisk();
 
             if (error)
-            {
-                if (_cachedGameData != null)
-                {
-                    _cachedGameData.Categories = tags;
-                    StoreGameDataToDisk().ForgetTaskSafely();
-                }
-
                 return error;
-            }
+
+            if(collectionTags)
+                gameData.CollectionCategories = tags;
+            else
+                gameData.Categories = tags;
             
-            gameData.Categories = tags;
             return await SetGameData(gameData);
         }
 

@@ -10,9 +10,9 @@ namespace Modio.API.SchemaDefinitions{
     public readonly partial struct ModPlatformsObject 
     {
         /// <summary>A [target platform](#targeting-a-platform).</summary>
-        internal readonly string Platform;
+        public readonly string Platform;
         /// <summary>The unique id of the modfile that is currently live on the platform specified in the `platform` field.</summary>
-        internal readonly long ModfileLive;
+        public readonly long ModfileLive;
 
         /// <param name="platform">A [target platform](#targeting-a-platform).</param>
         /// <param name="modfileLive">The unique id of the modfile that is currently live on the platform specified in the `platform` field.</param>

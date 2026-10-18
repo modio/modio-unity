@@ -1,5 +1,5 @@
 ﻿using Modio.API.SchemaDefinitions;
-using Plugins.Modio.Modio.Ratings;
+using Modio.Ratings;
 
 namespace Modio.Collections
 {

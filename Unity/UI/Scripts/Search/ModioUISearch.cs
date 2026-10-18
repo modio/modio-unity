@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Threading.Tasks;
 using Modio.Extensions;
-using Modio.Mods;
 using Modio.Search;
 using Modio.Unity.UI.Components;
 using Modio.Unity.UI.Components.SearchProperties;
@@ -38,21 +36,23 @@ namespace Modio.Unity.UI.Search
 
         public static ModioUISearch Default { get; private set; }
 
-        public ModioUISearchSettings LastSearchSettingsFrom { get; private set; }
-        ModioUISearchSettings _resetToSearchSettingsFrom;
+        public IModioSearchSettings LastSearchSettingsFrom => ModioSearch.LastSearchSettingsFrom;
 
         public int DefaultPageSize => _defaultPageSize;
-        public ModioSearch ModioSearch { get; private set; }
+        public ModioSearch ModioSearch => _modioSearch ??= new ModioSearch(DefaultPageSize, _isDefault);
+        ModioSearch _modioSearch;
 
         public UnityEvent OnSearchUpdatedUnityEvent;
 
-        public event Action AppliedSearchPreset;
-
         void Awake()
         {
-            ModioSearch ??= new ModioSearch(DefaultPageSize);
             ModioSearch.OnSearchUpdated += () => OnSearchUpdatedUnityEvent?.Invoke();
             if (_isDefault || Default == null) Default = this;
+        }
+
+        void Start()
+        {
+            ModioClient.OnInitialized += PluginReady;
         }
 
         void OnDestroy()
@@ -63,12 +63,6 @@ namespace Modio.Unity.UI.Search
             if (Default == this) Default = null;
             
             User.OnUserChanged -= PluginReady;
-        }
-
-        void Start()
-        {
-            ModioClient.OnInitialized += PluginReady;
-
         }
 
         void PluginReady(User _) => PluginReady();
@@ -86,86 +80,23 @@ namespace Modio.Unity.UI.Search
             if (!ModioSearch.TryClearSearch())
             {
                 if (_searchOnStart != null)
-                    _searchOnStart.Search(this);
+                    SetSearch(_searchOnStart, true);
                 else
-                {
                     ModioSearch.ClearCurrentResultsImmediately();
-                }
             }
-            
-            ApplyHiddenTags().ForgetTaskSafely();
         }
 
-        public void AddUpdatePropertiesListener(UnityAction listener)
+        public void AddUpdatePropertiesListener(UnityAction listener) => OnSearchUpdatedUnityEvent.AddListener(listener);
+
+        public void RemoveUpdatePropertiesListener(UnityAction listener) => OnSearchUpdatedUnityEvent.RemoveListener(listener);
+
+        public void SetSearch(IModioSearchSettings settingsFrom, bool resetToThis = false)
         {
-            OnSearchUpdatedUnityEvent.AddListener(listener);
+            ModioSearch.SetSearch(settingsFrom, resetToThis, _allowSearchWithoutUser);
         }
 
-        public void RemoveUpdatePropertiesListener(UnityAction listener)
-        {
-            OnSearchUpdatedUnityEvent.RemoveListener(listener);
-        }
+        public void ClearSearch() => ModioSearch.ClearSearch();
 
-        public void SetSearch(
-            ModSearchFilter searchFilter,
-            SpecialSearchType specialSearchType,
-            bool resetToThis = false,
-            object shareFiltersWith = null,
-            ModioUISearchSettings settingsFrom = null
-        ) {
-            LastSearchSettingsFrom = settingsFrom;
-            if (resetToThis) _resetToSearchSettingsFrom = settingsFrom;
-            
-            //It's possible that this is called before Awake if the GameObject is disabled in hierarchy
-            ModioSearch ??= new ModioSearch(DefaultPageSize);
-
-            ModioSearch.SetCollection(settingsFrom?.CollectionId ?? 0);
-            
-            ModioSearch.SetSearch(searchFilter, specialSearchType, resetToThis, shareFiltersWith, _allowSearchWithoutUser);
-            
-            if (settingsFrom != null && _isDefault)
-            {
-                ApplyHiddenTags().ForgetTaskSafely();
-            }
-            
-            AppliedSearchPreset?.Invoke();
-        }
-
-        async Task ApplyHiddenTags()
-        {
-            if (!ModioClient.IsInitialized)
-            {
-                ModioLog.Verbose?.Log($"Skipping {nameof(ApplyHiddenTags)} as mod.io isn't initialized");
-                return;
-            }
-            
-            (Error error, GameTagCategory[] gameTagCategories) = await GameTagCategory.GetGameTagOptions();
-
-            if (LastSearchSettingsFrom == null || gameTagCategories == null) return;
-            
-            foreach (GameTagCategory gameTagCategory in gameTagCategories)
-            {
-                bool hide = LastSearchSettingsFrom.hideTagCategories.Contains(gameTagCategory.Name);
-
-                gameTagCategory.TempHidden = hide;
-
-                foreach (ModTag tag in gameTagCategory.Tags)
-                {
-                    tag.TempHidden = hide;
-                }
-            }
-            
-            OnSearchUpdatedUnityEvent.Invoke();
-        }
-        
-        public void ClearSearch()
-        {
-            if(_resetToSearchSettingsFrom != null)
-                LastSearchSettingsFrom = _resetToSearchSettingsFrom;
-            ModioSearch.ClearSearch();
-            AppliedSearchPreset?.Invoke();
-        }
-
-        public bool HasCustomSearch() => ModioSearch.HasCustomSearch() || _resetToSearchSettingsFrom != LastSearchSettingsFrom;
+        public bool HasCustomSearch() => ModioSearch.HasCustomSearch();
     }
 }

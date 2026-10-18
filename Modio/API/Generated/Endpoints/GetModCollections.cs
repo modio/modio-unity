@@ -60,7 +60,10 @@ namespace Modio.API
 
                 foreach (KeyValuePair<string, object> modFilterParameter in modFilter.Parameters)
                 {
-                    collectionsFilter.Parameters[modFilterParameter.Key] = modFilterParameter.Value;
+                    string key = modFilterParameter.Key;
+                    if(key == "tags")
+                        key = "collection_tags";
+                    collectionsFilter.Parameters[key] = modFilterParameter.Value;
                 }
                 
                 return collectionsFilter;
@@ -248,7 +251,7 @@ namespace Modio.API
                 /// <param name="condition"><see cref="Filtering"/></param>
                 public GetModCollectionsFilter Tags(string tags, Filtering condition = Filtering.None)
                 {
-                    Parameters[$"tags{condition.ClearText()}"] = tags;
+                    Parameters[$"collection_tags{condition.ClearText()}"] = tags;
                     return this;
                 }
 
@@ -256,7 +259,7 @@ namespace Modio.API
                 /// <param name="condition"><see cref="Filtering"/></param>
                 public GetModCollectionsFilter Tags(ICollection<string> tags, Filtering condition = Filtering.None)
                 {
-                    Parameters[$"tags{condition.ClearText()}"] = tags;
+                    Parameters[$"collection_tags{condition.ClearText()}"] = tags;
                     return this;
                 }
 

@@ -81,6 +81,8 @@ namespace Modio.FileIO
                 throw new NotSupportedException(
                     "Write operation is not supported in CRCComputingStreamWrapper when created for read-only."
                 );
+            
+            cancellationToken.ThrowIfCancellationRequested();
 
             await _baseStream.WriteAsync(buffer, offset, count, cancellationToken);
             var segment = new ArraySegment<byte>(buffer, offset, count);

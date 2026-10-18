@@ -6,73 +6,74 @@ using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json.Linq;
 
 namespace Modio.API.SchemaDefinitions{
+    [Serializable]
     [JsonObject(MemberSerialization.Fields)]
     public readonly partial struct ModObject 
     {
         /// <summary>Unique mod id.</summary>
-        internal readonly long Id;
+        public readonly long Id;
         /// <summary>Unique game id.</summary>
-        internal readonly long GameId;
+        public readonly long GameId;
         /// <summary>Status of the mod (see [status and visibility](#status-amp-visibility) for details):<br/><br/>__0__ = Not Accepted<br/>__1__ = Accepted<br/>__3__ = Deleted</summary>
-        internal readonly long Status;
+        public readonly long Status;
         /// <summary>Visibility of the mod (see [status and visibility](#status-amp-visibility) for details):<br/><br/>__0__ = Hidden<br/>__1__ = Public</summary>
-        internal readonly long Visible;
+        public readonly long Visible;
         /// <summary>The user who published the mod.</summary>
-        internal readonly UserObject SubmittedBy;
+        public readonly UserObject SubmittedBy;
         /// <summary>Unix timestamp of date mod was registered.</summary>
-        internal readonly long DateAdded;
+        public readonly long DateAdded;
         /// <summary>Unix timestamp of date mod was updated.</summary>
-        internal readonly long DateUpdated;
+        public readonly long DateUpdated;
         /// <summary>Unix timestamp of date mod was set live.</summary>
-        internal readonly long DateLive;
+        public readonly long DateLive;
         /// <summary>Mature content found in this mod, this is only relevant if the parent game allows mods to be labelled as mature:<br/><br/>__0__ = None<br/>__1__ = Alcohol<br/>__2__ = Drugs<br/>__4__ = Violence<br/>__8__ = Explicit<br/>__?__ = Add the options you want together, to enable multiple filters (see [BITWISE fields](#bitwise-and-bitwise-and))</summary>
-        internal readonly long MaturityOption;
+        public readonly long MaturityOption;
         /// <summary>Community features enabled for this mod:<br/><br/>__0__ = All of the options below are disabled<br/>__1__ = Enable comments<br/>__64__ = Enable previews<br/>__128__ = Enable preview URLs<br/>__1024__ = Allow dependencies<br/>__?__ = Add the options you want together, to enable multiple features (see [BITWISE fields](#bitwise-and-bitwise-and))</summary>
-        internal readonly long CommunityOptions;
+        public readonly long CommunityOptions;
         /// <summary>Monetization features enabled for this mod:<br/><br/>__0__ = Access to monetization features disabled<br/>__1__ = Access to monetization features enabled by the game for this mod<br/>__2__ = Marketplace enabled<br/>__8__ = Quantity of this mod is limited<br/>__?__ = Add the options you want together, to enable multiple features (see [BITWISE fields](#bitwise-and-bitwise-and))</summary>
-        internal readonly long MonetizationOptions;
+        public readonly long MonetizationOptions;
         /// <summary>Credit options enabled for this mod:<br/><br/>__0__ = All the options are disabled<br/>__1__ = Show credits section<br/>__2__ = Mark with original or permitted assets<br/>__4__ = Allow redistribution with credit<br/>__8__ = Allow porting with credit<br/>__16__ = Allow patching without credit<br/>__32__ = Allow patching with credit<br/>__64__ = Allow patching with permission<br/>__128__ = Allow repackaging without credit<br/>__256__ = Allow repackaging with credit<br/>__512__ = Allow repackaging with permission<br/>__1024__ = Allow users to resell<br/>__?__ = Add the options you want together, to enable multiple options (see [BITWISE fields](#bitwise-and-bitwise-and))</summary>
-        internal readonly long CreditOptions;
+        public readonly long CreditOptions;
         /// <summary>The stock of the mod. 0 is the default value, and is only used when the mod has limited quantity enabled.</summary>
-        internal readonly long Stock;
+        public readonly long Stock;
         /// <summary>The price of the mod.</summary>
-        internal readonly long Price;
+        public readonly long Price;
         /// <summary>The tax of the mod.</summary>
-        internal readonly long Tax;
+        public readonly long Tax;
         /// <summary>Contains media URL's to the logo for the mod.</summary>
-        internal readonly LogoObject Logo;
+        public readonly LogoObject Logo;
         /// <summary>Official homepage of the mod.</summary>
-        internal readonly string HomepageUrl;
+        public readonly string HomepageUrl;
         /// <summary>Name of the mod.</summary>
-        internal readonly string Name;
+        public readonly string Name;
         /// <summary>Path for the mod on mod.io. For example: https://mod.io/g/rogue-knight/m/__rogue-knight-hd-pack__</summary>
-        internal readonly string NameId;
+        public readonly string NameId;
         /// <summary>Summary of the mod.</summary>
-        internal readonly string Summary;
+        public readonly string Summary;
         /// <summary>Detailed description of the mod which allows HTML.</summary>
-        internal readonly string Description;
+        public readonly string Description;
         /// <summary>`description` field converted into plaintext.</summary>
-        internal readonly string DescriptionPlaintext;
+        public readonly string DescriptionPlaintext;
         /// <summary>Metadata that is designed to be handled by the game client and is recommended to not be exposed to content creators when submitting their mods. Metadata can also be stored as searchable [key value pairs](#metadata), and to individual [mod files](#get-modfiles).</summary>
-        internal readonly string MetadataBlob;
+        public readonly string MetadataBlob;
         /// <summary>URL to the mod.</summary>
-        internal readonly string ProfileUrl;
+        public readonly string ProfileUrl;
         /// <summary>Contains YouTube &amp; Sketchfab links, aswell as media URL's of images for the mod.</summary>
-        internal readonly ModMediaObject Media;
+        public readonly ModMediaObject Media;
         /// <summary>The primary modfile for the mod.</summary>
-        internal readonly ModfileObject Modfile;
+        public readonly ModfileObject Modfile;
         /// <summary>If the mod has any dependencies, this value will be set to `true`.</summary>
-        internal readonly bool Dependencies;
+        public readonly bool Dependencies;
         /// <summary>Contains mod platform data.</summary>
-        internal readonly ModPlatformsObject[] Platforms;
+        public readonly ModPlatformsObject[] Platforms;
         /// <summary>Contains key-value metadata.</summary>
-        internal readonly MetadataKvpObject[] MetadataKvp;
+        public readonly MetadataKvpObject[] MetadataKvp;
         /// <summary>Contains mod tag data.</summary>
-        internal readonly ModTagObject[] Tags;
+        public readonly ModTagObject[] Tags;
         /// <summary>Numerous aggregate stats for the mod.</summary>
-        internal readonly ModStatsObject Stats;
+        public readonly ModStatsObject Stats;
         /// <summary>SKUs with corresponding platforms that can be used to purchase the mod.</summary>
-        internal readonly ModSkuObject[] Skus;
+        public readonly ModSkuObject[] Skus;
 
         /// <param name="id">Unique mod id.</param>
         /// <param name="gameId">Unique game id.</param>

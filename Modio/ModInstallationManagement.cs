@@ -524,7 +524,7 @@ namespace Modio
 
             List<long> longIds = tempMods.Select(modId => (long)modId).ToList();
 
-            (Error error, ICollection<Mod> mods) = await Mod.GetMods(longIds);
+            (Error error, IReadOnlyList<Mod> mods) = await Mod.GetMods(longIds);
 
             if (error) return error;
             
@@ -721,7 +721,7 @@ namespace Modio
 
 #region Jobs
 
-        abstract class Job
+        public abstract class Job
         {
             readonly CancellationTokenSource _cancellationTokenSource;
             public Func<Task<Error>> Operation;
@@ -731,7 +731,7 @@ namespace Modio
             protected OperationPhase Phase;
             public virtual bool IsVisible => true;
 
-            protected Job(Mod mod, OperationType type)
+            public Job(Mod mod, OperationType type)
             {
                 Type = type;
                 Mod = mod;
@@ -1031,7 +1031,7 @@ namespace Modio
             }
         }
 
-        class DownloadAndExtractJob : Job
+        public class DownloadAndExtractJob : Job
         {
             bool IsUpdateJob => Type == OperationType.Update;
 
@@ -1455,8 +1455,11 @@ namespace Modio
             );
         }
 
-        internal static string GetDebugString()
+        public static string GetDebugString()
         {
+            if (_currentOperation == null)
+                return "Current operation: None";
+            
             string debugString = $"Current operation: {_currentOperation}";
             foreach (Job job in _operationQueue)
             {
