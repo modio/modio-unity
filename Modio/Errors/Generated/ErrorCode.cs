@@ -335,6 +335,8 @@ namespace Modio.Errors
         SUBSCRIBE_FAILED_SELF = 15091,
         /// <summary>The user with the supplied UserID could not be found.</summary>
         MUTE_USER_NOT_FOUND = 17000,
+        /// <summary>The user cannot do action due spam detection. </summary>
+        USER_CANT_DO_ACTION_SPAM_DETECTED = 17011,
         /// <summary>You cannot mute yourself.</summary>
         CANNOT_MUTE_YOURSELF = 17039,
         /// <summary>Insufficient space for file</summary>
@@ -375,8 +377,23 @@ namespace Modio.Errors
         MONETIZATION_OUT_OF_STOCK = 900061,
         /// <summary>Creation of the payment intent or the consumption of the entitlement within the third party portal failed.</summary>
         MONETIZATION_TRANSACTION_CONSUME_FAILED = 900064,
+        /// <summary>The monetization team requires a leader.</summary>
+        MONETIZATION_ENTITY_TEAM_LEADER_REQUIRED =900076,
         /// <summary>The provided portal is not a supported platform.</summary>
         MONETIZATION_PORTAL_INVALID  = 900098,
+        /// <summary>Failed to get entitlement due to Epic authentcation error.</summary>
+        MONETIZATION_EPIC_GAMES_ENTITLEMENT_AUTH_FAILED = 900102,
+        /// <summary>Failed to get entitlement due to Google Play authentcation error.</summary>
+        MONETIZATION_GOOGLE_PLAY_ENTITLEMENT_AUTH_FAILED = 900103,
+        /// <summary>Failed to get entitlement due to PlayStation authentcation error.</summary>
+        MONETIZATION_PLAYSTATION_PS4_ENTITLEMENT_AUTH_FAILED  = 900104,
+        /// <summary>Failed to get entitlement due to PlayStation authentcation error.</summary>
+        MONETIZATION_PLAYSTATION_PS5_ENTITLEMENT_AUTH_FAILED =  900105,
+        /// <summary>Failed to get entitlement due to Steam authentcation error.</summary>
+        MONETIZATION_STEAM_ENTITLEMENT_AUTH_FAILED =  900106,
+        /// <summary>Failed to get entitlement due to XBOX authentcation error.</summary>
+        MONETIZATION_XBOX_LIVE_ENTITLEMENT_AUTH_FAILED =  900107,
+        
     }
 
     public static partial class ErrorExtensions
@@ -526,6 +543,7 @@ namespace Modio.Errors
                 ErrorCode.MATURE_MODS_NOT_ALLOWED => "This game does not allow mature mods.",
                 ErrorCode.SUBSCRIBE_FAILED_SELF => "The user cannot subscribe to self.",
                 ErrorCode.MUTE_USER_NOT_FOUND => "The user with the supplied UserID could not be found.",
+                ErrorCode.USER_CANT_DO_ACTION_SPAM_DETECTED => "The user cannot do action due spam detection. ",
                 ErrorCode.CANNOT_MUTE_YOURSELF => "You cannot mute yourself.",
                 ErrorCode.INSUFFICIENT_SPACE => "Insufficient space for file",
                 ErrorCode.REQUESTED_USER_NOT_FOUND => "The requested user could not be found.",
@@ -546,7 +564,14 @@ namespace Modio.Errors
                 ErrorCode.MONETIZATION_TRANSACTION_FINALIZE_FAILED  => "The transaction could not be finalized due to an unexpected error. The mod will still be issued to the user at this point as the portal entitlement was consumed (an irreversible operation)",
                 ErrorCode.MONETIZATION_OUT_OF_STOCK => "The mod that was attempting to be purchased has sold out. Only applicable if the Game and Mod have enabled limited.",
                 ErrorCode.MONETIZATION_TRANSACTION_CONSUME_FAILED => "Creation of the payment intent or the consumption of the entitlement within the third party portal failed.",
+                ErrorCode.MONETIZATION_ENTITY_TEAM_LEADER_REQUIRED => "The monetization team requires a leader.",
                 ErrorCode.MONETIZATION_PORTAL_INVALID  => "The provided portal is not a supported platform.",
+                ErrorCode.MONETIZATION_EPIC_GAMES_ENTITLEMENT_AUTH_FAILED => "Failed to get entitlement due to Epic authentcation error.",
+                ErrorCode.MONETIZATION_GOOGLE_PLAY_ENTITLEMENT_AUTH_FAILED => "Failed to get entitlement due to Google Play authentcation error.",
+                ErrorCode.MONETIZATION_PLAYSTATION_PS4_ENTITLEMENT_AUTH_FAILED => "Failed to get entitlement due to PlayStation authentcation error.",
+                ErrorCode.MONETIZATION_PLAYSTATION_PS5_ENTITLEMENT_AUTH_FAILED => "Failed to get entitlement due to PlayStation authentcation error.",
+                ErrorCode.MONETIZATION_STEAM_ENTITLEMENT_AUTH_FAILED => "Failed to get entitlement due to Steam authentcation error.",
+                ErrorCode.MONETIZATION_XBOX_LIVE_ENTITLEMENT_AUTH_FAILED => "Failed to get entitlement due to XBOX authentcation error.",
                 _ => null,
             };
             return $"{errorCode}{(string.IsNullOrWhiteSpace(message) ? string.Empty : $": {message}")}{(string.IsNullOrWhiteSpace(append) ? string.Empty : $": {append}")}";

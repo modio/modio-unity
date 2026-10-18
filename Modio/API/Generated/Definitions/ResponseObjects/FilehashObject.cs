@@ -10,7 +10,7 @@ namespace Modio.API.SchemaDefinitions{
     public readonly partial struct FilehashObject 
     {
         /// <summary>MD5 hash of the file.</summary>
-        internal readonly string Md5;
+        public readonly string Md5;
 
         /// <param name="md5">MD5 hash of the file.</param>
         [JsonConstructor]

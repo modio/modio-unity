@@ -10,9 +10,9 @@ using Modio.Errors;
 using Modio.Extensions;
 using Modio.Images;
 using Modio.Mods;
+using Modio.Ratings;
 using Modio.Reports;
 using Modio.Users;
-using Plugins.Modio.Modio.Ratings;
 
 namespace Modio.Collections
 {
@@ -73,8 +73,6 @@ namespace Modio.Collections
         internal bool Visible { get; private set; }
         /// <summary>The user who submitted the collection.</summary>
         public UserProfile Creator { get; private set; }
-        /// <summary>The category of the collection.</summary>
-        internal string Category { get; private set; }
         /// <summary>The date the collection was added.</summary>
         internal DateTime DateAdded { get; private set; }
         /// <summary>The date the collection was last updated.</summary>
@@ -165,6 +163,55 @@ namespace Modio.Collections
 
             return (Error.None, page);
         }
+        
+        /// <summary>Gets all collections from a list of IDs. Will intelligently check the cache for any present collections
+        /// and only get the mods that're missing from the cache.</summary>
+        /// <param name="neededModCollectionIds">A collection of longs to get.</param>
+        /// <remarks>This can be considered a method to guarantee that the collections are in the cache by completion
+        /// of this task. Use this whenever you don't know if you'll have the collections data ready but need to be certain
+        /// it's available.</remarks>
+        /// <returns>A collection of <see cref="ModCollection"/>s.</returns>
+        public static async Task<(Error error, IReadOnlyList<ModCollection> collections)> GetModCollections(List<long> neededModCollectionIds)
+        {
+            if (neededModCollectionIds.Count <= 0) 
+                return (Error.None, Array.Empty<ModCollection>());
+            
+            var output = new List<ModCollection>(neededModCollectionIds.Count);
+            var idsToFetch = new List<long>();
+
+            foreach (long id in neededModCollectionIds)
+                if (ModCollectionCache.TryGetCachedStatic(id, out ModCollection collection) && !string.IsNullOrEmpty(collection.Name))
+                    output.Add(collection);
+                else
+                    idsToFetch.Add(id);
+            
+            if(idsToFetch.Count == 0)
+                return (Error.None, output);
+            
+            ModioAPI.Collections.GetModCollectionsFilter filter = ModioAPI.Collections.FilterGetModCollections();
+            filter.Id(idsToFetch, Filtering.In);
+
+            while (true)
+            {
+                (Error error, ModioPage<ModCollection> modPage) = await GetCollections(filter);
+
+                if (error)
+                {
+                    if (!error.IsSilent) 
+                        ModioLog.Error?.Log($"Error getting Mods to populate cache from Index: {error.GetMessage()}");
+                    return (error, Array.Empty<ModCollection>());
+                }
+
+                output.AddRange(modPage.Data);
+                
+                if (modPage.HasMoreResults())
+                    filter.PageIndex += 1;
+                else
+                    break;
+            }
+
+            return (Error.None, output);
+        }
 
 #endregion
 
@@ -189,7 +236,6 @@ namespace Modio.Collections
             GameId = modObject.GameId;
             Status = modObject.Status;
             Visible = modObject.Visible;
-            Category = modObject.Category;
             LimitNumberMods = modObject.LimitNumberMods;
             ArchiveFilesize = modObject.Filesize;
             Filesize = modObject.FilesizeUncompressed;
@@ -204,12 +250,11 @@ namespace Modio.Collections
             DateAdded = modObject.DateAdded.GetLocalDateTime();
             DateLive = modObject.DateLive.GetLocalDateTime();
             DateUpdated = modObject.DateUpdated.GetLocalDateTime();
+            
+            Tags = new ModTag[modObject.CollectionTags.Length];
 
-            Tags = new ModTag[modObject.Tags.Length + 1];
-
-            Tags[0] = ModTag.Get(modObject.Category,  ResourceTagType.CollectionCategory);
-            for (int i = 0; i < modObject.Tags.Length; i++)
-                Tags[i + 1] = ModTag.Get(modObject.Tags[i], ResourceTagType.CollectionTag);
+            for (int i = 0; i < Tags.Length; i++)
+                Tags[i] = ModTag.Get(modObject.CollectionTags[i], ResourceTagType.CollectionTag);
 
             MaturityOptions = (ModMaturityOptions)modObject.MaturityOption;
 

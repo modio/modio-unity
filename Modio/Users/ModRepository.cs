@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Modio.API.SchemaDefinitions;
 using Modio.Mods;
+using Modio.Ratings;
 
 namespace Modio.Users
 {
@@ -15,6 +17,7 @@ namespace Modio.Users
         readonly HashSet<Mod> _purchased = new HashSet<Mod>();
         readonly HashSet<Mod> _disabled = new HashSet<Mod>();
         readonly HashSet<Mod> _creations = new HashSet<Mod>();
+        readonly Dictionary<ModioId, (ModioRating rating, long timestamp)> _ratings = new Dictionary<ModioId, (ModioRating rating, long timestamp)>();
         
         public IEnumerable<Mod> GetCreatedMods() => _creations;
         public IEnumerable<Mod> GetSubscribed() => _subscribed;
@@ -27,6 +30,7 @@ namespace Modio.Users
             Mod.AddChangeListener(ModChangeType.IsEnabled, OnModEnabledChange);
             Mod.AddChangeListener(ModChangeType.IsPurchased, OnModPurchasedChange);
             Mod.AddChangeListener(ModChangeType.IsUserCreation, OnModUserCreationStatusChange);
+            Mod.AddChangeListener(ModChangeType.Rating, OnModRatingChange);
             ModioClient.OnShutdown += Dispose;
         }
 
@@ -85,6 +89,43 @@ namespace Modio.Users
         public bool IsSubscribed(ModioId modId) => _subscribed.Any(mod => mod.Id == modId);
         public bool IsDisabled(ModioId modId) => _disabled.Any(mod => mod.Id == modId);
         public bool IsPurchased(ModioId modId) => _purchased.Any(mod => mod.Id == modId);
+        
+        public bool TryGetRating(ModioId id, out ModioRating rating)
+        {
+            rating = default(ModioRating);
+            if (!_ratings.TryGetValue(id, out (ModioRating rating, long timestamp) pair))
+                return false;
+
+            rating = pair.rating;
+            return true;
+        }
+
+        internal void SetUserRatingFromObject(RatingObject rating)
+        {
+            _ratings[rating.ModId] = ((ModioRating)rating.Rating, rating.DateAdded);
+        }
+
+        void OnModRatingChange(Mod mod, ModChangeType changeType)
+        {
+            if (mod.CurrentUserRating == ModioRating.None)
+            {
+                _ratings.Remove(mod.Id);
+                return;
+            }
+
+            if (!_ratings.TryGetValue(mod.Id, out (ModioRating rating, long timestamp) ratingPair))
+            {
+                ratingPair = (mod.CurrentUserRating, DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+                _ratings[mod.Id] = ratingPair;
+            }
+            else if(ratingPair.rating != mod.CurrentUserRating)
+            {
+                ratingPair.rating = mod.CurrentUserRating;
+                _ratings[mod.Id] = ratingPair;
+            }
+            
+        }
+        public IEnumerable<(ModioId id, long timestamp)> GetAllRatedModIds() => _ratings.Select(pair => (pair.Key, pair.Value.timestamp));
 
         public void Dispose()
         {
@@ -92,6 +133,7 @@ namespace Modio.Users
             Mod.RemoveChangeListener(ModChangeType.IsEnabled, OnModEnabledChange);
             Mod.RemoveChangeListener(ModChangeType.IsPurchased, OnModPurchasedChange);
             Mod.RemoveChangeListener(ModChangeType.IsUserCreation, OnModUserCreationStatusChange);
+            Mod.RemoveChangeListener(ModChangeType.Rating, OnModRatingChange);
             ModioClient.OnShutdown -= Dispose;
         }
     }

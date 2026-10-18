@@ -36,13 +36,13 @@ namespace Modio.FileIO
             base.Dispose(disposing);
         }
 
-        public async Task<string> GetMD5HashAsync()
+        public async Task<string> GetMD5HashAsync(CancellationToken token)
         {
             var buffer = new byte[4096];
 
             while (!_hasTransformedFinalBlock)
             {
-                int bytesRead = await ReadAsync(buffer, 0, buffer.Length, CancellationToken.None);
+                int bytesRead = await ReadAsync(buffer, 0, buffer.Length, token);
                 if (bytesRead == 0) break;
             }
 

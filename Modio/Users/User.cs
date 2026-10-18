@@ -12,7 +12,7 @@ using Modio.Extensions;
 using Modio.FileIO;
 using Modio.Mods;
 using Modio.Monetization;
-using Plugins.Modio.Modio.Ratings;
+using Modio.Ratings;
 
 namespace Modio.Users
 {
@@ -62,8 +62,7 @@ namespace Modio.Users
         bool _needsSavingToDisk;
         List<UserProfile> _muted = new List<UserProfile>();
         List<UserProfile> _followed = new List<UserProfile>();
-        Dictionary<ModioId, ModioRating> _modRatings = new Dictionary<ModioId, ModioRating>();
-        Dictionary<ModioId, ModioRating> _collectionRatings = new Dictionary<ModioId, ModioRating>();
+        readonly Dictionary<ModioId, (ModioRating rating, long timestamp)> _collectionRatings = new Dictionary<ModioId, (ModioRating rating, long timestamp)>();
         
         List<CachedEntitlement> _cachedEntitlements;
         
@@ -610,12 +609,10 @@ namespace Modio.Users
             
             foreach (RatingObject ratingObject in ratedMods)
             {
-                _modRatings[ratingObject.ModId] = (ModioRating)ratingObject.Rating;
-                
-                if (!ModCache.TryGetMod(ratingObject.ModId, out Mod mod))
-                    continue;
+                ModRepository.SetUserRatingFromObject(ratingObject);
 
-                mod.SetCurrentUserRating((ModioRating)ratingObject.Rating);
+                if (ModCache.TryGetMod(ratingObject.ModId, out Mod mod))
+                    mod.SetCurrentUserRating((ModioRating)ratingObject.Rating);
             }
             
             ModioLog.Verbose?.Log($"Finished Syncing Ratings for {LocalUserId} with result: {error}");
@@ -649,12 +646,10 @@ namespace Modio.Users
             
             foreach (RatingObject ratingObject in ratedMods)
             {
-                _collectionRatings[ratingObject.ModId] = (ModioRating)ratingObject.Rating;
-                
-                if (!ModCollectionCache.TryGetCachedStatic(ratingObject.ModId, out ModCollection collection))
-                    continue;
+                ModCollectionRepository.SetUserRatingFromObject(ratingObject);
 
-                collection.SetCurrentUserRating((ModioRating)ratingObject.Rating);
+                if (ModCollectionCache.TryGetCachedStatic(ratingObject.ModId, out ModCollection collection))
+                    collection.SetCurrentUserRating((ModioRating)ratingObject.Rating);
             }
 
             ModioLog.Verbose?.Log($"Finished Syncing Ratings for {LocalUserId} with result: {error}");
@@ -911,12 +906,16 @@ namespace Modio.Users
         }
 
         public bool TryGetRating(ModioId id, ModioResourceType resourceType, out ModioRating rating)
-            => resourceType switch
+        {
+            return resourceType switch
             {
-                ModioResourceType.Mod => _modRatings.TryGetValue(id, out rating),
-                ModioResourceType.Collection => _collectionRatings.TryGetValue(id, out rating),
+                ModioResourceType.Mod => ModRepository.TryGetRating(id, out rating),
+                ModioResourceType.Collection => ModCollectionRepository.TryGetRating(id, out rating),
                 _ => throw new ArgumentOutOfRangeException(nameof(resourceType), resourceType, null),
             };
+        }
+
+        public IEnumerable<(ModioId id, long timestamp)> GetAllRatedModCollectionIds() => _collectionRatings.Select(pair => (pair.Key, pair.Value.timestamp));
 
         /// <summary>Removes the <see cref="User"/> and associated authentication and caches from this device.</summary>
         [ModioDebugMenu(ShowInBrowserMenu = false, ShowInSettingsMenu = true)]

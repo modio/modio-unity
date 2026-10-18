@@ -10,11 +10,11 @@ namespace Modio.API.SchemaDefinitions{
     public readonly partial struct ModTagObject 
     {
         /// <summary>Tag name.</summary>
-        internal readonly string Name;
+        public readonly string Name;
         /// <summary>The localized tag name influenced by the [Accept-Language](https://docs.mod.io/restapi/localization) header, defaults to English.</summary>
-        internal readonly string NameLocalized;
+        public readonly string NameLocalized;
         /// <summary>**Deprecated:** Unix timestamp of date tag was applied.</summary>
-        internal readonly long DateAdded;
+        public readonly long DateAdded;
 
         /// <param name="name">Tag name.</param>
         /// <param name="nameLocalized">The localized tag name influenced by the [Accept-Language](https://docs.mod.io/restapi/localization) header, defaults to English.</param>

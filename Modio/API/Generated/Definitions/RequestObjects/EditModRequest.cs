@@ -46,6 +46,7 @@ namespace Modio.API.SchemaDefinitions{
         internal readonly long? Price;
         /// <summary>Maximum number of times this mod can be sold.</summary> 
         internal readonly long? Stock;
+        internal readonly string? Homepage;
 #nullable disable
 
         /// <param name="name"></param>
@@ -73,7 +74,8 @@ namespace Modio.API.SchemaDefinitions{
             string[]? tags,
             long? monetizationOptions,
             long? price,
-            long? stock
+            long? stock,
+            string? homepage_url
 #nullable disable
         ) {
             Name = name;
@@ -89,6 +91,7 @@ namespace Modio.API.SchemaDefinitions{
             MonetizationOptions = monetizationOptions;
             Price = price;
             Stock = stock;
+            Homepage = homepage_url;
         }
 
         public IReadOnlyDictionary<string, object> GetBodyParameters()
@@ -117,6 +120,7 @@ namespace Modio.API.SchemaDefinitions{
             if (MonetizationOptions != null) _bodyParameters.Add("monetization_options", MonetizationOptions);
             if (Price != null) _bodyParameters.Add("price", Price);
             if (Stock != null) _bodyParameters.Add("stock", Stock);
+            if (!string.IsNullOrEmpty(Homepage)) _bodyParameters.Add("homepage_url", Homepage);
 
             return _bodyParameters;
         }

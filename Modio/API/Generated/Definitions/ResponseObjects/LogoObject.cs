@@ -10,15 +10,15 @@ namespace Modio.API.SchemaDefinitions{
     public readonly partial struct LogoObject 
     {
         /// <summary>Logo filename including extension.</summary>
-        internal readonly string Filename;
+        public readonly string Filename;
         /// <summary>URL to the full-sized logo.</summary>
-        internal readonly string Original;
+        public readonly string Original;
         /// <summary>URL to the small logo thumbnail.</summary>
-        internal readonly string Thumb320X180;
+        public readonly string Thumb320X180;
         /// <summary>URL to the medium logo thumbnail.</summary>
-        internal readonly string Thumb640X360;
+        public readonly string Thumb640X360;
         /// <summary>URL to the large logo thumbnail.</summary>
-        internal readonly string Thumb1280X720;
+        public readonly string Thumb1280X720;
 
         /// <param name="filename">Logo filename including extension.</param>
         /// <param name="original">URL to the full-sized logo.</param>

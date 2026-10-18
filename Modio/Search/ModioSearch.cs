@@ -27,10 +27,14 @@ namespace Modio.Search
         SearchForUser,
         SubSearchesOnly,
         VcPacks,
+        RatedMods,
         
         SearchCollections     = 100,
         FollowedCollections   = 101,
         SearchModsInCollection,
+        RatedCollections,
+        
+        DynamicCarousels      = 200,
     }
     
     /// <summary>
@@ -48,10 +52,18 @@ namespace Modio.Search
         object _shareFiltersWith;
         List<Mod> _lastLocalQueryInFull;
         
+        readonly int _defaultPageSize;
+        readonly bool _isDefault;
+        
         public event Action OnSearchUpdated;
 
-        public ModioSearch(int defaultPageSize = 24) => _defaultPageSize = defaultPageSize;
+        public ModioSearch(int defaultPageSize = 24, bool isDefault = false)
+        {
+            _defaultPageSize = defaultPageSize;
+            _isDefault = isDefault;
+        }
 
+        public IModioSearchSettings LastSearchSettingsFrom { get; private set; }
         public ModSearchFilter LastSearchFilter { get; private set; } = new ModSearchFilter();
         public SpecialSearchType LastSearchPreset => _searchPreset;
         public bool IsSearching { get; private set; }
@@ -68,9 +80,7 @@ namespace Modio.Search
         public Error LastSearchError { get; private set; } = Error.None;
         public int LastSearchSelectionIndex { get; private set; }
         
-        (ModSearchFilter searchFilter, SpecialSearchType specialSearchType, object shareFiltersWith) _resetToSearch;
-        int _defaultPageSize;
-        long _collectionId;
+        (ModSearchFilter searchFilter, SpecialSearchType specialSearchType, object shareFiltersWith, IModioSearchSettings searchSettings) _resetToSearch;
 
         /// <summary>
         /// Change the sort mode and order for an existing search
@@ -105,7 +115,7 @@ namespace Modio.Search
             {
                 searchFilter.AddSearchPhrase(query, filterType);
             }
-            if (_searchPreset == SpecialSearchType.SubSearchesOnly) _searchPreset = SpecialSearchType.Nothing;
+            if (_searchPreset is SpecialSearchType.SubSearchesOnly or SpecialSearchType.DynamicCarousels) _searchPreset = SpecialSearchType.Nothing;
 
             searchFilter.PageIndex = 0;
             SetSearchAsync(searchFilter, _searchPreset).ForgetTaskSafely();
@@ -146,7 +156,7 @@ namespace Modio.Search
                     return;
             }
 
-            if (_searchPreset == SpecialSearchType.SubSearchesOnly) _searchPreset = SpecialSearchType.Nothing;
+            if (_searchPreset is SpecialSearchType.SubSearchesOnly or SpecialSearchType.DynamicCarousels) _searchPreset = SpecialSearchType.Nothing;
             LastSearchFilter.PageIndex = 0;
             SetSearchAsync(LastSearchFilter, _searchPreset).ForgetTaskSafely();
         }
@@ -161,6 +171,7 @@ namespace Modio.Search
             if(prev == null) return false;
 
             return _resetToSearch.specialSearchType != _searchPreset
+                   || _resetToSearch.searchSettings != LastSearchSettingsFrom
                    || prev.TagAndCategoryCount != LastSearchFilter.TagAndCategoryCount
                    || LastSearchFilter.GetUsers().Count > 0
                    || LastSearchFilter.GetSearchPhrase(Filtering.Like).Count > 0
@@ -217,7 +228,7 @@ namespace Modio.Search
             searchFilter.AddCollectionCategory(null);
 
             searchFilter.PageIndex = 0;
-            SetSearch(searchFilter, _resetToSearch.specialSearchType);
+            SetSearch(searchFilter, _resetToSearch.specialSearchType, searchSettings:_resetToSearch.searchSettings);
 
             return true;
         }
@@ -320,6 +331,22 @@ namespace Modio.Search
             SetSearchAsync(LastSearchFilter, _searchPreset).ForgetTaskSafely();
         }
 
+        public void SetSearch(
+            IModioSearchSettings searchSettings,
+            bool resetToThis = false,
+            bool allowSearchWithoutUser = false
+        )
+        {
+            SetSearch(
+                searchSettings.GetSearchFilter(_defaultPageSize),
+                searchSettings.SearchType,
+                resetToThis,
+                searchSettings.ShareFilterSettingsWith,
+                allowSearchWithoutUser,
+                searchSettings
+            );
+        }
+
         /// <summary>
         /// Run a search for a particular filter
         /// </summary>
@@ -328,14 +355,17 @@ namespace Modio.Search
         /// <param name="resetToThis">Should this be treated as a preset that we'll reset back to when applying new searches</param>
         /// <param name="shareFiltersWith">Pass in the same object to multiple sequential searches to keep the same filters between those searches</param>
         /// <param name="allowSearchWithoutUser">If true, the plugin won't require a user to be signed in. Not recommended in most cases. </param>
+        /// <param name="searchSettings">The searchSettings this search derived from, if any</param>
         public void SetSearch(
             ModSearchFilter searchFilter,
             SpecialSearchType specialSearchType,
             bool resetToThis = false,
             object shareFiltersWith = null,
-            bool allowSearchWithoutUser = false
+            bool allowSearchWithoutUser = false,
+            IModioSearchSettings searchSettings = null
         ) {
-            if (resetToThis) _resetToSearch = (searchFilter.Clone(), specialSearchType, shareFiltersWith);
+            if (resetToThis) _resetToSearch = (searchFilter.Clone(), specialSearchType, shareFiltersWith, searchSettings);
+            LastSearchSettingsFrom = searchSettings;
 
             if (!ModioClient.IsInitialized || (!allowSearchWithoutUser && (User.Current == null || !User.Current.IsInitialized)))
             {
@@ -364,15 +394,50 @@ namespace Modio.Search
             
             bool showMonetizationUI = ModioClient.Settings.TryGetPlatformSettings(out MonetizationSettings _);
             if (!showMonetizationUI) searchFilter.RevenueType = RevenueType.Free;
-
-
+            
             SetSearchAsync(searchFilter, specialSearchType).ForgetTaskSafely();
-
+            
+            if (_isDefault) ApplyHiddenTags().ForgetTaskSafely();
         }
 
-        public void SetCustomSearchBase(ModSearchFilter searchFilter, SpecialSearchType searchType)
+        async Task ApplyHiddenTags()
         {
-            _baseForCustomSearch = (searchFilter, searchType);
+            if (!ModioClient.IsInitialized)
+            {
+                ModioLog.Verbose?.Log($"Skipping {nameof(ApplyHiddenTags)} as mod.io isn't initialized");
+                return;
+            }
+            
+            (Error error, GameTagCategory[] gameTagCategories) = await GameTagCategory.GetGameTagOptions();
+
+            if (LastSearchSettingsFrom == null || gameTagCategories == null) return;
+            
+            foreach (GameTagCategory gameTagCategory in gameTagCategories)
+            {
+                bool hide = LastSearchSettingsFrom.HideTagCategories?.Contains(gameTagCategory.Name) ?? false;
+
+                gameTagCategory.TempHidden = hide;
+
+                foreach (ModTag tag in gameTagCategory.Tags)
+                {
+                    tag.TempHidden = hide;
+                }
+            }
+            
+            OnSearchUpdated?.Invoke();
+        }
+
+        public void SetCustomSearchBase(IModioSearchSettings searchSettings)
+        {
+            if (searchSettings == null)
+            {
+               _baseForCustomSearch = (null, default(SpecialSearchType));
+                return;
+            }
+            
+            var searchFilter = searchSettings.GetSearchFilter(_defaultPageSize);
+            
+            _baseForCustomSearch = (searchFilter, searchSettings.SearchType);
         }
 
         async Task SetSearchAsync(
@@ -392,13 +457,16 @@ namespace Modio.Search
 
             OnSearchUpdated?.Invoke();
 
-            var asyncSearchIndex = ++_asyncSearchIndex;
+            int asyncSearchIndex = ++_asyncSearchIndex;
 
-            (Error error, IReadOnlyList<Mod> mods, int totalCount) queryResultAnd;
+            Error error;
+            IReadOnlyList<Mod> mods = null;
+            IReadOnlyList<ModCollection> collections = null;
+            int totalCount;
 
             if (customResultProvider != null)
             {
-                queryResultAnd = await customResultProvider;
+                (error, mods, totalCount) = await customResultProvider;
             }
             else
             {
@@ -408,26 +476,59 @@ namespace Modio.Search
                     case SpecialSearchType.InstalledOrSubscribed:
                     case SpecialSearchType.Subscribed:
                     case SpecialSearchType.Purchased:
-                        queryResultAnd = await GetModsViaLocalQuery(specialSearchType);
+                        (error, mods, totalCount) = await GetModsViaLocalQuery(specialSearchType);
                         break;
                     case SpecialSearchType.UserCreations:
-                        queryResultAnd = await GetCurrentUserCreationsQuery();
+                        (error, mods, totalCount) = await GetCurrentUserCreationsQuery();
                         break;
                     case SpecialSearchType.SearchCollections:
-                        await SetSearchForCollections(searchFilter, isAdditiveSearch);
-                        return;
+                        (error, collections, totalCount) = await GetCollectionsViaStandardQuery();
+                        break;
                     case SpecialSearchType.SubSearchesOnly:
                     case SpecialSearchType.VcPacks:
-                        queryResultAnd = (Error.None, Array.Empty<Mod>(), 0);
+                        (error, mods, totalCount) = (Error.None, Array.Empty<Mod>(), 0);
+                        break;
+                    case SpecialSearchType.DynamicCarousels:
+                        GameData data;
+                        (error, data) = await GameData.GetGameData();
+                        totalCount = 0;
+
+                        if((data.CommunityOptions & GameCommunityOptions.DisableCarousels) != 0)
+                            break;
+
+                        if (LastSearchSettingsFrom is IModioSearchCarouselProvider carouselProvider)
+                        {
+                            var carousels = data.FeaturedContent.Where(mfc => mfc.Enabled).Select(gtc =>
+                                {
+                                    var featuredContentSearchSettings = new FeaturedContentSearchSettings(gtc);
+
+                                    return ((IModioSearchSettings)featuredContentSearchSettings, featuredContentSearchSettings.Style);
+                                }
+                            ).ToList();
+
+                            carouselProvider.Carousels = carousels.Count != 0 ? carousels : null;
+                        }
+                        else
+                            ModioLog.Error?.Log($"Tried to run SpecialSearchType {nameof(SpecialSearchType.DynamicCarousels)} on search settings {LastSearchSettingsFrom.GetType().Name} which doesn't implement {nameof(IModioSearchCarouselProvider)}");
+
                         break;
                     case SpecialSearchType.FollowedCollections:
-                        await GetFollowCollectionsViaLocalQuery();
-                        return;
+                        (error, collections, totalCount) = await GetFollowCollectionsViaLocalQuery();
+                        break;
                     case SpecialSearchType.SearchModsInCollection:
-                        queryResultAnd = await GetModsInCollection(searchFilter, _collectionId);
+                        if (LastSearchSettingsFrom == null)
+                            (error, totalCount) = (new Error(ErrorCode.BAD_PARAMETER), 0);
+                        else
+                            (error, mods, totalCount) = await GetModsInCollection(searchFilter, LastSearchSettingsFrom.CollectionId);
+                        break;
+                    case SpecialSearchType.RatedMods:
+                        (error, mods, totalCount) = await GetRatedMods();
+                        break;
+                    case SpecialSearchType.RatedCollections:
+                        (error, collections, totalCount) = await GetRatedCollections();
                         break;
                     default:
-                        queryResultAnd = await GetModsViaStandardQuery();
+                        (error, mods, totalCount) = await GetModsViaStandardQuery();
                         break;
                 }
             }
@@ -441,94 +542,50 @@ namespace Modio.Search
 
             IsSearching = false;
 
-            LastSearchResultModCollections = Array.Empty<ModCollection>();
-            
+            if(mods != null)
+                LastSearchResultModCollections = Array.Empty<ModCollection>();
+            if(collections != null)
+                LastSearchResultMods = Array.Empty<Mod>();
+
             if (!isAdditiveSearch)
             {
-                LastSearchResultMods = queryResultAnd.mods ?? Array.Empty<Mod>();
+                LastSearchResultMods = mods ?? Array.Empty<Mod>();
+                LastSearchResultModCollections = collections ?? Array.Empty<ModCollection>();
                 LastSearchSelectionIndex = 0;
             }
             else
             {
-                LastSearchSelectionIndex = LastSearchResultMods.Count;
-                var combinedResults = new List<Mod>(LastSearchResultMods);
-                if (queryResultAnd.mods != null) combinedResults.AddRange(queryResultAnd.mods);
-                LastSearchResultMods = combinedResults;
+                LastSearchSelectionIndex = Math.Max(LastSearchResultMods.Count, LastSearchResultModCollections.Count);
+                
+                if (mods != null)
+                {
+                    var combinedResults = new List<Mod>(LastSearchResultMods);
+                    combinedResults.AddRange(mods);
+                    LastSearchResultMods = combinedResults;
+                }
+                if(collections != null)
+                {
+                    var combinedResults = new List<ModCollection>(LastSearchResultModCollections);
+                    combinedResults.AddRange(collections);
+                    LastSearchResultModCollections = combinedResults;
+                }
             }
 
-            LastSearchResultTotalCount = queryResultAnd.totalCount;
-            LastSearchError = queryResultAnd.error;
+            LastSearchResultTotalCount = totalCount;
+            LastSearchError = error;
 
-            if(queryResultAnd.error.Code == ErrorCode.SHUTTING_DOWN) return;
+            if(error.Code == ErrorCode.SHUTTING_DOWN) return;
             
             OnSearchUpdated?.Invoke();
         }
 
-        Task GetFollowCollectionsViaLocalQuery()
+        Task<(Error error, IReadOnlyList<ModCollection> mods, int totalCount)> GetFollowCollectionsViaLocalQuery()
         {
-            var repo = User.Current.ModCollectionRepository;
+            ModCollectionRepository repo = User.Current.ModCollectionRepository;
 
-            var collections = repo.GetFollowed().ToList();
+            List<ModCollection> collections = repo.GetFollowed().ToList();
 
-            IsSearching = false;
-
-            LastSearchResultModCollections = collections;
-            LastSearchResultTotalCount = collections.Count;
-            OnSearchUpdated?.Invoke();
-            return Task.CompletedTask;
-        }
-
-        async Task SetSearchForCollections(
-            ModSearchFilter searchFilter,
-            bool isAdditiveSearch = false
-        ) {
-            LastSearchFilter = searchFilter;
-            _lastPageIndex = LastSearchFilter.PageIndex;
-            _lastLocalQueryInFull = null;
-
-            IsSearching = true;
-            IsAdditiveSearch = isAdditiveSearch;
-            if (!isAdditiveSearch) LastSearchResultMods = Array.Empty<Mod>();
-            LastSearchError = Error.None;
-            
-            OnSearchUpdated?.Invoke();
-
-            var asyncSearchIndex = ++_asyncSearchIndex;
-
-            (Error error, IReadOnlyList<ModCollection> collections, int totalCount) queryResultAnd;
-
-            queryResultAnd = await GetCollectionsViaStandardQuery();
-            
-            if (asyncSearchIndex != _asyncSearchIndex)
-            {
-                // A newer search is in progress or has completed; do not apply the results of the first search
-                // (particularly possible when swapping from an async search to a sync search)
-                return;
-            }
-
-            IsSearching = false;
-
-            LastSearchResultMods = Array.Empty<Mod>();
-            
-            if (!isAdditiveSearch)
-            {
-                LastSearchResultModCollections = queryResultAnd.collections ?? Array.Empty<ModCollection>();
-                LastSearchSelectionIndex = 0;
-            }
-            else
-            {
-                LastSearchSelectionIndex = LastSearchResultModCollections.Count;
-                var combinedResults = new List<ModCollection>(LastSearchResultModCollections);
-                if (queryResultAnd.collections != null) combinedResults.AddRange(queryResultAnd.collections);
-                LastSearchResultModCollections = combinedResults;
-            }
-
-            LastSearchResultTotalCount = queryResultAnd.totalCount;
-            LastSearchError = queryResultAnd.error;
-
-            if(queryResultAnd.error.Code == ErrorCode.SHUTTING_DOWN) return;
-
-            OnSearchUpdated?.Invoke();
+            return Task.FromResult<(Error error, IReadOnlyList<ModCollection> mods, int totalCount)>((Error.None, collections, collections.Count));
         }
 
         async Task<(Error error, IReadOnlyList<Mod> mods, int totalCount)> GetModsViaStandardQuery()
@@ -545,6 +602,46 @@ namespace Modio.Search
             }
 
             return (error, page.Data, (int)page.TotalSearchResults);
+        }
+        
+        async Task<(Error error, IReadOnlyList<Mod> mods, int totalCount)> GetRatedMods()
+        {
+            //ensure we've finished syncing ratings
+            await User.Current.DelayedSyncTasks;
+
+            IEnumerable<(ModioId id, long timestamp)> modIds = User.Current.ModRepository.GetAllRatedModIds();
+
+            var modioIds = modIds.OrderBy(tuple => tuple.timestamp)
+                                 .Select(tuple => (long)tuple.id)
+                                 .Skip(LastSearchFilter.PageIndex * LastSearchFilter.PageSize)
+                                 .Take(LastSearchFilter.PageSize)
+                                 .ToList();
+
+            (Error error, IReadOnlyList<Mod> mods) = await Mod.GetMods(modioIds);
+
+            int total = User.Current.ModRepository.GetAllRatedModIds().Count();
+
+            return (error, mods, total);
+        }
+        
+        async Task<(Error error, IReadOnlyList<ModCollection> mods, int totalCount)> GetRatedCollections()
+        {
+            //ensure we've finished syncing ratings
+            await User.Current.DelayedSyncTasks;
+
+            IEnumerable<(ModioId id, long timestamp)> modIds = User.Current.ModCollectionRepository.GetAllRatedModCollectionIds();
+
+            var modioIds = modIds.OrderBy(tuple => tuple.timestamp)
+                                 .Select(tuple => (long)tuple.id)
+                                 .Skip(LastSearchFilter.PageIndex * LastSearchFilter.PageSize)
+                                 .Take(LastSearchFilter.PageSize)
+                                 .ToList();
+
+            (Error error, IReadOnlyList<ModCollection> collections) = await ModCollection.GetModCollections(modioIds);
+
+            int total = User.Current.ModCollectionRepository.GetAllRatedModCollectionIds().Count();
+
+            return (error, collections, total);
         }
 
         async Task<(Error error, IReadOnlyList<ModCollection> mods, int totalCount)> GetCollectionsViaStandardQuery()
@@ -681,6 +778,7 @@ namespace Modio.Search
                 SortModsBy.Subscribers   => -x.Stats.Subscribers.CompareTo(y.Stats.Subscribers),
                 SortModsBy.DateSubmitted => -x.DateLive.CompareTo(y.DateLive),
                 SortModsBy.DateUpdated   => -x.DateUpdated.CompareTo(y.DateUpdated),
+                SortModsBy.DateLive      => -x.DateLive.CompareTo(y.DateLive),
                 _                        => throw new ArgumentOutOfRangeException(),
             };
 
@@ -726,16 +824,6 @@ namespace Modio.Search
                 
                 return (error, results, results.Count);
             }
-        }
-
-        /// <summary>
-        /// Set the collection that's being searched for
-        /// Note that this is a little hacky
-        /// </summary>
-        //TODO: find better alternative to this
-        public void SetCollection(long collectionId)
-        {
-            _collectionId = collectionId;
         }
     }
 }

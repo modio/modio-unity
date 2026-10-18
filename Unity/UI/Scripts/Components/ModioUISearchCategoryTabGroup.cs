@@ -67,15 +67,8 @@ namespace Modio.Unity.UI.Components
             else 
                 SetTabs(category.Tabs);
 
-            if (ModioUISearch.Default != null)
-            {
-                if (category.CustomSearchBase != null)
-                    category.CustomSearchBase.SetAsCustomSearchBase(ModioUISearch.Default);
-                else
-                {
-                    ModioUISearch.Default.ModioSearch.SetCustomSearchBase(null, default);
-                }
-            }
+            if (ModioUISearch.Default != null) 
+                ModioUISearch.Default.ModioSearch.SetCustomSearchBase(category.CustomSearchBase);
 
             if (_categoryName != null) _categoryName.text = category.CategoryLabel;
             if (_categoryNameLocalized != null) _categoryNameLocalized.SetKey(category.CategoryLabelLocalized);
