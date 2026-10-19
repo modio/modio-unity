@@ -17,7 +17,8 @@ namespace Modio.Unity
         readonly TaskCompletionSource<bool> _hasReceivedHeaders =  new TaskCompletionSource<bool>();
 
         UnityWebRequest _callingRequest;
-
+        
+        
         /// <summary>
         /// Creates a new DownloadHandlerToStream with a new buffer size of 1MB.
         /// </summary>
@@ -67,8 +68,7 @@ namespace Modio.Unity
         /// <summary>
         /// Asynchronously waits until the response headers have been received.
         /// </summary>
-        /// <param name="token"> Cancellation token to cancel the wait operation.</param>
-        public async Task ResponseReceived(CancellationToken token)
+        public async Task ResponseReceived()
         {
             await _hasReceivedHeaders.Task;
         }
@@ -125,6 +125,21 @@ namespace Modio.Unity
                 _streamBuffer.ThrowException = new IOException($"Download failed: {_callingRequest?.error}");
             
             _cancellationTokenSource.Cancel();
+            _streamBuffer.Signal.Set();
+        }
+
+        public override void Dispose()
+        {
+
+            if (!string.IsNullOrEmpty(_callingRequest?.error))
+            {
+                _streamBuffer.SetError(_callingRequest?.error);
+                _cancellationTokenSource.Cancel();
+            }
+
+            DetachRequest();
+            base.Dispose();
+            
         }
 
         /// <summary>
@@ -135,7 +150,7 @@ namespace Modio.Unity
         {
             readonly ConcurrentQueue<BufferChunk> _dataQueue = new ConcurrentQueue<BufferChunk>();
             readonly CancellationToken _shutdownToken;
-            readonly AsyncAutoResetEvent _signal = new AsyncAutoResetEvent();
+            internal readonly AsyncAutoResetEvent Signal = new AsyncAutoResetEvent();
             
             internal ChunkedStreamBuffer(CancellationToken shutdownToken) => _shutdownToken = shutdownToken;
 
@@ -146,7 +161,7 @@ namespace Modio.Unity
                     data.Dispose();
 
                 _dataQueue.Clear();
-                _signal.Set();
+                Signal.Set();
             }
 
             /// <summary>
@@ -159,7 +174,7 @@ namespace Modio.Unity
                 while (_dataQueue.TryDequeue(out BufferChunk data))
                     data.Dispose();
                 _dataQueue.Clear();
-                _signal.Set();
+                Signal.Set();
             }
 
             public override int Read(byte[] buffer, int offset, int count)
@@ -171,13 +186,17 @@ namespace Modio.Unity
                 int count,
                 CancellationToken cancellationToken
             ) {
-                if (cancellationToken == CancellationToken.None)
-                    cancellationToken = _shutdownToken;
-                
+                cancellationToken.ThrowIfCancellationRequested();
+
                 // Create a timeout cancellation token to avoid hanging indefinitely
                 TimeSpan timeout = TimeSpan.FromSeconds(10);
                 using var timeoutTokenSource = new CancellationTokenSource(timeout);
-                using var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutTokenSource.Token);
+
+                using var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(
+                    cancellationToken,
+                    timeoutTokenSource.Token,
+                    _shutdownToken
+                );
                 
                 var totalBytesRead = 0;
 
@@ -188,6 +207,7 @@ namespace Modio.Unity
                     // Wait for data to be available in the queue
                     while (!_dataQueue.TryPeek(out data))
                     {
+
                         if (linkedTokenSource.Token.IsCancellationRequested)
                         {
                             if(ThrowException != null)
@@ -200,13 +220,13 @@ namespace Modio.Unity
                         }
 
 
-                        if (IsDone && _dataQueue.IsEmpty || totalBytesRead > 0)
+                        if ((IsDone && _dataQueue.IsEmpty) || totalBytesRead > 0)
                         {
                             Position += totalBytesRead;
                             return totalBytesRead;
                         }
 
-                        await _signal.WaitAsync(linkedTokenSource.Token);
+                        await Signal.WaitAsync(linkedTokenSource.Token);
 
                     }
 
@@ -241,7 +261,7 @@ namespace Modio.Unity
                 var data = new NativeArray<byte>(bytesToWrite, Allocator.Persistent);
                 NativeArray<byte>.Copy(buffer, offset, data, 0, bytesToWrite - offset);
                 _dataQueue.Enqueue(new BufferChunk(data, 0));
-                _signal.Set();
+                Signal.Set();
 
             }
 
@@ -277,9 +297,18 @@ namespace Modio.Unity
             public void Complete()
             {
                 IsDone = true;
-                _signal.Set();
+                Signal.Set();
             }
 
+            public void SetError(string callingRequestError)
+            {
+                if (string.IsNullOrEmpty(callingRequestError))
+                    //No error message, no error
+                    return;
+
+                ThrowException = new Exception($"Download failed: {callingRequestError}");
+                Signal.Set();
+            }
         }
         
         /// <summary>
@@ -288,6 +317,6 @@ namespace Modio.Unity
         /// <see cref="NullReferenceException"/> from its native getters, so callers must detach
         /// before disposing rather than relying on a null check.
         /// </summary>
-        public void DetachRequest() => _callingRequest = null;
+        internal void DetachRequest() => _callingRequest = null;
     }
 }

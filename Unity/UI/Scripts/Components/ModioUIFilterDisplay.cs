@@ -200,7 +200,7 @@ namespace Modio.Unity.UI.Components
                         item = Instantiate(radioTagItemPrefab, _contentContainer);
                         item.group = toggleGroup;
                     }
-
+                    
                     item.GetComponentInChildren<TMP_Text>().text = tag1.NameLocalized;
 
                     item.gameObject.SetActive(true);

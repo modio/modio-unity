@@ -21,6 +21,7 @@ namespace Modio.Mods
         Subscribers,
         DateSubmitted,
         DateUpdated,
+        DateLive,
     }
     public enum RevenueType
     {
@@ -77,6 +78,7 @@ namespace Modio.Mods
         
         int _pageSize;
         int _pageIndex;
+        IReadOnlyDictionary<string, string> _unknownFilters;
 
         #endregion
 
@@ -217,6 +219,11 @@ namespace Modio.Mods
 
         public IReadOnlyList<UserProfile> GetUsers() => _users ?? (IReadOnlyList<UserProfile>)Array.Empty<UserProfile>();
         
+        internal void SetUnknownFilters(IReadOnlyDictionary<string, string> unknownFilters)
+        {
+            _unknownFilters = unknownFilters;
+        }
+        
         public ModioAPI.Mods.GetModsFilter GetModsFilter()
         {
             var filter = ModioAPI.Mods.FilterGetMods(PageIndex, PageSize);
@@ -257,6 +264,7 @@ namespace Modio.Mods
                 SortModsBy.Subscribers   => "subscribers_total",
                 SortModsBy.DateSubmitted => "id",
                 SortModsBy.DateUpdated   => "date_updated",
+                SortModsBy.DateLive      => "date_live",
                 _                        => throw new ArgumentOutOfRangeException()
             };
             filter.SortByStringType(sortBy, IsSortAscending);
@@ -264,6 +272,10 @@ namespace Modio.Mods
             filter.RevenueType((long)RevenueType);
             //filter.Stock(ShowSoldOut ? 0 : 1);
             
+            if (_unknownFilters != null)
+                foreach ((string key, string value) in _unknownFilters)
+                    filter.Parameters[key] = value;
+
             return filter;
         }
 

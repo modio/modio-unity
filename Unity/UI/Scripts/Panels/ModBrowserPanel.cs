@@ -158,8 +158,10 @@ namespace Modio.Unity.UI.Panels
             //The "Back" button can either clear the search, or exit the menu, depending on if there's a custom search
             ModioUIInput.RemoveHandler(ModioUIInput.ModioAction.Cancel,      CancelPressed);
             ModioUIInput.RemoveHandler(ModioUIInput.ModioAction.SearchClear, ClearSearch);
-            
-            if (ModioUISearch.Default.HasCustomSearch())
+
+            ModioUISearch tempQualifier = ModioUISearch.Default;
+
+            if (tempQualifier.ModioSearch.HasCustomSearch())
                 ModioUIInput.AddHandler(ModioUIInput.ModioAction.SearchClear, ClearSearch);
             else
                 ModioUIInput.AddHandler(ModioUIInput.ModioAction.Cancel, CancelPressed);
@@ -170,7 +172,7 @@ namespace Modio.Unity.UI.Panels
             
             if(ModioUISearch.Default.ModioSearch.LastSearchPreset is not SpecialSearchType.VcPacks)
                 ModioUIInput.AddHandler(ModioUIInput.ModioAction.Filter, OpenFilter);
-            if(ModioUISearch.Default.ModioSearch.LastSearchPreset is not SpecialSearchType.VcPacks and not SpecialSearchType.SubSearchesOnly)
+            if(ModioUISearch.Default.ModioSearch.LastSearchPreset is not SpecialSearchType.VcPacks and not SpecialSearchType.SubSearchesOnly and not SpecialSearchType.DynamicCarousels)
                 ModioUIInput.AddHandler(ModioUIInput.ModioAction.Sort,   OpenSort);
         }
 

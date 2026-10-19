@@ -1,7 +1,7 @@
 ﻿using System;
 using Modio.Images;
+using Modio.Ratings;
 using Modio.Users;
-using Plugins.Modio.Modio.Ratings;
 
 namespace Modio.Mods
 {

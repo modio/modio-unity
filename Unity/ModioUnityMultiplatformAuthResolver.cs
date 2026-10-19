@@ -24,6 +24,6 @@ namespace Modio.Unity
         public Task<(Error error, Texture2D image)> TryGetAvatarImage()
             => Get<IModioAuthService>() is IExternalAvatarProviderService<Texture2D> service
                 ? service.TryGetAvatarImage()
-                : Task.FromResult<(Error error, Texture2D image)>((Error.None, null));
+                : Task.FromResult<(Error error, Texture2D image)>((Error.Unknown, null));
     }
 }

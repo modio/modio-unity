@@ -1,4 +1,7 @@
-﻿using Modio.Unity.UI.Search;
+﻿using System;
+using System.Collections.Generic;
+using Modio.API;
+using Modio.Unity.UI.Search;
 using TMPro;
 using UnityEngine;
 
@@ -20,18 +23,27 @@ namespace Modio.Unity.UI.Components
         void OnEnable()
         {
             if (!_hasRunStart) return;
-            searchField.text = lastSearchPhrase = "";
-            ModioUISearch.Default.AppliedSearchPreset += OnAppliedSearchPreset;
+            
+            IList<string> searchPhrases = ModioUISearch.Default.ModioSearch.LastSearchFilter?.GetSearchPhrase(Filtering.Like);
+            if(searchPhrases?.Count > 0)
+                searchField.text = lastSearchPhrase = searchPhrases[0];
+            else
+                searchField.text = lastSearchPhrase = "";
+
+            ModioUISearch.Default.ModioSearch.OnSearchUpdated -= OnSearchUpdated;
+            ModioUISearch.Default.ModioSearch.OnSearchUpdated += OnSearchUpdated;
         }
 
         void OnDisable()
         {
-            ModioUISearch.Default.AppliedSearchPreset -= OnAppliedSearchPreset;
+            ModioUISearch.Default.ModioSearch.OnSearchUpdated -= OnSearchUpdated;
         }
 
-        void OnAppliedSearchPreset()
+        void OnSearchUpdated()
         {
-            searchField.text = lastSearchPhrase = "";
+            IList<string> searchPhrases = ModioUISearch.Default.ModioSearch.LastSearchFilter.GetSearchPhrase(Filtering.Like);
+            if(searchPhrases?.Count == 0)
+                searchField.text = lastSearchPhrase = "";
         }
 
         public void FilterView()

@@ -11,5 +11,6 @@ namespace Modio.Mods
         EnablePreviewUrls = 128,
         AllowNegativeRatings = 256,
         AllowDependencies = 1024,
+        DisableCarousels  = 524288,
     }
 }

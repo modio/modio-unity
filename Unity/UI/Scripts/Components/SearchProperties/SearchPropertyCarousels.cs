@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Modio.Monetization;
+using Modio.Search;
 using Modio.Unity.UI.Search;
 using UnityEngine;
 using UnityEngine.Scripting.APIUpdating;
@@ -15,7 +16,7 @@ namespace Modio.Unity.UI.Components.SearchProperties
         class CarouselDefinition
         {
             public GameObject GameObject;
-            public ModioUISearchSettings.CarouselStyle Style;
+            public CarouselStyle Style;
 
             public readonly Stack<ModioUISearch> Pool = new Stack<ModioUISearch>();
             public readonly Stack<ModioUISearch> Active = new Stack<ModioUISearch>();
@@ -26,7 +27,7 @@ namespace Modio.Unity.UI.Components.SearchProperties
         CarouselDefinition[] _carouselDefinitions;
         [SerializeField] 
         GameObject _disableWhenNoCarousels;
-        ModioUISearchSettings _searchLastSearchSettingsFrom;
+        IModioSearchSettings _searchLastSearchSettingsFrom;
 
         public void Start()
         {
@@ -39,10 +40,11 @@ namespace Modio.Unity.UI.Components.SearchProperties
 
         public void OnSearchUpdate(ModioUISearch search)
         {
-            ModioUISearchSettings searchSettings = search.LastSearchSettingsFrom;
+            IModioSearchSettings searchSettings = search.LastSearchSettingsFrom;
 
-            if (search.HasCustomSearch()) searchSettings = null;
-            
+            if (search.ModioSearch.HasCustomSearch()) searchSettings = null;
+            if (search.ModioSearch.IsSearching) searchSettings = null;
+
             if(_searchLastSearchSettingsFrom == searchSettings )
                 return;
             
@@ -56,35 +58,37 @@ namespace Modio.Unity.UI.Components.SearchProperties
                     carouselDefinition.Pool.Push(active);
                 }
             }
-            
-            if (_carouselParent != null) _carouselParent.SetActive(searchSettings?.Carousels is { Length: > 0, });
+
+            var carousels = (searchSettings as IModioSearchCarouselProvider)?.Carousels;
+
+            if (_carouselParent != null) _carouselParent.SetActive(carousels is { Count: > 0, });
             
             if (_disableWhenNoCarousels != null) 
-                _disableWhenNoCarousels.SetActive(searchSettings?.Carousels is { Length: > 0, });
+                _disableWhenNoCarousels.SetActive(carousels is { Count: > 0, });
 
-            if (searchSettings?.Carousels == null) return;
+            if (carousels == null) return;
 
             bool showMonetizationUI = ModioClient.Settings.GetPlatformSettings<MonetizationSettings>() != null;
             
             int siblingIndex = 0;
-            foreach (var carouselSettings in searchSettings.Carousels)
+            foreach (var carouselSettings in carousels)
             {
-                if (!showMonetizationUI && carouselSettings.Search.HiddenIfMonetizationDisabled)
+                if (!showMonetizationUI && carouselSettings.settings.HiddenIfMonetizationDisabled)
                 {
                     continue;
                 }
                 
-                ModioUISearch modioUISearch = GetCarousel(carouselSettings.Style);
+                ModioUISearch modioUISearch = GetCarousel(carouselSettings.style);
 
                 if (modioUISearch != null)
                 {
                     modioUISearch.transform.SetSiblingIndex(siblingIndex++);
-                    carouselSettings.Search.Search(modioUISearch);
+                    modioUISearch.SetSearch(carouselSettings.settings, true);
                 }
             }
         }
 
-        ModioUISearch GetCarousel(ModioUISearchSettings.CarouselStyle style)
+        ModioUISearch GetCarousel(CarouselStyle style)
         {
             foreach (CarouselDefinition carouselDefinition in _carouselDefinitions)
             {
@@ -95,6 +99,7 @@ namespace Modio.Unity.UI.Components.SearchProperties
                 {
                     fromPool.gameObject.SetActive(true);
                     carouselDefinition.Active.Push(fromPool);
+                    
                     return fromPool;
                 }
                 

@@ -1,4 +1,4 @@
-﻿namespace Plugins.Modio.Modio.Ratings
+﻿namespace Modio.Ratings
 {
     /// <summary>
     /// Enumeration representing the rating status of a mod or collection.

@@ -12,11 +12,11 @@ namespace Modio.API.SchemaDefinitions{
     public readonly partial struct ModSkuObject 
     {
         /// <summary>Tag name.</summary>
-        internal readonly long Id;
+        public readonly long Id;
         /// <summary>The localized tag name influenced by the [Accept-Language](https://docs.mod.io/restapi/localization) header, defaults to English.</summary>
-        internal readonly string Sku;
+        public readonly string Sku;
         /// <summary>**Deprecated:** Unix timestamp of date tag was applied.</summary>
-        internal readonly string Portal;
+        public readonly string Portal;
 
         /// <summary>Creates a new ModSkuObject.</summary>
         /// <param name="id">The unique identifier for the SKU object.</param>

@@ -18,7 +18,7 @@ namespace Modio.Mods
         
         public readonly ReadOnlyDictionary<string, string> NameLocalization;
 
-        public string LocalizedName => NameLocalization?.GetValueOrDefault(ModioAPI.LanguageCodeResponse, _nameLocalized);
+        public string LocalizedName => NameLocalization?.GetValueOrDefault(ModioAPI.LanguageCodeResponse, _nameLocalized) ?? Name;
         public readonly int Total;
         public readonly ReadOnlyDictionary<string, string> Filters;
         public readonly string Size;

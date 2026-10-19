@@ -10,39 +10,39 @@ namespace Modio.API.SchemaDefinitions{
     public readonly partial struct ModfileObject 
     {
         /// <summary>Unique modfile id.</summary>
-        internal readonly long Id;
+        public readonly long Id;
         /// <summary>Unique mod id.</summary>
-        internal readonly long ModId;
+        public readonly long ModId;
         /// <summary>Unix timestamp of date file was added.</summary>
-        internal readonly long DateAdded;
+        public readonly long DateAdded;
         /// <summary>Unix timestamp of date file was updated.</summary>
-        internal readonly long DateUpdated;
+        public readonly long DateUpdated;
         /// <summary>Unix timestamp of date file was virus scanned.</summary>
-        internal readonly long DateScanned;
+        public readonly long DateScanned;
         /// <summary>Current virus scan status of the file. For newly added files that have yet to be scanned this field will change frequently until a scan is complete:<br/><br/>__0__ = Not scanned<br/>__1__ = Scan complete<br/>__2__ = In progress<br/>__3__ = Too large to scan<br/>__4__ = File not found<br/>__5__ = Error Scanning</summary>
-        internal readonly long VirusStatus;
+        public readonly long VirusStatus;
         /// <summary>Was a virus detected:<br/><br/>__0__ = No threats detected<br/>__1__ = Flagged as malicious<br/>__2__ = Flagged as containing potentially harmful files (i.e. EXEs)</summary>
-        internal readonly long VirusPositive;
+        public readonly long VirusPositive;
         /// <summary>Deprecated: No longer used and will be removed in subsequent API version.</summary>
-        internal readonly string VirustotalHash;
+        public readonly string VirustotalHash;
         /// <summary>Size of the file in bytes.</summary>
-        internal readonly long Filesize;
+        public readonly long Filesize;
         /// <summary>The uncompressed filesize of the zip archive.</summary>
-        internal readonly long FilesizeUncompressed;
+        public readonly long FilesizeUncompressed;
         /// <summary>Contains a dictionary of filehashes for the contents of the download.</summary>
-        internal readonly FilehashObject Filehash;
+        public readonly FilehashObject Filehash;
         /// <summary>Filename including extension.</summary>
-        internal readonly string Filename;
+        public readonly string Filename;
         /// <summary>Release version this file represents.</summary>
-        internal readonly string Version;
+        public readonly string Version;
         /// <summary>Changelog for the file.</summary>
-        internal readonly string Changelog;
+        public readonly string Changelog;
         /// <summary>Metadata stored by the game developer for this file.</summary>
-        internal readonly string MetadataBlob;
+        public readonly string MetadataBlob;
         /// <summary>Contains download data for the modfile.</summary>
-        internal readonly DownloadObject Download;
+        public readonly DownloadObject Download;
         /// <summary>Contains modfile platform data.</summary>
-        internal readonly ModfilePlatformObject[] Platforms;
+        public readonly ModfilePlatformObject[] Platforms;
 
         /// <param name="id">Unique modfile id.</param>
         /// <param name="modId">Unique mod id.</param>

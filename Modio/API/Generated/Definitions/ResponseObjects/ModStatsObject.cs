@@ -10,31 +10,31 @@ namespace Modio.API.SchemaDefinitions{
     public readonly partial struct ModStatsObject 
     {
         /// <summary>Unique mod id.</summary>
-        internal readonly long ModId;
+        public readonly long ModId;
         /// <summary>Current rank of the mod.</summary>
-        internal readonly long PopularityRankPosition;
+        public readonly long PopularityRankPosition;
         /// <summary>Number of ranking spots the current rank is measured against.</summary>
-        internal readonly long PopularityRankTotalMods;
+        public readonly long PopularityRankTotalMods;
         /// <summary>Last 24hours of downloads for the mod.</summary>
-        internal readonly long DownloadsToday;
+        public readonly long DownloadsToday;
         /// <summary>Total downloads for the mod.</summary>
-        internal readonly long DownloadsTotal;
+        public readonly long DownloadsTotal;
         /// <summary>Total users who have subscribed to the mod.</summary>
-        internal readonly long SubscribersTotal;
+        public readonly long SubscribersTotal;
         /// <summary>Total times the mod has been rated.</summary>
-        internal readonly long RatingsTotal;
+        public readonly long RatingsTotal;
         /// <summary>Number of positive ratings.</summary>
-        internal readonly long RatingsPositive;
+        public readonly long RatingsPositive;
         /// <summary>Number of negative ratings.</summary>
-        internal readonly long RatingsNegative;
+        public readonly long RatingsNegative;
         /// <summary>Number of positive ratings, divided by the total ratings to determine it’s percentage score.</summary>
-        internal readonly long RatingsPercentagePositive;
+        public readonly long RatingsPercentagePositive;
         /// <summary>Overall rating of this item calculated using the [Wilson score confidence interval](https://www.evanmiller.org/how-not-to-sort-by-average-rating.html). This column is good to sort on, as it will order items based on number of ratings and will place items with many positive ratings above those with a higher score but fewer ratings.</summary>
-        internal readonly float RatingsWeightedAggregate;
+        public readonly float RatingsWeightedAggregate;
         /// <summary>Textual representation of the rating in format:<br/><br/>- Overwhelmingly Positive<br/>- Very Positive<br/>- Positive<br/>- Mostly Positive<br/>- Mixed<br/>- Negative<br/>- Mostly Negative<br/>- Very Negative<br/>- Overwhelmingly Negative<br/>- Unrated</summary>
-        internal readonly string RatingsDisplayText;
+        public readonly string RatingsDisplayText;
         /// <summary>Unix timestamp until this mods's statistics are considered stale.</summary>
-        internal readonly long DateExpires;
+        public readonly long DateExpires;
 
         /// <param name="modId">Unique mod id.</param>
         /// <param name="popularityRankPosition">Current rank of the mod.</param>

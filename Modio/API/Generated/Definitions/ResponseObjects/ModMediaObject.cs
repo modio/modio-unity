@@ -10,11 +10,11 @@ namespace Modio.API.SchemaDefinitions{
     public readonly partial struct ModMediaObject 
     {
         /// <summary>Array of YouTube links.</summary>
-        internal readonly string[] Youtube;
+        public readonly string[] Youtube;
         /// <summary>Array of SketchFab links.</summary>
-        internal readonly string[] Sketchfab;
+        public readonly string[] Sketchfab;
         /// <summary>Array of image objects (a gallery).</summary>
-        internal readonly ImageObject[] Images;
+        public readonly ImageObject[] Images;
 
         /// <param name="youtube">Array of YouTube links.</param>
         /// <param name="sketchfab">Array of SketchFab links.</param>

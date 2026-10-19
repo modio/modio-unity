@@ -3,8 +3,8 @@ using System.Threading.Tasks;
 using Modio.Collections;
 using Modio.Extensions;
 using Modio.Mods;
+using Modio.Ratings;
 using Modio.Unity.UI.Panels;
-using Plugins.Modio.Modio.Ratings;
 using UnityEngine;
 using UnityEngine.UI;
 

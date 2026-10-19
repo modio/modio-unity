@@ -101,6 +101,8 @@ namespace Modio.Errors
         MATURE_MODS_NOT_ALLOWED = ErrorCode.MATURE_MODS_NOT_ALLOWED,
         /// <inheritdoc cref="ErrorCode.MUTE_USER_NOT_FOUND" />
         MUTE_USER_NOT_FOUND = ErrorCode.MUTE_USER_NOT_FOUND,
+        /// <inheritdoc cref="ErrorCode.USER_CANT_DO_ACTION_SPAM_DETECTED" />
+        USER_CANT_DO_ACTION_SPAM_DETECTED = ErrorCode.USER_CANT_DO_ACTION_SPAM_DETECTED,
         /// <inheritdoc cref="ErrorCode.CANNOT_MUTE_YOURSELF" />
         CANNOT_MUTE_YOURSELF = ErrorCode.CANNOT_MUTE_YOURSELF,
         /// <inheritdoc cref="ErrorCode.REQUESTED_USER_NOT_FOUND" />

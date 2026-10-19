@@ -10,9 +10,9 @@ namespace Modio.API.SchemaDefinitions{
     public readonly partial struct ModfilePlatformObject 
     {
         /// <summary>A [target platform](#targeting-a-platform).</summary>
-        internal readonly string Platform;
+        public readonly string Platform;
         /// <summary>The status of the modfile for the corresponding `platform`. Possible values:<br/><br/>__0__ = Pending<br/>__1__ = Approved<br/>__2__ = Denied<br/>__3__ = Targetted</summary>
-        internal readonly long Status;
+        public readonly long Status;
 
         /// <param name="platform">A [target platform](#targeting-a-platform).</param>
         /// <param name="status">The status of the modfile for the corresponding `platform`. Possible values:<br/><br/>__0__ = Pending<br/>__1__ = Approved<br/>__2__ = Denied<br/>__3__ = Targetted</param>

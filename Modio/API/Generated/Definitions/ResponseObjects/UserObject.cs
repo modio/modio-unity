@@ -10,25 +10,25 @@ namespace Modio.API.SchemaDefinitions{
     public readonly partial struct UserObject 
     {
         /// <summary>Unique id of the user.</summary>
-        internal readonly long Id;
+        public readonly long Id;
         /// <summary>Path for the user on mod.io. For example: https://mod.io/u/__name-id-here__</summary>
-        internal readonly string NameId;
+        public readonly string NameId;
         /// <summary>Display name of the user.</summary>
-        internal readonly string Username;
+        public readonly string Username;
         /// <summary>The users' display name for the targeted portal. Value will be `null` if no valid `X-Modio-Portal` portal header value is provided. For more information see [Targeting a Portal](#targeting-a-portal).</summary>
-        internal readonly string DisplayNamePortal;
+        public readonly string DisplayNamePortal;
         /// <summary>Unix timestamp of date the user was last online.</summary>
-        internal readonly long DateOnline;
+        public readonly long DateOnline;
         /// <summary>Unix timestamp of date the user joined.</summary>
-        internal readonly long DateJoined;
+        public readonly long DateJoined;
         /// <summary>Contains media URL's to the users avatar.</summary>
-        internal readonly AvatarObject Avatar;
+        public readonly AvatarObject Avatar;
         /// <summary>Deprecated: No longer used and will be removed in subsequent API version.</summary>
-        internal readonly string Timezone;
+        public readonly string Timezone;
         /// <summary>Deprecated: No longer used and will be removed in subsequent API version. To [localize the API response](#localization) we recommend you set the `Accept-Language` header.</summary>
-        internal readonly string Language;
+        public readonly string Language;
         /// <summary>URL to the users profile.</summary>
-        internal readonly string ProfileUrl;
+        public readonly string ProfileUrl;
 
         /// <param name="id">Unique id of the user.</param>
         /// <param name="nameId">Path for the user on mod.io. For example: https://mod.io/u/__name-id-here__</param>
